@@ -80,6 +80,78 @@
     "tags": ["crop:root"],
     "asset": "crop-parsnip"
   },
+  "garlic-seed": {
+    "name": "Garlic Seeds",
+    "description": "A pungent spring bulb. Ready in 4 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 40 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-garlic"
+  },
+  "garlic": {
+    "name": "Garlic",
+    "description": "A pungent spring bulb.",
+    "category": "crop",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["crop:bulb"],
+    "asset": "crop-garlic"
+  },
+  "cauliflower-seed": {
+    "name": "Cauliflower Seeds",
+    "description": "A hearty spring brassica. Ready in 6 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 55 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-cauliflower"
+  },
+  "cauliflower": {
+    "name": "Cauliflower",
+    "description": "A pale green spring brassica.",
+    "category": "crop",
+    "price": { "base": 175 },
+    "canStack": true,
+    "tags": ["crop:brassica"],
+    "asset": "crop-cauliflower"
+  },
+  "strawberry-seed": {
+    "name": "Strawberry Seeds",
+    "description": "A spring berry. Ready in 8 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 100 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-strawberry"
+  },
+  "strawberry": {
+    "name": "Strawberry",
+    "description": "A sweet spring berry.",
+    "category": "crop",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-strawberry"
+  },
+  "green-bean-seed": {
+    "name": "Green Bean Seeds",
+    "description": "A climbing spring vine. Ready in 10 days, regrows.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 60 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-green-bean"
+  },
+  "green-bean": {
+    "name": "Green Bean",
+    "description": "A crisp climbing bean.",
+    "category": "crop",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["crop:vegetable"],
+    "asset": "crop-green-bean"
+  },
   "potato-seed": {
     "name": "Potato Seeds",
     "description": "A hearty spring tuber. Ready in 6 days.",
@@ -115,6 +187,42 @@
     "canStack": true,
     "tags": ["crop:berry"],
     "asset": "crop-blueberry"
+  },
+  "tomato-seed": {
+    "name": "Tomato Seeds",
+    "description": "A summer vine fruit. Ready in 8 days, regrows.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 50 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-tomato"
+  },
+  "tomato": {
+    "name": "Tomato",
+    "description": "A juicy summer vine fruit.",
+    "category": "crop",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-tomato"
+  },
+  "hot-pepper-seed": {
+    "name": "Hot Pepper Seeds",
+    "description": "A fiery summer pepper. Ready in 5 days, regrows.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 40 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-hot-pepper"
+  },
+  "hot-pepper": {
+    "name": "Hot Pepper",
+    "description": "A fiery summer pepper.",
+    "category": "crop",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-hot-pepper"
   },
   "wood": {
     "name": "Wood",

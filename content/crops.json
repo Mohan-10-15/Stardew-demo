@@ -19,6 +19,46 @@
     "quality": true,
     "waterNeed": 1
   },
+  "garlic": {
+    "name": "Garlic",
+    "seedId": "garlic-seed",
+    "days": [1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 60 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "cauliflower": {
+    "name": "Cauliflower",
+    "seedId": "cauliflower-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 175 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "strawberry": {
+    "name": "Strawberry",
+    "seedId": "strawberry-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 120 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "green-bean": {
+    "name": "Green Bean",
+    "seedId": "green-bean-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 3,
+    "seasons": [0],
+    "sell": { "base": 40 },
+    "quality": true,
+    "waterNeed": 1
+  },
   "blueberry": {
     "name": "Blueberry",
     "seedId": "blueberry-seed",
@@ -26,6 +66,26 @@
     "regrow": 4,
     "seasons": [1],
     "sell": { "base": 50 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "tomato": {
+    "name": "Tomato",
+    "seedId": "tomato-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 4,
+    "seasons": [1],
+    "sell": { "base": 60 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "hot-pepper": {
+    "name": "Hot Pepper",
+    "seedId": "hot-pepper-seed",
+    "days": [1, 1, 1, 1, 1],
+    "regrow": 3,
+    "seasons": [1],
+    "sell": { "base": 40 },
     "quality": true,
     "waterNeed": 1
   }

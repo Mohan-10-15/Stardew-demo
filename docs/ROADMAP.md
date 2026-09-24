@@ -3,10 +3,10 @@
 Checklist. Unchecked = not done. Checked only when the milestone gate passes
 (`npm run check` + playable + boot test where a browser exists).
 
-- [ ] M0 Foundations: git, tooling, AGENTS, docs, core contracts (types, Rng,
+- [x] M0 Foundations: git, tooling, AGENTS, docs, core contracts (types, Rng,
       EventBus, Store, save skeleton, content schemas + validator, feature
       contract, game bootstrap), `npm run check` green, seed content, commit.
-- [ ] M1 Core loop: calendar/energy, tools, till > plant > water > harvest,
+- [x] M1 Core loop: calendar/energy, tools, till > plant > water > harvest,
       hotbar, shipping bin, money, sleep/rollover, save/load flow, farm map +
       engine walkable, first crops. Result: a playable season.
 - [ ] M2 Village and economy: village map, shops, seasons + weather + forecasts,

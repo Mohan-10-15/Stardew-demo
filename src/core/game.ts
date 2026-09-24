@@ -6,10 +6,14 @@
 import { EventBus } from './events';
 import { Store } from './store';
 import { Rng } from './rng';
-import { createInitialState } from './state';
+import { buildInitialMaps, createInitialState, migrateAllMaps } from './state';
 import { validateMapRefs, type ContentDb } from './content';
 import type { FeatureContext, FeatureModule } from './feature';
 import { registerAllFeatures } from './registry';
+// Side-effect import AFTER the registry above: executing every feature entry
+// self-registers submodules; the registry body must be fully initialized first
+// (see the note in core/registry.ts about the ESM TDZ cycle).
+import '../features/auto-import';
 import type { GameState } from './types';
 import { TICK_MINUTES } from './types';
 import { advanceClock } from './time';
@@ -103,11 +107,16 @@ export function createGameRuntime(
   const seed = opts.seed ?? Math.floor(Math.random() * 0x7fffffff);
   const rng = new Rng(seed);
   const bus = new EventBus();
-  const initial = createInitialState(seed, opts.saveName ?? 'ember-hollow-save');
+  const content = loadContentSyncOrThrow();
+  const maps = buildInitialMaps(content.maps);
+  const initial = createInitialState(seed, opts.saveName ?? 'ember-hollow-save', { maps });
+  const farmDef = content.maps.get('farm');
+  if (farmDef) {
+    initial.player.position = { mapId: 'farm', x: farmDef.spawn.x, y: farmDef.spawn.y };
+  }
   const store = new Store(initial, rng, bus);
   store.registerReducer('time:tick', (st) => advanceTimeReducer(st));
   const features = registerAllFeatures();
-  const content = loadContentSyncOrThrow();
   validateMapRefs(content);
   const context = buildContext(store, bus, rng, headless, content, saveStore, saveSlot);
   for (const f of features) f.setup?.(context);
@@ -146,13 +155,14 @@ export async function loadRuntimeFromSave(
   const file = await saveStore.load(saveName);
   if (!file) throw new Error(`no save named ${saveName}`);
   const state = migrateSave(file.state);
+  const content = loadContentSyncOrThrow();
+  state.maps = migrateAllMaps(state.maps, content.maps);
   const seed = state.rngSeed;
   const rng = new Rng(seed);
   const bus = new EventBus();
   const s = new Store(state, rng, bus);
   s.registerReducer('time:tick', (st) => advanceTimeReducer(st));
   const features = registerAllFeatures();
-  const content = loadContentSyncOrThrow();
   const context = buildContext(s, bus, rng, typeof document === 'undefined', content, saveStore, saveSlot);
   for (const f of features) f.setup?.(context);
 

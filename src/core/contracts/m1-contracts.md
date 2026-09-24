@@ -74,7 +74,9 @@ their own reducers for `time:tick` that run AFTER core's.
   per day rollover **only if watered that day**. Fully grown = stage >= sum of
   all but... definition: stage index into days[]; plant at stage 0; each watered
   day rollover advances stage by 1; harvest allowed when stage >= days.length.
-  Wait/regrow: for regrow crops, after harvest reset stage to days.length-1.
+  Wait/regrow: for regrow crops, after harvest reset stage to
+  `days.length - regrow` (matches genre: next harvest returns `regrow` watered
+  days later). DECISIONS #14.
 - Unwatered for 2 consecutive days → withered (remove placed object, emit
   `crop:withered`).
 - Watering: tile must be watered daily; watering comes from what the player

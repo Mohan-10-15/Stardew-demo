@@ -3,7 +3,9 @@ import { Rng, hashSeed } from '@game/core/rng';
 import { advanceClock, startNewDay, weekOf } from '@game/core/time';
 import { Store } from '@game/core/store';
 import { MemorySaveStore, migrateSave, slotName, wrapSave } from '@game/core/save';
-import { createInitialState } from '@game/core/state';
+import { buildInitialMaps, createInitialState, mapStateFromDef, migrateAllMaps, tileKeyOf } from '@game/core/state';
+import { createGameRuntime } from '@game/core/game';
+import { loadContent } from '@game/core/content';
 import { EventBus } from '@game/core/events';
 import type { GameState, SimAction, WorldState } from '@game/core/types';
 import { PASS_OUT_HOUR } from '@game/core/types';
@@ -118,6 +120,26 @@ describe('Store', () => {
     store.registerReducer('dup', () => store.state);
     expect(() => store.registerReducer('dup', () => store.state)).not.toThrow();
   });
+
+  it('queues nested dispatches and flushes them in order (no reentrant throw)', () => {
+    const store = new Store(createInitialState(2, 'nested'), new Rng(2));
+    const order: string[] = [];
+    store.registerReducer('outer', (st) => {
+      order.push('outer');
+      store.bus.emit('do-inner', null);
+      return { ...st, player: { ...st.player, money: (st.player.money as number) + 10 } };
+    });
+    store.registerReducer('inner', (st) => {
+      order.push('inner');
+      return { ...st, player: { ...st.player, money: (st.player.money as number) + 1 } };
+    });
+    store.bus.on('do-inner', () => store.dispatch({ type: 'inner', payload: {} }));
+    expect(() => store.dispatch({ type: 'outer', payload: {} })).not.toThrow();
+    expect(order).toEqual(['outer', 'inner']);
+    expect(store.state.player.money).toBe(500 + 11);
+    expect(() => store.dispatch({ type: 'inner', payload: {} })).not.toThrow();
+    expect(store.state.player.money).toBe(500 + 12);
+  });
 });
 
 describe('EventBus', () => {
@@ -181,5 +203,45 @@ describe('save roundtrip', () => {
     expect(loaded?.state.rngSeed).toBe(5);
     await store.remove('slot1');
     expect(await store.load('slot1')).toBeNull();
+  });
+});
+
+describe('content map seeding', () => {
+  it('maps are derived from content, not the placeholder', async () => {
+    const content = await loadContent();
+    (globalThis as unknown as { __EH_CONTENT?: unknown }).__EH_CONTENT = content;
+    const runtime = createGameRuntime({ newGame: true, seed: 3, mountDom: false });
+    const farm = runtime.store.state.maps.farm!;
+    expect(farm.grid.width).toBeGreaterThan(4);
+    expect(farm.placed[tileKeyOf(5, 8)]?.id).toBe('shipping-bin');
+    expect(runtime.store.state.player.position).toEqual({ mapId: 'farm', x: content.maps.get('farm')?.spawn.x, y: content.maps.get('farm')?.spawn.y });
+    expect(runtime.features.map((f) => f.id)).toEqual(
+      expect.arrayContaining(['engine:sim', 'engine:view', 'farming:sim', 'farming:shipping', 'farming:weather', 'inventory:sim']),
+    );
+  });
+
+  it('migrateAllMaps rebuilds grids when content bumps version and keeps placed in-bounds', () => {
+    const content = (globalThis as unknown as { __EH_CONTENT?: { maps: Map<string, import('@game/core/schemas').MapDef> } }).__EH_CONTENT;
+    const def = content!.maps.get('farm')!;
+    const older = mapStateFromDef(def);
+    const bump = { ...def, version: def.version + 1, width: def.width + 2, height: def.height + 2 };
+    older.placed[tileKeyOf(0, 0)] = { id: 'branch', x: 0, y: 0 };
+    older.placed[tileKeyOf(99, 99)] = { id: 'rock', x: 99, y: 99 };
+    const migrated = migrateAllMaps({ farm: older }, new Map([[older.id, bump]]));
+    const out = migrated.farm!;
+    expect(out.version).toBe(bump.version);
+    expect(out.grid.width).toBe(bump.width);
+    expect(out.placed[tileKeyOf(0, 0)]?.id).toBe('branch');
+    expect(out.placed[tileKeyOf(99, 99)]).toBeUndefined();
+  });
+
+  it('buildInitialMaps covers every authored map', async () => {
+    const content = await loadContent();
+    const built = buildInitialMaps(content.maps);
+    for (const def of content.maps.values()) {
+      const state = built[def.id]!;
+      expect(state).toBeDefined();
+      expect(state.grid.tiles).toHaveLength(def.width * def.height);
+    }
   });
 });

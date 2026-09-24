@@ -2,7 +2,8 @@
  * Factory for a fresh, valid GameState. Deterministic given seed+player
  * identity. WORKER-2 extends this as the sim grows; keep it a pure function.
  */
-import type { GameState, MapState, Weather } from './types';
+import type { GameState, MapState, PlacedObject, Weather } from './types';
+import type { MapDef } from './schemas';
 import { createRngFromState, Rng } from './rng';
 import { DAYS_PER_SEASON, SEASONS_PER_YEAR } from './types';
 
@@ -16,18 +17,86 @@ export function emptyMap(id: string, width: number, height: number): MapState {
   };
 }
 
+/** Canonical "x,y" map tile key (placed-object record index). */
+export function tileKeyOf(x: number, y: number): string {
+  return `${x},${y}`;
+}
+
+/** Build a concrete MapState from an authored field-map definition. */
+export function mapStateFromDef(def: MapDef): MapState {
+  const ground = def.layers.ground.replace(/\s+/g, '');
+  const placed: Record<string, PlacedObject> = {};
+  for (const p of def.initialPlaced) {
+    placed[tileKeyOf(p.x, p.y)] = { id: p.id, x: p.x, y: p.y, data: { ...p.data } };
+  }
+  return {
+    id: def.id,
+    grid: { tiles: ground.split(''), width: def.width, height: def.height },
+    placed,
+    npcs: {},
+    version: def.version ?? 1,
+  };
+}
+
+/** Initial concrete maps for every field map in content (new games). */
+export function buildInitialMaps(defs: Map<string, MapDef>): Record<string, MapState> {
+  const out: Record<string, MapState> = {};
+  for (const def of defs.values()) out[def.id] = mapStateFromDef(def);
+  return out;
+}
+
+/**
+ * Migrate saved maps to the current content layout. When the authored version
+ * of a map is newer than the saved grid, rebuild the tile grid from content
+ * and keep any placed objects that still fall inside the new bounds. Content
+ * that does not exist (or is unchanged) is left untouched.
+ */
+export function migrateAllMaps(
+  savedMaps: Record<string, MapState>,
+  defs: Map<string, MapDef>,
+): Record<string, MapState> {
+  const out: Record<string, MapState> = { ...savedMaps };
+  for (const def of defs.values()) {
+    const saved = out[def.id];
+    if (!saved) {
+      out[def.id] = mapStateFromDef(def);
+      continue;
+    }
+    if ((saved.version ?? 0) >= (def.version ?? 1)) continue;
+    const kept: Record<string, PlacedObject> = {};
+    for (const [key, p] of Object.entries(saved.placed)) {
+      if (p.x < def.width && p.y < def.height) kept[key] = p;
+    }
+    const fresh = mapStateFromDef(def);
+    out[def.id] = {
+      id: def.id,
+      grid: fresh.grid,
+      placed: { ...fresh.placed, ...kept },
+      npcs: saved.npcs ?? {},
+      version: def.version ?? 1,
+    };
+  }
+  return out;
+}
+
 export interface NewGameOptions {
   playerName: string;
   farmName: string;
   /** Nickname for deriving the save's RNG seed. */
   seedPhrase?: string;
+  /** Initial concrete maps for the new game. */
+  maps?: Partial<Record<string, MapState>>;
 }
 
 export function createInitialState(seed: number, saveName: string, opts?: Partial<NewGameOptions>): GameState {
   const player = opts?.playerName ?? 'Rowan';
   const farm = opts?.farmName ?? 'Rustleaf Farm';
 
-  const farmMap = emptyMap('farm', 48, 40);
+  const maps: Record<string, MapState> = {};
+  for (const [id, mapState] of Object.entries(opts?.maps ?? {})) {
+    if (mapState) maps[id] = mapState;
+  }
+  if (!maps.farm) maps.farm = emptyMap('farm', 48, 40);
   const farmState: GameState['farm'] = { mapId: 'farm', name: farm };
 
   return {
@@ -74,7 +143,7 @@ export function createInitialState(seed: number, saveName: string, opts?: Partia
       stats: {},
     },
     farm: farmState,
-    maps: { farm: farmMap },
+    maps,
     relationships: {},
     quests: { active: [], completed: [] },
     progression: { flags: ['started'], collections: {}, heartstoneProgress: 0, story: [] },

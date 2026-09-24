@@ -31,3 +31,31 @@ Each non-obvious choice gets an entry. Newest last.
 10. **Content in M0 is intentionally tiny seed data.** Full quotas arrive in
     the owning lanes' milestones (M1-M6). Not a scope cut — tracked in
     ROADMAP quotas.
+11. **Feature glob moved to src/features/auto-import.ts (M1).** The eager
+    `import.meta.glob` originally lived inside core/registry.ts; Vite inlines
+    feature imports into registry's module scope, creating an ESM cycle
+    (registry still evaluating → feature index calls registerFeature → TDZ
+    ReferenceError under Vite/vitest). Now game.ts imports registry BEFORE
+    auto-import, so the registry finishes evaluating first and feature index.ts
+    self-registration is safe. Feature indexes restored to side-effect
+    registration after the fix.
+12. **Store queues nested dispatches instead of throwing (M1).** engine:sim's
+    `player:interact` reducer emits `tool:use-requested`, which farming:sim
+    handles by dispatching `farming:tool-use` — reentrant. Core Store now defers
+    nested dispatches and flushes them synchronously after the in-flight action
+    commits, preserving determinism (no microtasks, still replayable). A
+    `state:changed` is emitted per completed action.
+13. **Maps are seeded from content, not a placeholder (M1).** createGameRuntime
+    builds initial MapState from map defs (mapStateFromDef / buildInitialMaps,
+    core/state.ts); player spawn comes from the farm def's `spawn`. Saves
+    migrate grid layouts on load when map `version` is bumped (migrateAllMaps):
+    grid rebuilt from content, placed objects kept while in bounds.
+14. **Regrow semantics (M1).** Harvest of a regrow crop resets `stage` to
+    `days.length - regrow` (e.g. blueberry days.len 13 regrow 4 → stage 9), so
+    the next harvest comes `regrow` watered days later. m1-contracts.md was
+    aligned to this (it originally said `days.length - 1`, which ignored the
+    regrow interval). Matches genre convention.
+15. **Keyboard input is single-owner (M1).** WORKER-3's input:ui attaches key
+    listeners and sets `globalThis.__EH_INPUT_OWNED__`; main.ts's built-in
+    stopgap handler (WASD/Space) goes idle once the flag is set, so move/hold
+    repeats dispatch exactly once per 120ms interval with no double moves.
