@@ -1,0 +1,48 @@
+:root {
+  --eh-bg: #10141a;
+  --eh-panel: rgba(24, 30, 40, 0.92);
+  --eh-panel-border: #3a4758;
+  --eh-text: #e8e4d8;
+  --eh-text-dim: #9aa4b2;
+  --eh-accent: #e8a33d;
+  --eh-accent-2: #6fb3e8;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--eh-bg);
+  color: var(--eh-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#game-root {
+  position: absolute;
+  inset: 0;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#ui-root > * {
+  pointer-events: auto;
+}

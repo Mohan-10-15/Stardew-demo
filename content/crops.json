@@ -1,0 +1,32 @@
+{
+  "parsnip": {
+    "name": "Parsnip",
+    "seedId": "parsnip-seed",
+    "days": [1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 35 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "potato": {
+    "name": "Potato",
+    "seedId": "potato-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 80 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "blueberry": {
+    "name": "Blueberry",
+    "seedId": "blueberry-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 4,
+    "seasons": [1],
+    "sell": { "base": 50 },
+    "quality": true,
+    "waterNeed": 1
+  }
+}
