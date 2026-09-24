@@ -134,6 +134,24 @@ const mapSchema = z.object({
 export type MapDef = z.infer<typeof mapSchema>;
 export type MapLegend = Record<string, { walkable: boolean; tillable: boolean; respawn: boolean; water: boolean }>;
 
+const stockedItemSchema = z.object({
+  itemId: z.string().min(1),
+  /** Overrides the item's buy/sell price for this shop. */
+  price: z.number().int().min(0).optional(),
+  /** Unit stock restored each morning; omitted = infinite. */
+  qty: z.number().int().min(1).optional(),
+});
+
+const shopSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Whether this shop buys items from the player (pays item.price.base). */
+  buys: z.boolean().default(false),
+  stock: z.array(stockedItemSchema).default([]),
+});
+
+export type ShopDef = z.infer<typeof shopSchema>;
+
 function mapRecord<V>(schema: z.ZodTypeAny, rawNoId: Record<string, unknown>): Map<string, V> {
   const out = new Map<string, V>();
   for (const [id, rawValue] of Object.entries(rawNoId)) {
@@ -162,4 +180,4 @@ export const npcsSchema = {
 
 export const mapSchemaFull = mapSchema;
 
-export { baseItemSchema, cropSchema, npcSchema, mapSchema };
+export { baseItemSchema, cropSchema, npcSchema, mapSchema, shopSchema };

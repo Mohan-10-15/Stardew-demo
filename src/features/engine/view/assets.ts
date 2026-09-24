@@ -33,6 +33,7 @@ export function groundGeometry(): THREE.BufferGeometry {
 export interface GroundMaterials {
   grass: THREE.MeshLambertMaterial;
   soil: THREE.MeshLambertMaterial;
+  path: THREE.MeshLambertMaterial;
   water: THREE.MeshLambertMaterial;
 }
 
@@ -40,6 +41,7 @@ export function groundMaterials(): GroundMaterials {
   return {
     grass: new THREE.MeshLambertMaterial({ color: 0xffffff, name: 'grass-base' }),
     soil: new THREE.MeshLambertMaterial({ color: 0x7a5637, name: 'soil-base' }),
+    path: new THREE.MeshLambertMaterial({ color: 0xcfbd93, name: 'path-base' }),
     water: new THREE.MeshLambertMaterial({
       color: 0x2f6f8f,
       name: 'water-base',
@@ -318,4 +320,34 @@ export function buildHighlight(): THREE.Mesh {
   quad.rotation.x = -Math.PI / 2;
   quad.position.y = 0.03;
   return quad;
+}
+
+/**
+ * Cheap procedural weather particles. `rain` renders a dense field of small
+ * falling drops; `snow` renders larger, slower, soft flakes. The view module
+ * owns the frame-by-frame fall; this just builds the static point cloud.
+ */
+export function buildPrecipitation(kind: 'rain' | 'snow', count: number): THREE.Points {
+  const positions = new Float32Array(count * 3);
+  const spread = 22;
+  const span = 18;
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * spread;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * span;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: kind === 'rain' ? 0x9fb6cc : 0xffffff,
+    size: kind === 'rain' ? 0.13 : 0.22,
+    transparent: true,
+    opacity: kind === 'rain' ? 0.7 : 0.9,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  points.userData = { kind, positions, count };
+  return points;
 }

@@ -24,9 +24,10 @@ import type {
 } from '@game/core/types';
 import { addStackToInventory } from '../../inventory/sim/InventorySim';
 import { ensureFarmingExt, ensureWeatherExt } from './ext';
-import { applyCropRollover, type CropDefs } from './growth';
-import { applyWeatherRoll } from './weather';
-import { cropIdOf, tileKey } from './utils';
+import type { CropDefs } from './growth';
+import { applyFarmRollover, applyForageRoll } from './rollover';
+import { bumpStat, FORAGE_XP, HARVEST_XP } from './summary';
+import { cropIdOf, FORAGE_PREFIX, tileKey } from './utils';
 
 export type ToolKind = 'hoe' | 'watering' | 'axe' | 'pickaxe' | 'scythe' | 'hands';
 
@@ -177,8 +178,10 @@ function harvestCrop(
     placed[key] = { id: 'tilled', x: tile.x, y: tile.y, data: { watered: false } };
   }
   const next = mapWithPlaced(added.state, tile.mapId, placed);
+  let st = bumpStat(next, `day:harvest:${cropId}`, 1);
+  st = bumpStat(st, 'day:xp:farming', HARVEST_XP);
   row.bus.emit('crop:harvested', { tile, cropId, qty: 1, quality });
-  return { state: next, effect: 'harvested' };
+  return { state: st, effect: 'harvested' };
 }
 
 function applyHands(
@@ -196,6 +199,9 @@ function applyHands(
       return harvestCrop(state, tile, obj, cropId, def, rng, row);
     }
     return { state, effect: 'none' };
+  }
+  if (obj && obj.id.startsWith(FORAGE_PREFIX)) {
+    return pickForage(state, tile, obj, row);
   }
   if (toolId && seedIdToCrop(toolId, row.content)) {
     return applyPlant(state, tile, toolId, row);
@@ -221,11 +227,32 @@ function clearDebris(
     row.bus.emit('inventory:full', { tile, itemId: drop.id });
     return { state, effect: 'none' };
   }
-  const placed = { ...map.placed };
+const placed = { ...map.placed };
   delete placed[key];
   const next = mapWithPlaced(added.state, tile.mapId, placed);
   row.bus.emit('item:picked', { tile, itemId: drop.id, qty: drop.qty });
   return { state: next, effect: 'cleared' };
+}
+
+/** Pick up a `forage:<itemId>` placed object (bare hand or scythe), m2 §3. */
+function pickForage(state: GameState, tile: WorldPos, obj: PlacedObject, row: ToolRow): ToolResult {
+  const map = state.maps[tile.mapId];
+  if (!map || map.placed[tileKey(tile.x, tile.y)] !== obj) return { state, effect: 'none' };
+  const itemId = obj.id.slice(FORAGE_PREFIX.length);
+  if (!itemId) return { state, effect: 'none' };
+  const added = addStackToInventory(state, { id: itemId, qty: 1, quality: 0 });
+  if (!added.added) {
+    row.bus.emit('inventory:full', { tile, itemId });
+    return { state, effect: 'none' };
+  }
+  const placed = { ...map.placed };
+  const key = tileKey(tile.x, tile.y);
+  delete placed[key];
+  let st = mapWithPlaced(added.state, tile.mapId, placed);
+  st = bumpStat(st, `day:forage:${itemId}`, 1);
+  st = bumpStat(st, 'day:xp:foraging', FORAGE_XP);
+  row.bus.emit('item:picked', { tile, itemId, qty: 1 });
+  return { state: st, effect: 'cleared' };
 }
 
 function applyToolEffect(
@@ -270,7 +297,11 @@ function applyToolEffect(
 
   if (kind === 'axe') return clearDebris(state, tile, ['weed', 'branch', 'stump'], row);
   if (kind === 'pickaxe') return clearDebris(state, tile, ['rock'], row);
-  if (kind === 'scythe') return clearDebris(state, tile, ['weed'], row);
+  if (kind === 'scythe') {
+    const obj = map.placed[tileKey(tile.x, tile.y)];
+    if (obj && obj.id.startsWith(FORAGE_PREFIX)) return pickForage(state, tile, obj, row);
+    return clearDebris(state, tile, ['weed'], row);
+  }
   return { state, effect: 'none' };
 }
 
@@ -284,6 +315,13 @@ export function applyToolUse(
   const tile = payload.tile;
   const toolId = payload.toolId ?? '';
   const kind = toolKindOf(toolId);
+
+  // Winter: the soil is frozen — tilling is rejected, state unchanged (m2 §4).
+  if (kind === 'hoe' && state.world.calendar.seasonIndex === 3) {
+    row.bus.emit('farming:blocked', { reason: 'frozen', tile });
+    row.bus.emit('tool:used', { tile, toolId, effect: 'none' });
+    return state;
+  }
 
   if (kind === 'hands') {
     const { state: st, effect } = applyHands(state, tile, toolId, rng, row);
@@ -324,10 +362,12 @@ export const farmingSim: FeatureModule = defineFeature({
       return applyPlant(st, payload.tile, payload.seedId, row).state;
     });
     ctx.store.registerReducer('time:tick', (st, _action: SimAction, rng) => {
-      const roll = applyCropRollover(st, cropDefs);
-      for (const w of roll.withered) ctx.bus.emit('crop:withered', w);
-      return applyWeatherRoll(roll.state, rng, ctx.bus);
+      const roll = applyFarmRollover(st, cropDefs, rng, ctx.bus, ctx.content);
+      return roll.state;
     });
+    ctx.store.registerReducer('forage:roll', (st, _action: SimAction, rng) =>
+      applyForageRoll(st, rng, ctx.content),
+    );
     ctx.bus.on('tool:use-requested', (payload: ToolUsePayload) => {
       ctx.store.dispatch({ type: 'farming:tool-use', payload });
     });

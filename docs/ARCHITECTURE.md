@@ -35,11 +35,15 @@
   - content/crops.json => CropDef map (seedId must exist in items)
   - content/npcs.json => NpcDef map
   - content/maps/<id>.json => MapDef (multi-line layers are whitespace-normalized)
+  - content/shops/<id>.json => ShopDef map (stock itemId + price resolved in the
+    loader cross-ref rules)
 - Map validator: dimension match, legend glyph coverage, spawn bounds, warp
-  target existence. Cross refs: crop.seedId -> items.
+  target existence. Cross refs: crop.seedId -> items; shop stock -> items.
 - Map defs become concrete MapState on new game (mapStateFromDef /
   buildInitialMaps); saved grids migrate when the map def `version` is bumped,
   keeping in-bounds placed objects (DECISIONS #13).
+- Warps are executed by engine:sim on a valid move onto a warp tile
+  (resolveWarp -> position rewrite + `player:warped`; DECISIONS #17).
 
 ## 4. Save/load
 
@@ -48,6 +52,9 @@
 - sanitizeState backfills missing fields from defaults.
 - SaveStore interface: MemorySaveStore (tests), IdbSaveStore (browser),
   FsSaveStore (node bot). 3 slots named slot1..slot3.
+- Day rollover runs idempotently (day-counter guards) whether triggered from the
+  `time:tick` reducer or `player:sleep`, so both clock-pass-out and manual sleep
+  converge on the same deterministic night (DECISIONS #18).
 
 ## 5. Feature module contract
 

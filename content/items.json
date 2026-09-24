@@ -250,5 +250,50 @@
     "canStack": true,
     "tags": ["resource"],
     "asset": "res-fiber"
+  },
+  "daffodil": {
+    "name": "Daffodil",
+    "description": "A cheerful spring flower that grows wild.",
+    "category": "forage",
+    "price": { "base": 30 },
+    "canStack": true,
+    "tags": ["forage", "season:0"],
+    "asset": "forage-daffodil"
+  },
+  "leek": {
+    "name": "Leek",
+    "description": "A sweet, mild-tasting spring leek.",
+    "category": "forage",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["forage", "season:0"],
+    "asset": "forage-leek"
+  },
+  "wild-horseradish": {
+    "name": "Wild Horseradish",
+    "description": "A sharp, pungent root that grows in the grass.",
+    "category": "forage",
+    "price": { "base": 16 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-wild-horseradish"
+  },
+  "common-mushroom": {
+    "name": "Common Mushroom",
+    "description": "A plain, edible woodland mushroom.",
+    "category": "forage",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-common-mushroom"
+  },
+  "ember-bloom": {
+    "name": "Ember Bloom",
+    "description": "A hardy flower that thrives wherever it lands.",
+    "category": "forage",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-ember-bloom"
   }
 }

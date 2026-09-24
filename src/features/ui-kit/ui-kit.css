@@ -410,3 +410,102 @@
     height: 44px;
   }
 }
+
+/* ---- Summary + shop dialogs ---- */
+
+.eh-summary-dialog .eh-dialog {
+  max-width: min(560px, 92vw);
+}
+
+.eh-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eh-summary-section {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+}
+
+.eh-summary-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eh-ui-text-dim);
+  margin-bottom: 3px;
+}
+
+.eh-summary-row {
+  font-size: 13px;
+}
+
+.eh-summary-done {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.eh-shop-dialog .eh-dialog {
+  min-width: 360px;
+  max-width: min(520px, 92vw);
+}
+
+.eh-shop {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eh-shop-line {
+  font-size: 13px;
+}
+
+.eh-shop-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eh-ui-text-dim);
+  border-bottom: 1px solid var(--eh-ui-panel-border);
+  padding-bottom: 3px;
+  margin-top: 4px;
+}
+
+.eh-shop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.eh-shop-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.eh-shop-item {
+  font-size: 13px;
+}
+
+.eh-shop-price,
+.eh-shop-stock,
+.eh-shop-qty {
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eh-shop-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eh-shop-stock {
+  min-width: 42px;
+  text-align: right;
+}

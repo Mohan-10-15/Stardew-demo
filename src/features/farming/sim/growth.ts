@@ -60,7 +60,7 @@ function rolloverMap(
     const stage = typeof data.stage === 'number' ? data.stage : 0;
     const def = cropDefs(cropId);
     if (!def || !def.seasons.includes(seasonIndex)) {
-      withered.push({ mapId: map.id, x: obj.x, y: obj.y, cropId });
+      withered.push({ mapId: map.id, x: obj.x, y: obj.y, cropId, cause: 'season' });
       changed = true;
       continue;
     }
@@ -87,7 +87,7 @@ function rolloverMap(
 
     const missedWater = (typeof data.missedWater === 'number' ? data.missedWater : 0) + 1;
     if (missedWater >= 2) {
-      withered.push({ mapId: map.id, x: obj.x, y: obj.y, cropId });
+      withered.push({ mapId: map.id, x: obj.x, y: obj.y, cropId, cause: 'thirst' });
       changed = true;
       continue;
     }

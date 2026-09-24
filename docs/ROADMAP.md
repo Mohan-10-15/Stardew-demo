@@ -9,7 +9,7 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
 - [x] M1 Core loop: calendar/energy, tools, till > plant > water > harvest,
       hotbar, shipping bin, money, sleep/rollover, save/load flow, farm map +
       engine walkable, first crops. Result: a playable season.
-- [ ] M2 Village and economy: village map, shops, seasons + weather + forecasts,
+- [x] M2 Village and economy: village map, shops, seasons + weather + forecasts,
       foraging, tree chopping, more crops, end-of-day summary.
 - [ ] M3 People: schedules + pathfinding, dialogue, gifts, friendship, first
       events, quests + journal.

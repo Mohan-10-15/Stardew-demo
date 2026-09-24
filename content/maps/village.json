@@ -1,0 +1,74 @@
+{
+  "id": "village",
+  "name": "Ember Hollow",
+  "width": 32,
+  "height": 32,
+  "spawn": {
+    "x": 2,
+    "y": 16
+  },
+  "legend": {
+    "g": {
+      "walkable": true,
+      "tillable": true
+    },
+    "p": {
+      "walkable": true,
+      "tillable": true
+    },
+    "h": {
+      "walkable": false
+    },
+    "w": {
+      "walkable": false,
+      "water": true
+    },
+    "t": {
+      "walkable": false
+    }
+  },
+  "layers": {
+    "ground": "gggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggghhhhhggtggggggtggggggggggggg\ngggghhhhhggggggggggggggggggggggg\ngggghhhhhgggggggggggghhhhhgggggg\ngggghhhhhgggggggggggghhhhhgtgggg\ngggghhhhhgggggggggggghhhhhgggggg\nggggggggggggggggggggghhhhhgggggg\nggggggggggggggggggggghhhhhgggggg\ngggtgggggggggggggggggggggggggggg\ngggggggggpgggggggggggggggggggggg\ngggggggggpggggggggggggggggggtggg\ngggggggggpggtggggggggggggggggggg\ngggggggggpggggpppppggggggggggggg\ngggggggggpggggpppppggggggggggggg\npppppppppppppppppppppppppggggggg\ngggggggggpggggpppppgggggpggggggg\ngggggggggpggggpppppgggggpggggggg\ngggggggggpggggggggggggggpggggggg\ngghhhhhggpggggggggggggggpggggtgg\ngghhhhhgggggggggggggggggpggggggg\ngghhhhhgggggggggggggggggpggggggg\ngghhhhhgggggggggggggggggpggggggg\ngghhhhhgggggggggggggggggpgtggggg\ngggggggggggggtggggggggggpggggggg\nggggggggggggggggggggggggpggggggg\ngggggtggggtgggggggggpppppppppggg\nwwwwwwwwwwwwwwwwwwwwwwwwpwwwwwww\nwwwwwwwwwwwwwwwwwwwwwwwwpwwwwwww\nwwwwwwwwwwwwwwwwwwwwwwwwpwwwwwww\nwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    "objects": "................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................",
+    "above": "................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................"
+  },
+  "warps": [
+    {
+      "x": 0,
+      "y": 16,
+      "to": {
+        "map": "farm",
+        "x": 31,
+        "y": 12
+      }
+    }
+  ],
+  "initialPlaced": [
+    {
+      "id": "rock",
+      "x": 14,
+      "y": 6
+    },
+    {
+      "id": "rock",
+      "x": 24,
+      "y": 13
+    },
+    {
+      "id": "rock",
+      "x": 10,
+      "y": 23
+    },
+    {
+      "id": "branch",
+      "x": 19,
+      "y": 5
+    },
+    {
+      "id": "branch",
+      "x": 6,
+      "y": 25
+    }
+  ],
+  "version": 1
+}

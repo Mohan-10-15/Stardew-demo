@@ -1,14 +1,16 @@
 /**
  * T-0107 WORKER-1: engine sim reducers (walk/collision). Pure Node tests.
  * Instantiates a Store directly and registers only the engine reducers.
+ * T-0201 adds warp resolution (resolveWarp) + a walk-across-the-warp test.
  */
 import { describe, expect, it } from 'vitest';
 import { Store } from '@game/core/store';
 import { Rng } from '@game/core/rng';
 import { EventBus } from '@game/core/events';
-import { createInitialState } from '@game/core/state';
+import { createInitialState, buildInitialMaps } from '@game/core/state';
 import { loadContent } from '@game/core/content';
-import { registerEngineSim, WALK_ENERGY_COST } from '@game/features/engine/sim/PlayerPosition';
+import { createGameRuntime } from '@game/core/game';
+import { registerEngineSim, resolveWarp, WALK_ENERGY_COST } from '@game/features/engine/sim/PlayerPosition';
 import type { GameState, MapState } from '@game/core/types';
 
 const GROUND = [
@@ -132,6 +134,100 @@ describe('engine:sim player:move', () => {
     store.dispatch({ type: 'player:move', payload: { dx: 1, dy: 0 } });
 
     expect(store.state.player.position).toEqual({ mapId: 'farm', x: 2, y: 0 });
+  });
+});
+
+describe('resolveWarp (pure, real content)', () => {
+  it('resolves the farm east-road warp into the village and the village west warp back', async () => {
+    const content = await loadContent();
+    const farmDef = content.maps.get('farm')!;
+    const villageDef = content.maps.get('village')!;
+
+    const farmWarp = farmDef.warps.find((w) => w.to.map === 'village');
+    expect(farmWarp).toBeDefined();
+    expect(farmWarp!.x).toBe(farmDef.width - 1); // east road edge
+
+    expect(resolveWarp(farmDef, farmWarp!.x, farmWarp!.y)).toEqual({
+      map: 'village',
+      x: farmWarp!.to.x,
+      y: farmWarp!.to.y,
+    });
+    expect(resolveWarp(farmDef, farmWarp!.x - 1, farmWarp!.y)).toBeNull();
+
+    const villageWarp = villageDef.warps.find((w) => w.to.map === 'farm');
+    expect(villageWarp).toBeDefined();
+    expect(villageWarp!.x).toBe(0); // west road edge
+
+    expect(resolveWarp(villageDef, villageWarp!.x, villageWarp!.y)).toEqual({
+      map: 'farm',
+      x: villageWarp!.to.x,
+      y: villageWarp!.to.y,
+    });
+    expect(resolveWarp(villageDef, villageWarp!.x, villageWarp!.y + 1)).toBeNull();
+  });
+});
+
+describe('engine:sim warp stepping (T-0201)', () => {
+  it('walks east onto the farm warp, warps into the village, and returns via the village warp', async () => {
+    const content = await loadContent();
+    (globalThis as unknown as { __EH_CONTENT?: unknown }).__EH_CONTENT = content;
+    const runtime = createGameRuntime({ newGame: true, seed: 23, mountDom: false });
+    const farmDef = content.maps.get('farm')!;
+    const warp = farmDef.warps.find((w) => w.to.map === 'village')!;
+
+    expect(runtime.store.state.maps[farmDef.id]).toBeDefined();
+    expect(runtime.store.state.maps[warp.to.map]).toBeDefined();
+
+    runtime.store.state.player.position = { mapId: 'farm', x: warp.x - 1, y: warp.y };
+    const energyBefore = runtime.store.state.player.energy;
+    const warped: unknown[] = [];
+    runtime.bus.on('player:warped', (e: unknown) => warped.push(e));
+    const moved: unknown[] = [];
+    runtime.bus.on('player:moved', (e: unknown) => moved.push(e));
+
+    runtime.store.dispatch({ type: 'player:move', payload: { dx: 1, dy: 0 } });
+
+    expect(runtime.store.state.player.position).toEqual({ mapId: 'village', x: warp.to.x, y: warp.to.y });
+    expect(runtime.store.state.player.energy).toBeLessThan(energyBefore);
+    expect(warped).toEqual([{ from: 'farm', to: 'village' }]);
+    expect(moved).toHaveLength(0);
+
+    const villageDef = content.maps.get('village')!;
+    const returnWarp = villageDef.warps.find((w) => w.to.map === 'farm')!;
+    runtime.store.state.player.position = { mapId: 'village', x: warp.to.x, y: warp.to.y };
+    runtime.store.dispatch({ type: 'player:move', payload: { dx: -1, dy: 0 } });
+
+    expect(runtime.store.state.player.position).toEqual({
+      mapId: 'farm',
+      x: returnWarp.to.x,
+      y: returnWarp.to.y,
+    });
+    expect(warped).toEqual([
+      { from: 'farm', to: 'village' },
+      { from: 'village', to: 'farm' },
+    ]);
+  });
+
+  it('keeps a no-op (facing only) when the warp destination map is absent from state.maps', async () => {
+    const content = await loadContent();
+    const farmDef = content.maps.get('farm')!;
+    const warp = farmDef.warps.find((w) => w.to.map === 'village')!;
+
+    const state = createInitialState(9, 'warp-fallback');
+    state.maps = buildInitialMaps(new Map([[farmDef.id, farmDef]])); // village omitted
+    state.player.position = { mapId: 'farm', x: warp.x - 1, y: warp.y };
+    const energyBefore = state.player.energy;
+    const store = new Store(state, new Rng(9));
+    registerEngineSim({ store, bus: store.bus, content });
+    const warped: unknown[] = [];
+    store.bus.on('player:warped', (e: unknown) => warped.push(e));
+
+    store.dispatch({ type: 'player:move', payload: { dx: 1, dy: 0 } });
+
+    expect(store.state.player.position).toEqual({ mapId: 'farm', x: warp.x - 1, y: warp.y });
+    expect(store.state.player.facing).toBe('right');
+    expect(store.state.player.energy).toBe(energyBefore);
+    expect(warped).toHaveLength(0);
   });
 });
 

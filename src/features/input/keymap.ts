@@ -5,7 +5,8 @@
  *
  * Keys are normalized lowercase; the spacebar normalizes to 'space', arrows to
  * 'arrowup'|'arrowdown'|'arrowleft'|'arrowright'. Every key in the table maps
- * to one sim action (m1-contracts §3).
+ * to one action: either a sim action (m1-contracts §3) or a UI bus event such
+ * as 'shop' -> `ui:open-shop` (m2-contracts §2).
  */
 
 export interface MoveInputAction {
@@ -23,7 +24,11 @@ export interface SelectSlotInputAction {
   slot: number;
 }
 
-export type InputAction = MoveInputAction | InteractInputAction | SelectSlotInputAction;
+export interface ShopInputAction {
+  type: 'shop';
+}
+
+export type InputAction = MoveInputAction | InteractInputAction | SelectSlotInputAction | ShopInputAction;
 
 export interface KeyBinding {
   /** Normalized keys that trigger this action. */
@@ -51,6 +56,7 @@ export const DEFAULT_KEYMAP: readonly KeyBinding[] = [
   { keys: ['a', 'arrowleft'], action: { type: 'move', dx: -1, dy: 0 }, holdRepeat: true },
   { keys: ['d', 'arrowright'], action: { type: 'move', dx: 1, dy: 0 }, holdRepeat: true },
   { keys: ['space', 'e'], action: { type: 'interact' } },
+  { keys: ['f'], action: { type: 'shop' } },
   ...SLOT_BINDINGS,
 ];
 
@@ -74,8 +80,9 @@ export function findBinding(key: string, bindings: readonly KeyBinding[] = DEFAU
   return buildKeyIndex(bindings).get(key);
 }
 
-/** Translate an InputAction into the sim action it dispatches. */
-export function actionToSim(action: InputAction): InputSimAction {
+/** Translate an InputAction into the sim action it dispatches, or null when
+ * the binding resolves to a bus event instead of a store action (e.g. 'shop'). */
+export function actionToSim(action: InputAction): InputSimAction | null {
   switch (action.type) {
     case 'move':
       return { type: 'player:move', payload: { dx: action.dx, dy: action.dy } };
@@ -83,5 +90,7 @@ export function actionToSim(action: InputAction): InputSimAction {
       return { type: 'player:interact', payload: {} };
     case 'select-slot':
       return { type: 'player:select-slot', payload: { slot: action.slot } };
+    case 'shop':
+      return null;
   }
 }
