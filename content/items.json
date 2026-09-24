@@ -1,0 +1,146 @@
+{
+  "hoe-t0": {
+    "name": "Basic Hoe",
+    "description": "Tills soil so seeds can be planted.",
+    "category": "tool",
+    "price": { "base": 15, "buy": 250 },
+    "canStack": false,
+    "tags": ["tool:hoe", "tier:0"],
+    "asset": "tool-hoe"
+  },
+  "watering-can-t0": {
+    "name": "Basic Watering Can",
+    "description": "Waters a single tile of crops.",
+    "category": "tool",
+    "price": { "base": 20, "buy": 400 },
+    "canStack": false,
+    "tags": ["tool:watering", "tier:0"],
+    "asset": "tool-watering-can"
+  },
+  "axe-t0": {
+    "name": "Rusty Axe",
+    "description": "Chops down trees and weeds.",
+    "category": "tool",
+    "price": { "base": 15, "buy": 250 },
+    "canStack": false,
+    "tags": ["tool:axe", "tier:0"],
+    "asset": "tool-axe"
+  },
+  "pickaxe-t0": {
+    "name": "Rusty Pickaxe",
+    "description": "Breaks rocks and boulders.",
+    "category": "tool",
+    "price": { "base": 15, "buy": 250 },
+    "canStack": false,
+    "tags": ["tool:pickaxe", "tier:0"],
+    "asset": "tool-pickaxe"
+  },
+  "scythe-t0": {
+    "name": "Grass Scythe",
+    "description": "Cuts grass and forage.",
+    "category": "tool",
+    "price": { "base": 10, "buy": 200 },
+    "canStack": false,
+    "tags": ["tool:scythe", "tier:0"],
+    "asset": "tool-scythe"
+  },
+  "fishing-rod-t0": {
+    "name": "Bamboo Rod",
+    "description": "A humble fishing rod.",
+    "category": "tool",
+    "price": { "base": 25, "buy": 500 },
+    "canStack": false,
+    "tags": ["tool:rod", "tier:0"],
+    "asset": "tool-rod"
+  },
+  "sword-t0": {
+    "name": "Practice Blade",
+    "description": "A blunt training sword. Better than your fists.",
+    "category": "weapon",
+    "price": { "base": 50, "buy": 250 },
+    "canStack": false,
+    "tags": ["weapon:sword", "tier:0", "damage:4"],
+    "asset": "weapon-sword"
+  },
+  "parsnip-seed": {
+    "name": "Parsnip Seeds",
+    "description": "A spring root vegetable. Ready in 4 days.",
+    "category": "seed",
+    "price": { "base": 2, "buy": 20 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-parsnip"
+  },
+  "parsnip": {
+    "name": "Parsnip",
+    "description": "A crisp spring root vegetable.",
+    "category": "crop",
+    "price": { "base": 35 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-parsnip"
+  },
+  "potato-seed": {
+    "name": "Potato Seeds",
+    "description": "A hearty spring tuber. Ready in 6 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 50 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-potato"
+  },
+  "potato": {
+    "name": "Potato",
+    "description": "A starchy spring tuber. Sometimes drops multiple.",
+    "category": "crop",
+    "price": { "base": 80 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-potato"
+  },
+  "blueberry-seed": {
+    "name": "Blueberry Seeds",
+    "description": "A summer bush. Produces every 4 days after 13 days.",
+    "category": "seed",
+    "price": { "base": 5, "buy": 80 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-blueberry"
+  },
+  "blueberry": {
+    "name": "Blueberry",
+    "description": "A sweet summer berry.",
+    "category": "crop",
+    "price": { "base": 50 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-blueberry"
+  },
+  "wood": {
+    "name": "Wood",
+    "description": "A sturdy, plain plank.",
+    "category": "resource",
+    "price": { "base": 2 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-wood"
+  },
+  "stone": {
+    "name": "Stone",
+    "description": "A chipped chunk of rock.",
+    "category": "resource",
+    "price": { "base": 2 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-stone"
+  },
+  "fiber": {
+    "name": "Fiber",
+    "description": "Tough plant fiber pulled from weeds.",
+    "category": "resource",
+    "price": { "base": 1 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-fiber"
+  }
+}

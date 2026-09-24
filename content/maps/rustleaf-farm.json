@@ -1,0 +1,36 @@
+{
+  "id": "farm",
+  "name": "Rustleaf Farm",
+  "width": 32,
+  "height": 24,
+  "spawn": {
+    "x": 4,
+    "y": 6
+  },
+  "legend": {
+    "g": {
+      "walkable": true,
+      "tillable": true
+    },
+    "s": {
+      "walkable": true,
+      "tillable": true
+    },
+    "w": {
+      "walkable": false,
+      "water": true
+    },
+    "h": {
+      "walkable": false
+    },
+    "t": {
+      "walkable": false
+    }
+  },
+  "layers": {
+    "ground": "gggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\nggghhhhggggggggggggggggggggggggg\nggghhhhggggggggggggggggggggggggg\nggghhhhggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\nggggggggggggggttgggggggggggggggg\nggggggggggggggttgggggggggggggggg\ngggggggggggggggggggggggggggggggg\nggggggggggggwwwwwwwwgggggggggggg\nggggggggggggwwwwwwwwgggggggggggg\nggggggggggggwwwwwwwwgggggggggggg\nggggggggggggwwwwwwwwgggggggggggg\nggggggggggggwwwwwwwwgggggggggggg\ngggggggggggggggggggggggggggggggg\nggssssssssgggggggggggggggggggggg\nggssssssssgggggggggggggggggggggg\nggssssssssgggggggggggggggggggggg\nggssssssssgggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg\ngggggggggggggggggggggggggggggggg",
+    "objects": "................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................",
+    "above": "................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................\n................................"
+  },
+  "warps": []
+}

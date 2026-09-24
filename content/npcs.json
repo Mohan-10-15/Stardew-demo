@@ -1,0 +1,26 @@
+{
+  "rowan": {
+    "name": "Rowan",
+    "birth": { "season": 3, "day": 14 },
+    "gift": {
+      "loves": ["parsnip"],
+      "likes": ["wood", "stone"],
+      "neutral": [],
+      "dislikes": ["blueberry"],
+      "hates": []
+    },
+    "baseProfile": { "role": "mentor", "home": "village", "schedule": [] }
+  },
+  "marisol": {
+    "name": "Marisol",
+    "birth": { "season": 1, "day": 5 },
+    "gift": {
+      "loves": ["blueberry"],
+      "likes": ["potato"],
+      "neutral": [],
+      "dislikes": [],
+      "hates": ["sword-t0"]
+    },
+    "baseProfile": { "role": "carpenter", "home": "village", "schedule": [] }
+  }
+}
