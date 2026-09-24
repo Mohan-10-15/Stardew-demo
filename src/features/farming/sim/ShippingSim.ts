@@ -1,11 +1,15 @@
 /**
- * Shipping box + sleep (WORKER-2 lane, contract m1-contracts.md sections 3 & 6).
+ * Shipping box + sleep (WORKER-2 lane, contract m1-contracts.md sections 3 & 6,
+ * m2-contracts.md section 5).
  *
  * The shipping box lives in state.extensions.farming.shippingBox (ItemStack[]).
- * On `player:sleep` the world advances to the next day 06:00, crops/soil run
- * their day rollover, weather rolls, every stack is paid out (base price x
- * quality multiplier), energy is restored to max, then `shipping:report` +
- * `day:started` are emitted and ctx.persist() is kicked off (autosave).
+ * On `player:sleep` the world advances to the next day 06:00, the full rollover
+ * runs (weather + effects + crops + forage), every stack is paid out (base
+ * price x quality multiplier), the ended day's `day:summary` is emitted, energy
+ * is restored to max, then `shipping:report` + `day:started` are emitted and
+ * ctx.persist() is kicked off (autosave). On a forced pass-out (2:00 AM via
+ * time:tick) the rollover, payout and day:summary run too, but no energy
+ * restore and no `day:started` (WORKER-3 owns the morning hand-off).
  *
  * All of this runs inside the reducer, synchronously; persist() is deferred to
  * a microtask (after the Store commits the new state) so the save always
@@ -18,8 +22,9 @@ import { defineFeature } from '@game/core/feature';
 import type { Rng } from '@game/core/rng';
 import type { GameState, ItemStack } from '@game/core/types';
 import { ensureFarmingExt, ensureWeatherExt, readFarmingExt, writeFarmingExt } from './ext';
-import { applyCropRollover, type CropDefs } from './growth';
-import { applyWeatherRoll } from './weather';
+import type { CropDefs } from './growth';
+import { applyFarmRollover } from './rollover';
+import { bumpStat, closeDay, openDayNeedsClosing } from './summary';
 import { clampInt, nextDayMorning } from './utils';
 
 /** Quality multipliers: 0 normal x1, 1 silver x1.25, 2 gold x1.5. */
@@ -45,7 +50,8 @@ export function shipmentPrice(itemId: string, content: ContentDb): number {
   return 0;
 }
 
-/** Pay out every stack in the box, empty it and emit `shipping:report`. */
+/** Pay out every stack in the box, empty it, emit `shipping:report` and bump
+ * the day's summary counters (day:sold, day:sold-gold, day:gold). */
 export function payoutShipping(state: GameState, bus: EventBus, content: ContentDb): GameState {
   const ext = readFarmingExt(state);
   const sold: ShippingReportSold[] = [];
@@ -56,13 +62,17 @@ export function payoutShipping(state: GameState, bus: EventBus, content: Content
     sold.push({ itemId: stack.id, qty: stack.qty, gold });
     total += gold;
   }
-  const report: ShippingReport = { sold, total };
-  const next = writeFarmingExt(
+  let st: GameState = writeFarmingExt(
     { ...state, player: { ...state.player, money: state.player.money + total } },
     { ...ext, shippingBox: [] },
   );
-  bus.emit('shipping:report', report);
-  return next;
+  for (const row of sold) {
+    st = bumpStat(st, `day:sold:${row.itemId}`, row.qty);
+    st = bumpStat(st, `day:sold-gold:${row.itemId}`, row.gold);
+  }
+  st = bumpStat(st, 'day:gold', total);
+  bus.emit('shipping:report', { sold, total });
+  return st;
 }
 
 /** Move a whole hotbar stack into the shipping box. */
@@ -89,7 +99,21 @@ export function shippingInsert(state: GameState, slot: number, bus: EventBus): G
   return next;
 }
 
-/** One full sleep: next morning + day rollover + payout + energy restore. */
+/** Pay out the night's shipping + close the day that just ended (forced
+ * pass-out path, contract §5). Runs AFTER the farming room's time:tick so the
+ * rollover is already applied; idempotent once per night. */
+export function passOutDayReducer(
+  state: GameState,
+  bus: EventBus,
+  content: ContentDb,
+): GameState {
+  if (!state.world.passedOut) return state;
+  if (!openDayNeedsClosing(state)) return state;
+  state = payoutShipping(state, bus, content);
+  return closeDay(state, bus);
+}
+
+/** One full sleep: next morning + full rollover + payout + summary + energy. */
 export function sleepReducer(
   state: GameState,
   cropDefs: CropDefs,
@@ -103,14 +127,13 @@ export function sleepReducer(
   const world = nextDayMorning(st.world);
   st = { ...st, world };
 
-  const roll = applyCropRollover(st, cropDefs);
+  const roll = applyFarmRollover(st, cropDefs, rng, bus, content);
   st = roll.state;
-  st = applyWeatherRoll(st, rng, bus);
 
   bus.emit('day:rollover', st.world);
-  for (const w of roll.withered) bus.emit('crop:withered', w);
 
   st = payoutShipping(st, bus, content);
+  st = closeDay(st, bus);
   st = { ...st, player: { ...st.player, energy: st.player.energyMax } };
 
   bus.emit('day:started', st.world);
@@ -136,5 +159,6 @@ export const shippingSim: FeatureModule = defineFeature({
     ctx.store.registerReducer('player:sleep', (st, _action, rng) =>
       sleepReducer(st, cropDefs, rng, bus, content, persist),
     );
+    ctx.store.registerReducer('time:tick', (st) => passOutDayReducer(st, bus, content));
   },
 });

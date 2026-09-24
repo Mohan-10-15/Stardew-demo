@@ -15,6 +15,7 @@ import {
   type GameState,
   type ItemStack,
   type MapState,
+  type Weather,
   type WorldPos,
 } from '@game/core/types';
 import { advanceClock } from '@game/core/time';
@@ -23,6 +24,7 @@ import { farmingSim } from '@game/features/farming/sim/FarmingSim';
 import { shippingSim } from '@game/features/farming/sim/ShippingSim';
 import { seedWeatherSim } from '@game/features/farming/sim/SeedWeatherSim';
 import { inventorySim } from '@game/features/inventory/sim/InventorySim';
+import { shopSim } from '@game/features/shop/sim/ShopSim';
 import { tileKey } from '@game/features/farming/sim/utils';
 
 export const DEFAULT_MODULES: readonly FeatureModule[] = [
@@ -30,6 +32,7 @@ export const DEFAULT_MODULES: readonly FeatureModule[] = [
   shippingSim,
   seedWeatherSim,
   inventorySim,
+  shopSim,
 ];
 
 /** A small, fully-tillable farm grid (matches content legend code `g`). */
@@ -127,6 +130,27 @@ export class SimFixture {
 
   insertSlot(slot: number): void {
     this.dispatch('shipping:insert', { slot });
+  }
+
+  buy(shopId: string, itemId: string, qty: number): void {
+    this.dispatch('shop:buy', { shopId, itemId, qty });
+  }
+
+  sell(shopId: string, itemId: string, qty: number): void {
+    this.dispatch('shop:sell', { shopId, itemId, qty });
+  }
+
+  /**
+   * Sleep with a forced, non-rolling weather: sets world.weather + forecast an
+   * and marks the weather ext rolled through this night, so the night's roll
+   * is skipped and effects run exactly on the pinned weather.
+   */
+  sleepWithWeather(weather: Weather): void {
+    const w = this.store.state.world;
+    this.store.state.extensions['weather'] = { lastRolledDay: w.dayCount + 1 };
+    this.store.state.world.weather = weather;
+    this.store.state.world.forecast = [weather];
+    this.dispatch('player:sleep', null);
   }
 
   placed(mapId: string, x: number, y: number) {

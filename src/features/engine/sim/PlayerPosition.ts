@@ -14,7 +14,7 @@ import type { Store } from '../../../core/store';
 import type { EventBus } from '../../../core/events';
 import type { ContentDb } from '../../../core/content';
 import type { GameState, Facing, MapState, SimAction, TilePos, WorldPos } from '../../../core/types';
-import type { MapLegend } from '../../../core/schemas';
+import type { MapDef, MapLegend } from '../../../core/schemas';
 
 export const WALK_ENERGY_COST = 0.02;
 
@@ -27,6 +27,11 @@ export interface PlayerMovedEvent {
   from: TilePos;
   to: TilePos;
   mapId: string;
+}
+
+export interface PlayerWarpedEvent {
+  from: string;
+  to: string;
 }
 
 export interface ToolUseRequest {
@@ -79,6 +84,14 @@ export function tileInFront(pos: WorldPos, facing: Facing): TilePos {
   }
 }
 
+/** Pure warp lookup: returns the destination when (x, y) is a warp tile, else null. */
+export function resolveWarp(mapDef: MapDef, x: number, y: number): { map: string; x: number; y: number } | null {
+  for (const warp of mapDef.warps) {
+    if (warp.x === x && warp.y === y) return { map: warp.to.map, x: warp.to.x, y: warp.to.y };
+  }
+  return null;
+}
+
 export function playerMoveReducer(state: GameState, action: SimAction<string, unknown>, content: ContentDb): GameState {
   const payload = action.payload;
   if (typeof payload !== 'object' || payload === null) return state;
@@ -103,6 +116,21 @@ export function playerMoveReducer(state: GameState, action: SimAction<string, un
   }
 
   const energy = Math.max(0, state.player.energy - WALK_ENERGY_COST);
+  const warpTarget = resolveWarp(mapDef, targetX, targetY);
+  if (warpTarget) {
+    if (!state.maps[warpTarget.map]) {
+      return { ...state, player: { ...state.player, facing } };
+    }
+    return {
+      ...state,
+      player: {
+        ...state.player,
+        facing,
+        energy,
+        position: { mapId: warpTarget.map, x: warpTarget.x, y: warpTarget.y },
+      },
+    };
+  }
   return {
     ...state,
     player: {
@@ -119,7 +147,9 @@ export function registerEngineSim({ store, bus, content }: EngineSimDeps): void 
     const from = state.player.position;
     const next = playerMoveReducer(state, action, content);
     const to = next.player.position;
-    if (to.x !== from.x || to.y !== from.y || to.mapId !== from.mapId) {
+    if (to.mapId !== from.mapId) {
+      bus.emit<PlayerWarpedEvent>('player:warped', { from: from.mapId, to: to.mapId });
+    } else if (to.x !== from.x || to.y !== from.y) {
       bus.emit<PlayerMovedEvent>('player:moved', { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, mapId: to.mapId });
     }
     return next;

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createSim } from './harness';
 import { WEATHERS, type Weather } from '@game/core/types';
+import { applyWeatherEffects } from '@game/features/farming/sim/rollover';
+import { Rng } from '@game/core/rng';
+import { tileKey } from '@game/features/farming/sim/utils';
 
 function isAllowedInSeason(w: Weather, seasonIndex: number): boolean {
   if (w === 'snow') return seasonIndex === 3;
@@ -96,5 +99,82 @@ describe('weather sim', () => {
     sim.sleep(); // last winter day (28); weather rolls before the season turns
     expect(sim.state.world.calendar.seasonIndex).toBe(3);
     expect(['sun', 'snow', 'wind']).toContain(sim.state.world.weather);
+  });
+});
+
+describe('weather effects (m2 §4)', () => {
+  const TILE = { mapId: 'farm', x: 3, y: 3 };
+
+  it('rain waters an unwatered crop through the night', async () => {
+    const sim = await createSim();
+    sim.useTool(TILE, 'hoe-t0');
+    sim.useTool(TILE, 'parsnip-seed');
+    expect(sim.cropData('farm', 3, 3)?.watered).toBe(false);
+
+    sim.sleepWithWeather('rain');
+    expect(sim.cropData('farm', 3, 3)?.stage).toBe(1); // rain counted as the day's watering
+    expect(sim.cropData('farm', 3, 3)?.missedWater).toBe(0);
+  });
+
+  it('storm destroys crops deterministically by seed (pure)', async () => {
+    const sim = await createSim();
+    const farm = sim.store.state.maps['farm'];
+    expect(farm).toBeDefined();
+    if (!farm) throw new Error('farm map missing');
+    for (let i = 0; i < 6; i++) {
+      farm.placed[tileKey(1 + i, 1)] = {
+        id: 'crop:parsnip',
+        x: 1 + i,
+        y: 1,
+        data: { stage: 0, grownDays: 0, watered: false, missedWater: 0 },
+      };
+    }
+    sim.store.state.world.weather = 'storm';
+    const { lost } = applyWeatherEffects(sim.state, new Rng(7));
+    expect(lost).toHaveLength(2);
+    expect(lost.map((l) => `${l.x},${l.y}`)).toEqual(['5,1', '6,1']);
+    for (const l of lost) {
+      expect(l.cause).toBe('storm');
+      expect(l.cropId).toBe('parsnip');
+    }
+  });
+
+  it('storm through the sleep path removes crops and reports crop:lost', async () => {
+    const sim = await createSim({ seed: 99 });
+    const lost = sim.capture<{ cropId: string; cause: string; x: number; y: number }>('crop:lost');
+    const farm = sim.store.state.maps['farm'];
+    expect(farm).toBeDefined();
+    if (!farm) throw new Error('farm map missing');
+    for (let i = 0; i < 6; i++) {
+      farm.placed[tileKey(1 + i, 1)] = {
+        id: 'crop:parsnip',
+        x: 1 + i,
+        y: 1,
+        data: { stage: 0, grownDays: 0, watered: false, missedWater: 0 },
+      };
+    }
+    sim.sleepWithWeather('storm');
+    expect(lost.length).toBeGreaterThanOrEqual(1);
+    expect(lost.length).toBeLessThanOrEqual(6);
+    for (const l of lost) {
+      expect(sim.placed('farm', l.x, l.y)).toBeUndefined();
+    }
+    // Read the CURRENT (post-rollover) farm map, not the pre-sleep reference.
+    const farmAfter = sim.state.maps['farm']?.placed ?? {};
+    const remaining = Object.values(farmAfter).filter((o) => o.id.startsWith('crop:')).length;
+    expect(remaining).toBe(6 - lost.length);
+  });
+
+  it('rejects tilling in winter as frozen', async () => {
+    const sim = await createSim();
+    const blocked = sim.capture<{ reason: string; tile: unknown }>('farming:blocked');
+    sim.store.state.world.calendar.seasonIndex = 3;
+    sim.store.state.world.calendar.dayOfMonth = 1;
+    const energyBefore = sim.energy();
+
+    sim.useTool(TILE, 'hoe-t0');
+    expect(blocked).toEqual([{ reason: 'frozen', tile: TILE }]);
+    expect(sim.placed('farm', 3, 3)).toBeUndefined();
+    expect(sim.energy()).toBe(energyBefore); // no drain on a rejected action
   });
 });

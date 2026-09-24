@@ -8,6 +8,21 @@ describe('content validation', () => {
     expect(db.crops.has('parsnip')).toBe(true);
     expect(db.npcs.has('rowan')).toBe(true);
     expect(db.maps.has('farm')).toBe(true);
+    expect(db.shops.has('seed-shop')).toBe(true);
+    expect(db.shops.has('general-store')).toBe(true);
+  });
+
+  it('shop stock resolves to existing items with usable prices', async () => {
+    const db = await loadContent();
+    for (const shop of db.shops.values()) {
+      for (const entry of shop.stock) {
+        const item = db.items.get(entry.itemId);
+        expect(item, `shop ${shop.id} stock ${entry.itemId}`).toBeDefined();
+        if (entry.price === undefined) {
+          expect(item!.price.buy, `shop ${shop.id} buy price for ${entry.itemId}`).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 
   it('cross-checks crop seed ids against items', async () => {

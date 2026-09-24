@@ -1,0 +1,18 @@
+{
+  "id": "general-store",
+  "name": "Rustleaf General Store",
+  "buys": true,
+  "stock": [
+    { "itemId": "hoe-t0" },
+    { "itemId": "watering-can-t0" },
+    { "itemId": "axe-t0" },
+    { "itemId": "pickaxe-t0" },
+    { "itemId": "scythe-t0" },
+    { "itemId": "fishing-rod-t0" },
+    { "itemId": "sword-t0" },
+    { "itemId": "wood", "price": 2 },
+    { "itemId": "stone", "price": 2 },
+    { "itemId": "fiber", "price": 1 },
+    { "itemId": "parsnip-seed", "qty": 5 }
+  ]
+}

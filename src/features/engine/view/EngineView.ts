@@ -12,7 +12,7 @@
  */
 import * as THREE from 'three';
 import { defineFeature, type FeatureContext, type ViewHandle } from '../../../core/feature';
-import type { GameState, MapState } from '../../../core/types';
+import type { GameState, MapState, SeasonIndex } from '../../../core/types';
 import { tileInFront, isWalkable } from '../sim/PlayerPosition';
 import {
   GRID_CELL,
@@ -26,6 +26,8 @@ import {
   buildPlacedAsset,
   buildPlayer,
   buildHighlight,
+  buildPrecipitation,
+  type GroundMaterials,
   type HouseSpan,
 } from './assets';
 
@@ -48,6 +50,28 @@ const LIGHT_DAY = new THREE.Color(0xfff2d8);
 const LIGHT_NIGHT = new THREE.Color(0x3b4f8f);
 const AMBIENT_DAY = new THREE.Color(0xe8efff);
 const AMBIENT_NIGHT = new THREE.Color(0x202c4a);
+
+interface SeasonPalette {
+  grassTint: THREE.Color;
+  waterTint: THREE.Color;
+  foliageTint: THREE.Color;
+}
+
+/** Per-season ambient tint, re-applied whenever world.calendar.seasonIndex changes. */
+const SEASON_PALETTES: readonly SeasonPalette[] = [
+  { grassTint: new THREE.Color(0x8fbe58), waterTint: new THREE.Color(0x2f8fb5), foliageTint: new THREE.Color(0x5a8a34) },
+  { grassTint: new THREE.Color(0x7faf4a), waterTint: new THREE.Color(0x1f8ab0), foliageTint: new THREE.Color(0x4d7a2c) },
+  { grassTint: new THREE.Color(0xc8b25a), waterTint: new THREE.Color(0x3f78a0), foliageTint: new THREE.Color(0xb4692a) },
+  { grassTint: new THREE.Color(0xe2e8e2), waterTint: new THREE.Color(0x5f83a8), foliageTint: new THREE.Color(0xccd6cc) },
+];
+
+const WEATHER_RAIN = new THREE.Color(0x7d8a94);
+const WEATHER_STORM = new THREE.Color(0x5d6a74);
+const WEATHER_SNOW = new THREE.Color(0xd2dae2);
+const WEATHER_WIND = new THREE.Color(0x90a4b8);
+
+const FOG_NEAR = 26;
+const FOG_FAR = 60;
 
 export interface EngineViewHandle extends ViewHandle {
   dispose(): void;
@@ -118,6 +142,8 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const scene = new THREE.Scene();
   const sky = new THREE.Color().copy(SKY_DAY);
   scene.background = sky;
+  const fog = new THREE.Fog(new THREE.Color().copy(SKY_DAY), FOG_NEAR, FOG_FAR);
+  scene.fog = fog;
 
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
 
@@ -149,6 +175,8 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   let currentMapId: string | null = null;
   let gridKey = '';
   const placedMesh = new Map<string, THREE.Object3D>();
+  const groundMatsRef: { mats: GroundMaterials | null } = { mats: null };
+  let seasonApplied: SeasonIndex | null = null;
 
   const worldPos = (map: MapState, col: number, row: number): THREE.Vector3 =>
     new THREE.Vector3(
@@ -185,6 +213,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
     const grassCells: Array<[number, number]> = [];
     const soilCells: Array<[number, number]> = [];
+    const pathCells: Array<[number, number]> = [];
     const waterCells: Array<[number, number]> = [];
     const treeCells: Array<[number, number]> = [];
 
@@ -201,6 +230,10 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
           soilCells.push([c, r]);
           continue;
         }
+        if (code === 'p') {
+          pathCells.push([c, r]);
+          continue;
+        }
         if (legend[code ?? '']?.water === true) {
           waterCells.push([c, r]);
           continue;
@@ -210,10 +243,12 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
 
     const mats = groundMaterials();
+    groundMatsRef.mats = mats;
+    seasonApplied = null;
 
     function makeInstanced(
       gridMap: MapState,
-      kind: 'grass' | 'soil' | 'water',
+      kind: 'grass' | 'soil' | 'path' | 'water',
       cells: Array<[number, number]>,
       material: THREE.Material,
     ): void {
@@ -235,6 +270,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
     makeInstanced(map, 'grass', grassCells, mats.grass);
     makeInstanced(map, 'soil', soilCells, mats.soil);
+    makeInstanced(map, 'path', pathCells, mats.path);
     makeInstanced(map, 'water', waterCells, mats.water);
 
     for (const [c, r] of soilCells) {
@@ -446,14 +482,134 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     sun.target.position.set(p.x, 0, p.z);
   }
 
+  const weatherTint = new THREE.Color();
+
+  function applyWeatherTint(state: GameState, base: THREE.Color): THREE.Color {
+    weatherTint.copy(base);
+    switch (state.world.weather) {
+      case 'rain':
+        weatherTint.lerp(WEATHER_RAIN, 0.4);
+        break;
+      case 'storm':
+        weatherTint.lerp(WEATHER_STORM, 0.55);
+        break;
+      case 'snow':
+        weatherTint.lerp(WEATHER_SNOW, 0.5);
+        break;
+      case 'wind':
+        weatherTint.lerp(WEATHER_WIND, 0.22);
+        break;
+      default:
+        break;
+    }
+    return weatherTint;
+  }
+
+  /** Day/night sky + fog driven by world.clock.hour (dark ~22-04, bright midday). */
+  function updateAtmosphere(state: GameState): void {
+    const h = state.world.clock.hour + state.world.clock.minute / 60;
+    const a = ((h - 12) / 12) * Math.PI;
+    const t = (Math.cos(a) + 1) / 2;
+    const tone = applyWeatherTint(state, SKY_NIGHT.clone().lerp(SKY_DAY, t));
+    sky.copy(tone);
+    fog.color.copy(tone);
+  }
+
+  function applySeasonPalette(state: GameState): void {
+    const seasonIndex = state.world.calendar.seasonIndex;
+    if (seasonApplied === seasonIndex) return;
+    seasonApplied = seasonIndex;
+    const palette = SEASON_PALETTES[seasonIndex];
+    if (!palette) return;
+    const mats = groundMatsRef.mats;
+    if (mats) {
+      mats.grass.color.copy(palette.grassTint);
+      mats.water.color.copy(palette.waterTint);
+    }
+    groundLayer.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        const material = node.material;
+        if (material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial) {
+          const name = material.name;
+          if (name === 'tree-foliage' || name === 'tree-accent') {
+            material.color.copy(palette.foliageTint);
+          }
+        }
+      }
+    });
+  }
+
+  let weatherKind: 'rain' | 'snow' | null = null;
+  let precipLayer: THREE.Points | null = null;
+
+  function disposePrecip(): void {
+    if (!precipLayer) return;
+    scene.remove(precipLayer);
+    precipLayer.geometry.dispose();
+    (precipLayer.material as THREE.Material).dispose();
+    precipLayer = null;
+    weatherKind = null;
+  }
+
+  /** Toggle a cheap particle layer to match world.weather (rain/storm/snow only). */
+  function syncWeather(state: GameState): void {
+    const w = state.world.weather;
+    const kind: 'rain' | 'snow' | null = w === 'rain' || w === 'storm' ? 'rain' : w === 'snow' ? 'snow' : null;
+    if (kind === weatherKind) return;
+    disposePrecip();
+    if (kind) {
+      precipLayer = buildPrecipitation(kind, kind === 'rain' ? 220 : 140);
+      scene.add(precipLayer);
+      weatherKind = kind;
+    }
+  }
+
+  function updatePrecipitation(dt: number, state: GameState): void {
+    if (!precipLayer || !weatherKind) return;
+    const positions = precipLayer.userData.positions as Float32Array;
+    const count = precipLayer.userData.count as number;
+    const fall = weatherKind === 'rain' ? 7.5 : 1.8;
+    const width = 22;
+    const span = 18;
+    const drift = weatherKind === 'rain' ? 0.9 : 0.35;
+    for (let i = 0; i < count; i++) {
+      let x = positions[i * 3]! + drift * dt;
+      let y = positions[i * 3 + 1]! - fall * dt;
+      if (y < -span / 2) {
+        y += span;
+        x = (Math.random() - 0.5) * width;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * width;
+      }
+      if (x < -width / 2) x += width;
+      else if (x > width / 2) x -= width;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+    }
+    precipLayer.geometry.attributes.position!.needsUpdate = true;
+    const pos = state.player.position;
+    const map = state.maps[pos.mapId];
+    if (map) {
+      precipLayer.position.copy(worldPos(map, pos.x, pos.y));
+      precipLayer.position.y = 6;
+    }
+  }
+
+  function updateWeatherVisuals(dt: number, state: GameState): void {
+    syncWeather(state);
+    updatePrecipitation(dt, state);
+  }
+
   function render(dt: number, _time: number): void {
     const state = ctx.store.state;
     if (currentMapId === null && !state.maps[state.player.position.mapId]) return;
     syncMapIfNeeded(state);
+    applySeasonPalette(state);
+    updateWeatherVisuals(dt, state);
     updatePlayer(dt, state);
     updateHighlight(state);
     updateCamera(dt);
     updateLighting(state);
+    updateAtmosphere(state);
     renderer.render(scene, camera);
   }
 
@@ -478,6 +634,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     disposed = true;
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
+    disposePrecip();
     disposedPlaced();
     disposeGroup(groundLayer);
     player.traverse((node) => {

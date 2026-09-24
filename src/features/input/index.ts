@@ -18,4 +18,5 @@ export {
   type InputAction,
   type InputSimAction,
   type KeyBinding,
+  type ShopInputAction,
 } from './keymap';

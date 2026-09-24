@@ -59,3 +59,37 @@ Each non-obvious choice gets an entry. Newest last.
     listeners and sets `globalThis.__EH_INPUT_OWNED__`; main.ts's built-in
     stopgap handler (WASD/Space) goes idle once the flag is set, so move/hold
     repeats dispatch exactly once per 120ms interval with no double moves.
+16. **Shops are a content kind (M2).** content/shops/<id>.json,
+    Zod-validated ShopDef { id, name, buys, stock: [{ itemId, price?, qty? }] };
+    qty omitted = infinite daily stock; price overrides item.price.buy. Runtime
+    counters live in state.extensions.shop and restock each morning. Buy/sell
+    are pure sim reducers (shop:buy / shop:sell / shop:restock) so money and
+    stock stay deterministic and replayable.
+17. **Warp stepping lives in engine:sim player:move (M2).** A validated move
+    onto a mapDef.warps tile rewrites player.position to the destination map +
+    offset and emits `player:warped` once. The view swaps the rendered map
+    segment on the position change. Pure `resolveWarp(mapDef, x, y)` is
+    unit-tested against farm+village.
+18. **Night rollover is idempotent across both called paths (M2).** The same
+    farm rollover (weather roll → its effects → crop growth → forage refresh)
+    is invoked from the `time:tick` reducer AND the `player:sleep` reducer just
+    in case sleep's own pass wins the race; both applyFarmRollover and
+    applyWeatherRoll are gated on ext day-counters (farming.lastRolloverDay /
+    weather.lastRolledDay) so they fire exactly once per world day regardless
+    of which reducer runs first. Events (weather:changed, crop:lost,
+    crop:withered) are emitted only by the pass that actually rolls.
+19. **Forage spawns as placed objects (M2).** Each morning the farm map gets a
+    batch of `forage:<itemId>` placed objects (count floor(3 + rng*5), picked
+    from items with category 'forage' whose optional `season:<idx>` tag matches
+    today). Any map's old forage is cleared first. Scythe/bare-hand interact
+    picks one up. Keeps decay/save/serialization free — forage re-rolls at each
+    day rollover instead of persisting long-lived state.
+20. **day:summary is emitted once per sleep (M2).** WORKER-2 accumulates per-day
+    counts in state.player.stats (day:sold:<itemId> etc.), resets them at each
+    day rollover, and emits `day:summary` exactly once after shipping payout on
+    sleep/pass-out. WORKER-3's summary:ui dialog consumes it.
+21. **Shop UI and shop sim are separate feature dirs (M2).** Sim owns
+    src/features/shop/ (id shop:sim); UI owns src/features/shop-ui/ (id
+    shop:ui) to avoid cross-worker write conflicts on a shared index.ts. UI
+    opens on 'F' (data-driven 'shop' keymap action → `ui:open-shop` bus event);
+    walking-into-a-shop proximity triggers properly land in M3 with NPCs.

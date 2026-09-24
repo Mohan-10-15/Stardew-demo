@@ -1,0 +1,8 @@
+{
+  "id": "clinic",
+  "name": "Rustleaf Clinic",
+  "buys": false,
+  "stock": [
+    { "itemId": "wood", "price": 3 }
+  ]
+}

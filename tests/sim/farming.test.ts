@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createSim } from './harness';
+import { forageItemIds, forageCountOf } from '@game/features/farming/sim/rollover';
+import { Rng } from '@game/core/rng';
+import { tileKey } from '@game/features/farming/sim/utils';
 
 const TILE = { mapId: 'farm', x: 3, y: 3 };
 
@@ -16,6 +19,7 @@ interface WitheredEvent {
   x: number;
   y: number;
   cropId: string;
+  cause: string;
 }
 interface RejectedEvent {
   reason: string;
@@ -81,15 +85,18 @@ describe('farming sim: till > plant > water > harvest', () => {
     sim.useTool(TILE, 'parsnip-seed');
     expect(sim.placed('farm', 3, 3)?.id).toBe('crop:parsnip');
 
-    sim.sleep();
+    // Pin both nights to sun (deterministic dry days): real-random night 2 can
+    // be rain, which auto-waters the crop and prevents the wither.
+    sim.sleepWithWeather('sun');
     expect(sim.placed('farm', 3, 3)?.id).toBe('crop:parsnip');
     expect(sim.cropData('farm', 3, 3)?.stage).toBe(0);
     expect(sim.cropData('farm', 3, 3)?.missedWater).toBe(1);
 
-    sim.sleep();
+    sim.sleepWithWeather('sun');
     expect(sim.placed('farm', 3, 3)).toBeUndefined();
     expect(withered).toHaveLength(1);
     expect(withered[0]?.cropId).toBe('parsnip');
+    expect(withered[0]?.cause).toBe('thirst');
     expect(withered[0]?.mapId).toBe('farm');
   });
 
@@ -141,6 +148,7 @@ describe('farming sim: till > plant > water > harvest', () => {
     expect(sim.placed('farm', 3, 3)).toBeUndefined();
     expect(withered).toHaveLength(1);
     expect(withered[0]?.cropId).toBe('parsnip');
+    expect(withered[0]?.cause).toBe('season');
   });
 
   it('charges energy per tool use and refuses when exhausted', async () => {
@@ -205,5 +213,93 @@ describe('farming sim: till > plant > water > harvest', () => {
     expect(sim.placed('farm', 20, 6)?.id).toBe('tilled');
     sim.useTool({ mapId: 'farm', x: 10, y: 10 }, 'hoe-t0');
     expect(sim.placed('farm', 10, 10)?.id).toBe('shipping-bin');
+  });
+});
+
+describe('foraging (m2 §3)', () => {
+  function forageObjects(sim: { state: { maps: Record<string, { placed: Record<string, { id: string; x: number; y: number }> }> } }) {
+    return Object.values(sim.state.maps['farm']?.placed ?? {}).filter((o) => o.id.startsWith('forage:'));
+  }
+
+  it('spawns 3..7 forage objects on the farm each morning on grass', async () => {
+    const sim = await createSim();
+    sim.sleepWithWeather('sun');
+    const batch = forageObjects(sim);
+    expect(batch.length).toBeGreaterThanOrEqual(3);
+    expect(batch.length).toBeLessThanOrEqual(7);
+    for (const obj of batch) {
+      expect(obj.id.startsWith('forage:')).toBe(true);
+      expect(sim.placed('farm', obj.x, obj.y)).toBe(obj);
+      // never on the shipping bin or debris tiles
+      expect(`${obj.x},${obj.y}`).not.toBe(tileKey(10, 10));
+    }
+    const ids = batch.map((o) => o.id.slice('forage:'.length));
+    for (const id of ids) {
+      expect(['daffodil', 'leek', 'wild-horseradish', 'common-mushroom', 'ember-bloom']).toContain(id);
+    }
+  });
+
+  it('clears the previous batch everywhere and spawns a fresh farm batch', async () => {
+    const sim = await createSim();
+    sim.sleepWithWeather('sun');
+    const night1 = forageObjects(sim);
+    expect(night1.length).toBeGreaterThanOrEqual(3);
+
+    // Stale forage parked on a second map must also be cleared next rollover.
+    sim.store.state.maps['other'] = {
+      id: 'other',
+      grid: { tiles: new Array(16 * 16).fill('g'), width: 16, height: 16 },
+      placed: { [tileKey(2, 2)]: { id: 'forage:common-mushroom', x: 2, y: 2, data: {} } },
+      npcs: {},
+      version: 1,
+    };
+    sim.sleepWithWeather('sun');
+
+    const otherPlaced = sim.state.maps['other']?.placed ?? {};
+    expect(Object.values(otherPlaced).filter((o) => o.id.startsWith('forage:'))).toHaveLength(0);
+
+    const night2 = forageObjects(sim);
+    expect(night2.length).toBeGreaterThanOrEqual(3);
+    expect(night2.length).toBeLessThanOrEqual(7);
+  });
+
+  it('picks up forage with bare hands and with the scythe', async () => {
+    const sim = await createSim();
+    const picked = sim.capture<PickedEvent>('item:picked');
+    sim.sleepWithWeather('sun');
+    const batch = forageObjects(sim);
+    expect(batch.length).toBeGreaterThanOrEqual(3);
+
+    const firstId = batch[0]?.id.slice('forage:'.length);
+    sim.useTool({ mapId: 'farm', x: batch[0]?.x ?? 0, y: batch[0]?.y ?? 0 }, '');
+    expect(picked).toContainEqual({ tile: expect.any(Object), itemId: firstId, qty: 1 });
+    expect(sim.placed('farm', batch[0]?.x ?? 0, batch[0]?.y ?? 0)).toBeUndefined();
+    const inBag = sim.state.player.inventory.slots.find((s) => s !== null && s.id === firstId);
+    expect(inBag?.qty).toBe(1);
+    expect(sim.state.player.stats[`day:forage:${firstId}`]).toBe(1);
+
+    sim.useTool({ mapId: 'farm', x: batch[1]?.x ?? 0, y: batch[1]?.y ?? 0 }, 'scythe-t0');
+    expect(sim.placed('farm', batch[1]?.x ?? 0, batch[1]?.y ?? 0)).toBeUndefined();
+    expect(picked).toHaveLength(2);
+    expect(sim.state.player.stats[`day:forage:${firstId}`]).toBe(1);
+  });
+
+  it('only shines for eligible seasons (tagged or untagged)', async () => {
+    const sim = await createSim();
+    const spring = forageItemIds(sim.content, 0).sort();
+    expect(spring).toEqual(
+      ['common-mushroom', 'daffodil', 'ember-bloom', 'leek', 'wild-horseradish'].sort(),
+    );
+    const summer = forageItemIds(sim.content, 1).sort();
+    expect(summer).toEqual(['common-mushroom', 'ember-bloom', 'wild-horseradish'].sort());
+  });
+
+  it('draws 3..7 from the count formula', () => {
+    const rng = new Rng(20260924);
+    for (let i = 0; i < 40; i++) {
+      const n = forageCountOf(rng);
+      expect(n).toBeGreaterThanOrEqual(3);
+      expect(n).toBeLessThanOrEqual(7);
+    }
   });
 });

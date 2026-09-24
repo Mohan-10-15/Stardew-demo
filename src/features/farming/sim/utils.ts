@@ -10,6 +10,7 @@ import {
 } from '@game/core/types';
 
 export const CROP_PREFIX = 'crop:';
+export const FORAGE_PREFIX = 'forage:';
 
 export function clampInt(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -24,11 +25,14 @@ export function cropIdOf(objId: string): string | null {
   return objId.startsWith(CROP_PREFIX) ? objId.slice(CROP_PREFIX.length) : null;
 }
 
+export type WitheredCause = 'thirst' | 'season';
+
 export interface WitheredCrop {
   mapId: string;
   x: number;
   y: number;
   cropId: string;
+  cause: WitheredCause;
 }
 
 /**

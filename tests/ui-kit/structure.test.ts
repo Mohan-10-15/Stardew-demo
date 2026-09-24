@@ -29,8 +29,28 @@ import {
 } from '@game/features/input/keymap';
 import { getFeatures } from '@game/core/registry';
 import { SEASON_NAMES } from '@game/core/types';
+import type { FeatureContext } from '@game/core/feature';
+import { EventBus } from '@game/core/events';
 import '@game/features/hud';
 import '@game/features/input';
+import '@game/features/summary';
+import '@game/features/shop-ui';
+import {
+  buildSummaryModel,
+  formatGold,
+  groupCountsByIdentifier,
+  groupSoldByItem,
+  resolveDisplayName,
+  skillLabel,
+  weatherLabel,
+} from '@game/features/summary/format';
+import {
+  remainingDisplayQty,
+  resolveBuyPrice,
+  sellableInventory,
+  stockLabel,
+  trackedRemaining,
+} from '@game/features/shop-ui/format';
 
 describe('structured exports', () => {
   it('exposes the i18n table and season names', () => {
@@ -45,6 +65,17 @@ describe('structured exports', () => {
     expect(ids).toContain('hud:ui');
     expect(ids).toContain('input:ui');
     for (const id of ['hud:ui', 'input:ui']) {
+      const mod = getFeatures().find((f) => f.id === id);
+      expect(mod?.lane).toBe('ui');
+      expect(typeof mod?.ui).toBe('function');
+    }
+  });
+
+  it('registers summary:ui and shop:ui via registerFeature', () => {
+    const ids = getFeatures().map((f) => f.id);
+    expect(ids).toContain('summary:ui');
+    expect(ids).toContain('shop:ui');
+    for (const id of ['summary:ui', 'shop:ui']) {
       const mod = getFeatures().find((f) => f.id === id);
       expect(mod?.lane).toBe('ui');
       expect(typeof mod?.ui).toBe('function');
@@ -96,6 +127,169 @@ describe('ui-kit headless safety', () => {
     expect(btn.el).toBeNull();
     expect(kit.clear).toBeTypeOf('function');
     kit.clear();
+  });
+
+  it('mounts summary and shop ui without a document without throwing', () => {
+    const stub = {
+      store: { state: null, dispatch: () => undefined },
+      bus: new EventBus(),
+      rng: null,
+      content: null,
+      headless: true,
+      getRenderer: () => undefined,
+      getConfig: () => ({}),
+      persist: async () => undefined,
+    } as unknown as FeatureContext;
+    for (const id of ['summary:ui', 'shop:ui']) {
+      const mod = getFeatures().find((f) => f.id === id);
+      expect(mod, id).toBeDefined();
+      expect(() => mod!.setup?.(stub)).not.toThrow();
+      expect(mod!.ui).toBeTypeOf('function');
+      const handle = mod!.ui!();
+      expect(() => handle.mount({} as HTMLElement)).not.toThrow();
+      expect(() => handle.dispose()).not.toThrow();
+    }
+  });
+});
+
+describe('summary format helpers', () => {
+  it('groups sold rows by item summing qty and gold', () => {
+    expect(
+      groupSoldByItem([
+        { itemId: 'parsnip', qty: 2, gold: 70 },
+        { itemId: 'parsnip', qty: 1, gold: 35 },
+        { itemId: 'strawberry', qty: 3, gold: 360 },
+      ]),
+    ).toEqual([
+      { itemId: 'parsnip', qty: 3, gold: 105 },
+      { itemId: 'strawberry', qty: 3, gold: 360 },
+    ]);
+    expect(groupSoldByItem([])).toEqual([]);
+  });
+
+  it('groups count rows by identifier', () => {
+    expect(
+      groupCountsByIdentifier([
+        { itemId: 'daffodil', qty: 1 },
+        { itemId: 'daffodil', qty: 2 },
+      ]),
+    ).toEqual([{ itemId: 'daffodil', qty: 3 }]);
+  });
+
+  it('reuses the hud gold formatter', () => {
+    expect(formatGold(175)).toBe('175g');
+    expect(formatGold(-4)).toBe('0g');
+  });
+
+  it('resolves display names with an i18n fallback', () => {
+    const items = new Map([['parsnip', { name: 'Parsnip' }]]);
+    const crops = new Map([['parsnip', { name: 'Parsnip' }]]);
+    expect(resolveDisplayName('parsnip', items, crops)).toBe('Parsnip');
+    expect(resolveDisplayName('parsnip', undefined, crops)).toBe('Parsnip');
+    expect(resolveDisplayName('ghost-stone', items, crops)).toMatch(/ghost-stone/);
+    expect(resolveDisplayName('ghost-stone', new Map(), new Map())).toContain('Unknown item');
+  });
+
+  it('maps weather and skill names with fallbacks', () => {
+    expect(weatherLabel('rain')).toBe('Rain');
+    expect(weatherLabel('storm')).toBe('Storm');
+    expect(weatherLabel('haze')).toBe('haze');
+    expect(skillLabel('farming')).toBe('Farming');
+    expect(skillLabel('combat')).toBe('Combat');
+    expect(skillLabel('martial-arts')).toBe('martial-arts');
+  });
+
+  it('builds a full summary display model', () => {
+    const payload = {
+      dayCount: 3,
+      date: { year: 1, seasonIndex: 0 as const, dayOfMonth: 3 },
+      weather: 'rain',
+      forecast: ['sun'],
+      goldEarned: 175,
+      itemsSold: [{ itemId: 'parsnip', qty: 5, gold: 175 }],
+      cropsHarvested: [{ cropId: 'parsnip', qty: 5 }],
+      collectedForage: [],
+      xpEarned: [{ skill: 'farming', amount: 12 }],
+    };
+    const items = new Map([['parsnip', { name: 'Parsnip' }]]);
+    const crops = new Map([['parsnip', { name: 'Parsnip' }]]);
+    const model = buildSummaryModel(payload, items, crops);
+    expect(model.date).toBe('Spring 3, Year 1');
+    expect(model.weather).toBe('Rain');
+    expect(model.goldEarned).toBe('175g');
+    expect(model.shipping).toEqual([{ label: 'Parsnip', qty: 5, gold: '175g' }]);
+    expect(model.harvest).toEqual([{ label: 'Parsnip', qty: 5 }]);
+    expect(model.forage).toEqual([]);
+    expect(model.experience).toEqual([{ label: 'Farming', qty: 12 }]);
+    expect(model.isEmpty).toBe(false);
+  });
+
+  it('marks an empty day as empty in the model', () => {
+    const payload = {
+      dayCount: 1,
+      date: { year: 1, seasonIndex: 0 as const, dayOfMonth: 1 },
+      weather: 'sun',
+      forecast: [],
+      goldEarned: 0,
+      itemsSold: [],
+      cropsHarvested: [],
+      collectedForage: [],
+      xpEarned: [],
+    };
+    const model = buildSummaryModel(payload, new Map(), new Map());
+    expect(model.isEmpty).toBe(true);
+    expect(model.shipping).toEqual([]);
+    expect(model.goldEarned).toBe('0g');
+  });
+});
+
+describe('shop format helpers', () => {
+  it('resolves buy prices with entry override winning', () => {
+    const item = { name: 'Parsnip Seeds', price: { base: 2, buy: 20 } };
+    expect(resolveBuyPrice({ itemId: 'parsnip-seed' }, item)).toBe(20);
+    expect(resolveBuyPrice({ itemId: 'parsnip-seed', price: 15 }, item)).toBe(15);
+    expect(resolveBuyPrice({ itemId: 'x' }, undefined)).toBe(0);
+  });
+
+  it('reads tracked shop stock defensively', () => {
+    const ext = { stock: { 'seed-shop': { 'parsnip-seed': 3 } } };
+    expect(trackedRemaining('seed-shop', 'parsnip-seed', ext)).toBe(3);
+    expect(trackedRemaining('seed-shop', 'parsnip-seed', undefined)).toBeNull();
+    expect(trackedRemaining('other-shop', 'parsnip-seed', ext)).toBeNull();
+    expect(trackedRemaining('seed-shop', 'strawberry-seed', ext)).toBeNull();
+    expect(trackedRemaining('seed-shop', 'parsnip-seed', 'nope')).toBeNull();
+  });
+
+  it('falls back to content qty, and null means infinite', () => {
+    expect(remainingDisplayQty('seed-shop', 'parsnip-seed', 40, undefined)).toBe(40);
+    expect(remainingDisplayQty('seed-shop', 'hoe-t0', undefined, undefined)).toBeNull();
+    expect(
+      remainingDisplayQty('seed-shop', 'parsnip-seed', 40, { stock: { 'seed-shop': { 'parsnip-seed': 2 } } }),
+    ).toBe(2);
+  });
+
+  it('labels remaining stock from i18n', () => {
+    expect(stockLabel(null)).toBe('Unlimited');
+    expect(stockLabel(7)).toBe('Left: 7');
+  });
+
+  it('lists sellable inventory grouped by item, base price > 0 only', () => {
+    const items = new Map([
+      ['parsnip', { name: 'Parsnip', price: { base: 35 } }],
+      ['hoe-t0', { name: 'Basic Hoe', price: { base: 15 } }],
+      ['old-ring', { name: 'Old Ring', price: { base: 0 } }],
+    ]);
+    const slots = [
+      { id: 'parsnip', qty: 2, quality: 0 as const },
+      { id: 'parsnip', qty: 1, quality: 1 as const },
+      { id: 'hoe-t0', qty: 1, quality: 0 as const },
+      { id: 'old-ring', qty: 1, quality: 0 as const },
+      null,
+    ];
+    expect(sellableInventory(slots, items)).toEqual([
+      { itemId: 'hoe-t0', name: 'Basic Hoe', qty: 1, price: 15 },
+      { itemId: 'parsnip', name: 'Parsnip', qty: 3, price: 35 },
+    ]);
   });
 });
 
@@ -208,6 +402,12 @@ describe('input keymap', () => {
     expect(actionToSim({ type: 'move', dx: -1, dy: 0 })).toEqual({ type: 'player:move', payload: { dx: -1, dy: 0 } });
     expect(actionToSim({ type: 'interact' })).toEqual({ type: 'player:interact', payload: {} });
     expect(actionToSim({ type: 'select-slot', slot: 3 })).toEqual({ type: 'player:select-slot', payload: { slot: 3 } });
+  });
+
+  it('binds the shop action to f and resolves no sim action for it', () => {
+    expect(findBinding('f')?.action).toEqual({ type: 'shop' });
+    expect(normalizeKey('F')).toBe('f');
+    expect(actionToSim({ type: 'shop' })).toBeNull();
   });
 });
 

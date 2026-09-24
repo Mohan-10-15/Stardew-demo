@@ -85,6 +85,7 @@ function loadContentSyncOrThrow(): ContentDb {
     crops: new Map(),
     npcs: new Map(),
     maps: new Map(),
+    shops: new Map(),
     byId() {
       return undefined;
     },

@@ -6,14 +6,15 @@
  * `npm run check` gate.
  */
 import { z } from 'zod';
-import type { CropDef, ItemDef, MapDef, NpcDef } from './schemas';
-import { cropsSchema, itemsSchema, mapSchemaFull, npcsSchema } from './schemas';
+import type { CropDef, ItemDef, MapDef, NpcDef, ShopDef } from './schemas';
+import { cropsSchema, itemsSchema, mapSchemaFull, npcsSchema, shopSchema } from './schemas';
 
 export interface ContentDb {
   items: Map<string, ItemDef>;
   crops: Map<string, CropDef>;
   npcs: Map<string, NpcDef>;
   maps: Map<string, MapDef>;
+  shops: Map<string, ShopDef>;
   /** Map id -> set of tile codes present (for validator spot-checks). */
   byId<T>(kind: keyof ContentDb, id: string): T | undefined;
 }
@@ -124,6 +125,21 @@ function collectRecords(files: LoadedFile[], suffix: string, parse: RecordParser
   return out;
 }
 
+function collectShops(files: LoadedFile[]): Map<string, ShopDef> {
+  const out = new Map<string, ShopDef>();
+  for (const f of files) {
+    if (!f.rel.includes('/shops/') || !f.rel.endsWith('.json')) continue;
+    try {
+      const parsed = shopSchema.parse(f.json);
+      out.set(parsed.id, parsed);
+    } catch (e) {
+      if (e instanceof z.ZodError) throw new ContentError(f.rel, e.issues, 'schema');
+      throw e;
+    }
+  }
+  return out;
+}
+
 /** Loads and validates the entire content tree; throws ContentError on failure. */
 export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles): Promise<ContentDb> {
   const files = await scan();
@@ -131,11 +147,13 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
   const crops = collectRecords(files, 'crops.json', cropsSchema.parseRecord) as Map<string, CropDef>;
   const npcs = collectRecords(files, 'npcs.json', npcsSchema.parseRecord) as Map<string, NpcDef>;
   const maps = collectMaps(files);
+  const shops = collectShops(files);
   const db: ContentDb = {
     items,
     crops,
     npcs,
     maps,
+    shops,
     byId<T>(kind: keyof ContentDb, id: string): T | undefined {
       const col = this[kind];
       return col instanceof Map ? (col.get(id) as T | undefined) : undefined;
@@ -149,6 +167,27 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
         [ruleIssue(['seedId'], `seed item '${crop.seedId}' does not exist in items.json`)],
         'rule',
       );
+    }
+  }
+  // Cross-references: shop stock must exist, and either carry a price override
+  // or resolve through item.price.buy.
+  for (const shop of shops.values()) {
+    for (const [i, entry] of shop.stock.entries()) {
+      const item = items.get(entry.itemId);
+      if (!item) {
+        throw new ContentError(
+          `shops/${shop.id}.json`,
+          [ruleIssue(['stock', i, 'itemId'], `item '${entry.itemId}' does not exist in items.json`)],
+          'rule',
+        );
+      }
+      if (entry.price === undefined && item.price.buy === undefined) {
+        throw new ContentError(
+          `shops/${shop.id}.json`,
+          [ruleIssue(['stock', i, 'price'], `no buy price for '${entry.itemId}'; set a price override`)],
+          'rule',
+        );
+      }
     }
   }
   return db;

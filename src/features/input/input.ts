@@ -74,7 +74,12 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       dispatchMove();
       return;
     }
-    ctx.store.dispatch(actionToSim(action) as SimAction<string, unknown>);
+    if (action.type === 'shop') {
+      ctx.bus.emit('ui:open-shop', {});
+      return;
+    }
+    const sim = actionToSim(action);
+    if (sim) ctx.store.dispatch(sim as SimAction<string, unknown>);
   }
 
   function onKeyUp(event: KeyboardEvent): void {

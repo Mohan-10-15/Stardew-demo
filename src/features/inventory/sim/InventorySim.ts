@@ -53,6 +53,34 @@ export function addStackToInventory(
   };
 }
 
+/**
+ * Try to add `qty` units of `itemId` to inventory. Stackable items merge up to
+ * MAX_STACK; non-stackable items cost one unit per empty slot. Returns how many
+ * units actually fit (<= qty), or -1 when none do.
+ */
+export function tryAddToSlots(
+  state: GameState,
+  itemId: string,
+  qty: number,
+  canStack: boolean,
+): { state: GameState; added: number } {
+  let st = state;
+  let remaining = qty;
+  if (canStack) {
+    const res = addStackToInventory(st, { id: itemId, qty: remaining, quality: 0 });
+    if (!res.added) return { state: st, added: 0 };
+    st = res.state;
+    return { state: st, added: qty };
+  }
+  for (let i = 0; i < qty && remaining > 0; i++) {
+    const res = addStackToInventory(st, { id: itemId, qty: 1, quality: 0 });
+    if (!res.added) break;
+    st = res.state;
+    remaining -= 1;
+  }
+  return { state: st, added: qty - remaining };
+}
+
 /** Aggregated view of the bag, merged by id+quality, first-appearance order. */
 export function summarizeInventory(state: GameState): InventorySummary[] {
   const out: InventorySummary[] = [];
