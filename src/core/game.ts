@@ -25,6 +25,10 @@ export interface GameRuntime {
   /** True when the sim is deterministic (bot/test mode). */
   headless: boolean;
   saveStore: SaveStore;
+  /** Active save slot name (e.g. slot1). */
+  saveSlot: string;
+  /** Persist current state into the active save slot. */
+  persist: () => Promise<void>;
 }
 
 export interface GameBootOptions {
@@ -42,59 +46,36 @@ function advanceTimeReducer(state: GameState): GameState {
   return { ...state, world: transition.world };
 }
 
-export function createGameRuntime(opts: GameBootOptions = {}): GameRuntime {
-  const headless = typeof document === 'undefined';
-  const seed = opts.seed ?? Math.floor(Math.random() * 0x7fffffff);
-  const rng = new Rng(seed);
-  const bus = new EventBus();
-  const initial = createInitialState(seed, opts.saveName ?? 'ember-hollow-save');
-  const store = new Store(initial, rng, bus);
-
-  store.registerReducer('time:tick', (st) => advanceTimeReducer(st));
-
-  const features = registerAllFeatures();
-  const content = loadContentSyncOrThrow();
-  validateMapRefs(content);
-
-  let saveStore: SaveStore;
-  try {
-    saveStore = createDefaultSaveStore();
-  } catch {
-    saveStore = null as unknown as SaveStore;
-  }
-
-  const context: FeatureContext = {
+function buildContext(
+  store: Store,
+  bus: EventBus,
+  rng: Rng,
+  headless: boolean,
+  content: ContentDb,
+  saveStore: SaveStore,
+  saveSlot: string,
+): FeatureContext {
+  return {
     store,
     bus,
     rng,
+    content,
     headless,
     getRenderer: () => undefined,
     getConfig: () => ({}),
-  };
-
-  for (const f of features) f.setup?.(context);
-
-  const runtime: GameRuntime = {
-    store,
-    bus,
-    content,
-    features,
-    headless,
-    saveStore,
-    tickSimStep: () => {
-      store.dispatch({ type: 'time:tick', payload: null });
+    persist: async () => {
+      const file = wrapSave(store.state);
+      await saveStore.save(saveSlot, file);
+      const stamped = { ...store.state.meta, updatedAt: Date.now() };
+      store.replaceState({ ...store.state, meta: stamped });
+      bus.emit('save:done', { slot: saveSlot, savedAt: file.savedAt });
     },
   };
-
-  if (opts.mountDom && !headless) {
-    mountDomModules(runtime);
-  }
-  return runtime;
 }
 
 function loadContentSyncOrThrow(): ContentDb {
-  // The browser path calls validateContent() ahead of boot in main.ts; here we
-  // serve the preloaded copy.
+  // The browser path calls loadContent() ahead of boot in main.ts; here we
+  // serve the preloaded copy, or an empty DB in headless tests.
   return (globalThis as unknown as { __EH_CONTENT?: ContentDb }).__EH_CONTENT ?? {
     items: new Map(),
     crops: new Map(),
@@ -103,6 +84,94 @@ function loadContentSyncOrThrow(): ContentDb {
     byId() {
       return undefined;
     },
+  };
+}
+
+function logDone(features: readonly FeatureModule[]): void {
+  for (const f of features) {
+    if (f.lane === 'sim' || f.lane === 'core') continue;
+    console.info(`[ember-hollow] feature ${f.id} registered (${f.lane})`);
+  }
+}
+
+export function createGameRuntime(
+  opts: GameBootOptions = {},
+  saveStore: SaveStore = createDefaultSaveStore(),
+  saveSlot = 'slot1',
+): GameRuntime {
+  const headless = typeof document === 'undefined';
+  const seed = opts.seed ?? Math.floor(Math.random() * 0x7fffffff);
+  const rng = new Rng(seed);
+  const bus = new EventBus();
+  const initial = createInitialState(seed, opts.saveName ?? 'ember-hollow-save');
+  const store = new Store(initial, rng, bus);
+  store.registerReducer('time:tick', (st) => advanceTimeReducer(st));
+  const features = registerAllFeatures();
+  const content = loadContentSyncOrThrow();
+  validateMapRefs(content);
+  const context = buildContext(store, bus, rng, headless, content, saveStore, saveSlot);
+  for (const f of features) f.setup?.(context);
+  logDone(features);
+
+  const runtime: GameRuntime = {
+    store,
+    bus,
+    content,
+    features,
+    headless,
+    saveStore,
+    saveSlot,
+    tickSimStep: () => {
+      const before = store.state.world.dayCount;
+      store.dispatch({ type: 'time:tick', payload: null });
+      const after = store.state.world.dayCount;
+      if (after !== before) bus.emit('day:rollover', store.state.world);
+      bus.emit('time:ticked', store.state.world);
+    },
+    persist: context.persist,
+  };
+
+  if (opts.mountDom && !headless) {
+    mountDomModules(runtime);
+  }
+  return runtime;
+}
+
+/** Load a save file into a fresh runtime (browser boot path). */
+export async function loadRuntimeFromSave(
+  saveName: string,
+  saveStore: SaveStore = createDefaultSaveStore(),
+  saveSlot = saveName,
+): Promise<GameRuntime> {
+  const file = await saveStore.load(saveName);
+  if (!file) throw new Error(`no save named ${saveName}`);
+  const state = migrateSave(file.state);
+  const seed = state.rngSeed;
+  const rng = new Rng(seed);
+  const bus = new EventBus();
+  const s = new Store(state, rng, bus);
+  s.registerReducer('time:tick', (st) => advanceTimeReducer(st));
+  const features = registerAllFeatures();
+  const content = loadContentSyncOrThrow();
+  const context = buildContext(s, bus, rng, typeof document === 'undefined', content, saveStore, saveSlot);
+  for (const f of features) f.setup?.(context);
+
+  return {
+    store: s,
+    bus,
+    content,
+    features,
+    headless: typeof document === 'undefined',
+    saveStore,
+    saveSlot,
+    tickSimStep: () => {
+      const before = s.state.world.dayCount;
+      s.dispatch({ type: 'time:tick', payload: null });
+      const after = s.state.world.dayCount;
+      if (after !== before) bus.emit('day:rollover', s.state.world);
+      bus.emit('time:ticked', s.state.world);
+    },
+    persist: context.persist,
   };
 }
 
@@ -115,32 +184,4 @@ function mountDomModules(runtime: GameRuntime): void {
       h.mount(root);
     }
   }
-}
-
-export { migrateSave, wrapSave };
-
-export type { SaveStore };
-
-/** Load a save file into a fresh runtime (browser boot path). */
-export async function loadRuntimeFromSave(saveName: string, store: SaveStore = createDefaultSaveStore()): Promise<GameRuntime> {
-  const file = await store.load(saveName);
-  if (!file) throw new Error(`no save named ${saveName}`);
-  const state = migrateSave(file.state);
-  const seed = state.rngSeed;
-  const rng = new Rng(seed);
-  const bus = new EventBus();
-  const s = new Store(state, rng, bus);
-  s.registerReducer('time:tick', (st) => advanceTimeReducer(st));
-  const features = registerAllFeatures();
-  const context: FeatureContext = { store: s, bus, rng, headless: typeof document === 'undefined', getRenderer: () => undefined, getConfig: () => ({}) };
-  for (const f of features) f.setup?.(context);
-  return {
-    store: s,
-    bus,
-    content: loadContentSyncOrThrow(),
-    features,
-    headless: typeof document === 'undefined',
-    saveStore: store,
-    tickSimStep: () => s.dispatch({ type: 'time:tick', payload: null }),
-  };
 }

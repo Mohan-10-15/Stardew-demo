@@ -65,12 +65,12 @@ export function createInitialState(seed: number, saveName: string, opts?: Partia
         fishing: { level: 0, xp: 0 },
         combat: { level: 0, xp: 0 },
       },
-      inventory: {
+      inventory: applyStarterItems({
         slots: new Array(12).fill(null),
         capacity: 12,
         selected: 0,
         cursor: { x: 0, y: 0 },
-      },
+      }),
       stats: {},
     },
     farm: farmState,
@@ -80,6 +80,31 @@ export function createInitialState(seed: number, saveName: string, opts?: Partia
     progression: { flags: ['started'], collections: {}, heartstoneProgress: 0, story: [] },
     extensions: {},
   };
+}
+
+/** Starter loadout handed to a brand-new farmer. */
+export const STARTER_ITEMS: { id: string; qty: number }[] = [
+  { id: 'hoe-t0', qty: 1 },
+  { id: 'watering-can-t0', qty: 1 },
+  { id: 'axe-t0', qty: 1 },
+  { id: 'pickaxe-t0', qty: 1 },
+  { id: 'scythe-t0', qty: 1 },
+  { id: 'fishing-rod-t0', qty: 1 },
+  { id: 'sword-t0', qty: 1 },
+  { id: 'parsnip-seed', qty: 15 },
+];
+
+/** Apply a starter loadout to an inventory (used by createInitialState). */
+export function applyStarterItems(inv: GameState['player']['inventory']): GameState['player']['inventory'] {
+  const slots = [...inv.slots];
+  let slot = 0;
+  for (const it of STARTER_ITEMS) {
+    while (slot < slots.length && slots[slot] !== null) slot += 1;
+    if (slot >= slots.length) break;
+    slots[slot] = { id: it.id, qty: it.qty, quality: 0 };
+    slot += 1;
+  }
+  return { ...inv, slots };
 }
 
 export function createRestoredState(saved: GameState): GameState {

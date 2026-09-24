@@ -15,6 +15,7 @@ import type { EventBus } from './events';
 import type { Store } from './store';
 import type { Rng } from './rng';
 import type { GameState } from './types';
+import type { ContentDb } from './content';
 
 export type FeatureLane = 'world' | 'sim' | 'people' | 'ui' | 'core';
 
@@ -22,11 +23,15 @@ export interface FeatureContext {
   store: Store;
   bus: EventBus;
   rng: Rng;
+  /** Validated content database (items, crops, npcs, maps). */
+  content: ContentDb;
   /** Headless mode: true when running under vitest/Node without a DOM. */
   headless: boolean;
   /** Renderer handle (filled by the world/engine module before setup of others). */
   getRenderer: () => unknown;
   getConfig: () => unknown;
+  /** Persist the current state to the active save slot. */
+  persist: () => Promise<void>;
 }
 
 export interface ViewHandle {

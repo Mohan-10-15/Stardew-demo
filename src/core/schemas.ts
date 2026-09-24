@@ -88,6 +88,13 @@ const npcSchema = z.object({
 
 export type NpcDef = z.infer<typeof npcSchema>;
 
+const placedObjectSchema = z.object({
+  id: z.string().min(1),
+  x: z.number().int().min(0),
+  y: z.number().int().min(0),
+  data: z.record(z.string(), z.unknown()).default({}),
+});
+
 const mapSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -118,6 +125,8 @@ const mapSchema = z.object({
       to: z.object({ map: z.string().min(1), x: z.number().int().min(0), y: z.number().int().min(0) }),
     }),
   ),
+  /** Objects seeded into the map on a new game (sim seeds them into MapState). */
+  initialPlaced: z.array(placedObjectSchema).default([]),
 });
 
 export type MapDef = z.infer<typeof mapSchema>;
