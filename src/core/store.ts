@@ -3,6 +3,10 @@
  * the simulation uses. Features contribute deterministic reducers keyed by
  * action type; the store applies them in registration order and emits
  * 'state:changed' on every commit.
+ *
+ * Nested dispatches (a reducer or a bus listener dispatching another action)
+ * are queued and flushed synchronously AFTER the outer dispatch finishes, so
+ * the simulation stays deterministic and reentrancy never throws.
  */
 import { EventBus } from './events';
 import type { Rng } from './rng';
@@ -24,6 +28,7 @@ export class Store {
   private rng: Rng;
   private reducers: RegisteredReducer[] = [];
   private processing = false;
+  private pending: SimAction<string, unknown>[] = [];
 
   constructor(state: GameState, rng: Rng, bus?: EventBus) {
     this._state = state;
@@ -46,7 +51,25 @@ export class Store {
 
   /** Dispatch an action through every registered reducer for its type. */
   dispatch<T extends string, P>(action: SimAction<T, P>): void {
-    if (this.processing) throw new Error('reentrant dispatch');
+    if (this.processing) {
+      // Defer nested dispatches until the in-flight action commits, keeping
+      // the sim deterministic and free of reentrant-dispatch throws.
+      this.pending.push(action as SimAction<string, unknown>);
+      return;
+    }
+    this.processing = true;
+    try {
+      this.runAction(action);
+      while (this.pending.length > 0) {
+        const queued = this.pending.shift();
+        if (queued) this.runAction(queued);
+      }
+    } finally {
+      this.processing = false;
+    }
+  }
+
+  private runAction<T extends string, P>(action: SimAction<T, P>): void {
     const matches = this.reducers
       .filter((r) => r.type === action.type)
       .sort((a, b) => a.order - b.order);
@@ -54,15 +77,10 @@ export class Store {
       this.bus.emit('store:unknown-action', action);
       return;
     }
-    this.processing = true;
-    try {
-      for (const r of matches) {
-        this._state = r.fn(this._state, action as SimAction, this.rng);
-      }
-      this.bus.emit('state:changed', this._state);
-    } finally {
-      this.processing = false;
+    for (const r of matches) {
+      this._state = r.fn(this._state, action as SimAction, this.rng);
     }
+    this.bus.emit('state:changed', this._state);
   }
 
   /** Direct, intentional mutation for save-load and controlled bootstrap only. */

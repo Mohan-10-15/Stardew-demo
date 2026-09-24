@@ -1,0 +1,412 @@
+/*
+ * Ember Hollow UI kit + HUD styles (WORKER-3 lane).
+ * Class-based, emoji-free, themeable through the engine CSS variables.
+ */
+
+:root {
+  --eh-ui-panel-bg: var(--eh-panel, rgba(24, 30, 40, 0.92));
+  --eh-ui-panel-border: var(--eh-panel-border, #3a4758);
+  --eh-ui-text: var(--eh-text, #e8e4d8);
+  --eh-ui-text-dim: var(--eh-text-dim, #9aa4b2);
+  --eh-ui-accent: var(--eh-accent, #e8a33d);
+  --eh-ui-accent-2: var(--eh-accent-2, #6fb3e8);
+  --eh-ui-health: #e05a4f;
+  --eh-ui-energy: #5bbf7a;
+}
+
+/* ---- primitives ---- */
+
+.eh-panel {
+  background: var(--eh-ui-panel-bg);
+  border: 1px solid var(--eh-ui-panel-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color: var(--eh-ui-text);
+}
+
+.eh-button {
+  appearance: none;
+  border: 1px solid var(--eh-ui-panel-border);
+  border-radius: 8px;
+  background: rgba(16, 20, 26, 0.6);
+  color: var(--eh-ui-text);
+  font: inherit;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.eh-button:hover {
+  border-color: var(--eh-ui-accent);
+}
+
+.eh-button:active {
+  transform: translateY(1px);
+}
+
+.eh-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--eh-ui-text);
+}
+
+.eh-icon-heart::before {
+  content: '\2665';
+}
+
+.eh-icon-close::before {
+  content: '\00d7';
+}
+
+.eh-icon-leaf::before {
+  content: '\2733';
+}
+
+.eh-tooltip {
+  position: fixed;
+  z-index: 300;
+  max-width: 240px;
+  white-space: pre-line;
+  background: rgba(10, 14, 20, 0.96);
+  border: 1px solid var(--eh-ui-panel-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--eh-ui-text);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.eh-tabs {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.eh-tablist {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--eh-ui-panel-border);
+}
+
+.eh-tab {
+  appearance: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--eh-ui-text-dim);
+  font: inherit;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.eh-tab[aria-selected='true'] {
+  color: var(--eh-ui-text);
+  border-bottom-color: var(--eh-ui-accent);
+}
+
+.eh-tab-body {
+  padding: 8px 4px;
+}
+
+.eh-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+}
+
+.eh-slider-label {
+  font-size: 13px;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-slider input[type='range'] {
+  accent-color: var(--eh-ui-accent);
+  flex: 1;
+}
+
+.eh-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 8, 12, 0.6);
+}
+
+.eh-dialog-backdrop.is-open {
+  display: flex;
+}
+
+.eh-dialog {
+  min-width: 320px;
+  max-width: min(520px, 90vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--eh-ui-panel-bg);
+  border: 1px solid var(--eh-ui-panel-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.5);
+  color: var(--eh-ui-text);
+}
+
+.eh-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--eh-ui-panel-border);
+}
+
+.eh-dialog-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.eh-dialog-close {
+  appearance: none;
+  border: 1px solid var(--eh-ui-panel-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--eh-ui-text-dim);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.eh-dialog-close:hover {
+  color: var(--eh-ui-text);
+  border-color: var(--eh-ui-accent);
+}
+
+.eh-dialog-body {
+  overflow: auto;
+  padding: 12px 14px;
+}
+
+/* ---- HUD ---- */
+
+.eh-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.eh-hud-info {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.eh-hud-info > div {
+  display: flex;
+  align-items: center;
+}
+
+.eh-hud-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.eh-hud-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: 12px;
+  border: 1px solid var(--eh-ui-panel-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.eh-weather-sun {
+  color: #ffd27a;
+  border-color: #8a6a2a;
+}
+
+.eh-weather-rain {
+  color: #9ec7ef;
+  border-color: #35597e;
+}
+
+.eh-weather-storm {
+  color: #cbb4f0;
+  border-color: #5b4a82;
+}
+
+.eh-weather-snow {
+  color: #e6f2ff;
+  border-color: #6b83a1;
+}
+
+.eh-weather-wind {
+  color: #b8c8b0;
+  border-color: #5d7355;
+}
+
+.eh-hud-money {
+  font-weight: 600;
+  color: var(--eh-ui-accent);
+}
+
+.eh-hud-vitals {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  min-width: 200px;
+}
+
+.eh-bar {
+  display: grid;
+  grid-template-columns: 64px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+}
+
+.eh-bar-label {
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-bar-track {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.eh-bar-fill {
+  height: 100%;
+  width: 0;
+  transition: width 120ms linear;
+}
+
+.eh-bar-energy .eh-bar-fill {
+  background: linear-gradient(90deg, var(--eh-ui-energy), #7edb99);
+}
+
+.eh-bar-health .eh-bar-fill {
+  background: linear-gradient(90deg, var(--eh-ui-health), #f07a6d);
+}
+
+.eh-bar-amount {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-hud-shipping {
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+}
+
+.eh-hud-hotbar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  pointer-events: auto;
+}
+
+.eh-hud-hotbar-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eh-ui-text-dim);
+  pointer-events: none;
+}
+
+.eh-hud-hotbar-slots {
+  display: flex;
+  gap: 6px;
+}
+
+.eh-slot {
+  appearance: none;
+  position: relative;
+  width: 52px;
+  height: 52px;
+  padding: 4px;
+  border: 2px solid var(--eh-ui-panel-border);
+  border-radius: 8px;
+  background: rgba(16, 20, 26, 0.78);
+  color: var(--eh-ui-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.eh-slot:hover {
+  border-color: var(--eh-ui-accent-2);
+}
+
+.eh-slot.is-selected {
+  border-color: var(--eh-ui-accent);
+  box-shadow: 0 0 0 2px rgba(232, 163, 61, 0.45);
+}
+
+.eh-slot-dragging {
+  opacity: 0.6;
+}
+
+.eh-slot-name {
+  display: block;
+  max-height: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.eh-slot-count {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--eh-ui-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .eh-hud-vitals {
+    min-width: 160px;
+  }
+
+  .eh-slot {
+    width: 44px;
+    height: 44px;
+  }
+}

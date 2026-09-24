@@ -98,6 +98,8 @@ const placedObjectSchema = z.object({
 const mapSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  /** Bump when the map layout changes so saved grids migrate on load. */
+  version: z.number().int().min(1).default(1),
   width: z.number().int().min(4),
   height: z.number().int().min(4),
   spawn: z.object({ x: z.number().int().min(0), y: z.number().int().min(0) }),

@@ -16,8 +16,15 @@
 - Features live under src/features/<name>/ with sim/ (WORKER-2), view/ (WORKER-1)
   and ui/ (WORKER-3) subfolders.
 - Every feature folder has an index.ts that self-registers its `FeatureModule`s by
-  importing them; src/features/index.ts imports all entries via
-  import.meta.glob so no shared registry is edited by hand.
+  importing them; src/features/auto-import.ts imports all entries via
+  import.meta.glob so no shared registry is edited by hand. The glob must NOT
+  live in core/registry.ts: that would inline feature imports into registry's
+  module scope and create an ESM self-cycle (TDZ on registerFeature). The game
+  bootstrap (src/core/game.ts) imports registry before auto-import, which is
+  what makes index.ts side-effect registration safe (DECISIONS #11).
+- The Store queues nested dispatches (a reducer or bus listener dispatching
+  again) and flushes them synchronously after the outer action commits —
+  reentrancy never throws and the sim stays replayable (DECISIONS #12).
 - src/core is owned by the orchestrator: types, Rng, EventBus, Store, save/load,
   content schemas + validator, feature contract, game bootstrap.
 
@@ -30,6 +37,9 @@
   - content/maps/<id>.json => MapDef (multi-line layers are whitespace-normalized)
 - Map validator: dimension match, legend glyph coverage, spawn bounds, warp
   target existence. Cross refs: crop.seedId -> items.
+- Map defs become concrete MapState on new game (mapStateFromDef /
+  buildInitialMaps); saved grids migrate when the map def `version` is bumped,
+  keeping in-bounds placed objects (DECISIONS #13).
 
 ## 4. Save/load
 
