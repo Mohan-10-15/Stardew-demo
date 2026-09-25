@@ -1,4 +1,4 @@
-# Ember Hollow — Task Index
+﻿# Ember Hollow â€” Task Index
 
 Format: `T-#### | lane | title | status`. Status: DONE | TODO | BLOCKED.
 Milestones are committed only when `npm run check` is green AND the matching
@@ -12,8 +12,8 @@ docs/ACCEPTANCE.md script rows pass.
 | T-0202 | sim | M2 shop sim + foraging + weather/season effects + day:summary | DONE (89816e1) |
 | T-0203 | people/ui | M2 summary UI + shop UI (F key) + i18n | DONE (89816e1) |
 | T-0300 | core | M3 contracts + schemas (schedules, dialogue, quests) + ACCEPTANCE.md gate | DONE (a13dc88) |
-| T-0301 | people | M3 NPC schedules + pathfinding + position-on-map; dialogue selection; gifts + friendship hearts; heart events; content (npcs/dialogue/schedules) | DONE (M3) |
-| T-0302 | world | M3 NPC view rendering + walking animation + Home interior map for first heart event | DONE (M3) |
-| T-0303 | people | M3 quests: quest board NPC, quest content, accept/complete/turn-in, journal UI (quests + hearts tabs) | DONE (M3) |
-| T-0304 | sim | M3 seasonal shop stock + Friday traveling merchant (content + sim, seeded) | DONE (M3) |
+| T-0301 | people | M3 NPC schedules + pathfinding + position-on-map; dialogue selection; gifts + friendship hearts; heart events; content (npcs/dialogue/schedules) | DONE (1c32b36) |
+| T-0302 | world | M3 NPC view rendering + walking animation + Home interior map for first heart event | DONE (1c32b36) |
+| T-0303 | people | M3 quests: quest board NPC, quest content, accept/complete/turn-in, journal UI (quests + hearts tabs) | DONE (1c32b36) |
+| T-0304 | sim | M3 seasonal shop stock + Friday traveling merchant (content + sim, seeded) | DONE (1c32b36) |
 | (fill in during dispatch) | | | |
