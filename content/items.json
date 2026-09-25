@@ -343,5 +343,311 @@
     "price": { "base": 400, "buy": 850 },
     "canStack": true,
     "tags": ["resource", "gift", "rare"]
+  },
+  "anchovy": {
+    "name": "Anchovy",
+    "description": "A tiny, salty fish that schools in spring runoff.",
+    "category": "fish",
+    "price": { "base": 30 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-anchovy"
+  },
+  "sardine": {
+    "name": "Sardine",
+    "description": "A small silver fish that bites all day in spring.",
+    "category": "fish",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-sardine"
+  },
+  "halibut": {
+    "name": "Halibut",
+    "description": "A flat, mild spring fish with both eyes on one side.",
+    "category": "fish",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-halibut"
+  },
+  "sunfish": {
+    "name": "Sunfish",
+    "description": "A bright spring panfish that glitters in the shallows.",
+    "category": "fish",
+    "price": { "base": 50 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-sunfish"
+  },
+  "herring": {
+    "name": "Herring",
+    "description": "Frisky spring herring, best before noon.",
+    "category": "fish",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-herring"
+  },
+  "shad": {
+    "name": "Shad",
+    "description": "A silver river shad that runs on bright spring mornings.",
+    "category": "fish",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["fish", "season:0"],
+    "asset": "fish-shad"
+  },
+  "bluegill": {
+    "name": "Bluegill",
+    "description": "A feisty little summer panfish.",
+    "category": "fish",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-bluegill"
+  },
+  "bass": {
+    "name": "Large Bass",
+    "description": "A heavy summer bass that hunts the shallows.",
+    "category": "fish",
+    "price": { "base": 100 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-bass"
+  },
+  "tilapia": {
+    "name": "Tilapia",
+    "description": "A warm-water fish that goes wild in summer heat.",
+    "category": "fish",
+    "price": { "base": 75 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-tilapia"
+  },
+  "carp": {
+    "name": "Carp",
+    "description": "A broad summer mud-lover, sluggish but strong.",
+    "category": "fish",
+    "price": { "base": 110 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-carp"
+  },
+  "pike": {
+    "name": "Pike",
+    "description": "A toothy ambush predator of summer lakes.",
+    "category": "fish",
+    "price": { "base": 140 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-pike"
+  },
+  "sunray-koi": {
+    "name": "Sunray Koi",
+    "description": "A gilded summer koi said to catch the afternoon light.",
+    "category": "fish",
+    "price": { "base": 220 },
+    "canStack": true,
+    "tags": ["fish", "season:1", "rare"],
+    "asset": "fish-sunray-koi"
+  },
+  "salmon": {
+    "name": "Salmon",
+    "description": "Runs the fall river in muscular silver pulses.",
+    "category": "fish",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["fish", "season:2"],
+    "asset": "fish-salmon"
+  },
+  "trout": {
+    "name": "River Trout",
+    "description": "A speckled fall trout that strikes fast in cold water.",
+    "category": "fish",
+    "price": { "base": 110 },
+    "canStack": true,
+    "tags": ["fish", "season:2"],
+    "asset": "fish-trout"
+  },
+  "sturgeon": {
+    "name": "Sturgeon",
+    "description": "An armored leviathan of the deep fall pools.",
+    "category": "fish",
+    "price": { "base": 320 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "rare"],
+    "asset": "fish-sturgeon"
+  },
+  "walleye": {
+    "name": "Walleye",
+    "description": "A glassy-eyed night feeder, most active after dark.",
+    "category": "fish",
+    "price": { "base": 150 },
+    "canStack": true,
+    "tags": ["fish", "season:2"],
+    "asset": "fish-walleye"
+  },
+  "eel": {
+    "name": "Rain Eel",
+    "description": "Slips out of the shallows only when the sky pours.",
+    "category": "fish",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["fish", "season:2"],
+    "asset": "fish-eel"
+  },
+  "gizzard-shad": {
+    "name": "Gizzard Shad",
+    "description": "An oily fall shad with a fussy appetite.",
+    "category": "fish",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["fish", "season:2"],
+    "asset": "fish-gizzard-shad"
+  },
+  "snow-perch": {
+    "name": "Snow Perch",
+    "description": "A pale perch that thrives under the winter ice.",
+    "category": "fish",
+    "price": { "base": 80 },
+    "canStack": true,
+    "tags": ["fish", "season:3"],
+    "asset": "fish-snow-perch"
+  },
+  "ice-fish": {
+    "name": "Ice Fish",
+    "description": "A frosty little fish with cold, clear flesh.",
+    "category": "fish",
+    "price": { "base": 95 },
+    "canStack": true,
+    "tags": ["fish", "season:3"],
+    "asset": "fish-ice-fish"
+  },
+  "midnight-carp": {
+    "name": "Midnight Carp",
+    "description": "A dark carp that only stirs in the dead of winter nights.",
+    "category": "fish",
+    "price": { "base": 180 },
+    "canStack": true,
+    "tags": ["fish", "season:3", "rare"],
+    "asset": "fish-midnight-carp"
+  },
+  "bream": {
+    "name": "Winter Bream",
+    "description": "An unbothered bream that nibbles through the frost.",
+    "category": "fish",
+    "price": { "base": 100 },
+    "canStack": true,
+    "tags": ["fish", "season:3"],
+    "asset": "fish-bream"
+  },
+  "goldfish": {
+    "name": "Goldfish",
+    "description": "A tame winter ornament that escaped into the river.",
+    "category": "fish",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["fish", "season:3"],
+    "asset": "fish-goldfish"
+  },
+  "minnow": {
+    "name": "Minnow",
+    "description": "Bites anywhere, any season, any hour.",
+    "category": "fish",
+    "price": { "base": 15 },
+    "canStack": true,
+    "tags": ["fish"],
+    "asset": "fish-minnow"
+  },
+  "creek-chub": {
+    "name": "Creek Chub",
+    "description": "A patient year-round stream dweller.",
+    "category": "fish",
+    "price": { "base": 30 },
+    "canStack": true,
+    "tags": ["fish"],
+    "asset": "fish-creek-chub"
+  },
+  "river-perch": {
+    "name": "River Perch",
+    "description": "A striped night-feeder found in every season.",
+    "category": "fish",
+    "price": { "base": 65 },
+    "canStack": true,
+    "tags": ["fish"],
+    "asset": "fish-river-perch"
+  },
+  "rock-bass": {
+    "name": "Rock Bass",
+    "description": "Holds to stone ledges and hits hard at dawn.",
+    "category": "fish",
+    "price": { "base": 75 },
+    "canStack": true,
+    "tags": ["fish"],
+    "asset": "fish-rock-bass"
+  },
+  "catfish": {
+    "name": "Catfish",
+    "description": "A whiskered river brute that only bites in the rain.",
+    "category": "fish",
+    "price": { "base": 180 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:1", "season:2"],
+    "asset": "fish-catfish"
+  },
+  "dace": {
+    "name": "Dace",
+    "description": "A quick darter that flashes between spring and summer.",
+    "category": "fish",
+    "price": { "base": 35 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:1"],
+    "asset": "fish-dace"
+  },
+  "brook-trout": {
+    "name": "Brook Trout",
+    "description": "Warm-weather trout with rose-spotted flanks.",
+    "category": "fish",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:1"],
+    "asset": "fish-brook-trout"
+  },
+  "flounder": {
+    "name": "Flounder",
+    "description": "A muddy flat fish of the cold months.",
+    "category": "fish",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "season:3"],
+    "asset": "fish-flounder"
+  },
+  "mackerel": {
+    "name": "Mackerel",
+    "description": "A busy striped fish of the spring and fall runs.",
+    "category": "fish",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:2"],
+    "asset": "fish-mackerel"
+  },
+  "tuna": {
+    "name": "Tuna",
+    "description": "A fast, warm-bodied sea wanderer of long summer evenings.",
+    "category": "fish",
+    "price": { "base": 200 },
+    "canStack": true,
+    "tags": ["fish", "season:1", "season:2", "rare"],
+    "asset": "fish-tuna"
+  },
+  "cod": {
+    "name": "Cod",
+    "description": "A chunky cold-water cod with snow-white flesh.",
+    "category": "fish",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "season:3"],
+    "asset": "fish-cod"
   }
 }
