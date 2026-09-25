@@ -15,3 +15,10 @@ changes. Assets fetched and placed under `public/assets/` — log the source
 URL + license line here when that happens.
 
 Nothing is imported yet as of M0.
+
+- **Silkscreen** (SIL Open Font License 1.1, free) — used for the UI pixel
+  font. Loaded from Google Fonts
+  (https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700), applied
+  via src/style.css. Vendor: Jason Kottke contributor "TypeSetit", OFL 1.1;
+  no attribution required beyond retaining the license text, preserved in the
+  OFL declaration.

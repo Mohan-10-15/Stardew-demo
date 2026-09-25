@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Ember Hollow - a 3D farming and life-simulation game",
   "scripts": {
-    "dev": "vite --port 5170 --strictPort",
+    "dev": "vite --port 2026 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 5170 --strictPort",
+    "preview": "vite preview --port 2026 --strictPort",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

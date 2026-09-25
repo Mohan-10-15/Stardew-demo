@@ -1,11 +1,10 @@
 import './style.css';
 import { loadContent } from './core/content';
 import { createGameRuntime } from './core/game';
+import { JOG_UNITS_PER_SEC, WALK_SPEED_MULT } from './features/engine/sim/PlayerPosition';
 
 /** Fixed real-time budget between sim steps (one step = 10 in-game minutes). */
 export const SIM_TICK_MS = 7000;
-/** Repeat rate for held move keys (ms). */
-const MOVE_HOLD_MS = 120;
 
 interface MoveDir {
   dx: number;
@@ -47,14 +46,22 @@ async function main(): Promise<void> {
   }
 
   const held = new Set<string>();
-  const order: string[] = [];
+  const modifiers = new Set<string>();
+  let lastMove = 0;
 
-  const dispatchMove = (): void => {
-    const last = order[order.length - 1];
-    if (!last) return;
-    const dir = KEY_DIRS[last];
-    if (!dir) return;
-    runtime.store.dispatch({ type: 'player:move', payload: dir });
+  const dispatchMove = (dt: number): void => {
+    let dx = 0;
+    let dy = 0;
+    for (const key of held) {
+      const dir = KEY_DIRS[key];
+      if (dir) {
+        dx += dir.dx;
+        dy += dir.dy;
+      }
+    }
+    if (dx === 0 && dy === 0) return;
+    const speed = JOG_UNITS_PER_SEC * (modifiers.has('shift') ? WALK_SPEED_MULT : 1);
+    runtime.store.dispatch({ type: 'player:walk', payload: { dx, dy, dt: Math.min(0.1, dt), speed } });
   };
 
   window.addEventListener('keydown', (e) => {
@@ -62,11 +69,11 @@ async function main(): Promise<void> {
     const key = e.key.toLowerCase();
     if (KEY_DIRS[key]) {
       e.preventDefault();
-      if (!e.repeat && !held.has(key)) {
-        held.add(key);
-        order.push(key);
-        dispatchMove();
-      }
+      if (!e.repeat && !held.has(key)) held.add(key);
+      return;
+    }
+    if (key === 'shift') {
+      modifiers.add('shift');
       return;
     }
     if (INTERACT_KEYS.has(key)) {
@@ -77,23 +84,25 @@ async function main(): Promise<void> {
 
   window.addEventListener('keyup', (e) => {
     const key = e.key.toLowerCase();
-    if (held.delete(key)) {
-      const index = order.indexOf(key);
-      if (index >= 0) order.splice(index, 1);
-    }
+    modifiers.delete(key);
+    held.delete(key);
+  });
+
+  window.addEventListener('blur', () => {
+    held.clear();
+    modifiers.clear();
   });
 
   let last = performance.now();
   let lastTick = last;
-  let holdAccumulator = 0;
 
   const frame = (now: number): void => {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    holdAccumulator += dt * 1000;
-    if (holdAccumulator >= MOVE_HOLD_MS && !inputIsOwned()) {
-      holdAccumulator = 0;
-      dispatchMove();
+    lastMove += dt;
+    if (lastMove > 0.016 && !inputIsOwned()) {
+      lastMove = 0;
+      dispatchMove(dt);
     }
     for (const render of renderHandles) render(dt, now / 1000);
     if (now - lastTick >= SIM_TICK_MS) {

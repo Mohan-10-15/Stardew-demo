@@ -18,9 +18,24 @@ import type { MapDef, MapLegend } from '../../../core/schemas';
 
 export const WALK_ENERGY_COST = 0.02;
 
+/** Default jog speed (tiles per second) when no modifier key is held. */
+export const JOG_UNITS_PER_SEC = 4;
+/** Shift-to-walk multiplier applied to the jog speed. */
+export const WALK_SPEED_MULT = 0.6;
+
 export interface MovePayload {
   dx: number;
   dy: number;
+}
+
+/** Continuous per-frame movement payload (ADDENDUM B). Coordinates and
+ *  distances are in tile units; `speed` is units per second and `dt` the
+ *  elapsed seconds since the last dispatch. Dir may combine axes for 8-way. */
+export interface WalkPayload {
+  dx: number;
+  dy: number;
+  dt: number;
+  speed: number;
 }
 
 export interface PlayerMovedEvent {
@@ -72,15 +87,17 @@ export function facingFromDelta(dx: number, dy: number): Facing {
 }
 
 export function tileInFront(pos: WorldPos, facing: Facing): TilePos {
+  const x = Math.floor(pos.x);
+  const y = Math.floor(pos.y);
   switch (facing) {
     case 'up':
-      return { x: pos.x, y: pos.y - 1 };
+      return { x, y: y - 1 };
     case 'down':
-      return { x: pos.x, y: pos.y + 1 };
+      return { x, y: y + 1 };
     case 'left':
-      return { x: pos.x - 1, y: pos.y };
+      return { x: x - 1, y };
     case 'right':
-      return { x: pos.x + 1, y: pos.y };
+      return { x: x + 1, y };
   }
 }
 
@@ -142,6 +159,84 @@ export function playerMoveReducer(state: GameState, action: SimAction<string, un
   };
 }
 
+export function playerWalkReducer(state: GameState, action: SimAction<string, unknown>, content: ContentDb): GameState {
+  const payload = action.payload;
+  if (typeof payload !== 'object' || payload === null) return state;
+  const { dx, dy, dt, speed } = payload as WalkPayload;
+  if (typeof dt !== 'number' || !Number.isFinite(dt) || dt <= 0) return state;
+  if (typeof speed !== 'number' || !Number.isFinite(speed) || speed <= 0) return state;
+  if (dx === 0 && dy === 0) return state;
+
+  const position = state.player.position;
+  const map = state.maps[position.mapId];
+  if (!map) return state;
+  const mapDef = content.maps.get(position.mapId);
+  if (!mapDef) return state;
+
+  const facing = facingFromDelta(dx, dy);
+  const length = Math.hypot(dx, dy);
+  const ux = dx / length;
+  const uy = dy / length;
+  const dist = speed * dt;
+
+  // Axis-separated movement with continuous collision sampling: each axis is
+  // stepped in sub-tile increments so a big dt can never tunnel a one-tile
+  // wall, and the check uses the destination tile of the moving axis only (the
+  // other axis keeps its current floor) so walls stop just the axis they block
+  // and the player slides cleanly along them.
+  const MAX_STEP = 0.25;
+  type WarpTarget = { map: string; x: number; y: number };
+
+  const stepAxis = (
+    value: number,
+    delta: number,
+    check: (after: number) => { cx: number; cy: number },
+  ): { value: number; warp: WarpTarget | null } => {
+    if (delta === 0) return { value, warp: null };
+    let cursor = value;
+    let remaining = Math.abs(delta);
+    const sign = Math.sign(delta);
+    while (remaining > 0) {
+      const step = Math.min(remaining, MAX_STEP);
+      const after = cursor + sign * step;
+      const tile = check(after);
+      if (!isWalkable(map, mapDef.legend, tile.cx, tile.cy)) break;
+      const hit = resolveWarp(mapDef, tile.cx, tile.cy);
+      if (hit && state.maps[hit.map]) return { value: after, warp: hit };
+      cursor = after;
+      remaining -= step;
+    }
+    return { value: cursor, warp: null };
+  };
+
+  const xDelta = ux * dist;
+  let x = position.x;
+  let y = position.y;
+  const yDelta = uy * dist;
+  const xAxis = stepAxis(x, xDelta, (after) => ({ cx: Math.floor(after), cy: Math.floor(y) }));
+  const yAxis = xAxis.warp
+    ? null
+    : stepAxis(y, yDelta, (after) => ({ cx: Math.floor(x), cy: Math.floor(after) }));
+
+  x = xAxis.value;
+  y = xAxis.warp ? y : yAxis!.value;
+  const warpTarget = xAxis.warp ?? yAxis?.warp ?? null;
+
+  const moved = Math.hypot(x - position.x, y - position.y);
+  const energy = Math.max(0, state.player.energy - WALK_ENERGY_COST * moved);
+
+  if (warpTarget) {
+    return {
+      ...state,
+      player: { ...state.player, facing, energy, position: { mapId: warpTarget.map, x: warpTarget.x, y: warpTarget.y } },
+    };
+  }
+  return {
+    ...state,
+    player: { ...state.player, facing, energy, position: { mapId: position.mapId, x, y } },
+  };
+}
+
 export function registerEngineSim({ store, bus, content }: EngineSimDeps): void {
   store.registerReducer('player:move', (state: GameState, action: SimAction<string, unknown>, _rng: unknown): GameState => {
     const from = state.player.position;
@@ -151,6 +246,22 @@ export function registerEngineSim({ store, bus, content }: EngineSimDeps): void 
       bus.emit<PlayerWarpedEvent>('player:warped', { from: from.mapId, to: to.mapId });
     } else if (to.x !== from.x || to.y !== from.y) {
       bus.emit<PlayerMovedEvent>('player:moved', { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, mapId: to.mapId });
+    }
+    return next;
+  });
+
+  store.registerReducer('player:walk', (state: GameState, action: SimAction<string, unknown>, _rng: unknown): GameState => {
+    const from = state.player.position;
+    const next = playerWalkReducer(state, action, content);
+    const to = next.player.position;
+    if (to.mapId !== from.mapId) {
+      bus.emit<PlayerWarpedEvent>('player:warped', { from: from.mapId, to: to.mapId });
+    } else {
+      const fromTile = { x: Math.floor(from.x), y: Math.floor(from.y) };
+      const toTile = { x: Math.floor(to.x), y: Math.floor(to.y) };
+      if (toTile.x !== fromTile.x || toTile.y !== fromTile.y) {
+        bus.emit<PlayerMovedEvent>('player:moved', { from: fromTile, to: toTile, mapId: to.mapId });
+      }
     }
     return next;
   });

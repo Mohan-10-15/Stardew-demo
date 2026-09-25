@@ -15,6 +15,9 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
       events, quests + journal.
 - [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
       professions.
+- [x] ADDENDUM B: core-loop feel — distinct success/failure feedback (visual +
+      audio), continuous 8-way movement with shift-walk, wood/parchment UI
+      panels + pixel font; playtested per docs/ACCEPTANCE.md.
 - [ ] M5 Mines and combat: 40+ floors, 12+ monsters, 2 bosses, gear, checkpoints.
 - [ ] M6 Story + content completion: Heartstone progression, festivals,
       romance/marriage, collections; hit every quota (30+ crops, 30+ fish,

@@ -1,36 +1,91 @@
 /*
  * Ember Hollow UI kit + HUD styles (WORKER-3 lane).
  * Class-based, emoji-free, themeable through the engine CSS variables.
+ *
+ * Look: thick beveled wood frames on parchment, corner nail accents, and the
+ * SIL Open Font License pixel face 'Silkscreen' (see docs/ASSET_LICENSES.md).
  */
 
 :root {
-  --eh-ui-panel-bg: var(--eh-panel, rgba(24, 30, 40, 0.92));
-  --eh-ui-panel-border: var(--eh-panel-border, #3a4758);
-  --eh-ui-text: var(--eh-text, #e8e4d8);
-  --eh-ui-text-dim: var(--eh-text-dim, #9aa4b2);
-  --eh-ui-accent: var(--eh-accent, #e8a33d);
-  --eh-ui-accent-2: var(--eh-accent-2, #6fb3e8);
-  --eh-ui-health: #e05a4f;
-  --eh-ui-energy: #5bbf7a;
+  --eh-ui-panel-bg: var(--eh-panel, #4a2f18);
+  --eh-ui-panel-hi: var(--eh-panel-hi, #8a5a30);
+  --eh-ui-panel-lo: var(--eh-panel-lo, #3a2312);
+  --eh-ui-panel-border: var(--eh-panel-border, #2a1a0c);
+  --eh-ui-parchment: var(--eh-parchment, #ecd9a8);
+  --eh-ui-parchment-2: var(--eh-parchment-2, #f3e6c3);
+  --eh-ui-text: var(--eh-ink, #3a2a18);
+  --eh-ui-text-dim: var(--eh-ink-dim, #6b5538);
+  --eh-ui-accent: var(--eh-accent, #c96a2a);
+  --eh-ui-accent-2: var(--eh-accent-2, #4f83c9);
+  --eh-ui-health: #c0493f;
+  --eh-ui-energy: #4f9a63;
 }
 
 /* ---- primitives ---- */
 
 .eh-panel {
-  background: var(--eh-ui-panel-bg);
-  border: 1px solid var(--eh-ui-panel-border);
-  border-radius: 10px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  position: relative;
+  background: linear-gradient(135deg, var(--eh-ui-panel-hi) 0%, var(--eh-ui-panel-bg) 45%, var(--eh-ui-panel-lo) 100%);
+  border: 3px solid var(--eh-ui-panel-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 222, 168, 0.4),
+    inset 0 0 0 4px rgba(24, 13, 5, 0.85),
+    0 8px 22px rgba(0, 0, 0, 0.45);
   color: var(--eh-ui-text);
+  padding: 12px;
+}
+
+.eh-panel::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  border-radius: 4px;
+  background: radial-gradient(120% 130% at 20% 0%, var(--eh-ui-parchment-2) 0%, var(--eh-ui-parchment) 72%);
+  box-shadow: inset 0 0 14px rgba(122, 82, 42, 0.4);
+}
+
+.eh-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.eh-panel::after,
+.eh-dialog::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, var(--eh-ui-panel-lo), var(--eh-ui-panel-lo)),
+    linear-gradient(180deg, var(--eh-ui-panel-lo), var(--eh-ui-panel-lo)),
+    linear-gradient(180deg, var(--eh-ui-panel-lo), var(--eh-ui-panel-lo)),
+    linear-gradient(180deg, var(--eh-ui-panel-lo), var(--eh-ui-panel-lo));
+  background-size: 7px 7px;
+  background-repeat: no-repeat;
+  background-position:
+    top left,
+    top right,
+    bottom left,
+    bottom right;
 }
 
 .eh-button {
   appearance: none;
-  border: 1px solid var(--eh-ui-panel-border);
-  border-radius: 8px;
-  background: rgba(16, 20, 26, 0.6);
-  color: var(--eh-ui-text);
+  border: 2px solid var(--eh-ui-panel-border);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--eh-ui-panel-hi), var(--eh-ui-panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 222, 168, 0.5),
+    inset 0 -2px 0 rgba(24, 13, 5, 0.6);
+  color: #f3e6c3;
   font: inherit;
+  font-size: 13px;
   padding: 6px 14px;
   cursor: pointer;
 }
@@ -70,9 +125,12 @@
   z-index: 300;
   max-width: 240px;
   white-space: pre-line;
-  background: rgba(10, 14, 20, 0.96);
-  border: 1px solid var(--eh-ui-panel-border);
-  border-radius: 8px;
+  background: var(--eh-ui-parchment);
+  border: 2px solid var(--eh-ui-panel-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 222, 168, 0.5),
+    0 4px 14px rgba(0, 0, 0, 0.45);
   padding: 7px 10px;
   color: var(--eh-ui-text);
   font-size: 13px;
@@ -89,7 +147,7 @@
 .eh-tablist {
   display: flex;
   gap: 4px;
-  border-bottom: 1px solid var(--eh-ui-panel-border);
+  border-bottom: 2px solid var(--eh-ui-panel-lo);
 }
 
 .eh-tab {
@@ -136,7 +194,7 @@
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(5, 8, 12, 0.6);
+  background: rgba(8, 5, 2, 0.62);
 }
 
 .eh-dialog-backdrop.is-open {
@@ -144,16 +202,36 @@
 }
 
 .eh-dialog {
+  position: relative;
   min-width: 320px;
   max-width: min(520px, 90vw);
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: var(--eh-ui-panel-bg);
-  border: 1px solid var(--eh-ui-panel-border);
-  border-radius: 12px;
-  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, var(--eh-ui-panel-hi) 0%, var(--eh-ui-panel-bg) 45%, var(--eh-ui-panel-lo) 100%);
+  border: 3px solid var(--eh-ui-panel-border);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 222, 168, 0.4),
+    inset 0 0 0 4px rgba(24, 13, 5, 0.85),
+    0 12px 42px rgba(0, 0, 0, 0.5);
   color: var(--eh-ui-text);
+}
+
+.eh-dialog::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  border-radius: 4px;
+  background: radial-gradient(120% 130% at 20% 0%, var(--eh-ui-parchment-2) 0%, var(--eh-ui-parchment) 72%);
+  box-shadow: inset 0 0 14px rgba(122, 82, 42, 0.4);
+}
+
+.eh-dialog-header,
+.eh-dialog-body {
+  position: relative;
+  z-index: 1;
 }
 
 .eh-dialog-header {
@@ -161,8 +239,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--eh-ui-panel-border);
+  padding: 12px 14px 8px;
 }
 
 .eh-dialog-title {
@@ -172,10 +249,10 @@
 
 .eh-dialog-close {
   appearance: none;
-  border: 1px solid var(--eh-ui-panel-border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--eh-ui-text-dim);
+  border: 2px solid var(--eh-ui-panel-border);
+  border-radius: 5px;
+  background: var(--eh-ui-panel-lo);
+  color: var(--eh-ui-parchment-2);
   font: inherit;
   font-size: 12px;
   padding: 3px 10px;
@@ -183,13 +260,13 @@
 }
 
 .eh-dialog-close:hover {
-  color: var(--eh-ui-text);
+  color: var(--eh-ui-parchment-2);
   border-color: var(--eh-ui-accent);
 }
 
 .eh-dialog-body {
   overflow: auto;
-  padding: 12px 14px;
+  padding: 4px 14px 14px;
 }
 
 /* ---- HUD ---- */
@@ -219,47 +296,47 @@
 
 .eh-hud-clock {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .eh-hud-weather {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 1px 10px;
   font-size: 12px;
-  border: 1px solid var(--eh-ui-panel-border);
-  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--eh-ui-panel-border);
+  background: rgba(122, 82, 42, 0.18);
 }
 
 .eh-weather-sun {
-  color: #ffd27a;
+  color: #b56a12;
   border-color: #8a6a2a;
 }
 
 .eh-weather-rain {
-  color: #9ec7ef;
+  color: #35689a;
   border-color: #35597e;
 }
 
 .eh-weather-storm {
-  color: #cbb4f0;
+  color: #5b4a82;
   border-color: #5b4a82;
 }
 
 .eh-weather-snow {
-  color: #e6f2ff;
+  color: #55708f;
   border-color: #6b83a1;
 }
 
 .eh-weather-wind {
-  color: #b8c8b0;
+  color: #55715a;
   border-color: #5d7355;
 }
 
 .eh-hud-money {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--eh-ui-accent);
 }
 
@@ -289,9 +366,10 @@
 .eh-bar-track {
   height: 12px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(42, 26, 12, 0.75);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(24, 13, 5, 0.9);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .eh-bar-fill {
@@ -318,7 +396,7 @@
 .eh-hud-shipping {
   font-size: 12px;
   color: var(--eh-ui-text-dim);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(42, 26, 12, 0.5);
   padding-top: 6px;
 }
 
@@ -356,7 +434,10 @@
   padding: 4px;
   border: 2px solid var(--eh-ui-panel-border);
   border-radius: 8px;
-  background: rgba(16, 20, 26, 0.78);
+  background: linear-gradient(180deg, var(--eh-ui-parchment-2), var(--eh-ui-parchment));
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 222, 168, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
   color: var(--eh-ui-text);
   font: inherit;
   font-size: 12px;
@@ -371,7 +452,9 @@
 
 .eh-slot.is-selected {
   border-color: var(--eh-ui-accent);
-  box-shadow: 0 0 0 2px rgba(232, 163, 61, 0.45);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 222, 168, 0.6),
+    0 0 0 3px rgba(201, 106, 42, 0.5);
 }
 
 .eh-slot-dragging {
@@ -393,7 +476,7 @@
   right: 2px;
   bottom: 1px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--eh-ui-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
@@ -425,7 +508,7 @@
 
 .eh-summary-section {
   margin-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(42, 26, 12, 0.4);
   padding-top: 6px;
 }
 
@@ -467,7 +550,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--eh-ui-text-dim);
-  border-bottom: 1px solid var(--eh-ui-panel-border);
+  border-bottom: 1px solid rgba(42, 26, 12, 0.4);
   padding-bottom: 3px;
   margin-top: 4px;
 }
@@ -533,9 +616,10 @@
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.55);
+  border: 2px solid var(--eh-ui-panel-lo);
   border-radius: 50%;
-  color: #17202a;
+  color: var(--eh-ui-parchment-2);
+  background: var(--eh-ui-panel-bg);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -603,8 +687,9 @@
   justify-content: space-between;
   gap: 14px;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border: 1px solid rgba(42, 26, 12, 0.45);
+  border-radius: 6px;
+  background: rgba(243, 230, 195, 0.35);
 }
 
 .eh-journal-row-copy {
@@ -618,7 +703,7 @@
 .eh-journal-row-main {
   margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--eh-ui-text);
 }
 
@@ -638,11 +723,11 @@
 }
 
 .eh-journal-status-available {
-  color: #9ad0a8;
+  color: #3f7a52;
 }
 
 .eh-journal-status-ready {
-  color: #f3cf7a;
+  color: #a06a12;
   font-weight: 700;
 }
 
@@ -653,13 +738,13 @@
   margin-top: 6px;
   overflow: hidden;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(42, 26, 12, 0.35);
 }
 
 .eh-journal-hearts-fill {
   height: 100%;
   border-radius: 5px;
-  background: linear-gradient(90deg, #c0608a, #e87f6e);
+  background: linear-gradient(90deg, #a0526f, #c96a7a);
   transition: width 160ms ease;
 }
 

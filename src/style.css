@@ -1,12 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap');
+
 :root {
-  --eh-bg: #10141a;
-  --eh-panel: rgba(24, 30, 40, 0.92);
-  --eh-panel-border: #3a4758;
-  --eh-text: #e8e4d8;
-  --eh-text-dim: #9aa4b2;
-  --eh-accent: #e8a33d;
-  --eh-accent-2: #6fb3e8;
-  color-scheme: dark;
+  --eh-bg: #1b1308;
+  --eh-panel: #4a2f18;
+  --eh-panel-border: #2a1a0c;
+  --eh-panel-hi: #8a5a30;
+  --eh-panel-lo: #3a2312;
+  --eh-parchment: #ecd9a8;
+  --eh-parchment-2: #f3e6c3;
+  --eh-ink: #3a2a18;
+  --eh-ink-dim: #6b5538;
+  --eh-text: var(--eh-ink);
+  --eh-text-dim: var(--eh-ink-dim);
+  --eh-accent: #c96a2a;
+  --eh-accent-2: #4f83c9;
+  --eh-health: #c0493f;
+  --eh-energy: #4f9a63;
+  color-scheme: light;
 }
 
 * {
@@ -21,7 +31,7 @@ body {
   overflow: hidden;
   background: var(--eh-bg);
   color: var(--eh-text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Silkscreen', 'Courier New', monospace;
   user-select: none;
   -webkit-user-select: none;
 }
