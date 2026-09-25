@@ -1,0 +1,52 @@
+{
+  "mayonnaise-machine": {
+    "name": "Mayonnaise Machine",
+    "kind": "crafting",
+    "output": { "itemId": "mayonnaise-machine", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 20 }, { "itemId": "fiber", "qty": 5 }],
+    "unlock": { "skill": "foraging", "level": 2 }
+  },
+  "cheese-press": {
+    "name": "Cheese Press",
+    "kind": "crafting",
+    "output": { "itemId": "cheese-press", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 25 }, { "itemId": "stone", "qty": 10 }],
+    "unlock": { "skill": "farming", "level": 3 }
+  },
+  "loom": {
+    "name": "Loom",
+    "kind": "crafting",
+    "output": { "itemId": "loom", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 15 }, { "itemId": "fiber", "qty": 10 }],
+    "unlock": { "skill": "foraging", "level": 4 }
+  },
+  "seed-maker": {
+    "name": "Seed Maker",
+    "kind": "crafting",
+    "output": { "itemId": "seed-maker", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 20 }, { "itemId": "stone", "qty": 12 }, { "itemId": "fiber", "qty": 5 }],
+    "unlock": { "skill": "farming", "level": 2 }
+  },
+  "fried-egg": {
+    "name": "Fried Egg",
+    "kind": "cooking",
+    "output": { "itemId": "fried-egg", "qty": 1 },
+    "ingredients": [{ "itemId": "egg", "qty": 1 }],
+    "food": { "energy": 20, "health": 8, "buffs": [] }
+  },
+  "cheese-omelette": {
+    "name": "Cheese Omelette",
+    "kind": "cooking",
+    "output": { "itemId": "cheese-omelette", "qty": 1 },
+    "ingredients": [{ "itemId": "egg", "qty": 1 }, { "itemId": "milk", "qty": 1 }, { "itemId": "cheese", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 4 },
+    "food": { "energy": 40, "health": 18, "buffs": [{ "stat": "farming", "amount": 1, "hours": 2 }] }
+  },
+  "ember-bloom-tea": {
+    "name": "Ember Bloom Tea",
+    "kind": "cooking",
+    "output": { "itemId": "ember-bloom-tea", "qty": 1 },
+    "ingredients": [{ "itemId": "ember-bloom", "qty": 1 }, { "itemId": "fiber", "qty": 3 }],
+    "food": { "energy": 15, "health": 6, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  }
+}

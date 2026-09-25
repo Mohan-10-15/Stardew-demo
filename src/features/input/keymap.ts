@@ -6,7 +6,8 @@
  * Keys are normalized lowercase; the spacebar normalizes to 'space', arrows to
  * 'arrowup'|'arrowdown'|'arrowleft'|'arrowright'. Every key in the table maps
  * to one action: either a sim action (m1-contracts §3) or a UI bus event such
- * as 'shop' -> `ui:open-shop` (m2-contracts §2).
+ * such as 'shop' -> `ui:open-shop` (m2-contracts §2) and 'crafting' ->
+ * `ui:open-crafting` (m4-contracts §4).
  */
 
 export interface MoveInputAction {
@@ -32,12 +33,17 @@ export interface JournalInputAction {
   type: 'journal';
 }
 
+export interface CraftingInputAction {
+  type: 'crafting';
+}
+
 export type InputAction =
   | MoveInputAction
   | InteractInputAction
   | SelectSlotInputAction
   | ShopInputAction
-  | JournalInputAction;
+  | JournalInputAction
+  | CraftingInputAction;
 
 export interface KeyBinding {
   /** Normalized keys that trigger this action. */
@@ -67,6 +73,7 @@ export const DEFAULT_KEYMAP: readonly KeyBinding[] = [
   { keys: ['space', 'e'], action: { type: 'interact' } },
   { keys: ['f'], action: { type: 'shop' } },
   { keys: ['j'], action: { type: 'journal' } },
+  { keys: ['c'], action: { type: 'crafting' } },
   ...SLOT_BINDINGS,
 ];
 
@@ -103,6 +110,8 @@ export function actionToSim(action: InputAction): InputSimAction | null {
     case 'shop':
       return null;
     case 'journal':
+      return null;
+    case 'crafting':
       return null;
   }
 }

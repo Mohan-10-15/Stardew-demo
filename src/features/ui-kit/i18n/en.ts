@@ -134,6 +134,20 @@ export const en = {
     skillLevel: '{skill} · Level {level}',
     xp: '{xp} xp',
   },
+  crafting: {
+    title: 'Crafting',
+    sectionCrafts: 'Crafting',
+    sectionCooking: 'Cooking',
+    craft: 'Craft',
+    qtyBadge: 'x{qty}',
+    unlockAt: 'Unlocks at {skill} Level {level}',
+    ingredients: '{ingredients}',
+    foodStats: '+{energy} energy · +{health} health',
+    buffLine: '{stat} +{amount} ({hours}h)',
+    shortBadge: ' (have {have})',
+    noRecipes: 'No recipes here yet.',
+    unknownItem: 'Unknown item',
+  },
 } as const;
 
 export type Messages = typeof en;

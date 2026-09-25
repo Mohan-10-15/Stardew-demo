@@ -409,6 +409,12 @@ describe('input keymap', () => {
     expect(normalizeKey('F')).toBe('f');
     expect(actionToSim({ type: 'shop' })).toBeNull();
   });
+
+  it('binds the crafting action to c and resolves no sim action for it', () => {
+    expect(findBinding('c')?.action).toEqual({ type: 'crafting' });
+    expect(normalizeKey('C')).toBe('c');
+    expect(actionToSim({ type: 'crafting' })).toBeNull();
+  });
 });
 
 describe('HUD constants', () => {

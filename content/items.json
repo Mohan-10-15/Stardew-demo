@@ -703,5 +703,95 @@
     "canStack": true,
     "tags": ["animal_product"],
     "asset": "product-wool"
+  },
+  "mayonnaise": {
+    "name": "Mayonnaise",
+    "description": "Silky, golden mayo pressed from a fresh farm egg.",
+    "category": "animal_product",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["animal_product", "processed"],
+    "asset": "product-mayonnaise"
+  },
+  "cheese": {
+    "name": "Cheese",
+    "description": "A pressed wheel of tangy farm cheese.",
+    "category": "animal_product",
+    "price": { "base": 200 },
+    "canStack": true,
+    "tags": ["animal_product", "processed"],
+    "asset": "product-cheese"
+  },
+  "cloth": {
+    "name": "Cloth",
+    "description": "A soft woven bolt made from farm wool.",
+    "category": "animal_product",
+    "price": { "base": 250 },
+    "canStack": true,
+    "tags": ["animal_product", "processed"],
+    "asset": "product-cloth"
+  },
+  "fried-egg": {
+    "name": "Fried Egg",
+    "description": "Golden and crispy at the edges. Quick comfort food.",
+    "category": "cooking",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-fried-egg"
+  },
+  "cheese-omelette": {
+    "name": "Cheese Omelette",
+    "description": "Fluffy eggs folded around melted farm cheese.",
+    "category": "cooking",
+    "price": { "base": 140 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-cheese-omelette"
+  },
+  "ember-bloom-tea": {
+    "name": "Ember Bloom Tea",
+    "description": "Smoky, reassuring tea brewed from Ember Blooms.",
+    "category": "cooking",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ember-bloom-tea"
+  },
+  "mayonnaise-machine": {
+    "name": "Mayonnaise Machine",
+    "description": "Presses eggs into golden mayonnaise.",
+    "category": "machine",
+    "price": { "base": 1000 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-mayonnaise"
+  },
+  "cheese-press": {
+    "name": "Cheese Press",
+    "description": "Curds fresh milk into pressed cheese.",
+    "category": "machine",
+    "price": { "base": 1200 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-cheese-press"
+  },
+  "loom": {
+    "name": "Loom",
+    "description": "Weaves thick farm wool into soft cloth.",
+    "category": "machine",
+    "price": { "base": 1400 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-loom"
+  },
+  "seed-maker": {
+    "name": "Seed Maker",
+    "description": "Sifts one crop into its own seeds.",
+    "category": "machine",
+    "price": { "base": 900 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-seed-maker"
   }
 }
