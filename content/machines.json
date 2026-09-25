@@ -1,0 +1,26 @@
+{
+  "mayonnaise-machine": {
+    "name": "Mayonnaise Machine",
+    "input": [{ "itemId": "egg", "qty": 1 }],
+    "output": [{ "itemId": "mayonnaise", "qty": 1 }],
+    "hours": 3
+  },
+  "cheese-press": {
+    "name": "Cheese Press",
+    "input": [{ "itemId": "milk", "qty": 1 }],
+    "output": [{ "itemId": "cheese", "qty": 1 }],
+    "hours": 4
+  },
+  "loom": {
+    "name": "Loom",
+    "input": [{ "itemId": "wool", "qty": 1 }],
+    "output": [{ "itemId": "cloth", "qty": 1 }],
+    "hours": 5
+  },
+  "seed-maker": {
+    "name": "Seed Maker",
+    "input": [{ "itemId": "parsnip", "qty": 1 }],
+    "output": [{ "itemId": "parsnip-seed", "qty": 1 }],
+    "hours": 1
+  }
+}

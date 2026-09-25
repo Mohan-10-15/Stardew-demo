@@ -593,6 +593,67 @@
   text-align: right;
 }
 
+.eh-crafting-dialog .eh-dialog {
+  min-width: 380px;
+  max-width: min(560px, 92vw);
+}
+
+.eh-crafting {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eh-crafting-line {
+  font-size: 13px;
+}
+
+.eh-crafting-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eh-ui-text-dim);
+  border-bottom: 1px solid rgba(42, 26, 12, 0.4);
+  padding-bottom: 3px;
+  margin-top: 4px;
+}
+
+.eh-crafting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.eh-crafting-row.is-locked {
+  opacity: 0.55;
+}
+
+.eh-crafting-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.eh-crafting-item {
+  font-size: 13px;
+}
+
+.eh-crafting-meta {
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eh-crafting-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .eh-dialogue-dialog .eh-dialog {
   min-width: 340px;
   max-width: min(620px, 92vw);
