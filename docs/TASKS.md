@@ -1,4 +1,4 @@
-# Ember Hollow â€” Task Index
+# Ember Hollow - Task Index
 
 Format: `T-#### | lane | title | status`. Status: DONE | TODO | BLOCKED.
 Milestones are committed only when `npm run check` is green AND the matching
@@ -23,3 +23,5 @@ docs/ACCEPTANCE.md script rows pass.
 | T-0403 | sim | M4 animals: buy, feed daily, hunger, heart growth, product + quality from friendship/happiness | TODO |
 | T-0404 | sim+ui | M4 crafting/cooking/machinery: recipes from unlocks, cook once + eat buff, machine processes (keg/preserves/etc.), crafting UI | TODO |
 | T-0405 | ui | M4 skills panel + fishing/animal/machine UI affordances + buff display | TODO |
+| T-0406 | world | M4.9 first-person "Minecraft-POV" voxel presentation: block columns (water rims/pools, trees, houses) + eye-level camera, mouse look, F toggle over the 2D sim | DONE (6e04002) |
+| T-0460 | ui | M4.9 original procedural WebAudio soundtrack: day/night/season/weather/biome/combat loops + audio settings | TODO |

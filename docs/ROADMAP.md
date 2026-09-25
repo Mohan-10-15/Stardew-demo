@@ -15,6 +15,11 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
       events, quests + journal.
 - [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
       professions.
+- [ ] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
+      voxel presentation over the 2D sim world (T-0406 renderer landed; polish:
+      placed-object blending, pointer-lock look, terrain height), original
+      procedural WebAudio soundtrack — day/night/season/weather/biome/combat
+      loops (T-0460), audio settings.
 - [x] ADDENDUM B: core-loop feel — distinct success/failure feedback (visual +
       audio), continuous 8-way movement with shift-walk, wood/parchment UI
       panels + pixel font; playtested per docs/ACCEPTANCE.md.

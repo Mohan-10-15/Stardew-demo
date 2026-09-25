@@ -80,6 +80,8 @@ buff food changes stats · skill level unlocks recipe + profession at 5/10.
 | Buy an animal, feed it daily, hunger + heart growth, product quality from friendship | TODO | T-0403 (animals.json + animals:sim) |
 | Machine processes convert inputs over time (keg/preserves/etc.) | TODO | T-0404 (machines.json + machines:sim) |
 | Cooked food applies a timed stat buff when eaten | TODO | T-0404 (recipes.json cooking kind + buffs) |
+| First-person voxel presentation: F-switch camera + block world over the same sim map (browser polish: placed-object blending, pointer-lock look) | browser (deferred — sim math PASS) | tests/view/voxel.test.ts (voxelColumns: house/tree/water/rim rules on real maps; pose: facing yaw, look vector, pitch clamp, head-bob) |
+| Original procedural soundtrack: day/night/season/weather/biome + combat loops change with context | TODO | T-0460 (audio:sim/music module + settings) |
 
 ## M5 — Mines & combat (pending)
 
