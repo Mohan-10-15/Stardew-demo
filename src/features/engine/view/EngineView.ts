@@ -54,6 +54,7 @@ const BURST_COLOR: Record<ToolKind, number> = {
   axe: 0x8a7a5a,
   pickaxe: 0x96908a,
   scythe: 0x7dbe63,
+  fishing: 0x4fb5c8,
   hands: 0x6fae49,
 };
 
@@ -227,12 +228,43 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     failFlashT = FAIL_FLASH_SECONDS;
   }
 
+  // Fishing bobber: a pulsing float shown at the cast tile while the fishing
+  // line is out, driven purely by bus events from fishing:sim.
+  const bobberMat = new THREE.MeshStandardMaterial({ color: 0xd94f4f });
+  const bobber = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), bobberMat);
+  bobber.visible = false;
+  scene.add(bobber);
+  let bobberMapId: string | null = null;
+
+  function hideBobber(): void {
+    bobberMapId = null;
+    bobber.visible = false;
+  }
+
+  function onFishingCast(payload: { tile: { mapId: string; x: number; y: number } }): void {
+    const map = ctx.store.state.maps[payload.tile.mapId];
+    if (!map) return;
+    bobberMapId = payload.tile.mapId;
+    bobber.position.copy(worldPos(map, payload.tile.x, payload.tile.y));
+    bobber.position.y = 0.18;
+    bobber.visible = true;
+  }
+
   let npcRebuildPending = false;
   const offWarp = ctx.bus.on('player:warped', () => {
     npcRebuildPending = true;
+    hideBobber();
   });
   const offUsed = ctx.bus.on('tool:used', onToolUsed);
   const offFail = ctx.bus.on('tool:failed', onToolFailed);
+  const offCast = ctx.bus.on('fishing:cast', onFishingCast);
+  const offBite = ctx.bus.on('fishing:bite', () => {
+    bobberBob = Math.PI; // quick excited pulse on the bite strike
+  });
+  const offHide = ctx.bus.on('fishing:caught', hideBobber);
+  const offEscape = ctx.bus.on('fishing:escaped', hideBobber);
+  const offCancel = ctx.bus.on('fishing:reel-cancel', hideBobber);
+  const offNoFish = ctx.bus.on('fishing:no-fish', hideBobber);
 
   let disposed = false;
   let zoom = 1;
@@ -705,6 +737,24 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     updatePrecipitation(dt, state);
   }
 
+  let bobberBob = 0;
+
+  /** Bob the float gently; hide it if the player left the bobber's map. */
+  function updateBobber(dt: number, state: GameState): void {
+    if (!bobber.visible) return;
+    if (bobberMapId === null || bobberMapId !== state.player.position.mapId) {
+      hideBobber();
+      return;
+    }
+    const map = state.maps[bobberMapId];
+    if (!map) {
+      hideBobber();
+      return;
+    }
+    bobberBob += dt;
+    bobber.position.y = 0.16 + Math.sin(bobberBob * 3.2) * 0.03;
+  }
+
   function render(dt: number, _time: number): void {
     const state = ctx.store.state;
     if (currentMapId === null && !state.maps[state.player.position.mapId]) return;
@@ -717,6 +767,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     updatePlayer(dt, state);
     updateHighlight(state);
     updateEffects(dt);
+    updateBobber(dt, state);
     updateCamera(dt);
     updateLighting(state);
     updateAtmosphere(state);
@@ -747,6 +798,15 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     offWarp();
     offUsed();
     offFail();
+    offCast();
+    offBite();
+    offHide();
+    offEscape();
+    offCancel();
+    offNoFish();
+    scene.remove(bobber);
+    bobber.geometry.dispose();
+    bobberMat.dispose();
     for (const p of particles) {
       fxLayer.remove(p.mesh);
       p.mesh.geometry.dispose();

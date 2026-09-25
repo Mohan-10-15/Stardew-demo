@@ -29,10 +29,12 @@ import { applyFarmRollover, applyForageRoll } from './rollover';
 import { bumpStat, FORAGE_XP, HARVEST_XP } from './summary';
 import { cropIdOf, FORAGE_PREFIX, tileKey } from './utils';
 
-export type ToolKind = 'hoe' | 'watering' | 'axe' | 'pickaxe' | 'scythe' | 'hands';
+export type ToolKind = 'hoe' | 'watering' | 'axe' | 'pickaxe' | 'scythe' | 'fishing' | 'hands';
 
-/** Energy cost per successful-or-wasted swing (contract section 5). */
-export const TOOL_COST: Record<Exclude<ToolKind, 'hands'>, number> = {
+/** Energy cost per successful-or-wasted swing (contract section 5). Rods
+ *  (kind 'fishing') are resolved by fishing:sim, which claims the bus
+ *  `tool:use-requested` event for rod tools — no energy is spent here. */
+export const TOOL_COST: Record<Exclude<ToolKind, 'hands' | 'fishing'>, number> = {
   hoe: 6,
   watering: 4,
   axe: 8,
@@ -53,6 +55,7 @@ export function toolKindOf(toolId: string): ToolKind {
   if (toolId.startsWith('axe-')) return 'axe';
   if (toolId.startsWith('pickaxe-')) return 'pickaxe';
   if (toolId.startsWith('scythe-')) return 'scythe';
+  if (toolId.startsWith('fishing-rod-')) return 'fishing';
   return 'hands';
 }
 
@@ -335,6 +338,10 @@ export function applyToolUse(
     row.bus.emit<ToolFailedEvent>('tool:failed', { tile, toolId, reason: 'frozen' });
     return state;
   }
+
+  // Rod tools belong to fishing:sim, which resolves them via its own bus
+  // subscription and emits its own events. Avoid a spurious tool:failed here.
+  if (kind === 'fishing') return state;
 
   if (kind === 'hands') {
     const { state: st, effect, reason } = applyHands(state, tile, toolId, rng, row);
