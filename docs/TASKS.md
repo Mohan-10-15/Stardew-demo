@@ -17,8 +17,8 @@ docs/ACCEPTANCE.md script rows pass.
 | T-0303 | people | M3 quests: quest board NPC, quest content, accept/complete/turn-in, journal UI (quests + hearts tabs) | DONE (1c32b36) |
 | T-0304 | sim | M3 seasonal shop stock + Friday traveling merchant (content + sim, seeded) | DONE (1c32b36) |
 | T-AB01 | all | ADDENDUM B: core-loop feel (tool feedback split, engine FX, continuous walk, audio:ui, ui-kit restyle) | DONE (ba709e9) |
-| T-0400 | core | M4 contracts + schemas (skills, fishing, animals, machines) + ACCEPTANCE.md M4 rows | DONE (in-progress commit) |
-| T-0401 | sim | M4 skills + XP: earning farming/foraging/mining/fishing/combat levels, unlocks at 5 + one profession at 5/10 (profession buff effects land in T-0404) | DONE (in-progress commit) |
+| T-0400 | core | M4 contracts + schemas (skills, fishing, animals, machines) + ACCEPTANCE.md M4 rows | DONE (23a72d9) |
+| T-0401 | sim | M4 skills + XP: earning farming/foraging/mining/fishing/combat levels, unlocks at 5 + one profession at 5/10 (profession buff effects land in T-0404) | DONE (23a72d9) |
 | T-0402 | sim+world | M4 fishing: 30+ fish content, seasons/time gating, cast/wait/hook mini-loop (sim), water bobber visual (world) | TODO |
 | T-0403 | sim | M4 animals: buy, feed daily, hunger, heart growth, product + quality from friendship/happiness | TODO |
 | T-0404 | sim+ui | M4 crafting/cooking/machinery: recipes from unlocks, cook once + eat buff, machine processes (keg/preserves/etc.), crafting UI | TODO |
