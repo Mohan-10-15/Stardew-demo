@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import { defineFeature, type FeatureContext, type ViewHandle } from '../../../core/feature';
 import type { GameState, MapState, SeasonIndex } from '../../../core/types';
+import type { MapLegend } from '../../../core/schemas';
 import { tileInFront, isWalkable } from '../sim/PlayerPosition';
 import { toolKindOf, type ToolKind } from '../../farming/sim/FarmingSim';
 import {
@@ -32,6 +33,16 @@ import {
   type HouseSpan,
 } from './assets';
 import { NpcView } from './npcs';
+import {
+  clampPitch,
+  EYE_HEIGHT,
+  headBob,
+  LOOK_SPEED,
+  lookVector,
+  voxelColumns,
+  yawOfFacing,
+  type VoxelKind,
+} from './voxel';
 
 const CAM_PITCH = (57 * Math.PI) / 180;
 const CAM_YAW = Math.PI / 4;
@@ -185,6 +196,28 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   highlight.visible = false;
   scene.add(groundLayer, placedLayer, npcView.group, player, highlight);
 
+  // First-person "voxel" presentation layer (see ./voxel.ts): block columns
+  // for water pools, rim walls, trees and houses. Rebuilt with the ground;
+  // only visible while the first-person camera is active.
+  const voxelGroup = new THREE.Group();
+  scene.add(voxelGroup);
+  const VOXEL_MATERIALS: Record<VoxelKind, THREE.MeshLambertMaterial> = {
+    grass: new THREE.MeshLambertMaterial({ color: 0x61913d, name: 'voxel-grass' }),
+    soil: new THREE.MeshLambertMaterial({ color: 0x7a5637, name: 'voxel-soil' }),
+    path: new THREE.MeshLambertMaterial({ color: 0xcfbd93, name: 'voxel-path' }),
+    water: new THREE.MeshLambertMaterial({
+      color: 0x2f6f8f,
+      name: 'voxel-water',
+      transparent: true,
+      opacity: 0.86,
+    }),
+    'water-wall': new THREE.MeshLambertMaterial({ color: 0x5a4a38, name: 'voxel-wall' }),
+    'tree-trunk': new THREE.MeshLambertMaterial({ color: 0x6b4a2f, name: 'voxel-trunk' }),
+    'tree-crown': new THREE.MeshLambertMaterial({ color: 0x4a6b31, name: 'voxel-crown' }),
+    house: new THREE.MeshLambertMaterial({ color: 0xd9b38c, name: 'voxel-house' }),
+  };
+  voxelGroup.visible = false;
+
   const fxLayer = new THREE.Group();
   scene.add(fxLayer);
   interface FxParticle {
@@ -257,6 +290,9 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   });
   const offUsed = ctx.bus.on('tool:used', onToolUsed);
   const offFail = ctx.bus.on('tool:failed', onToolFailed);
+  const offMode = ctx.bus.on('view:camera-mode', (payload: { mode: 'top' | 'first' }) => {
+    if (payload && (payload.mode === 'top' || payload.mode === 'first')) setCameraMode(payload.mode);
+  });
   const offCast = ctx.bus.on('fishing:cast', onFishingCast);
   const offBite = ctx.bus.on('fishing:bite', () => {
     bobberBob = Math.PI; // quick excited pulse on the bite strike
@@ -273,6 +309,11 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const placedMesh = new Map<string, THREE.Object3D>();
   const groundMatsRef: { mats: GroundMaterials | null } = { mats: null };
   let seasonApplied: SeasonIndex | null = null;
+
+  let firstPerson = false;
+  const lookPose = { yaw: 0, pitch: 0 };
+  let bobPhase = 0;
+  const prevPlayerEye = new THREE.Vector3();
 
   const worldPos = (map: MapState, col: number, row: number): THREE.Vector3 =>
     new THREE.Vector3(
@@ -387,6 +428,20 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
         ((span.minRow + span.maxRow) / 2 - (height - 1) / 2) * GRID_CELL,
       );
       groundLayer.add(house);
+    }
+    rebuildVoxels(map, legend);
+  }
+
+  function rebuildVoxels(map: MapState, legend: MapLegend): void {
+    disposeGroup(voxelGroup);
+    for (const box of voxelColumns(map, legend)) {
+      const mat = VOXEL_MATERIALS[box.kind];
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, box.h, 1), mat);
+      const p = worldPos(map, box.col, box.row);
+      mesh.position.set(p.x, box.baseY + box.h / 2, p.z);
+      mesh.castShadow = box.kind === 'house' || box.kind === 'tree-crown' || box.kind === 'water-wall';
+      mesh.receiveShadow = box.kind !== 'water';
+      voxelGroup.add(mesh);
     }
   }
 
@@ -590,6 +645,33 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     camera.lookAt(target);
   }
 
+  /** Eye-level camera: sits on the player, looks along yaw/pitch, bobs while walking. */
+  function updateFirstPersonCamera(dt: number, state: GameState): void {
+    const map = state.maps[state.player.position.mapId];
+    if (!map) return;
+    if (player.position.distanceToSquared(prevPlayerEye) > 1e-6) bobPhase += dt * 9;
+    prevPlayerEye.copy(player.position);
+    const eye = player.position.clone();
+    eye.y = EYE_HEIGHT + headBob(bobPhase);
+    const dir = lookVector(lookPose);
+    camera.position.copy(eye);
+    camera.lookAt(eye.x + dir.x, eye.y + dir.y, eye.z + dir.z);
+  }
+
+  /** Toggle 'top' (follow) / 'first' (eye) presentation. */
+  function setCameraMode(mode: 'top' | 'first'): void {
+    const on = mode === 'first';
+    if (on === firstPerson) return;
+    firstPerson = on;
+    groundLayer.visible = !firstPerson;
+    voxelGroup.visible = firstPerson;
+    if (firstPerson) {
+      zoom = 1;
+      lookPose.yaw = yawOfFacing(ctx.store.state.player.facing);
+      lookPose.pitch = 0;
+    }
+  }
+
   const lightDay = new THREE.Color();
   const lightNight = new THREE.Color();
   const ambientDay = new THREE.Color();
@@ -768,7 +850,11 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     updateHighlight(state);
     updateEffects(dt);
     updateBobber(dt, state);
-    updateCamera(dt);
+    if (firstPerson) {
+      updateFirstPersonCamera(dt, state);
+    } else {
+      updateCamera(dt);
+    }
     updateLighting(state);
     updateAtmosphere(state);
     renderer.render(scene, camera);
@@ -784,20 +870,36 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
   function onWheel(e: WheelEvent): void {
     e.preventDefault();
+    if (firstPerson) return; // free-look mode: wheel does not zoom
     zoom = THREE.MathUtils.clamp(zoom * Math.exp(-e.deltaY * 0.0016), ZOOM_MIN, ZOOM_MAX);
+  }
+
+  function onModeKey(e: KeyboardEvent): void {
+    if (e.code === 'KeyF') setCameraMode(firstPerson ? 'top' : 'first');
+  }
+
+  function onLook(e: MouseEvent): void {
+    if (!firstPerson) return;
+    lookPose.yaw -= e.movementX * LOOK_SPEED;
+    lookPose.pitch = clampPitch(lookPose.pitch - e.movementY * LOOK_SPEED);
   }
 
   window.addEventListener('resize', onResize);
   renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onModeKey);
+  window.addEventListener('mousemove', onLook);
 
   function dispose(): void {
     if (disposed) return;
     disposed = true;
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
+    window.removeEventListener('keydown', onModeKey);
+    window.removeEventListener('mousemove', onLook);
     offWarp();
     offUsed();
     offFail();
+    offMode();
     offCast();
     offBite();
     offHide();
@@ -818,6 +920,8 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     disposedPlaced();
     npcView.dispose();
     disposeGroup(groundLayer);
+    disposeGroup(voxelGroup);
+    for (const mat of Object.values(VOXEL_MATERIALS)) mat.dispose();
     player.traverse((node) => {
       if (node instanceof THREE.Mesh) {
         node.geometry.dispose();
