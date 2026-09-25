@@ -18,8 +18,9 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
 - [ ] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
       voxel presentation over the 2D sim world (T-0406 renderer landed; polish:
       placed-object blending, pointer-lock look, terrain height), original
-      procedural WebAudio soundtrack — day/night/season/weather/biome/combat
-      loops (T-0460), audio settings.
+      procedural WebAudio soundtrack with day/night/season/weather/biome/health
+      themes (T-0460 landed; combat tie-in arrives with M5 mines, audio
+      settings UI in T-0405/M7).
 - [x] ADDENDUM B: core-loop feel — distinct success/failure feedback (visual +
       audio), continuous 8-way movement with shift-walk, wood/parchment UI
       panels + pixel font; playtested per docs/ACCEPTANCE.md.

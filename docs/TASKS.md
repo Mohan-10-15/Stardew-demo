@@ -24,4 +24,4 @@ docs/ACCEPTANCE.md script rows pass.
 | T-0404 | sim+ui | M4 crafting/cooking/machinery: recipes from unlocks, cook once + eat buff, machine processes (keg/preserves/etc.), crafting UI | TODO |
 | T-0405 | ui | M4 skills panel + fishing/animal/machine UI affordances + buff display | TODO |
 | T-0406 | world | M4.9 first-person "Minecraft-POV" voxel presentation: block columns (water rims/pools, trees, houses) + eye-level camera, mouse look, F toggle over the 2D sim | DONE (6e04002) |
-| T-0460 | ui | M4.9 original procedural WebAudio soundtrack: day/night/season/weather/biome/combat loops + audio settings | TODO |
+| T-0460 | ui | M4.9 original procedural WebAudio soundtrack: day/night/season/weather/biome/health themes, deterministic bars, headless-safe engine; music starts on first player move, `music:set-enabled`/`music:set-volume` controls; settings UI later | DONE (303d2c7) |

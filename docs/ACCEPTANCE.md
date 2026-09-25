@@ -81,7 +81,7 @@ buff food changes stats · skill level unlocks recipe + profession at 5/10.
 | Machine processes convert inputs over time (keg/preserves/etc.) | TODO | T-0404 (machines.json + machines:sim) |
 | Cooked food applies a timed stat buff when eaten | TODO | T-0404 (recipes.json cooking kind + buffs) |
 | First-person voxel presentation: F-switch camera + block world over the same sim map (browser polish: placed-object blending, pointer-lock look) | browser (deferred — sim math PASS) | tests/view/voxel.test.ts (voxelColumns: house/tree/water/rim rules on real maps; pose: facing yaw, look vector, pitch clamp, head-bob) |
-| Original procedural soundtrack: day/night/season/weather/biome + combat loops change with context | TODO | T-0460 (audio:sim/music module + settings) |
+| Original procedural soundtrack: day/night/season/weather/biome + low-health themes change with context (browser listen — sim logic PASS) | sim (PASS) | tests/sim/music.test.ts (mood/time/weather/season resolution, home/cave/danger overrides, deterministic bars, audible notes in-scale, headless engine) |
 
 ## M5 — Mines & combat (pending)
 
