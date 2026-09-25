@@ -93,3 +93,28 @@ Each non-obvious choice gets an entry. Newest last.
     shop:ui) to avoid cross-worker write conflicts on a shared index.ts. UI
     opens on 'F' (data-driven 'shop' keymap action → `ui:open-shop` bus event);
     walking-into-a-shop proximity triggers properly land in M3 with NPCs.
+22. **NPC schedules are a content kind with override slots (M3).** Schedules live
+    in content/schedules.json as { home, default, overrides } with rules keyed
+    by Stardew-style game-minutes (600 = 6 AM, 2600 = 2 AM). The first override
+    whose { season, weather, day, dayOfWeek } all match wins; no rule covers
+    the clock -> NPC waits at home/spawn. Same-map windows move tile-by-tile
+    via deterministic A* (N,S,W,E tie-break, max 3 tiles per 10-min tick);
+    cross-map windows apply as an instant "through the door" cut, so authors
+    place map changes at night. Positions live in mapState.npcs; intents in
+    state.extensions.people.targets.
+23. **Gift/heart math (M3).** Taste deltas: loved +1, like +0.5, neutral 0,
+    dislike -0.5, hate -1, clamped 0..10, only the first gift of a day counts;
+    talking once a day gives +0.25. Heart events are data (dialogue.json
+    heartEvents + eventLine) with a code trigger; each id plays once ever and
+    reward hearts are capped at 10. Dialogue pools pick by byHeart > weather >
+    season > time-of-day > default, seeded per npc+day for repeatable lines
+    ("say another" cycles the seeded order).
+24. **Quests are collect/deliver/talk only for M3 (M5/M6 add reach/mine).**
+    Quest rewards mutate money/inventory/relationships directly in the people
+    sim reducers, reusing addStackToInventory from inventory:sim (ShippingSim
+    and ShopSim are the precedent). Progress for collect-type is re-derived
+    from inventory at turn-in instead of being ticked.
+25. **Acceptance playtests are a milestone gate (ADDENDUM A).** docs/ACCEPTANCE.md
+    carries the per-milestone script; steps are marked sim (headless bot/tests,
+    the gate here) vs browser (deferred to Playwright). Browser-only steps may
+    not be the sole coverage of any feature's logic.

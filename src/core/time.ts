@@ -141,3 +141,36 @@ export function describeDate(world: WorldState): string {
   const seasonNames = ['Spring', 'Summer', 'Fall', 'Winter'];
   return `Year ${world.calendar.year} ${seasonNames[world.calendar.seasonIndex]} ${world.calendar.dayOfMonth}`;
 }
+
+/**
+ * Stardew-style game-minutes for schedule authoring: 6:00 AM = 600, midnight
+ * = 2400, 2:00 AM (pass-out) = 2600. Hours before 6 (after midnight) map to
+ * the 2400+ range so schedule windows stay monotonic within a day.
+ */
+export function clockToGameMinutes(clock: Clock): number {
+  const m = clock.hour * 100 + clock.minute;
+  return m + (clock.hour < 6 ? 2400 : 0);
+}
+
+/** Absolute 0-based index of a calendar day within the game's timeline (day 1 = 0). */
+export function dayIndex(calendar: TimeCalendar): number {
+  return (calendar.year - 1) * (SEASONS_PER_YEAR * DAYS_PER_SEASON) + calendar.seasonIndex * DAYS_PER_SEASON + calendar.dayOfMonth - 1;
+}
+
+/** Day of week 0..6 where 0 = Sunday (matches schedules.json dayOfWeek keys). */
+export function dayOfWeek(calendar: TimeCalendar): number {
+  return dayIndex(calendar) % 7;
+}
+
+export function dayOfWeekName(calendar: TimeCalendar): 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' {
+  const names: Array<'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday'> = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+  ];
+  return names[dayOfWeek(calendar) % 7] ?? 'sunday';
+}

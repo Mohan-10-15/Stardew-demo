@@ -32,6 +32,24 @@ health; farming/foraging/fishing/mining/combat skills; animals and a horse;
 birthdays and heart events, romance/marriage; a quest board; 8 festivals;
 shipping bin and 5+ shops; 3 save slots.
 
+## Creative direction (ADDENDUM A)
+
+- **Setting**: a terraced mountain valley stalled in late summer, crossed by the
+  Emberbrook river, with a misty coastal marsh to the east where the river meets
+  the sea. The valley is a collapsed mining-and-rail town ringed by a ruined
+  mountain track (mines) upstream.
+- **Tone**: warm and cozy with a little mystery — the valley is held together by
+  the quietly magical Heartstone and the legend of the Sunherd; the mine
+  collapse left secrets underneath. Wholesome neighbors, gentle humor, one or
+  two shadows.
+- **Signature mechanic**: the **Emberfall restoration** — completing the four
+  Valley Collections re-lights Heartstone shards that unlock gated areas and
+  festivals, and each shard blooms one season of the hollow (thematically richer,
+  more forage, an NPC's better mood). On **windy** days, red **ember wisps**
+  drift across every map; catching one briefly reveals hidden foragables and
+  gives a small energy blessing, rewarding exploration on otherwise quiet days.
+  This ties the long-term story goal into everyday play.
+
 ## Place
 
 Farm; village (Ember Square); forest; river/lake; beach; mountain; mine

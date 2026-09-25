@@ -32,6 +32,15 @@ Content ownership: maps -> WORKER-1; items/crops/recipes/fish/monsters/animals -
 - No TODO/FIXME/stub left behind (grep before accepting).
 - Docs updated: ROADMAP checkbox, ARCHITECTURE notes, a DECISIONS entry for any non-obvious choice.
 
+## Acceptance playtests (ADDENDUM A)
+
+- docs/ACCEPTANCE.md holds the per-milestone playtest script. A milestone is NOT
+  done until its script passes (driven by the headless bot and/or sim tests,
+  since no browser runs here) and the result is recorded in the status report.
+- Steps are marked `sim` (covered by headless tests) or `browser` (deferred to
+  Playwright once a browser is available); `browser` steps must never be the
+  only coverage for a feature's logic.
+
 ## Commands
 
 ```
@@ -44,7 +53,9 @@ npm run format       # prettier
 
 ## Current status
 
-Milestone M0 (foundations) — in progress. See docs/ROADMAP.md for the full checklist.
+M0-M2 committed. M3 (people: schedules + pathfinding, dialogue, gifts,
+friendship, heart events, quests + journal) in progress. See docs/ROADMAP.md and
+docs/TASKS.md.
 
 ## Tech stack (fixed)
 
