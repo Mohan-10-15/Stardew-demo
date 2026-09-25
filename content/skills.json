@@ -1,0 +1,46 @@
+{
+  "farming": {
+    "name": "Farming",
+    "description": "Crops, tilling, and animal husbandry. Earned by harvesting crops.",
+    "professions": [
+      { "level": 5, "id": "tiller", "name": "Tiller", "description": "Crops sell for 10% more." },
+      { "level": 10, "id": "agriculturist", "name": "Agriculturist", "description": "Crops grow 10% faster." },
+      { "level": 10, "id": "rancher", "name": "Rancher", "description": "Animal products sell for 20% more." }
+    ]
+  },
+  "foraging": {
+    "name": "Foraging",
+    "description": "Picking wild goods. Earned by collecting forage.",
+    "professions": [
+      { "level": 5, "id": "forester", "name": "Forester", "description": "Wood sells for 25% more." },
+      { "level": 10, "id": "gatherer", "name": "Gatherer", "description": "Forage is worth double." },
+      { "level": 10, "id": "botanist", "name": "Botanist", "description": "Forage is always highest quality." }
+    ]
+  },
+  "fishing": {
+    "name": "Fishing",
+    "description": "Casting and reeling. Earned by catching fish.",
+    "professions": [
+      { "level": 5, "id": "fisher", "name": "Fisher", "description": "Fish sell for 25% more." },
+      { "level": 10, "id": "angler", "name": "Angler", "description": "Fish sell for 50% more." },
+      { "level": 10, "id": "mariner", "name": "Mariner", "description": "Bait is never consumed." }
+    ]
+  },
+  "mining": {
+    "name": "Mining",
+    "description": "Breaking rocks and ore. Earned by mining.",
+    "professions": [
+      { "level": 5, "id": "miner", "name": "Miner", "description": "Find 25% more ore." },
+      { "level": 10, "id": "prospector", "name": "Prospector", "description": "Find twice the coal." }
+    ]
+  },
+  "combat": {
+    "name": "Combat",
+    "description": "Fighting monsters. Earned in the mines.",
+    "professions": [
+      { "level": 5, "id": "fighter", "name": "Fighter", "description": "Deal 10% more damage." },
+      { "level": 10, "id": "brute", "name": "Brute", "description": "Deal 15% more damage." },
+      { "level": 10, "id": "defender", "name": "Defender", "description": "Take 50% less knockback." }
+    ]
+  }
+}

@@ -7,25 +7,35 @@
  */
 import { z } from 'zod';
 import type {
+  AnimalDef,
   CropDef,
   DialogueDef,
+  FishDef,
   ItemDef,
+  MachineDef,
   MapDef,
   NpcDef,
   NpcScheduleDef,
   QuestDef,
+  RecipeDef,
   ScheduleRule,
   ShopDef,
+  SkillDef,
 } from './schemas';
 import {
+  animalsSchema,
   cropsSchema,
   dialoguesSchema,
+  fishSchemaBundle,
   itemsSchema,
+  machinesSchema,
   mapSchemaFull,
   npcsSchema,
   questsSchema,
+  recipesSchema,
   schedulesSchema,
   shopSchema,
+  skillsSchema,
 } from './schemas';
 
 export interface ContentDb {
@@ -37,6 +47,11 @@ export interface ContentDb {
   schedules: Map<string, NpcScheduleDef>;
   dialogue: Map<string, DialogueDef>;
   quests: Map<string, QuestDef>;
+  skills: Map<string, SkillDef>;
+  fish: Map<string, FishDef>;
+  animals: Map<string, AnimalDef>;
+  machines: Map<string, MachineDef>;
+  recipes: Map<string, RecipeDef>;
   /** Map id -> set of tile codes present (for validator spot-checks). */
   byId<T>(kind: keyof ContentDb, id: string): T | undefined;
 }
@@ -173,6 +188,11 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
   const schedules = collectRecords(files, 'schedules.json', schedulesSchema.parseRecord) as Map<string, NpcScheduleDef>;
   const dialogue = collectRecords(files, 'dialogue.json', dialoguesSchema.parseRecord) as Map<string, DialogueDef>;
   const quests = collectRecords(files, 'quests.json', questsSchema.parseRecord) as Map<string, QuestDef>;
+  const skills = collectRecords(files, 'skills.json', skillsSchema.parseRecord) as Map<string, SkillDef>;
+  const fish = collectRecords(files, 'fish.json', fishSchemaBundle.parseRecord) as Map<string, FishDef>;
+  const animals = collectRecords(files, 'animals.json', animalsSchema.parseRecord) as Map<string, AnimalDef>;
+  const machines = collectRecords(files, 'machines.json', machinesSchema.parseRecord) as Map<string, MachineDef>;
+  const recipes = collectRecords(files, 'recipes.json', recipesSchema.parseRecord) as Map<string, RecipeDef>;
   const db: ContentDb = {
     items,
     crops,
@@ -182,6 +202,11 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
     schedules,
     dialogue,
     quests,
+    skills,
+    fish,
+    animals,
+    machines,
+    recipes,
     byId<T>(kind: keyof ContentDb, id: string): T | undefined {
       const col = this[kind];
       return col instanceof Map ? (col.get(id) as T | undefined) : undefined;
@@ -400,6 +425,64 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
     }
     for (const itemId of q.reward.items) assertQuestRef(questId, 'reward.items', itemId, true);
     for (const h of q.reward.hearts) assertQuestRef(questId, 'reward.hearts.npc', h.npc, false);
+  }
+  // Cross-references: M4 kinds. Fish/animal products/machine io/recipe io must
+  // exist in items; recipe kinds require matching output categories; recipe
+  // unlocks reference real skills.
+  function assertItemRef(kind: string, id: string, file: string, path: string): void {
+    if (!items.has(id)) {
+      throw new ContentError(file, [ruleIssue([path], `'${kind} #${id}' references missing item '${id}'`)], 'rule');
+    }
+  }
+  for (const f of fish.values()) {
+    assertItemRef('fish', f.itemId, `fish.json#${f.id}`, 'itemId');
+    const item = items.get(f.itemId);
+    if (item && item.category !== 'fish') {
+      throw new ContentError(
+        `fish.json#${f.id}`,
+        [ruleIssue(['itemId'], `fish item '${f.itemId}' must have category 'fish', got '${item.category}'`)],
+        'rule',
+      );
+    }
+  }
+  for (const a of animals.values()) {
+    assertItemRef('animal', a.productId, `animals.json#${a.id}`, 'productId');
+    const item = items.get(a.productId);
+    if (item && item.category !== 'animal_product') {
+      throw new ContentError(
+        `animals.json#${a.id}`,
+        [ruleIssue(['productId'], `animal product '${a.productId}' must have category 'animal_product', got '${item.category}'`)],
+        'rule',
+      );
+    }
+  }
+  for (const m of machines.values()) {
+    for (const [i, ing] of m.input.entries()) assertItemRef('machine', ing.itemId, `machines.json#${m.id}`, `input.${i}.itemId`);
+    for (const [i, ing] of m.output.entries()) assertItemRef('machine', ing.itemId, `machines.json#${m.id}`, `output.${i}.itemId`);
+  }
+  for (const r of recipes.values()) {
+    assertItemRef('recipe', r.output.itemId, `recipes.json#${r.id}`, 'output.itemId');
+    for (const [i, ing] of r.ingredients.entries()) {
+      assertItemRef('recipe', ing.itemId, `recipes.json#${r.id}`, `ingredients.${i}.itemId`);
+    }
+    const outputItem = items.get(r.output.itemId);
+    if (outputItem) {
+      const allowed = r.kind === 'cooking' ? ['cooking', 'food'] : ['crafted', 'machine'];
+      if (!allowed.includes(outputItem.category)) {
+        throw new ContentError(
+          `recipes.json#${r.id}`,
+          [ruleIssue(['output', 'itemId'], `output '${r.output.itemId}' category '${outputItem.category}' does not match recipe kind '${r.kind}'`)],
+          'rule',
+        );
+      }
+    }
+    if (r.unlock && !skills.has(r.unlock.skill)) {
+      throw new ContentError(
+        `recipes.json#${r.id}`,
+        [ruleIssue(['unlock', 'skill'], `unlock skill '${r.unlock.skill}' does not exist in skills.json`)],
+        'rule',
+      );
+    }
   }
   return db;
 }

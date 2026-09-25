@@ -70,6 +70,17 @@ Playwright · `sim+browser` = sim covered now, browser check pending.
 fish gated by season/time · animal buy/feed/product quality · machine processes ·
 buff food changes stats · skill level unlocks recipe + profession at 5/10.
 
+| Step | Cov | Where |
+|------|-----|-------|
+| XP earned by farming/foraging/mining/fishing/combat actions banks and levels skills 1-10 on a fixed curve | sim (PASS) | tests/sim/skills.test.ts (`skills:grant-xp`: threshold, multi-level chain, level-10 cap + overflow drop) |
+| Daily XP counters roll into skills at day close with level-up feedback | sim (PASS) | skills.test.ts (day:summary -> `player:levelup` harvesting the `day:xp:*` counters) |
+| Reaching a level unlocks its authored recipes | sim (PASS) | skills.test.ts (`skills:recipes-unlocked` diff at the milestone level; `recipesUnlockedFor` is level/data-driven) |
+| Choosing a profession at level 5/10 is one-time and level-gated | sim (PASS) | skills.test.ts (`skills:choose-profession`: below-level reject, valid pick emits `player:profession`, second pick locked) |
+| 30+ fish content with season/time rarity, cast/wait/hook mini-loop | TODO | T-0402 (fish.json + items + fishing:sim) |
+| Buy an animal, feed it daily, hunger + heart growth, product quality from friendship | TODO | T-0403 (animals.json + animals:sim) |
+| Machine processes convert inputs over time (keg/preserves/etc.) | TODO | T-0404 (machines.json + machines:sim) |
+| Cooked food applies a timed stat buff when eaten | TODO | T-0404 (recipes.json cooking kind + buffs) |
+
 ## M5 — Mines & combat (pending)
 
 same seed -> same floor · 3 monster types behave differently · death penalty +

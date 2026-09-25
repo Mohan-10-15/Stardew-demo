@@ -89,6 +89,11 @@ function loadContentSyncOrThrow(): ContentDb {
     schedules: new Map(),
     dialogue: new Map(),
     quests: new Map(),
+    skills: new Map(),
+    fish: new Map(),
+    animals: new Map(),
+    machines: new Map(),
+    recipes: new Map(),
     byId() {
       return undefined;
     },

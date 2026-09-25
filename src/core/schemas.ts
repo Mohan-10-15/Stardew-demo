@@ -220,6 +220,112 @@ const questSchema = z.object({
 export type QuestObjective = z.infer<typeof questObjectiveSchema>;
 export type QuestDef = z.infer<typeof questSchema>;
 
+// --- M4 skills (content/skills.json, keyed by skillId) ---
+// Five life skills, each leveled 0..10. Professions are one-time picks offered
+// at the authored levels (convention 5 and 10); choosing one is permanent per
+// save. Recipes unlock per skill+level and are re-derived on level-up.
+const professionSchema = z.object({
+  level: z.number().int().min(5).max(10),
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(''),
+});
+
+const skillSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(''),
+  professions: z.array(professionSchema).default([]),
+});
+
+export type ProfessionDef = z.infer<typeof professionSchema>;
+export type SkillDef = z.infer<typeof skillSchema>;
+
+// --- M4 fishing (content/fish.json, keyed by fishId) ---
+// `itemId` keys into items.json (category 'fish'). Omitted season/weather/time
+// means the fish is available all the time. Game-minutes use the Stardew-style
+// 600..2700 scale (6:00 AM = 600, 2:00 AM = 2600).
+const fishSchema = z.object({
+  id: z.string().min(1),
+  itemId: z.string().min(1),
+  name: z.string().min(1),
+  seasons: z.array(seasonSchema).optional(),
+  weather: z.array(weatherLiteral).optional(),
+  time: z
+    .object({
+      from: z.number().int().min(0).max(2700),
+      to: z.number().int().min(0).max(2700),
+    })
+    .optional(),
+  difficulty: z.number().int().min(1).max(100).default(50),
+  xp: z.number().int().min(1).default(5),
+});
+
+export type FishDef = z.infer<typeof fishSchema>;
+
+// --- M4 animals (content/animals.json, keyed by animalId) ---
+const animalSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  buy: z.number().int().min(0),
+  /** Daily animal product; an item of category 'animal_product'. */
+  productId: z.string().min(1),
+  produceEveryDays: z.number().int().min(1).default(1),
+  heartsMax: z.number().int().min(1).default(10),
+});
+
+export type AnimalDef = z.infer<typeof animalSchema>;
+
+// --- M4 machines (content/machines.json, keyed by machineId) ---
+// A machine takes one input bundle and yields one output bundle after `hours`
+// of in-game time. Instances live on the farm (MapState.placed, data.remaining).
+const ingredientSchema = z.object({
+  itemId: z.string().min(1),
+  qty: z.number().int().min(1).default(1),
+});
+
+const machineSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  input: z.array(ingredientSchema).min(1),
+  output: z.array(ingredientSchema).min(1),
+  hours: z.number().int().min(1),
+});
+
+export type MachineDef = z.infer<typeof machineSchema>;
+
+// --- M4 recipes (content/recipes.json, keyed by recipeId) ---
+const buffSchema = z.object({
+  stat: z.enum(['energy', 'health', 'max-energy', 'speed', 'luck', 'farming', 'foraging', 'fishing', 'mining', 'combat']),
+  amount: z.number().int(),
+  hours: z.number().int().min(1).default(2),
+});
+
+const recipeSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  kind: z.enum(['cooking', 'crafting']),
+  output: z.object({ itemId: z.string().min(1), qty: z.number().int().min(1).default(1) }),
+  ingredients: z.array(ingredientSchema).min(1),
+  /** Recipes are learned at this skill level (any skill if omitted = always known). */
+  unlock: z
+    .object({
+      skill: z.string().min(1),
+      level: z.number().int().min(1).max(10),
+    })
+    .optional(),
+  /** Cooking-only: passive energy/health plus time-boxed buffs while eaten. */
+  food: z
+    .object({
+      energy: z.number().int().min(0).default(0),
+      health: z.number().int().min(0).default(0),
+      buffs: z.array(buffSchema).default([]),
+    })
+    .optional(),
+});
+
+export type RecipeDef = z.infer<typeof recipeSchema>;
+
 const placedObjectSchema = z.object({
   id: z.string().min(1),
   x: z.number().int().min(0),
@@ -329,6 +435,31 @@ export const dialoguesSchema = {
 export const questsSchema = {
   schema: questSchema,
   parseRecord: (raw: Record<string, unknown>): Map<string, QuestDef> => mapRecord<QuestDef>(questSchema, raw),
+};
+
+export const skillsSchema = {
+  schema: skillSchema,
+  parseRecord: (raw: Record<string, unknown>): Map<string, SkillDef> => mapRecord<SkillDef>(skillSchema, raw),
+};
+
+export const fishSchemaBundle = {
+  schema: fishSchema,
+  parseRecord: (raw: Record<string, unknown>): Map<string, FishDef> => mapRecord<FishDef>(fishSchema, raw),
+};
+
+export const animalsSchema = {
+  schema: animalSchema,
+  parseRecord: (raw: Record<string, unknown>): Map<string, AnimalDef> => mapRecord<AnimalDef>(animalSchema, raw),
+};
+
+export const machinesSchema = {
+  schema: machineSchema,
+  parseRecord: (raw: Record<string, unknown>): Map<string, MachineDef> => mapRecord<MachineDef>(machineSchema, raw),
+};
+
+export const recipesSchema = {
+  schema: recipeSchema,
+  parseRecord: (raw: Record<string, unknown>): Map<string, RecipeDef> => mapRecord<RecipeDef>(recipeSchema, raw),
 };
 
 export const mapSchemaFull = mapSchema;
