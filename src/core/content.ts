@@ -218,6 +218,20 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
       }
     }
   }
+  // Cross-references: NPC gift tastes reference existing items.
+  for (const npc of npcs.values()) {
+    for (const tier of ['loves', 'likes', 'neutral', 'dislikes', 'hates'] as const) {
+      for (const itemId of npc.gift[tier]) {
+        if (!items.has(itemId)) {
+          throw new ContentError(
+            `npcs.json#${npc.id}`,
+            [ruleIssue(['gift', tier], `gift item '${itemId}' does not exist in items.json`)],
+            'rule',
+          );
+        }
+      }
+    }
+  }
   // Cross-references: NPC schedules target existing maps/tiles.
   function assertScheduleRule(npcId: string, path: Array<string | number>, rule: ScheduleRule): void {
     if (rule.from >= rule.to) {
