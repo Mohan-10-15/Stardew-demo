@@ -1,4 +1,4 @@
-﻿# Ember Hollow â€” Task Index
+# Ember Hollow â€” Task Index
 
 Format: `T-#### | lane | title | status`. Status: DONE | TODO | BLOCKED.
 Milestones are committed only when `npm run check` is green AND the matching

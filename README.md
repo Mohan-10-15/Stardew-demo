@@ -9,7 +9,7 @@ friendships.
 
 ```
 npm install
-npm run dev        # http://localhost:5170
+npm run dev        # http://localhost:2026
 npm run build      # production build in dist/
 ```
 

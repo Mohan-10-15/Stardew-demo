@@ -9,7 +9,7 @@ This is NOT a prototype, tech demo or vertical slice. The finished product is a 
 - Every file has exactly one owning lane (see LANES below), and a worker never edits outside its lane — it asks the orchestrator instead.
 - Only the ORCHESTRATOR runs git commits; workers must never commit, reset, stash or checkout.
 - Docs are the orchestrator's; workers put doc-worthy notes in their report and the orchestrator folds them in.
-- Dev servers use distinct ports (orchestrator 5170, workers 5171-5173).
+- Dev servers use distinct ports (orchestrator 2026, workers 5171-5173).
 - Workers run only the tests for their own module; the orchestrator runs the full suite at integration points.
 - NEW (adapted 2026-09): this environment has no oc-grid; workers are opencode subagents, each dispatched by brief. Keep reports in the exact `DONE T-#### | ...` format.
 
@@ -44,7 +44,7 @@ Content ownership: maps -> WORKER-1; items/crops/recipes/fish/monsters/animals -
 ## Commands
 
 ```
-npm run dev          # Vite dev server on :5170 (always keep working)
+npm run dev          # Vite dev server on :2026 (always keep working)
 npm run check        # typecheck + lint + all tests + content validation (gate)
 npm run test         # vitest run
 npm run build        # production build

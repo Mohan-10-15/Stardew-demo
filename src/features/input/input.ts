@@ -4,15 +4,16 @@
  * only from `mount()` (browser), sets `__EH_INPUT_OWNED__` so src/main.ts goes
  * idle, and cleans up entirely on `dispose()`.
  *
- * Movement fires once on keydown then repeats at a fixed hold interval exactly
- * like main.ts: one step per interval, driven by requestAnimationFrame, top
- * priority = last pressed move key.
+ * Movement is continuous (ADDENDUM B): every rAF frame the held move keys are
+ * summed into an 8-way vector and dispatched as `player:walk` with the elapsed
+ * `dt` and a speed in units/sec. No modifiers = a confident jog; holding Shift
+ * walks at ~60% (run-by-default / hold-to-walk). The default keymap holds no
+ * run binding because running IS the default.
  */
 import { defineFeature, type FeatureContext, type UiHandle } from '../../core/feature';
 import type { SimAction } from '../../core/types';
 import { actionToSim, buildKeyIndex, normalizeKey } from './keymap';
-
-export const HOLD_INTERVAL_MS = 120;
+import { JOG_UNITS_PER_SEC, WALK_SPEED_MULT } from '../engine/sim/PlayerPosition';
 
 function isFormTarget(target: unknown): boolean {
   if (typeof HTMLElement === 'undefined') return false;
@@ -29,12 +30,11 @@ function ownerFlag(): { __EH_INPUT_OWNED__?: boolean } {
 export function createInputUi(ctx: FeatureContext): UiHandle {
   const keyIndex = buildKeyIndex();
   const held = new Set<string>();
-  const order: string[] = [];
+  const modifiers = new Set<string>();
 
   let owned = false;
   let running = false;
   let rafId = 0;
-  let acc = 0;
   let lastTime = 0;
   let uiRoot: HTMLElement | null = null;
 
@@ -42,36 +42,32 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
     return typeof document !== 'undefined' && typeof window !== 'undefined';
   }
 
-  function topDir(): { dx: number; dy: number } | null {
-    for (let i = order.length - 1; i >= 0; i--) {
-      const key = order[i];
-      if (!key) continue;
+  function heldDir(): { dx: number; dy: number } {
+    let dx = 0;
+    let dy = 0;
+    for (const key of held) {
       const binding = keyIndex.get(key);
       if (binding && binding.action.type === 'move') {
-        return { dx: binding.action.dx, dy: binding.action.dy };
+        dx += binding.action.dx;
+        dy += binding.action.dy;
       }
     }
-    return null;
-  }
-
-  function dispatchMove(): void {
-    const dir = topDir();
-    if (dir) ctx.store.dispatch({ type: 'player:move', payload: dir });
+    return { dx, dy };
   }
 
   function onKeyDown(event: KeyboardEvent): void {
     if (isFormTarget(event.target)) return;
     const key = normalizeKey(event.key);
     const binding = keyIndex.get(key);
-    if (!binding) return;
+    if (!binding) {
+      if (key === 'shift') modifiers.add('shift');
+      return;
+    }
     event.preventDefault();
     if (event.repeat) return;
     const action = binding.action;
     if (action.type === 'move') {
-      if (held.has(key)) return;
       held.add(key);
-      order.push(key);
-      dispatchMove();
       return;
     }
     if (action.type === 'shop') {
@@ -88,20 +84,23 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
 
   function onKeyUp(event: KeyboardEvent): void {
     const key = normalizeKey(event.key);
-    if (!held.has(key)) return;
+    modifiers.delete(key);
     held.delete(key);
-    const index = order.indexOf(key);
-    if (index >= 0) order.splice(index, 1);
+  }
+
+  function onBlur(): void {
+    held.clear();
+    modifiers.clear();
   }
 
   function frame(timestamp: number): void {
     if (!running || !owned) return;
-    if (lastTime === 0) lastTime = timestamp;
-    acc += timestamp - lastTime;
+    const dt = lastTime === 0 ? 0 : Math.min(0.1, (timestamp - lastTime) / 1000);
     lastTime = timestamp;
-    if (acc >= HOLD_INTERVAL_MS) {
-      acc = 0;
-      dispatchMove();
+    const dir = heldDir();
+    if (dir.dx !== 0 || dir.dy !== 0) {
+      const speed = JOG_UNITS_PER_SEC * (modifiers.has('shift') ? WALK_SPEED_MULT : 1);
+      ctx.store.dispatch({ type: 'player:walk', payload: { dx: dir.dx, dy: dir.dy, dt, speed } });
     }
     rafId = window.requestAnimationFrame(frame);
   }
@@ -121,8 +120,8 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       owned = true;
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('blur', onBlur);
       document.addEventListener('click', onClick);
-      acc = 0;
       lastTime = 0;
       running = true;
       rafId = window.requestAnimationFrame(frame);
@@ -130,6 +129,7 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
     dispose(): void {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
       document.removeEventListener('click', onClick);
       if (rafId !== 0) window.cancelAnimationFrame(rafId);
       running = false;
@@ -138,7 +138,7 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       uiRoot = null;
       ownerFlag().__EH_INPUT_OWNED__ = false;
       held.clear();
-      order.length = 0;
+      modifiers.clear();
     },
   };
 }

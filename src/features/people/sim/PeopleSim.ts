@@ -342,7 +342,9 @@ export function advancePeople(state: GameState, content: ContentDb, bus?: EventB
       path = pathFor(maps, current.mapId, current.presence, target, content);
     }
     const blocked = blockedTiles(maps, current.mapId, npcId);
-    if (current.mapId === next.player.position.mapId) blocked.add(`${next.player.position.x},${next.player.position.y}`);
+    if (current.mapId === next.player.position.mapId) {
+      blocked.add(`${Math.floor(next.player.position.x)},${Math.floor(next.player.position.y)}`);
+    }
     const stepped = stepNpc(current.presence, path, NPC_WALK_TILES_PER_TICK, blocked, {
       x: target.x,
       y: target.y,
@@ -364,10 +366,12 @@ export function peopleTickReducer(state: GameState, content: ContentDb, bus?: Ev
 export const tickPeople = peopleTickReducer;
 
 function frontTile(position: WorldPos & { facing: GameState['player']['facing'] }): TilePos {
-  if (position.facing === 'up') return { x: position.x, y: position.y - 1 };
-  if (position.facing === 'down') return { x: position.x, y: position.y + 1 };
-  if (position.facing === 'left') return { x: position.x - 1, y: position.y };
-  return { x: position.x + 1, y: position.y };
+  const x = Math.floor(position.x);
+  const y = Math.floor(position.y);
+  if (position.facing === 'up') return { x, y: y - 1 };
+  if (position.facing === 'down') return { x, y: y + 1 };
+  if (position.facing === 'left') return { x: x - 1, y };
+  return { x: x + 1, y };
 }
 
 export function npcAtFront(state: GameState, explicitNpcId?: string): NpcLocation | undefined {

@@ -14,6 +14,7 @@ import * as THREE from 'three';
 import { defineFeature, type FeatureContext, type ViewHandle } from '../../../core/feature';
 import type { GameState, MapState, SeasonIndex } from '../../../core/types';
 import { tileInFront, isWalkable } from '../sim/PlayerPosition';
+import { toolKindOf, type ToolKind } from '../../farming/sim/FarmingSim';
 import {
   GRID_CELL,
   hash2,
@@ -44,6 +45,17 @@ const ZOOM_MIN = 0.6;
 const ZOOM_MAX = 1.8;
 const TILE_LERP_SECONDS = 0.11;
 const FOLLOW_LAMBDA = 5;
+const SWING_SECONDS = 0.26;
+const FAIL_FLASH_SECONDS = 0.18;
+
+const BURST_COLOR: Record<ToolKind, number> = {
+  hoe: 0x8a5a30,
+  watering: 0x4fa8e8,
+  axe: 0x8a7a5a,
+  pickaxe: 0x96908a,
+  scythe: 0x7dbe63,
+  hands: 0x6fae49,
+};
 
 const SKY_DAY = new THREE.Color(0x8ec6ea);
 const SKY_NIGHT = new THREE.Color(0x0b1120);
@@ -172,10 +184,55 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   highlight.visible = false;
   scene.add(groundLayer, placedLayer, npcView.group, player, highlight);
 
+  const fxLayer = new THREE.Group();
+  scene.add(fxLayer);
+  interface FxParticle {
+    mesh: THREE.Mesh;
+    vel: THREE.Vector3;
+    life: number;
+    max: number;
+  }
+  const particles: FxParticle[] = [];
+  const PARTICLE_CAP = 40;
+  const armR = player.getObjectByName('player-arm-r') ?? null;
+  let swingT = 0;
+  let failFlashT = 0;
+
+  function spawnBurst(tileWorld: THREE.Vector3, color: number): void {
+    for (let i = 0; i < 9; i++) {
+      if (particles.length >= PARTICLE_CAP) return;
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), mat);
+      const a = Math.random() * Math.PI * 2;
+      mesh.position.copy(tileWorld);
+      mesh.position.y = 0.16;
+      particles.push({
+        mesh,
+        vel: new THREE.Vector3(Math.cos(a) * 0.55, 1.4 + Math.random() * 1.3, Math.sin(a) * 0.55),
+        life: 0.5,
+        max: 0.5,
+      });
+      fxLayer.add(mesh);
+    }
+  }
+
+  function onToolUsed(e: { tile: { x: number; y: number }; toolId: string }): void {
+    const map = ctx.store.state.maps[ctx.store.state.player.position.mapId];
+    if (!map) return;
+    swingT = SWING_SECONDS;
+    spawnBurst(worldPos(map, e.tile.x, e.tile.y), BURST_COLOR[toolKindOf(e.toolId)]);
+  }
+
+  function onToolFailed(): void {
+    failFlashT = FAIL_FLASH_SECONDS;
+  }
+
   let npcRebuildPending = false;
   const offWarp = ctx.bus.on('player:warped', () => {
     npcRebuildPending = true;
   });
+  const offUsed = ctx.bus.on('tool:used', onToolUsed);
+  const offFail = ctx.bus.on('tool:failed', onToolFailed);
 
   let disposed = false;
   let zoom = 1;
@@ -395,23 +452,31 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     if (!map) return;
     const pos = state.player.position;
     const key = `${pos.x},${pos.y}`;
-    if (key !== lastTileKey) {
-      const target = worldPos(map, pos.x, pos.y);
-      if (lastTileKey === '') {
-        lerpFrom.copy(target);
-        lerpTo.copy(target);
-        lerpT = 1;
-      } else {
-        lerpFrom.copy(player.position);
-        lerpTo.copy(target);
-        lerpT = 0;
-      }
+    const continuous = !Number.isInteger(pos.x) || !Number.isInteger(pos.y);
+    if (continuous) {
+      // Continuous walk already advances sub-tile positions every frame;
+      // snap straight to the live world position (no lerp lag).
+      player.position.copy(worldPos(map, pos.x, pos.y));
       lastTileKey = key;
-    }
-    if (lerpT < 1) {
-      lerpT = Math.min(1, lerpT + dt / TILE_LERP_SECONDS);
-      const e = lerpT * lerpT * (3 - 2 * lerpT);
-      player.position.lerpVectors(lerpFrom, lerpTo, e);
+    } else {
+      if (key !== lastTileKey) {
+        const target = worldPos(map, pos.x, pos.y);
+        if (lastTileKey === '') {
+          lerpFrom.copy(target);
+          lerpTo.copy(target);
+          lerpT = 1;
+        } else {
+          lerpFrom.copy(player.position);
+          lerpTo.copy(target);
+          lerpT = 0;
+        }
+        lastTileKey = key;
+      }
+      if (lerpT < 1) {
+        lerpT = Math.min(1, lerpT + dt / TILE_LERP_SECONDS);
+        const e = lerpT * lerpT * (3 - 2 * lerpT);
+        player.position.lerpVectors(lerpFrom, lerpTo, e);
+      }
     }
     player.rotation.y = THREE.MathUtils.damp(player.rotation.y, facingRotation(state.player.facing), 10, dt);
   }
@@ -437,10 +502,44 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     const legend = ctx.content.maps.get(mapId)?.legend ?? {};
     const walkable = isWalkable(map, legend, tile.x, tile.y);
     const material = highlight.material as THREE.MeshBasicMaterial;
-    material.color.setHex(walkable ? 0xffcf7a : 0xe56b4f);
-    material.opacity = walkable ? 0.35 : 0.5;
+    if (failFlashT > 0) {
+      material.color.setHex(0xe05a4f);
+      material.opacity = 0.7;
+    } else {
+      material.color.setHex(walkable ? 0xffcf7a : 0xe56b4f);
+      material.opacity = walkable ? 0.35 : 0.5;
+    }
     highlight.visible = true;
     highlight.position.copy(worldPos(map, tile.x, tile.y));
+  }
+
+  function updateEffects(dt: number): void {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]!;
+      p.life -= dt;
+      if (p.life <= 0) {
+        fxLayer.remove(p.mesh);
+        p.mesh.geometry.dispose();
+        (p.mesh.material as THREE.Material).dispose();
+        particles.splice(i, 1);
+        continue;
+      }
+      p.vel.y -= 6 * dt;
+      p.mesh.position.addScaledVector(p.vel, dt);
+      const mat = p.mesh.material as THREE.MeshBasicMaterial;
+      mat.opacity = Math.max(0, p.life / p.max);
+      p.mesh.scale.setScalar(Math.max(0.06, p.life / p.max));
+    }
+    if (swingT > 0) {
+      swingT = Math.max(0, swingT - dt);
+      if (armR) {
+        const ease = 1 - swingT / SWING_SECONDS;
+        armR.rotation.z = -1.25 * Math.sin(Math.PI * Math.min(1, ease));
+      }
+    } else if (armR && armR.rotation.z !== 0) {
+      armR.rotation.z = 0;
+    }
+    if (failFlashT > 0) failFlashT = Math.max(0, failFlashT - dt);
   }
 
   let cameraSettled = false;
@@ -617,6 +716,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     npcRebuildPending = false;
     updatePlayer(dt, state);
     updateHighlight(state);
+    updateEffects(dt);
     updateCamera(dt);
     updateLighting(state);
     updateAtmosphere(state);
@@ -645,6 +745,15 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
     offWarp();
+    offUsed();
+    offFail();
+    for (const p of particles) {
+      fxLayer.remove(p.mesh);
+      p.mesh.geometry.dispose();
+      (p.mesh.material as THREE.Material).dispose();
+    }
+    particles.length = 0;
+    scene.remove(fxLayer);
     disposePrecip();
     disposedPlaced();
     npcView.dispose();

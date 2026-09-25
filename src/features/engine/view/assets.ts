@@ -60,14 +60,27 @@ function sharedMaterial(color: number, name: string): THREE.MeshLambertMaterial 
   return new THREE.MeshLambertMaterial({ color, name });
 }
 
-const furrowMat = () => sharedMaterial(0x5a3b23, 'furrow');
+const furrowMat = () => sharedMaterial(0x49301a, 'soil-furrow');
 
+/** The single, shared tilled-soil visual. Authored `s` tiles and player-tilled
+ *  soil both go through here (buildTilledAsset delegates below), so cultivated
+ *  ground reads identically everywhere. Crossed, higher-contrast strips so it
+ *  stays visible under the interaction highlight. */
 export function buildFurrow(x: number, z: number): THREE.Object3D {
-  const strip = new THREE.Mesh(new THREE.BoxGeometry(1, 0.07, 0.16), furrowMat());
-  strip.position.y = 0.012;
-  strip.rotation.y = hash2(x, z) > 0.5 ? Math.PI / 2 : 0;
-  strip.receiveShadow = true;
-  return strip;
+  const g = new THREE.Group();
+  const a = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 0.26), furrowMat());
+  a.position.y = 0.02;
+  a.rotation.y = hash2(x, z) > 0.5 ? Math.PI / 2 : 0;
+  const b = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.08, 1), furrowMat());
+  b.position.y = 0.02;
+  a.receiveShadow = true;
+  b.receiveShadow = true;
+  g.add(a, b);
+  return g;
+}
+
+export function buildTilledAsset(x: number, z: number): THREE.Object3D {
+  return buildFurrow(x, z);
 }
 
 const trunkMat = () => sharedMaterial(0x6b4a2f, 'tree-trunk');
@@ -208,20 +221,6 @@ export function buildShippingBinAsset(): THREE.Object3D {
   return g;
 }
 
-export function buildTilledAsset(): THREE.Object3D {
-  const g = new THREE.Group();
-  const mat = () => sharedMaterial(0x5a3b23, 'tilled-furrow');
-  const a = new THREE.Mesh(new THREE.BoxGeometry(1, 0.07, 0.16), mat());
-  a.position.y = 0.012;
-  a.rotation.y = Math.PI / 2;
-  const b = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 1), mat());
-  b.position.y = 0.012;
-  a.receiveShadow = true;
-  b.receiveShadow = true;
-  g.add(a, b);
-  return g;
-}
-
 export function buildCropAsset(stage: number, hash: number): THREE.Object3D {
   const g = new THREE.Group();
   const s = 0.55 + 0.22 * Math.max(0, stage);
@@ -254,7 +253,7 @@ export function buildMiscAsset(): THREE.Object3D {
 }
 
 export function buildPlacedAsset(assetId: string, stage: number, hash: number): THREE.Object3D {
-  if (assetId === 'tilled') return buildTilledAsset();
+  if (assetId === 'tilled') return buildTilledAsset(Math.floor(hash * 97), Math.floor(hash * 31));
   if (assetId.startsWith('crop:')) return buildCropAsset(stage, hash);
   switch (assetId) {
     case 'weed':
@@ -292,6 +291,7 @@ export function buildPlayer(): THREE.Object3D {
   armL.position.set(-0.25, 0.52, 0);
   const armR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), shirtMat());
   armR.position.set(0.25, 0.52, 0);
+  armR.name = 'player-arm-r';
 
   const head = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.26), skinMat());
   head.position.y = 0.84;

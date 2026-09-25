@@ -69,9 +69,22 @@ export interface ToolUsePayload {
   toolId?: string | null;
 }
 
+export interface ToolFailedEvent {
+  tile: WorldPos;
+  toolId: string | null;
+  reason: string;
+}
+
+export interface ToolUsedEvent {
+  tile: WorldPos;
+  toolId: string;
+  effect: 'tilled' | 'watered' | 'cleared' | 'planted' | 'harvested';
+}
+
 interface ToolResult {
   state: GameState;
   effect: 'tilled' | 'watered' | 'cleared' | 'planted' | 'harvested' | 'none';
+  reason?: string;
 }
 
 export interface ToolRow {
@@ -111,20 +124,20 @@ function mapWithPlaced(
 
 function applyPlant(state: GameState, tile: WorldPos, seedId: string, row: ToolRow): ToolResult {
   const crop = seedIdToCrop(seedId, row.content);
-  if (!crop) return { state, effect: 'none' };
+  if (!crop) return { state, effect: 'none', reason: 'no-crop' };
   const map = state.maps[tile.mapId];
-  if (!map) return { state, effect: 'none' };
+  if (!map) return { state, effect: 'none', reason: 'no-map' };
   const key = tileKey(tile.x, tile.y);
   const soil = map.placed[key];
-  if (!soil || soil.id !== 'tilled') return { state, effect: 'none' };
+  if (!soil || soil.id !== 'tilled') return { state, effect: 'none', reason: 'not-tilled' };
   if (!crop.seasons.includes(state.world.calendar.seasonIndex)) {
     row.bus.emit('crop:plant-rejected', { tile, seedId, reason: 'wrong-season' });
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'wrong-season' };
   }
   const seedSlot = findSeedSlot(state, seedId);
   if (seedSlot === -1) {
     row.bus.emit('inventory:full', { tile, itemId: seedId });
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'no-seed' };
   }
   const inv = state.player.inventory;
   const slots = [...inv.slots];
@@ -162,10 +175,10 @@ function harvestCrop(
   const added = addStackToInventory(state, stack);
   if (!added.added) {
     row.bus.emit('inventory:full', { tile, itemId: cropId });
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'inventory-full' };
   }
   const map = added.state.maps[tile.mapId];
-  if (!map) return { state, effect: 'none' };
+  if (!map) return { state, effect: 'none', reason: 'no-map' };
   const key = tileKey(tile.x, tile.y);
   const placed = { ...map.placed };
   if (def.regrow !== null && def.regrow !== undefined) {
@@ -198,7 +211,7 @@ function applyHands(
     if (def && isMature(obj, def)) {
       return harvestCrop(state, tile, obj, cropId, def, rng, row);
     }
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'not-mature' };
   }
   if (obj && obj.id.startsWith(FORAGE_PREFIX)) {
     return pickForage(state, tile, obj, row);
@@ -206,7 +219,7 @@ function applyHands(
   if (toolId && seedIdToCrop(toolId, row.content)) {
     return applyPlant(state, tile, toolId, row);
   }
-  return { state, effect: 'none' };
+  return { state, effect: 'none', reason: 'nothing' };
 }
 
 function clearDebris(
@@ -216,16 +229,16 @@ function clearDebris(
   row: ToolRow,
 ): ToolResult {
   const map = state.maps[tile.mapId];
-  if (!map) return { state, effect: 'none' };
+  if (!map) return { state, effect: 'none', reason: 'no-map' };
   const key = tileKey(tile.x, tile.y);
   const obj = map.placed[key];
-  if (!obj || !allowed.includes(obj.id)) return { state, effect: 'none' };
+  if (!obj || !allowed.includes(obj.id)) return { state, effect: 'none', reason: 'no-debris' };
   const drop = DEBRIS_DROP[obj.id];
-  if (!drop) return { state, effect: 'none' };
+  if (!drop) return { state, effect: 'none', reason: 'no-debris' };
   const added = addStackToInventory(state, { id: drop.id, qty: drop.qty, quality: 0 });
   if (!added.added) {
     row.bus.emit('inventory:full', { tile, itemId: drop.id });
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'inventory-full' };
   }
 const placed = { ...map.placed };
   delete placed[key];
@@ -237,13 +250,13 @@ const placed = { ...map.placed };
 /** Pick up a `forage:<itemId>` placed object (bare hand or scythe), m2 §3. */
 function pickForage(state: GameState, tile: WorldPos, obj: PlacedObject, row: ToolRow): ToolResult {
   const map = state.maps[tile.mapId];
-  if (!map || map.placed[tileKey(tile.x, tile.y)] !== obj) return { state, effect: 'none' };
+  if (!map || map.placed[tileKey(tile.x, tile.y)] !== obj) return { state, effect: 'none', reason: 'no-forage' };
   const itemId = obj.id.slice(FORAGE_PREFIX.length);
-  if (!itemId) return { state, effect: 'none' };
+  if (!itemId) return { state, effect: 'none', reason: 'no-forage' };
   const added = addStackToInventory(state, { id: itemId, qty: 1, quality: 0 });
   if (!added.added) {
     row.bus.emit('inventory:full', { tile, itemId });
-    return { state, effect: 'none' };
+    return { state, effect: 'none', reason: 'inventory-full' };
   }
   const placed = { ...map.placed };
   const key = tileKey(tile.x, tile.y);
@@ -261,18 +274,18 @@ function applyToolEffect(
   tile: WorldPos,
   row: ToolRow,
 ): ToolResult {
-  if (kind === 'hands') return { state, effect: 'none' };
+  if (kind === 'hands') return { state, effect: 'none', reason: 'nothing' };
   const map = state.maps[tile.mapId];
-  if (!map) return { state, effect: 'none' };
+  if (!map) return { state, effect: 'none', reason: 'no-map' };
   const idx = tile.y * map.grid.width + tile.x;
   const code = map.grid.tiles[idx];
-  if (code === undefined) return { state, effect: 'none' };
+  if (code === undefined) return { state, effect: 'none', reason: 'no-map' };
 
   if (kind === 'hoe') {
     const legend = row.content.maps.get(tile.mapId)?.legend[code];
-    if (!legend?.tillable) return { state, effect: 'none' };
+    if (!legend?.tillable) return { state, effect: 'none', reason: 'not-tillable' };
     const key = tileKey(tile.x, tile.y);
-    if (map.placed[key]) return { state, effect: 'none' };
+    if (map.placed[key]) return { state, effect: 'none', reason: 'occupied' };
     const placed = {
       ...map.placed,
       [key]: { id: 'tilled', x: tile.x, y: tile.y, data: { watered: false } },
@@ -283,10 +296,10 @@ function applyToolEffect(
   if (kind === 'watering') {
     const key = tileKey(tile.x, tile.y);
     const obj = map.placed[key];
-    if (!obj) return { state, effect: 'none' };
+    if (!obj) return { state, effect: 'none', reason: 'no-soil' };
     const isTilled = obj.id === 'tilled';
     const isCrop = cropIdOf(obj.id) !== null;
-    if (!isTilled && !isCrop) return { state, effect: 'none' };
+    if (!isTilled && !isCrop) return { state, effect: 'none', reason: 'no-soil' };
     const placed = {
       ...map.placed,
       [key]: { ...obj, data: { ...(obj.data ?? {}), watered: true } },
@@ -302,7 +315,7 @@ function applyToolEffect(
     if (obj && obj.id.startsWith(FORAGE_PREFIX)) return pickForage(state, tile, obj, row);
     return clearDebris(state, tile, ['weed'], row);
   }
-  return { state, effect: 'none' };
+  return { state, effect: 'none', reason: 'no-effect' };
 }
 
 /** Resolve one tool/hands use requested by the input layer. */
@@ -319,25 +332,34 @@ export function applyToolUse(
   // Winter: the soil is frozen — tilling is rejected, state unchanged (m2 §4).
   if (kind === 'hoe' && state.world.calendar.seasonIndex === 3) {
     row.bus.emit('farming:blocked', { reason: 'frozen', tile });
-    row.bus.emit('tool:used', { tile, toolId, effect: 'none' });
+    row.bus.emit<ToolFailedEvent>('tool:failed', { tile, toolId, reason: 'frozen' });
     return state;
   }
 
   if (kind === 'hands') {
-    const { state: st, effect } = applyHands(state, tile, toolId, rng, row);
-    row.bus.emit('tool:used', { tile, toolId, effect });
+    const { state: st, effect, reason } = applyHands(state, tile, toolId, rng, row);
+    if (effect === 'none') {
+      row.bus.emit<ToolFailedEvent>('tool:failed', { tile, toolId, reason: reason ?? 'nothing' });
+    } else {
+      row.bus.emit<ToolUsedEvent>('tool:used', { tile, toolId, effect });
+    }
     return st;
   }
 
   const cost = TOOL_COST[kind];
   if (state.player.energy < cost) {
     row.bus.emit('player:exhausted', { tile, toolId, energy: state.player.energy });
+    row.bus.emit<ToolFailedEvent>('tool:failed', { tile, toolId, reason: 'exhausted' });
     return state;
   }
   const energy = state.player.energy - cost;
   const drained = { ...state, player: { ...state.player, energy } };
-  const { state: st, effect } = applyToolEffect(drained, kind, tile, row);
-  row.bus.emit('tool:used', { tile, toolId, effect });
+  const { state: st, effect, reason } = applyToolEffect(drained, kind, tile, row);
+  if (effect === 'none') {
+    row.bus.emit<ToolFailedEvent>('tool:failed', { tile, toolId, reason: reason ?? 'no-effect' });
+  } else {
+    row.bus.emit<ToolUsedEvent>('tool:used', { tile, toolId, effect });
+  }
   return st;
 }
 

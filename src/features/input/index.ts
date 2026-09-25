@@ -7,7 +7,7 @@ import { inputUi } from './input';
 
 registerFeature(inputUi);
 
-export { inputUi, createInputUi, HOLD_INTERVAL_MS } from './input';
+export { inputUi, createInputUi } from './input';
 export {
   DEFAULT_KEYMAP,
   HOTBAR_SLOT_KEYS,

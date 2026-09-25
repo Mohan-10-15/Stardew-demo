@@ -53,6 +53,18 @@ Playwright · `sim+browser` = sim covered now, browser check pending.
 | NPCs never stand on blocked tiles | sim | content validation: schedule rule + home anchor must be walkable per legend |
 | Seasonal shop stock + Friday traveling merchant | sim | tests/sim/shop-seasonal.test.ts (open/closed days, seeded 4-item rotation, season gating) |
 
+## ADDENDUM B — Core-loop feel: PASS
+
+| Step | Cov | Where |
+|------|-----|-------|
+| Successful hoe/axe/water/pick swings land a quick visual + a distinct success blip | sim+browser | engine:view swing anim + particle burst (browser pending); audio `tool:used` success cue (tests/sim/audio.test.ts); success/failure bus split (tests/sim/tool-feedback.test.ts) |
+| Failed interactions clearly fail: red hit-flash on the tile only + distinct failure blip, never confused with a success | sim+browser | engine:view failFlash (browser pending); audio `tool:failed` cue (audio.test.ts); failure reasons incl. frozen/exhausted/occupied/nothing (tool-feedback.test.ts) |
+| Movement is continuous (hold a key to jog; Shift walks ~60% slower) with 8-way diagonals at the same speed | sim | engine:sim `player:walk` + input layer; tests: tests/view/walk-continuous.test.ts |
+| Walls stop movement exactly at the tile edge and are slid along, never walked into or teleported through | sim | walk reducer sub-tile collision sampling; tests: walk-continuous.test.ts (wall block + slide) |
+| Walking gives feedback (footstep audio cadence; energy still drains) and still warps through map edges | sim+browser | audio `player:moved` cue; warp on walk; tests: walk-continuous.test.ts (warp + moved events, energy drain) |
+| Selling into the shipping bin rings in a coin register | sim+browser | audio `shipping:report` coin cue when sold.length > 0; tests: tests/sim/audio.test.ts |
+| Wood-and-parchment UI panels with a pixel font and corner accents | browser | ui-kit revamp (wood bevel + parchment + corner nails, Silkscreen font); visual deferred, CSS only |
+
 ## M4 — Life skills (pending)
 
 fish gated by season/time · animal buy/feed/product quality · machine processes ·
