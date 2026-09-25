@@ -13,6 +13,7 @@
     { "itemId": "wood", "price": 2 },
     { "itemId": "stone", "price": 2 },
     { "itemId": "fiber", "price": 1 },
+    { "itemId": "hay", "price": 15, "qty": 12 },
     { "itemId": "parsnip-seed", "qty": 5, "season": [0] }
   ]
 }

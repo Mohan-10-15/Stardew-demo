@@ -1,0 +1,47 @@
+{
+  "chicken": {
+    "name": "Chicken",
+    "buy": 400,
+    "productId": "egg",
+    "produceEveryDays": 1,
+    "heartsMax": 10,
+    "feed": { "itemId": "hay", "qty": 1 },
+    "maturityDays": 0
+  },
+  "duck": {
+    "name": "Duck",
+    "buy": 900,
+    "productId": "duck-egg",
+    "produceEveryDays": 2,
+    "heartsMax": 10,
+    "feed": { "itemId": "hay", "qty": 1 },
+    "maturityDays": 0
+  },
+  "cow": {
+    "name": "Cow",
+    "buy": 1500,
+    "productId": "milk",
+    "produceEveryDays": 1,
+    "heartsMax": 10,
+    "feed": { "itemId": "hay", "qty": 1 },
+    "maturityDays": 0
+  },
+  "goat": {
+    "name": "Goat",
+    "buy": 1400,
+    "productId": "goat-milk",
+    "produceEveryDays": 2,
+    "heartsMax": 10,
+    "feed": { "itemId": "hay", "qty": 1 },
+    "maturityDays": 0
+  },
+  "sheep": {
+    "name": "Sheep",
+    "buy": 1200,
+    "productId": "wool",
+    "produceEveryDays": 3,
+    "heartsMax": 10,
+    "feed": { "itemId": "hay", "qty": 1 },
+    "maturityDays": 0
+  }
+}
