@@ -455,6 +455,7 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
         'rule',
       );
     }
+    assertItemRef('animal', a.feed.itemId, `animals.json#${a.id}`, 'feed.itemId');
   }
   for (const m of machines.values()) {
     for (const [i, ing] of m.input.entries()) assertItemRef('machine', ing.itemId, `machines.json#${m.id}`, `input.${i}.itemId`);

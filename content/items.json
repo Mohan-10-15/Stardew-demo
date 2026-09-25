@@ -649,5 +649,59 @@
     "canStack": true,
     "tags": ["fish", "season:2", "season:3"],
     "asset": "fish-cod"
+  },
+  "hay": {
+    "name": "Hay",
+    "description": "Dried grass for the barn and coop.",
+    "category": "resource",
+    "price": { "base": 3, "buy": 15 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "resource-hay"
+  },
+  "egg": {
+    "name": "Egg",
+    "description": "A fresh farm egg.",
+    "category": "animal_product",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["animal_product"],
+    "asset": "product-egg"
+  },
+  "duck-egg": {
+    "name": "Duck Egg",
+    "description": "A pale, hefty egg from a happy duck.",
+    "category": "animal_product",
+    "price": { "base": 75 },
+    "canStack": true,
+    "tags": ["animal_product"],
+    "asset": "product-duck-egg"
+  },
+  "milk": {
+    "name": "Milk",
+    "description": "Cold, creamy milk.",
+    "category": "animal_product",
+    "price": { "base": 110 },
+    "canStack": true,
+    "tags": ["animal_product"],
+    "asset": "product-milk"
+  },
+  "goat-milk": {
+    "name": "Goat Milk",
+    "description": "Rich, tangy milk from a roaming goat.",
+    "category": "animal_product",
+    "price": { "base": 180 },
+    "canStack": true,
+    "tags": ["animal_product"],
+    "asset": "product-goat-milk"
+  },
+  "wool": {
+    "name": "Wool",
+    "description": "A soft fleece of thick wool.",
+    "category": "animal_product",
+    "price": { "base": 260 },
+    "canStack": true,
+    "tags": ["animal_product"],
+    "asset": "product-wool"
   }
 }

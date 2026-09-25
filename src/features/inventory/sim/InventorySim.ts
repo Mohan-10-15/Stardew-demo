@@ -81,6 +81,35 @@ export function tryAddToSlots(
   return { state: st, added: qty - remaining };
 }
 
+/**
+ * Atomically remove `qty` units of `itemId` from the bag (any quality stack is
+ * acceptable, lowest first). Returns `removed: qty` on success; or `0` with
+ * the state untouched when fewer than `qty` are present (callers must not
+ * consume the item otherwise).
+ */
+export function removeStackFromInventory(
+  state: GameState,
+  itemId: string,
+  qty: number,
+): { state: GameState; removed: number } {
+  const slots = state.player.inventory.slots;
+  let total = 0;
+  for (const s of slots) if (s && s.id === itemId) total += s.qty;
+  if (total < qty) return { state, removed: 0 };
+
+  let next = slots;
+  let remaining = qty;
+  for (let i = 0; i < next.length && remaining > 0; i++) {
+    const s = next[i];
+    if (!s || s.id !== itemId) continue;
+    const take = Math.min(s.qty, remaining);
+    next = next.map((slot, si) => (si === i ? s.qty - take > 0 ? { ...s, qty: s.qty - take } : null : slot));
+    remaining -= take;
+  }
+  const inv = state.player.inventory;
+  return { state: { ...state, player: { ...state.player, inventory: { ...inv, slots: next } } }, removed: qty };
+}
+
 /** Aggregated view of the bag, merged by id+quality, first-appearance order. */
 export function summarizeInventory(state: GameState): InventorySummary[] {
   const out: InventorySummary[] = [];

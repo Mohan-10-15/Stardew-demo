@@ -2,8 +2,9 @@
 
 Status: ORCHESTRATOR. Workers code against this document; raise disagreements in
 their report (`DONE T-#### | files | verify | issues`). Fishing (section 1) is
-RATIFIED (T-0402). Sections for animals, machines and recipes/buffs land with
-T-0403 / T-0404 and are marked RATIFIED there — do not code them from here yet.
+RATIFIED (T-0402). Animals (section 2) is RATIFIED (T-0403). Sections for
+machines and recipes/buffs land with T-0404 and are marked RATIFIED there — do
+not code them from here yet.
 
 Read first: AGENTS.md, docs/ARCHITECTURE.md, src/core/contracts/m1-contracts.md,
 src/core/contracts/m2-contracts.md, this doc. All M1/M2/M3 contracts stay in force.
@@ -22,9 +23,9 @@ in src/core (schemas.ts, content.ts). Workers READ these; nobody edits them.
   - Omitted `seasons`/`weather`/`time` = always available. Game-minutes use the
     Stardew 600..2700 scale (6:00 = 600, 2:00 = 2600). Seasons are indices 0..3.
   - Type: `FishDef`.
-- (T-0403/T-0404 will add `content/animals.json`, `content/machines.json`,
-  `content/recipes.json`; schemas already exist in core/schemas.ts as
-  `AnimalDef`, `MachineDef`, `RecipeDef`.)
+- `content/animals.json` (keyed by species — RATIFIED in T-0403, section 2).
+  `content/machines.json` / `content/recipes.json` land with T-0404; schemas
+  already exist in core/schemas.ts as `AnimalDef`, `MachineDef`, `RecipeDef`.
 
 ## 1. Fishing (RATIFIED — T-0402)
 
@@ -113,3 +114,86 @@ no-fish, weighted pick, bite -> catch (item + day stats), reel-cancel,
 too-slow escape, inventory-full escape, day-end clear, save/load session
 round-trip, and farming:sim no-op for rods. Uses the real village water
 (bottom rows 28-31) by seeding `mapStateFromDef` for the village map.
+
+## 2. Animals (RATIFIED — T-0403)
+
+### 2.1 Where state lives
+
+- `state.extensions.animals`:
+  ```
+  { animals: AnimalState[], lastRolledDay, seq }
+  AnimalState = { id, species, bornDay, mature, happy, hearts, fedToday,
+                  petToday, hungerStreak, productReady, nextProductAt }
+  ```
+  Purely data; the herd rides save/load. `id` = `<species>-<seq>` (monotonic
+  per save), `happy` 0..100, `hearts` 0..heartsMax (float).
+
+### 2.2 Content baseline (5 species)
+
+`content/animals.json` ships chicken (400g), duck (900g), cow (1500g), goat
+(1400g), sheep (1200g). Every species eats `hay` x1 daily (general-store stocks
+12 hay at 15g each — T-0403 added the stock entry) and yields its own
+`animal_product` item in items.json (T-0403 added `hay`, `egg`, `duck-egg`,
+`milk`, `goat-milk`, `wool`). `maturityDays` is 0 for all; enforce later.
+
+### 2.3 Buying (`animals:buy {species, qty}`)
+
+- Caps the herd at `ANIMAL_CAP = 24`; rejects `full`. Requires gold
+  `species.buy x qty`, else `no-gold`. Unknown species -> `unknown-species`.
+  On success: money deducted, animals added `mature` (maturityDays 0..day),
+  `nextProductAt = dayCount + maturityDays + produceEveryDays`, emits
+  `animals:bought`. Every failure emits `animals:denied`.
+
+### 2.4 Morning roll (`rollAnimalsDay`, gated on `lastRolledDay`)
+
+Two rollover paths feed this; the guard makes the night roll exactly once:
+
+- **Forced pass-out** (`time:tick`): core advances time first, so the reducer
+  rolls `world.dayCount` directly.
+- **Voluntary sleep** (`player:sleep`): shipping:sim advances the world inside
+  the same action, so animals dispatches a nested `animals:roll-day` which the
+  store runs after every `player:sleep` reducer — order-independent.
+
+Per fed morning: `happy += 12`, `hearts += 0.35`, hunger streak resets. Per
+unfed morning: `hungerStreak += 1`, `happy -= 16 + 5*streak`, `hearts -= 0.1`
+(no bond from a starving animal). Petting (once/day, `animals:pet`) adds
+`happy += 10`, `hearts += 0.2` on the spot. A mature animal whose
+`nextProductAt <= day` AND `hearts >= 2` (MIN_HEARTS_TO_PRODUCE) flips
+`productReady = true`.
+
+### 2.5 Collecting (`animals:collect {animalId}`)
+
+Rejects `no-animal` / `not-ready` / `unknown-species` (all `animals:denied`).
+Quality roll (`animals:quality` rng fork): gold when `happy >= 70`,
+`hearts/heartsMax >= 0.3`, `r >= 0.85`; silver when `happy >= 45`,
+`hearts >= 2`, `r >= 0.6`; else normal. Product goes into the bag (capacity
+limited — a full bag emits `inventory:full` and the animal STAYS ready), then
+`productReady = false`, `nextProductAt = dayCount + produceEveryDays`, and
+`animals:collected`.
+
+### 2.6 Feeding (`animals:feed {animalId}`)
+
+Consumes exactly `species.feed.qty` of `species.feed.itemId` (atomic: a bag
+without the full count refuses `no-feed` and nothing is consumed). Already fed
+this day -> `already-fed`. Emits `animals:fed`.
+
+### 2.7 Events
+
+| Event | Payload |
+|---|---|
+| `animals:bought` | `{ species, qty, uids, gold }` |
+| `animals:day` | `{ day, count, produced }` |
+| `animals:fed` | `{ animalId, species, itemId }` |
+| `animals:petted` | `{ animalId, species }` |
+| `animals:collected` | `{ animalId, species, itemId, qty, quality }` |
+| `animals:denied` | `{ reason: 'full' \| 'no-gold' \| 'unknown-species' \| 'no-animal' \| 'already-fed' \| 'no-feed' \| 'already-petted' \| 'not-ready' }` |
+| `inventory:full` | `{ animalId, itemId }` (shared inventory event) |
+
+### 2.8 Test coverage
+
+`tests/sim/animals.test.ts`: buying (gold, cap, unknown species, uid
+uniqueness), the morning roll over BOTH paths (fed gain, hunger decay,
+idempotence, forced pass-out), bond gating (`MIN_HEARTS_TO_PRODUCE`, ~4 fully
+cared days to first product), feeding/petting denials, quality tiers, collect +
+reschedule, inventory-full keeps the animal ready, per-species products, and
+herd save/load round-trip.

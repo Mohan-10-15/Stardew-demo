@@ -264,6 +264,9 @@ const fishSchema = z.object({
 export type FishDef = z.infer<typeof fishSchema>;
 
 // --- M4 animals (content/animals.json, keyed by animalId) ---
+// Feed is consumed from the inventory once per animal per day; defaulting to
+// the shared 'hay' item. maturityDays delays the first product (0 = produces
+// from the first morning after purchase).
 const animalSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -272,6 +275,13 @@ const animalSchema = z.object({
   productId: z.string().min(1),
   produceEveryDays: z.number().int().min(1).default(1),
   heartsMax: z.number().int().min(1).default(10),
+  feed: z
+    .object({
+      itemId: z.string().min(1).default('hay'),
+      qty: z.number().int().min(1).default(1),
+    })
+    .default({ itemId: 'hay', qty: 1 }),
+  maturityDays: z.number().int().min(0).default(0),
 });
 
 export type AnimalDef = z.infer<typeof animalSchema>;
