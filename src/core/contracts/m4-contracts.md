@@ -2,9 +2,10 @@
 
 Status: ORCHESTRATOR. Workers code against this document; raise disagreements in
 their report (`DONE T-#### | files | verify | issues`). Fishing (section 1) is
-RATIFIED (T-0402). Animals (section 2) is RATIFIED (T-0403). Sections for
-machines and recipes/buffs land with T-0404 and are marked RATIFIED there — do
-not code them from here yet.
+RATIFIED (T-0402). Animals (section 2) is RATIFIED (T-0403). Machines
+(section 3) and recipes/cooking buffs (section 4) are RATIFIED here (T-0404) —
+code against them; the skills panel UI is still open (T-0405) and stays
+briefed at the bottom of this document.
 
 Read first: AGENTS.md, docs/ARCHITECTURE.md, src/core/contracts/m1-contracts.md,
 src/core/contracts/m2-contracts.md, this doc. All M1/M2/M3 contracts stay in force.
@@ -24,8 +25,9 @@ in src/core (schemas.ts, content.ts). Workers READ these; nobody edits them.
     Stardew 600..2700 scale (6:00 = 600, 2:00 = 2600). Seasons are indices 0..3.
   - Type: `FishDef`.
 - `content/animals.json` (keyed by species — RATIFIED in T-0403, section 2).
-  `content/machines.json` / `content/recipes.json` land with T-0404; schemas
-  already exist in core/schemas.ts as `AnimalDef`, `MachineDef`, `RecipeDef`.
+  `content/machines.json` / `content/recipes.json` ship with T-0404 (sections
+  3 and 4); schemas exist in core/schemas.ts as `AnimalDef`, `MachineDef`,
+  `RecipeDef`.
 
 ## 1. Fishing (RATIFIED — T-0402)
 
@@ -197,3 +199,126 @@ idempotence, forced pass-out), bond gating (`MIN_HEARTS_TO_PRODUCE`, ~4 fully
 cared days to first product), feeding/petting denials, quality tiers, collect +
 reschedule, inventory-full keeps the animal ready, per-species products, and
 herd save/load round-trip.
+
+## 3. Machines (RATIFIED — T-0404)
+
+### 3.1 Content baseline
+
+`content/machines.json` (keyed by machineId) ships four processors. The
+machine's **id doubles as the item id** used to place it (`machine`-category
+item, obtained by crafting — section 4):
+
+| machine | input | output | hours |
+|---|---|---|---|
+| `mayonnaise-machine` | egg x1 | mayonnaise x1 | 3 |
+| `cheese-press` | milk x1 | cheese x1 | 4 |
+| `loom` | wool x1 | cloth x1 | 5 |
+| `seed-maker` | parsnip x1 | parsnip-seed x1 | 1 |
+
+T-0404 added the machine items `mayonnaise-machine` / `cheese-press` / `loom` /
+`seed-maker` (category `machine`, uncraftable-until-bought via recipes) and the
+products `mayonnaise` / `cheese` / `cloth` (category `animal_product`) plus the
+cooked foods (section 4) to items.json.
+
+### 3.2 Where state lives
+
+A machine is a placed object `machine:<machineId>` in `MapState.placed[x,y]`
+(any map), whose `data` is:
+
+```
+{ machineId, loaded: 0|1, remainingTicks }
+```
+
+`remainingTicks` counts down 1 per 10-minute `time:tick` (1 in-game hour = 6
+ticks). Machines ride save/load and map migration like any placed object; no
+extension block.
+
+### 3.3 Actions and events
+
+| Action | Payload | Result on success |
+|---|---|---|
+| `machines:place` | `{ tile, itemId }` | consumes the machine item, adds the placed object, `machines:placed` |
+| `machines:insert` | `{ tile, slot }` | consumes one matching input bundle from the slot, arms `remainingTicks = hours*6`, `machines:loaded` |
+| `machines:collect` | `{ tile }` | adds each output to the bag, resets `loaded`/`remainingTicks`, `machines:collected` |
+| `time:tick` | — | decrements every loaded machine; last tick emits `machines:finished` |
+
+Denials (all `machines:denied`): `unknown-machine`, `no-map`, `occupied`,
+`blocked`, `no-item`, `no-slot`, `not-needed`, `busy`, `no-ingredient`,
+`no-machine`, `not-loaded`, `not-ready`, `inventory-full`.
+
+Rules fixed in T-0404:
+
+- **Placement** requires a free walkable tile (`legend.walkable`, per the map's
+  authored glyph). A bag without the full machine item refuses `no-item`.
+- **Insert** needs a slot holding an item matching a `def.input` entry (qty
+  checked atomically through the bag); a loaded machine is `busy` until its
+  current bundle is collected.
+- **Collect** is atomic on outputs: if the bag cannot take the full output, the
+  machine STAYS loaded+ready and emits `inventory:full` + `machines:denied
+  {reason:'inventory-full'}`.
+- **Countdown** pauses during `player:sleep` (only `time:tick` advances it).
+
+## 4. Recipes, cooking and food buffs (RATIFIED — T-0404)
+
+### 4.1 Content baseline
+
+`content/recipes.json` (keyed by recipeId) ships `kind: 'crafting'` recipes for
+the four machines and `kind: 'cooking'` recipes for three foods:
+
+| recipe | kind | ingredients | unlock | food |
+|---|---|---|---|---|
+| `mayonnaise-machine` | crafting | wood x20, fiber x5 | foraging 2 | — |
+| `cheese-press` | crafting | wood x25, stone x10 | farming 3 | — |
+| `loom` | crafting | wood x15, fiber x10 | foraging 4 | — |
+| `seed-maker` | crafting | wood x20, stone x12, fiber x5 | farming 2 | — |
+| `fried-egg` | cooking | egg x1 | none | energy 20, health 8 |
+| `cheese-omelette` | cooking | egg, milk, cheese x1 each | farming 4 | energy 40, health 18, buff `farming +1` 2h |
+| `ember-bloom-tea` | cooking | ember-bloom x1, fiber x3 | none | energy 15, health 6, buff `luck +1` 3h |
+
+### 4.2 Crafting (`crafting:craft {recipeId}`)
+
+- **Unlock**: `recipeUnlocked(state, recipeId)` = no `unlock`, or the named
+  skill's level >= the required level. Locked -> `crafting:denied
+  {reason:'locked'}`.
+- **Atomic**: the output must fit the bag FIRST (else `inventory-full`, nothing
+  consumed); only then are ingredient bundles removed full-or-none (else
+  `missing-ingredients`, nothing consumed); the output is added last. Success
+  emits `crafting:crafted {recipeId, itemId, qty}`.
+
+### 4.3 Eating (player:eat {slot})
+
+- `player:eat` requires a stack in the slot whose item is a cooked food
+  (`not-food` / `no-slot` otherwise). Consumes one, adds `food.energy` /
+  `food.health` capped at the player's maxima, and appends `food.buffs` as
+  `ActiveBuff { stat, amount, expiresAt }` where
+  `expiresAt = absoluteMinutes(now) + hours*60`. Emits `food:eaten {itemId,
+  energy, health, buffs}` (the food's deltas).
+- Buffs live in `extensions.crafting.buffs` and are **pruned on `time:tick`**
+  against the advanced absolute minute; `activeBuffs(state)` reads those still
+  in window. They ride save/load.
+
+### 4.4 Events
+
+| Event | Payload |
+|---|---|
+| `crafting:crafted` | `{ recipeId, itemId, qty }` |
+| `crafting:denied` | `{ reason: 'unknown-recipe' \| 'locked' \| 'inventory-full' \| 'missing-ingredients' \| 'no-slot' \| 'not-food' }` |
+| `food:eaten` | `{ itemId, energy, health, buffs }` |
+| `machines:placed` / `machines:loaded` / `machines:finished` / `machines:collected` | { tile, ... } (section 3) |
+
+### 4.5 Test coverage
+
+`tests/sim/crafting.test.ts` + `tests/sim/machines.test.ts`: every action,
+every `*:denied` branch, atomic consumption (full bag / missing ingredient
+leaves the bag untouched), unlock gating across skill levels, countdown and
+finished scheduling, collect denials, inventory-full keeps the machine ready,
+and both persistence paths (placed machine in-flight + active buffs) survive
+`flushPersist`.
+
+## 5. T-0405 (skills panel and HUD) — briefed, not yet ratified
+
+Still open (WORKER-3 / workers, browser-only rows): skills panel listing the
+five skills with level/XP/professions and the currently known recipes;
+animal/fishing/machine click affordances; a buff HUD line draining over time;
+audio-settings UI. Covered by Playwright once a browser runs here; sim-level
+logic behind them already lands with sections 3–4.
