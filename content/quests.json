@@ -1,0 +1,42 @@
+{
+  "q-rowan-cinders": {
+    "name": "Cinders for the Lantern Walk",
+    "giver": "rowan",
+    "description": "The Lantern Walk needs fresh parsnips to line the baskets. Bring five to Rowan at the plaza.",
+    "objective": { "type": "collect", "item": "parsnip", "count": 5 },
+    "reward": { "gold": 350, "hearts": [{ "npc": "rowan", "amount": 1 }] },
+    "repeats": "once"
+  },
+  "q-marisol-wagon": {
+    "name": "Wagon Repair",
+    "giver": "marisol",
+    "description": "Marisol's wagon lost a wheel on the old road. Gather twenty pieces of wood for the repair.",
+    "objective": { "type": "collect", "item": "wood", "count": 20 },
+    "reward": { "gold": 300, "hearts": [{ "npc": "marisol", "amount": 1 }] },
+    "repeats": "once"
+  },
+  "q-finn-geode": {
+    "name": "The Hearth Geode",
+    "giver": "finn",
+    "description": "Finn wants a violet Amethyst to study the old hearth-light. The Lantern Wagon brings rare stones on Fridays.",
+    "objective": { "type": "collect", "item": "amethyst", "count": 1 },
+    "reward": { "gold": 200, "items": ["topaz"], "hearts": [{ "npc": "finn", "amount": 1 }] },
+    "repeats": "once"
+  },
+  "q-bramble-delivery": {
+    "name": "Morning Delivery",
+    "giver": "bramble",
+    "description": "Bramble owes Juniper a box of Hollow Chocolate. Deliver it to Juniper's door.",
+    "objective": { "type": "deliver", "item": "chocolate", "to": "juniper" },
+    "reward": { "gold": 220, "hearts": [{ "npc": "juniper", "amount": 1 }, { "npc": "bramble", "amount": 1 }] },
+    "repeats": "weekly"
+  },
+  "q-sable-message": {
+    "name": "Message to the Clinic",
+    "giver": "sable",
+    "description": "Sable needs a message carried to Juniper at the clinic. Talk to Juniper.",
+    "objective": { "type": "talk", "to": "juniper" },
+    "reward": { "gold": 150, "hearts": [{ "npc": "juniper", "amount": 1 }] },
+    "repeats": "weekly"
+  }
+}

@@ -78,6 +78,10 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       ctx.bus.emit('ui:open-shop', {});
       return;
     }
+    if (action.type === 'journal') {
+      ctx.bus.emit('ui:open-journal', {});
+      return;
+    }
     const sim = actionToSim(action);
     if (sim) ctx.store.dispatch(sim as SimAction<string, unknown>);
   }

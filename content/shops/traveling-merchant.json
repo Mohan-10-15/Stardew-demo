@@ -1,0 +1,16 @@
+{
+  "id": "traveling-merchant",
+  "name": "The Lantern Wagon",
+  "buys": false,
+  "days": ["friday"],
+  "stock": [
+    { "itemId": "amethyst", "qty": 1 },
+    { "itemId": "emerald", "qty": 1 },
+    { "itemId": "topaz", "qty": 1 },
+    { "itemId": "opal", "qty": 1 },
+    { "itemId": "chocolate", "qty": 2 },
+    { "itemId": "rainbow-prism", "qty": 1 },
+    { "itemId": "strawberry-seed", "qty": 2 },
+    { "itemId": "hot-pepper-seed", "qty": 3 }
+  ]
+}

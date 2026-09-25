@@ -28,7 +28,16 @@ export interface ShopInputAction {
   type: 'shop';
 }
 
-export type InputAction = MoveInputAction | InteractInputAction | SelectSlotInputAction | ShopInputAction;
+export interface JournalInputAction {
+  type: 'journal';
+}
+
+export type InputAction =
+  | MoveInputAction
+  | InteractInputAction
+  | SelectSlotInputAction
+  | ShopInputAction
+  | JournalInputAction;
 
 export interface KeyBinding {
   /** Normalized keys that trigger this action. */
@@ -57,6 +66,7 @@ export const DEFAULT_KEYMAP: readonly KeyBinding[] = [
   { keys: ['d', 'arrowright'], action: { type: 'move', dx: 1, dy: 0 }, holdRepeat: true },
   { keys: ['space', 'e'], action: { type: 'interact' } },
   { keys: ['f'], action: { type: 'shop' } },
+  { keys: ['j'], action: { type: 'journal' } },
   ...SLOT_BINDINGS,
 ];
 
@@ -91,6 +101,8 @@ export function actionToSim(action: InputAction): InputSimAction | null {
     case 'select-slot':
       return { type: 'player:select-slot', payload: { slot: action.slot } };
     case 'shop':
+      return null;
+    case 'journal':
       return null;
   }
 }
