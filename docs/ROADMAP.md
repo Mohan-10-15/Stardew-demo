@@ -14,7 +14,8 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
 - [x] M3 People: schedules + pathfinding, dialogue, gifts, friendship, heart
       events, quests + journal.
 - [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
-      professions.
+      professions. (T-0401 skills, T-0402 fishing, T-0403 animals + hay stock
+      landed; the checkbox stays open until T-0404 machines/recipes/buffs.)
 - [ ] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
       voxel presentation over the 2D sim world (T-0406 renderer landed; polish:
       placed-object blending, pointer-lock look, terrain height), original
