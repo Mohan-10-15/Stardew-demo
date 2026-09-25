@@ -6,8 +6,27 @@
  * `npm run check` gate.
  */
 import { z } from 'zod';
-import type { CropDef, ItemDef, MapDef, NpcDef, ShopDef } from './schemas';
-import { cropsSchema, itemsSchema, mapSchemaFull, npcsSchema, shopSchema } from './schemas';
+import type {
+  CropDef,
+  DialogueDef,
+  ItemDef,
+  MapDef,
+  NpcDef,
+  NpcScheduleDef,
+  QuestDef,
+  ScheduleRule,
+  ShopDef,
+} from './schemas';
+import {
+  cropsSchema,
+  dialoguesSchema,
+  itemsSchema,
+  mapSchemaFull,
+  npcsSchema,
+  questsSchema,
+  schedulesSchema,
+  shopSchema,
+} from './schemas';
 
 export interface ContentDb {
   items: Map<string, ItemDef>;
@@ -15,6 +34,9 @@ export interface ContentDb {
   npcs: Map<string, NpcDef>;
   maps: Map<string, MapDef>;
   shops: Map<string, ShopDef>;
+  schedules: Map<string, NpcScheduleDef>;
+  dialogue: Map<string, DialogueDef>;
+  quests: Map<string, QuestDef>;
   /** Map id -> set of tile codes present (for validator spot-checks). */
   byId<T>(kind: keyof ContentDb, id: string): T | undefined;
 }
@@ -148,12 +170,18 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
   const npcs = collectRecords(files, 'npcs.json', npcsSchema.parseRecord) as Map<string, NpcDef>;
   const maps = collectMaps(files);
   const shops = collectShops(files);
+  const schedules = collectRecords(files, 'schedules.json', schedulesSchema.parseRecord) as Map<string, NpcScheduleDef>;
+  const dialogue = collectRecords(files, 'dialogue.json', dialoguesSchema.parseRecord) as Map<string, DialogueDef>;
+  const quests = collectRecords(files, 'quests.json', questsSchema.parseRecord) as Map<string, QuestDef>;
   const db: ContentDb = {
     items,
     crops,
     npcs,
     maps,
     shops,
+    schedules,
+    dialogue,
+    quests,
     byId<T>(kind: keyof ContentDb, id: string): T | undefined {
       const col = this[kind];
       return col instanceof Map ? (col.get(id) as T | undefined) : undefined;
@@ -189,6 +217,150 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
         );
       }
     }
+  }
+  // Cross-references: NPC schedules target existing maps/tiles.
+  function assertScheduleRule(npcId: string, path: Array<string | number>, rule: ScheduleRule): void {
+    if (rule.from >= rule.to) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue([...path, 'from'], 'rule.from must be < rule.to')],
+        'rule',
+      );
+    }
+    const m = maps.get(rule.map);
+    if (!m) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue([...path, 'map'], `schedule map '${rule.map}' does not exist in maps/`)],
+        'rule',
+      );
+    }
+    if (rule.x >= m.width || rule.y >= m.height) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue([...path], 'schedule tile out of bounds')],
+        'rule',
+      );
+    }
+  }
+  for (const [npcId, s] of schedules) {
+    if (!npcs.has(npcId)) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue([], `schedule key '${npcId}' has no npc in npcs.json`)],
+        'rule',
+      );
+    }
+    if (!maps.has(s.home)) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue(['home'], `home map '${s.home}' does not exist in maps/`)],
+        'rule',
+      );
+    }
+    s.default.forEach((r, i) => assertScheduleRule(npcId, ['default', i], r));
+    s.overrides.forEach((slot, si) => slot.rules.forEach((r, ri) => assertScheduleRule(npcId, ['overrides', si, 'rules', ri], r)));
+  }
+  // Cross-references: dialogue keywords/sentinels exist; heart events are valid.
+  const SEASON_TIER_RE = /^\d+$/;
+  for (const [npcId, d] of dialogue) {
+    if (!npcs.has(npcId)) {
+      throw new ContentError(
+        `dialogue.json#${npcId}`,
+        [ruleIssue([], `dialogue key '${npcId}' has no npc in npcs.json`)],
+        'rule',
+      );
+    }
+    for (const key of Object.keys(d.season ?? {})) {
+      if (!SEASON_TIER_RE.test(key) || Number(key) < 0 || Number(key) > 3) {
+        throw new ContentError(
+          `dialogue.json#${npcId}`,
+          [ruleIssue(['season', key], 'season keys must be "0".."3"')],
+          'rule',
+        );
+      }
+    }
+    for (const key of Object.keys(d.byHeart ?? {})) {
+      if (!SEASON_TIER_RE.test(key) || Number(key) < 0 || Number(key) > 10) {
+        throw new ContentError(
+          `dialogue.json#${npcId}`,
+          [ruleIssue(['byHeart', key], 'byHeart keys must be "0".."10"')],
+          'rule',
+        );
+      }
+    }
+    for (const [i, ev] of d.heartEvents.entries()) {
+      if (d.eventLine && !d.eventLine[ev.line]) {
+        throw new ContentError(
+          `dialogue.json#${npcId}`,
+          [ruleIssue(['heartEvents', i, 'line'], `event line '${ev.line}' does not exist in eventLine`)],
+          'rule',
+        );
+      }
+      if (ev.map !== undefined && !maps.has(ev.map)) {
+        throw new ContentError(
+          `dialogue.json#${npcId}`,
+          [ruleIssue(['heartEvents', i, 'map'], `event map '${ev.map}' does not exist in maps/`)],
+          'rule',
+        );
+      }
+      if (ev.time && ev.time.from >= ev.time.to) {
+        throw new ContentError(
+          `dialogue.json#${npcId}`,
+          [ruleIssue(['heartEvents', i, 'time'], 'time.from must be < time.to')],
+          'rule',
+        );
+      }
+      for (const itemId of ev.reward.items) {
+        if (!items.has(itemId)) {
+          throw new ContentError(
+            `dialogue.json#${npcId}`,
+            [ruleIssue(['heartEvents', i, 'reward', 'items'], `reward item '${itemId}' does not exist in items.json`)],
+            'rule',
+          );
+        }
+      }
+    }
+  }
+  // Cross-references: quests reference real npcs/items; reward items exist.
+  function assertQuestRef(questId: string, path: string, itemId: string, item: boolean): void {
+    if (item && !items.has(itemId)) {
+      throw new ContentError(
+        `quests.json#${questId}`,
+        [ruleIssue([path], `quest refers to missing item '${itemId}'`)],
+        'rule',
+      );
+    }
+    if (!item && !npcs.has(itemId)) {
+      throw new ContentError(
+        `quests.json#${questId}`,
+        [ruleIssue([path], `quest refers to missing npc '${itemId}'`)],
+        'rule',
+      );
+    }
+  }
+  for (const [questId, q] of quests) {
+    if (!npcs.has(q.giver)) {
+      throw new ContentError(
+        `quests.json#${questId}`,
+        [ruleIssue(['giver'], `giver '${q.giver}' does not exist in npcs.json`)],
+        'rule',
+      );
+    }
+    switch (q.objective.type) {
+      case 'collect':
+        assertQuestRef(questId, 'objective.item', q.objective.item, true);
+        break;
+      case 'deliver':
+        assertQuestRef(questId, 'objective.item', q.objective.item, true);
+        assertQuestRef(questId, 'objective.to', q.objective.to, false);
+        break;
+      case 'talk':
+        assertQuestRef(questId, 'objective.to', q.objective.to, false);
+        break;
+    }
+    for (const itemId of q.reward.items) assertQuestRef(questId, 'reward.items', itemId, true);
+    for (const h of q.reward.hearts) assertQuestRef(questId, 'reward.hearts.npc', h.npc, false);
   }
   return db;
 }

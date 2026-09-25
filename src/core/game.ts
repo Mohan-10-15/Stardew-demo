@@ -86,6 +86,9 @@ function loadContentSyncOrThrow(): ContentDb {
     npcs: new Map(),
     maps: new Map(),
     shops: new Map(),
+    schedules: new Map(),
+    dialogue: new Map(),
+    quests: new Map(),
     byId() {
       return undefined;
     },
