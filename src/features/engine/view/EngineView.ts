@@ -30,6 +30,7 @@ import {
   type GroundMaterials,
   type HouseSpan,
 } from './assets';
+import { NpcView } from './npcs';
 
 const CAM_PITCH = (57 * Math.PI) / 180;
 const CAM_YAW = Math.PI / 4;
@@ -165,10 +166,16 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
   const groundLayer = new THREE.Group();
   const placedLayer = new THREE.Group();
+  const npcView = new NpcView(ctx.content.npcs);
   const player = buildPlayer();
   const highlight = buildHighlight();
   highlight.visible = false;
-  scene.add(groundLayer, placedLayer, player, highlight);
+  scene.add(groundLayer, placedLayer, npcView.group, player, highlight);
+
+  let npcRebuildPending = false;
+  const offWarp = ctx.bus.on('player:warped', () => {
+    npcRebuildPending = true;
+  });
 
   let disposed = false;
   let zoom = 1;
@@ -605,6 +612,9 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     syncMapIfNeeded(state);
     applySeasonPalette(state);
     updateWeatherVisuals(dt, state);
+    const npcMapId = state.player.position.mapId;
+    npcView.update(state.maps[npcMapId], npcMapId, dt, npcRebuildPending);
+    npcRebuildPending = false;
     updatePlayer(dt, state);
     updateHighlight(state);
     updateCamera(dt);
@@ -634,8 +644,10 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     disposed = true;
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
+    offWarp();
     disposePrecip();
     disposedPlaced();
+    npcView.dispose();
     disposeGroup(groundLayer);
     player.traverse((node) => {
       if (node instanceof THREE.Mesh) {

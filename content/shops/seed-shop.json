@@ -5,11 +5,11 @@
   "stock": [
     { "itemId": "parsnip-seed", "qty": 40 },
     { "itemId": "garlic-seed", "qty": 30 },
-    { "itemId": "cauliflower-seed", "qty": 25 },
+    { "itemId": "cauliflower-seed", "qty": 25, "season": [0] },
     { "itemId": "strawberry-seed", "qty": 20 },
     { "itemId": "green-bean-seed", "qty": 25 },
     { "itemId": "potato-seed", "qty": 30 },
-    { "itemId": "blueberry-seed", "qty": 25 },
+    { "itemId": "blueberry-seed", "qty": 25, "season": [1] },
     { "itemId": "tomato-seed", "qty": 25 },
     { "itemId": "hot-pepper-seed", "qty": 25 }
   ]

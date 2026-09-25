@@ -256,6 +256,16 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
         'rule',
       );
     }
+    const ground = m.layers.ground.replace(/\s+/g, '');
+    const glyph = ground[rule.y * m.width + rule.x];
+    const glyphDef = glyph ? m.legend[glyph] : undefined;
+    if (!glyphDef || glyphDef.walkable !== true) {
+      throw new ContentError(
+        `schedules.json#${npcId}`,
+        [ruleIssue([...path], `schedule tile (${rule.x},${rule.y}) on '${m.id}' is not walkable`)],
+        'rule',
+      );
+    }
   }
   for (const [npcId, s] of schedules) {
     if (!npcs.has(npcId)) {
@@ -274,6 +284,21 @@ export async function loadContent(scan: () => Promise<LoadedFile[]> = scanFiles)
     }
     s.default.forEach((r, i) => assertScheduleRule(npcId, ['default', i], r));
     s.overrides.forEach((slot, si) => slot.rules.forEach((r, ri) => assertScheduleRule(npcId, ['overrides', si, 'rules', ri], r)));
+    if (s.homeAnchor) {
+      const home = maps.get(s.home);
+      if (home) {
+        const ground = home.layers.ground.replace(/\s+/g, '');
+        const glyph = ground[s.homeAnchor.y * home.width + s.homeAnchor.x];
+        const glyphDef = glyph ? home.legend[glyph] : undefined;
+        if (!glyphDef || glyphDef.walkable !== true) {
+          throw new ContentError(
+            `schedules.json#${npcId}`,
+            [ruleIssue(['homeAnchor'], `home anchor (${s.homeAnchor.x},${s.homeAnchor.y}) on '${s.home}' is not walkable`)],
+            'rule',
+          );
+        }
+      }
+    }
   }
   // Cross-references: dialogue keywords/sentinels exist; heart events are valid.
   const SEASON_TIER_RE = /^\d+$/;

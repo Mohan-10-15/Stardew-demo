@@ -14,18 +14,26 @@
 import type { ContentDb } from '@game/core/content';
 import type { EventBus } from '@game/core/events';
 import { defineFeature, type FeatureContext, type FeatureModule } from '@game/core/feature';
+import { createRngFromState } from '@game/core/rng';
+import { dayIndex, dayOfWeekName } from '@game/core/time';
+import type { ShopDef } from '@game/core/schemas';
 import type { GameState, ItemStack } from '@game/core/types';
 import { tryAddToSlots } from '../../inventory/sim/InventorySim';
 import { bumpStat } from '../../farming/sim/summary';
 
 export const SHOP_EXT_ID = 'shop';
+export const TRAVELING_MERCHANT_SHOP_ID = 'traveling-merchant';
 
-export type ShopDenyReason = 'funds' | 'space' | 'stock';
+const MERCHANT_STOCK_SIZE = 4;
+
+export type ShopDenyReason = 'funds' | 'space' | 'stock' | 'closed';
 
 export interface ShopExt {
   stock: Record<string, Record<string, number>>;
   /** world.dayCount when per-shop daily counters were last restored. */
   lastRestockDay: number;
+  seasonStock: Record<string, Record<string, boolean>>;
+  merchantToday: boolean;
 }
 
 export interface ShopBuyPayload {
@@ -40,12 +48,27 @@ export interface ShopSellPayload {
   qty: number;
 }
 
+interface ShopStockState {
+  stock: Record<string, Record<string, number>>;
+  seasonStock: Record<string, Record<string, boolean>>;
+  merchantToday: boolean;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export function readShopExt(state: GameState): ShopExt {
   const raw: Record<string, unknown> | undefined = state.extensions[SHOP_EXT_ID];
-  if (raw && raw.stock && typeof raw.stock === 'object' && typeof raw.lastRestockDay === 'number') {
-    return raw as unknown as ShopExt;
+  if (raw && isRecord(raw.stock) && typeof raw.lastRestockDay === 'number') {
+    return {
+      stock: raw.stock as ShopExt['stock'],
+      lastRestockDay: raw.lastRestockDay,
+      seasonStock: isRecord(raw.seasonStock) ? (raw.seasonStock as ShopExt['seasonStock']) : {},
+      merchantToday: raw.merchantToday === true,
+    };
   }
-  return { stock: {}, lastRestockDay: state.world.dayCount };
+  return { stock: {}, lastRestockDay: state.world.dayCount, seasonStock: {}, merchantToday: false };
 }
 
 export function writeShopExt(state: GameState, next: ShopExt): GameState {
@@ -55,35 +78,76 @@ export function writeShopExt(state: GameState, next: ShopExt): GameState {
   };
 }
 
+export function isShopOpen(shop: ShopDef, state: GameState): boolean {
+  return shop.days === undefined || shop.days.includes(dayOfWeekName(state.world.calendar));
+}
+
+function entryIsInSeason(entry: ShopDef['stock'][number], state: GameState): boolean {
+  return entry.season === undefined || entry.season.includes(state.world.calendar.seasonIndex);
+}
+
+function merchantEntries(shop: ShopDef, state: GameState): ShopDef['stock'] {
+  const entries = [...shop.stock];
+  if (entries.length === 0) return [];
+  const rng = createRngFromState(state.rngSeed).fork(`merchant@${dayIndex(state.world.calendar)}`);
+  return rng.shuffle(entries).slice(0, Math.min(MERCHANT_STOCK_SIZE, entries.length));
+}
+
+function listedEntries(shop: ShopDef, state: GameState): ShopDef['stock'] {
+  if (!isShopOpen(shop, state)) return [];
+  const entries = shop.id === TRAVELING_MERCHANT_SHOP_ID ? merchantEntries(shop, state) : shop.stock;
+  return entries.filter((entry) => entryIsInSeason(entry, state));
+}
+
 /** Initialise the shop extension, seeding finite daily counters from content. */
 export function ensureShopExt(state: GameState, content: ContentDb): GameState {
   const raw: Record<string, unknown> | undefined = state.extensions[SHOP_EXT_ID];
-  if (raw && raw.stock && typeof raw.stock === 'object' && typeof raw.lastRestockDay === 'number') {
+  if (
+    raw &&
+    isRecord(raw.stock) &&
+    typeof raw.lastRestockDay === 'number' &&
+    isRecord(raw.seasonStock) &&
+    typeof raw.merchantToday === 'boolean'
+  ) {
     return state;
   }
-  return writeShopExt(state, { stock: freshStock(content), lastRestockDay: state.world.dayCount });
+  return writeShopExt(state, { ...freshStock(state, content), lastRestockDay: state.world.dayCount });
 }
 
-function freshStock(content: ContentDb): Record<string, Record<string, number>> {
+function freshStock(state: GameState, content: ContentDb): ShopStockState {
   const stock: Record<string, Record<string, number>> = {};
+  const seasonStock: Record<string, Record<string, boolean>> = {};
+  let merchantToday = false;
+
   for (const shop of content.shops.values()) {
+    const open = isShopOpen(shop, state);
+    if (shop.id === TRAVELING_MERCHANT_SHOP_ID) merchantToday = open;
+    const entries = listedEntries(shop, state);
+    const available = new Set(entries.map((entry) => entry.itemId));
+    const availability: Record<string, boolean> = {};
     const counters: Record<string, number> = {};
     for (const entry of shop.stock) {
-      if (entry.qty !== undefined) counters[entry.itemId] = entry.qty;
+      availability[entry.itemId] = available.has(entry.itemId);
+      if (available.has(entry.itemId) && entry.qty !== undefined) {
+        counters[entry.itemId] = entry.qty;
+      }
     }
+    seasonStock[shop.id] = availability;
     if (Object.keys(counters).length > 0) stock[shop.id] = counters;
   }
-  return stock;
+
+  return { stock, seasonStock, merchantToday };
 }
 
 /** Remaining units of itemId at shopId this day (Infinity = infinite). */
-function remainingOf(ext: ShopExt, shopId: string, itemId: string, content: ContentDb): number {
-  const counter = ext.stock[shopId]?.[itemId];
+function remainingOf(
+  ext: ShopExt,
+  shopId: string,
+  entry: ShopDef['stock'][number],
+): number {
+  const counter = ext.stock[shopId]?.[entry.itemId];
   if (typeof counter === 'number') return counter;
-  const shop = content.shops.get(shopId);
-  const entry = shop?.stock.find((e) => e.itemId === itemId);
-  if (entry && entry.qty === undefined) return Infinity;
-  return 0;
+  return entry.qty === undefined ? Infinity : 0;
 }
 
 function decrementStock(
@@ -115,14 +179,16 @@ export function buyReducer(
 ): GameState {
   const ext = readShopExt(state);
   const shop = content.shops.get(payload.shopId);
-  const entry = shop?.stock.find((e) => e.itemId === payload.itemId);
   const item = content.items.get(payload.itemId);
-  if (!shop || !entry || !item) return denyShop(state, bus, 'stock', payload);
+  if (!shop) return denyShop(state, bus, 'stock', payload);
+  if (!isShopOpen(shop, state)) return denyShop(state, bus, 'closed', payload);
+  const entry = listedEntries(shop, state).find((e) => e.itemId === payload.itemId);
+  if (!entry || !item) return denyShop(state, bus, 'stock', payload);
 
   const qty = Math.floor(payload.qty);
   if (qty <= 0) return denyShop(state, bus, 'stock', payload);
 
-  const remaining = remainingOf(ext, payload.shopId, payload.itemId, content);
+  const remaining = remainingOf(ext, payload.shopId, entry);
   if (remaining < qty) return denyShop(state, bus, 'stock', payload);
 
   const price = entry.price ?? item.price.buy;
@@ -176,7 +242,15 @@ export function sellReducer(
 ): GameState {
   const shop = content.shops.get(payload.shopId);
   const item = content.items.get(payload.itemId);
-  if (!shop || !shop.buys || !item) {
+  if (!shop) {
+    bus.emit('shop:denied', { reason: 'stock', shopId: payload.shopId, itemId: payload.itemId });
+    return state;
+  }
+  if (!isShopOpen(shop, state)) {
+    bus.emit('shop:denied', { reason: 'closed', shopId: payload.shopId, itemId: payload.itemId });
+    return state;
+  }
+  if (!shop.buys || !item) {
     bus.emit('shop:denied', { reason: 'stock', shopId: payload.shopId, itemId: payload.itemId });
     return state;
   }
@@ -204,7 +278,10 @@ export function sellReducer(
 export function restockReducer(state: GameState, bus: EventBus, content: ContentDb): GameState {
   const ext = readShopExt(state);
   if (ext.lastRestockDay === state.world.dayCount) return state;
-  const next = writeShopExt(state, { stock: freshStock(content), lastRestockDay: state.world.dayCount });
+  const next = writeShopExt(state, {
+    ...freshStock(state, content),
+    lastRestockDay: state.world.dayCount,
+  });
   bus.emit('shop:restocked', { dayCount: state.world.dayCount });
   return next;
 }

@@ -11,7 +11,7 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
       engine walkable, first crops. Result: a playable season.
 - [x] M2 Village and economy: village map, shops, seasons + weather + forecasts,
       foraging, tree chopping, more crops, end-of-day summary.
-- [ ] M3 People: schedules + pathfinding, dialogue, gifts, friendship, first
+- [x] M3 People: schedules + pathfinding, dialogue, gifts, friendship, heart
       events, quests + journal.
 - [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
       professions.

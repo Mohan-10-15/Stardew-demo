@@ -509,3 +509,162 @@
   min-width: 42px;
   text-align: right;
 }
+
+.eh-dialogue-dialog .eh-dialog {
+  min-width: 340px;
+  max-width: min(620px, 92vw);
+}
+
+.eh-dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eh-dialogue-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eh-dialogue-avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  color: #17202a;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.eh-dialogue-name {
+  margin: 0;
+  font-size: 15px;
+}
+
+.eh-dialogue-line {
+  min-height: 48px;
+  margin: 0;
+  color: var(--eh-ui-text);
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.eh-dialogue-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eh-dialogue-hint,
+.eh-dialogue-counter {
+  color: var(--eh-ui-text-dim);
+  font-size: 12px;
+}
+
+.eh-dialogue-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .eh-dialogue-dialog .eh-dialog {
+    min-width: 280px;
+  }
+}
+
+.eh-journal-dialog .eh-dialog {
+  min-width: 420px;
+  max-width: min(640px, 92vw);
+}
+
+.eh-journal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eh-journal-tabs .eh-tab-body {
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.eh-journal-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.eh-journal-row-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eh-journal-row-main {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--eh-ui-text);
+}
+
+.eh-journal-row-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-journal-status {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eh-journal-status-available {
+  color: #9ad0a8;
+}
+
+.eh-journal-status-ready {
+  color: #f3cf7a;
+  font-weight: 700;
+}
+
+.eh-journal-hearts {
+  position: relative;
+  width: 128px;
+  height: 10px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.eh-journal-hearts-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #c0608a, #e87f6e);
+  transition: width 160ms ease;
+}
+
+@media (max-width: 720px) {
+  .eh-journal-dialog .eh-dialog {
+    min-width: 300px;
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "rowan": {
+    "home": "village",
+    "homeAnchor": { "x": 2, "y": 16 },
+    "default": [
+      { "from": 600, "to": 900, "map": "farm", "x": 6, "y": 6 },
+      { "from": 900, "to": 1200, "map": "village", "x": 8, "y": 10 },
+      { "from": 1200, "to": 1800, "map": "village", "x": 18, "y": 10 },
+      { "from": 1800, "to": 2700, "map": "village", "x": 8, "y": 20 }
+    ],
+    "overrides": [
+      {
+        "when": { "weather": "rain" },
+        "rules": [
+          { "from": 600, "to": 1800, "map": "village", "x": 12, "y": 10 },
+          { "from": 1800, "to": 2700, "map": "village", "x": 18, "y": 20 }
+        ]
+      }
+    ]
+  },
+  "marisol": {
+    "home": "village",
+    "homeAnchor": { "x": 24, "y": 16 },
+    "default": [
+      { "from": 600, "to": 900, "map": "village", "x": 24, "y": 10 },
+      { "from": 900, "to": 1300, "map": "village", "x": 26, "y": 10 },
+      { "from": 1300, "to": 1900, "map": "farm", "x": 20, "y": 6 },
+      { "from": 1900, "to": 2700, "map": "village", "x": 24, "y": 20 }
+    ],
+    "overrides": [
+      {
+        "when": { "dayOfWeek": "friday" },
+        "rules": [
+          { "from": 600, "to": 2700, "map": "village", "x": 24, "y": 10 }
+        ]
+      }
+    ]
+  },
+  "finn": {
+    "home": "farm",
+    "homeAnchor": { "x": 10, "y": 6 },
+    "default": [
+      { "from": 600, "to": 900, "map": "farm", "x": 10, "y": 6 },
+      { "from": 900, "to": 1200, "map": "farm", "x": 20, "y": 6 },
+      { "from": 1200, "to": 1800, "map": "village", "x": 7, "y": 10 },
+      { "from": 1800, "to": 2700, "map": "farm", "x": 25, "y": 11 }
+    ],
+    "overrides": []
+  },
+  "bramble": {
+    "home": "village",
+    "homeAnchor": { "x": 27, "y": 20 },
+    "default": [
+      { "from": 600, "to": 1200, "map": "village", "x": 27, "y": 20 },
+      { "from": 1200, "to": 1900, "map": "village", "x": 20, "y": 10 },
+      { "from": 1900, "to": 2700, "map": "village", "x": 27, "y": 20 }
+    ],
+    "overrides": []
+  },
+  "sable": {
+    "home": "farm",
+    "homeAnchor": { "x": 25, "y": 11 },
+    "default": [
+      { "from": 600, "to": 900, "map": "farm", "x": 25, "y": 11 },
+      { "from": 900, "to": 1800, "map": "farm", "x": 28, "y": 11 },
+      { "from": 1800, "to": 2100, "map": "village", "x": 28, "y": 20 },
+      { "from": 2100, "to": 2700, "map": "farm", "x": 25, "y": 11 }
+    ],
+    "overrides": [
+      {
+        "when": { "season": 3 },
+        "rules": [
+          { "from": 600, "to": 2700, "map": "farm", "x": 25, "y": 11 }
+        ]
+      }
+    ]
+  },
+  "juniper": {
+    "home": "village",
+    "homeAnchor": { "x": 8, "y": 20 },
+    "default": [
+      { "from": 600, "to": 900, "map": "village", "x": 8, "y": 20 },
+      { "from": 900, "to": 1300, "map": "village", "x": 10, "y": 10 },
+      { "from": 1300, "to": 1900, "map": "village", "x": 18, "y": 20 },
+      { "from": 1900, "to": 2700, "map": "village", "x": 8, "y": 20 }
+    ],
+    "overrides": [
+      {
+        "when": { "weather": "snow" },
+        "rules": [
+          { "from": 600, "to": 2700, "map": "village", "x": 8, "y": 20 }
+        ]
+      }
+    ]
+  }
+}

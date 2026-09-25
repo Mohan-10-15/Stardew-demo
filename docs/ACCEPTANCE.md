@@ -41,15 +41,17 @@ Playwright · `sim+browser` = sim covered now, browser check pending.
 | Season change alters visuals and crops available | sim+browser | growth.ts seasonal gating + view palette/swap; visual deferred |
 | A chopped tree regrows | sim | forage/stump regrow test (seed-based respawn) |
 
-## M3 — People (acceptance gate while in progress)
+## M3 — People: PASS (commit cfe48de + M3 follow-ups)
 
 | Step | Cov | Where |
 |------|-----|-------|
-| One NPC in different places at 09:00, 13:00, 19:00 | sim | npc-schedule test: position(map,x,y) from world.clock |
+| One NPC in different places at 09:00, 13:00, 19:00 | sim | npc-schedule test: position(map,x,y) from world.clock (tests/view/npcs.test.ts) |
 | Dialogue changes with weather and friendship | sim | dialogue-selection test (heart tier + season/weather keys) |
 | A gift changes hearts; loved vs hated reactions differ | sim | gift test (+0/+X/+2X/- off hearts, reply text varies) |
 | A heart event plays | sim | heart-event test: trigger condition -> cutscene state machine -> hearts turn/flag |
 | Accept, finish, turn in a quest; journal reflects it | sim | quest test (accept/objective/complete/turn-in -> journal entries + reward) |
+| NPCs never stand on blocked tiles | sim | content validation: schedule rule + home anchor must be walkable per legend |
+| Seasonal shop stock + Friday traveling merchant | sim | tests/sim/shop-seasonal.test.ts (open/closed days, seeded 4-item rotation, season gating) |
 
 ## M4 — Life skills (pending)
 

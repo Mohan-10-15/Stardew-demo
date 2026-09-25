@@ -295,5 +295,53 @@
     "canStack": true,
     "tags": ["forage"],
     "asset": "forage-ember-bloom"
+  },
+  "amethyst": {
+    "name": "Amethyst",
+    "description": "A violet crystal that holds the embers' glow.",
+    "category": "mineral",
+    "price": { "base": 90, "buy": 200 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "emerald": {
+    "name": "Emerald",
+    "description": "A deep green gem polished by an old village stream.",
+    "category": "mineral",
+    "price": { "base": 160, "buy": 350 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "topaz": {
+    "name": "Topaz",
+    "description": "A warm golden stone that sparkles like a banked coal.",
+    "category": "mineral",
+    "price": { "base": 120, "buy": 275 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "opal": {
+    "name": "Opal",
+    "description": "A milky gem with shifting colors hidden in its heart.",
+    "category": "mineral",
+    "price": { "base": 210, "buy": 460 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "chocolate": {
+    "name": "Hollow Chocolate",
+    "description": "A rich ember-brown treat wrapped for a long journey.",
+    "category": "food",
+    "price": { "base": 35, "buy": 70 },
+    "canStack": true,
+    "tags": ["food", "gift"]
+  },
+  "rainbow-prism": {
+    "name": "Rainbow Prism",
+    "description": "A rare crystal that bends lantern light into a bright ribbon.",
+    "category": "resource",
+    "price": { "base": 400, "buy": 850 },
+    "canStack": true,
+    "tags": ["resource", "gift", "rare"]
   }
 }

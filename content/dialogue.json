@@ -1,0 +1,240 @@
+{
+  "rowan": {
+    "default": ["The village is waking up.", "A good day to tend the soil."],
+    "byHeart": {
+      "2": ["We should keep moving."],
+      "5": ["You have earned my trust."],
+      "8": ["I am glad you are here."]
+    },
+    "weather": {
+      "sun": ["A bright day for a bright plan."],
+      "rain": ["The rain will wake the seeds."],
+      "storm": ["Stay close when the sky roars."],
+      "snow": ["The old paths are quiet today."],
+      "wind": ["The wind is testing every roof."]
+    },
+    "season": {
+      "0": ["Spring makes the whole valley hopeful."],
+      "1": ["Summer evenings are worth the heat."],
+      "2": ["Fall colors are arriving early."],
+      "3": ["Winter has its own quiet beauty."]
+    },
+    "time": {
+      "morning": ["You found me before the village woke."],
+      "day": ["There is plenty of work before dusk."],
+      "evening": ["The lanterns are coming on."],
+      "night": ["The village is resting now."]
+    },
+    "giftReply": {
+      "loves": ["That is exactly what I needed. Thank you!"],
+      "likes": ["A thoughtful gift. Thank you."],
+      "neutral": ["I appreciate the thought."],
+      "dislikes": ["I am not especially fond of that."],
+      "hates": ["Please keep that away from me."]
+    },
+    "eventLine": {
+      "e-rowan-cinders": [
+        "I found something warm in the old kiln while the wind was talking.",
+        "Cinders still glowing after all these years — the valley keeps its stories close.",
+        "Thank you for walking with me. Take this wood and tend your own hearth. We are neighbors now."
+      ]
+    },
+    "heartEvents": [
+      {
+        "id": "e-rowan-cinders",
+        "hearts": 2,
+        "map": "village",
+        "time": { "from": 1100, "to": 2300 },
+        "line": "e-rowan-cinders",
+        "reward": { "hearts": 1, "items": ["wood"] }
+      }
+    ]
+  },
+  "marisol": {
+    "default": ["A sound board is worth a hundred words.", "Mind the sawdust."],
+    "byHeart": {
+      "2": ["You have a steady hand."],
+      "5": ["I would build something lasting with you."],
+      "8": ["You are part of this place now."]
+    },
+    "weather": {
+      "sun": ["Good drying weather for fresh timber."],
+      "rain": ["Rain means no wasted splinters."],
+      "storm": ["The roof is secure, for once."],
+      "snow": ["Cold hands make careful work."],
+      "wind": ["Nothing blows loose on my watch."]
+    },
+    "season": {
+      "0": ["The workshop smells like fresh wood."],
+      "1": ["Summer heat means longer days."],
+      "2": ["The repair list is getting shorter."],
+      "3": ["I will mend whatever needs mending."]
+    },
+    "time": {
+      "morning": ["You caught me before the first cut."],
+      "day": ["Measure twice, cut once."],
+      "evening": ["A last few boards before dinner."],
+      "night": ["The tools are quiet for now."]
+    },
+    "giftReply": {
+      "loves": ["Perfect! I can make something wonderful from that."],
+      "likes": ["That will be useful around here."],
+      "neutral": ["Thank you, I suppose."],
+      "dislikes": ["I would rather have something sturdier."],
+      "hates": ["That belongs far away from my workshop."]
+    }
+  },
+  "finn": {
+    "default": ["The meadow is full of small surprises.", "Smell the herbs after the rain."],
+    "byHeart": {
+      "2": ["You have a careful eye."],
+      "5": ["The valley tells me you belong here."],
+      "8": ["You may help me tend the wild places."]
+    },
+    "weather": {
+      "sun": ["Sunlight makes the clearest leaves."],
+      "rain": ["Every fern is drinking deeply."],
+      "storm": ["The forest is keeping its secrets."],
+      "snow": ["Winter herbs keep their secrets close."],
+      "wind": ["The seeds are traveling today."]
+    },
+    "season": {
+      "0": ["The first green shoots are everywhere."],
+      "1": ["The meadow is bright and busy."],
+      "2": ["I am gathering the last useful leaves."],
+      "3": ["Even winter has roots beneath it."]
+    },
+    "time": {
+      "morning": ["The dew is best before the sun."],
+      "day": ["There is a whole hillside to check."],
+      "evening": ["The air is cooling quickly."],
+      "night": ["Some flowers close after dark."]
+    },
+    "giftReply": {
+      "loves": ["A wonderful find! I will remember your thought."],
+      "likes": ["A useful addition to my basket."],
+      "neutral": ["I will find a place for it."],
+      "dislikes": ["I would rather leave that behind."],
+      "hates": ["That is not a gift for a herb jar."]
+    },
+    "eventLine": {
+      "e-finn-fern": [
+        "There is a little fern that waves a welcome whenever you pass the gate.",
+        "The meadow remembers you, farmer. It told me you belong here.",
+        "Take this fiber — leave a little out at dusk, and the valley wrens will line their nest with it."
+      ]
+    },
+    "heartEvents": [
+      {
+        "id": "e-finn-fern",
+        "hearts": 2,
+        "map": "farm",
+        "time": { "from": 600, "to": 2400 },
+        "line": "e-finn-fern",
+        "reward": { "hearts": 1, "items": ["fiber"] }
+      }
+    ]
+  },
+  "bramble": {
+    "default": ["Everything has a fair price, and a fair story.", "Have a look around."],
+    "byHeart": {
+      "2": ["You have a practical way about you."],
+      "5": ["You have my full confidence."],
+      "8": ["You are a true friend of the market."]
+    },
+    "weather": {
+      "sun": ["A good day for a brisk trade."],
+      "rain": ["Rain slows the crowds, not the work."],
+      "storm": ["Keep your coin close in a storm."],
+      "snow": ["Warm goods sell quickly today."],
+      "wind": ["Mind the awnings when the wind rises."]
+    },
+    "season": {
+      "0": ["Spring has brought a fine shipment."],
+      "1": ["Cool drinks are selling quickly."],
+      "2": ["The harvest is looking generous."],
+      "3": ["Only the warm stores remain."]
+    },
+    "time": {
+      "morning": ["We open with the first light."],
+      "day": ["The market is in full swing."],
+      "evening": ["A few last bargains remain."],
+      "night": ["The shutters are down for now."]
+    },
+    "giftReply": {
+      "loves": ["A fine choice! My customers will envy you."],
+      "likes": ["That is a solid choice."],
+      "neutral": ["I will find a use for it."],
+      "dislikes": ["Not quite my kind of trade."],
+      "hates": ["I have no market for that at all."]
+    }
+  },
+  "sable": {
+    "default": ["The mine never stays quiet for long.", "Keep your lamp close."],
+    "byHeart": {
+      "2": ["You are quicker than you look."],
+      "5": ["You have proven yourself underground."],
+      "8": ["You are the best company on any dig."]
+    },
+    "weather": {
+      "sun": ["A bright day above ground."],
+      "rain": ["Rain fills the cracks with good ore."],
+      "storm": ["The tunnels are safest below the storm."],
+      "snow": ["Cold makes the stone ring true."],
+      "wind": ["The draft knows every tunnel."]
+    },
+    "season": {
+      "0": ["The hillside is waking up."],
+      "1": ["Even the heat cannot stop the dig."],
+      "2": ["The ore is calling from below."],
+      "3": ["The frozen seams are easiest to read."]
+    },
+    "time": {
+      "morning": ["The first shift is ready."],
+      "day": ["There is plenty of stone left."],
+      "evening": ["We call it a day's work."],
+      "night": ["The deep shift is just beginning."]
+    },
+    "giftReply": {
+      "loves": ["Now that is a find! Thank you."],
+      "likes": ["Good material. I can work with that."],
+      "neutral": ["I will keep it in the supply pile."],
+      "dislikes": ["That will not help at the dig."],
+      "hates": ["Please keep that out of the mine."]
+    }
+  },
+  "juniper": {
+    "default": ["A little care goes a long way.", "You look tired. Sit a while."],
+    "byHeart": {
+      "2": ["You are learning the rhythm of the valley."],
+      "5": ["I trust you with the most delicate remedies."],
+      "8": ["You have brought this place back to life."]
+    },
+    "weather": {
+      "sun": ["Sunlight is medicine of its own."],
+      "rain": ["Listen to the rain. It teaches patience."],
+      "storm": ["Stay inside until the sky settles."],
+      "snow": ["Warm broth and warm thoughts."],
+      "wind": ["The wind carries every season's scent."]
+    },
+    "season": {
+      "0": ["The first blossoms need tending."],
+      "1": ["Drink water before the heat catches you."],
+      "2": ["The harvest will be gentler this year."],
+      "3": ["Rest is part of staying well."]
+    },
+    "time": {
+      "morning": ["You are up before the village again."],
+      "day": ["Let me see that hand."],
+      "evening": ["The day is lighter now."],
+      "night": ["Sleep well. I will keep watch."]
+    },
+    "giftReply": {
+      "loves": ["You remembered what I need. Thank you."],
+      "likes": ["That will help someone today."],
+      "neutral": ["A kind thought is welcome too."],
+      "dislikes": ["I will pass on that one."],
+      "hates": ["That is not safe for a patient."]
+    }
+  }
+}

@@ -110,6 +110,30 @@ export const en = {
     unknownItem: 'Unknown item',
     qtyBadge: 'x{qty}',
   },
+  people: {
+    dialogue: {
+      continueLabel: 'Continue',
+      closeLabel: 'Close',
+      hint: 'Space or click to continue',
+      counter: '{current} / {total}',
+      empty: 'There is nothing to say right now.',
+    },
+  },
+  journal: {
+    title: 'Journal',
+    tabQuests: 'Quests',
+    tabPeople: 'People',
+    tabSkills: 'Skills',
+    available: 'Available',
+    ready: 'Ready to turn in',
+    done: 'Completed today',
+    progress: '{current} / {total}',
+    completed: 'Completed {days} day(s) ago',
+    hearts: '{hearts} hearts',
+    loves: 'Loves: {items}',
+    skillLevel: '{skill} · Level {level}',
+    xp: '{xp} xp',
+  },
 } as const;
 
 export type Messages = typeof en;

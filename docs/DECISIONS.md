@@ -118,3 +118,19 @@ Each non-obvious choice gets an entry. Newest last.
     carries the per-milestone script; steps are marked sim (headless bot/tests,
     the gate here) vs browser (deferred to Playwright). Browser-only steps may
     not be the sole coverage of any feature's logic.
+26. **Quest interaction routing (M3).** A player:interact on an NPC resolves in
+    priority order: pending deliver (held item is the quest item) → pending talk
+    → pending turn-in (giver + objective satisfied) → giver accepts a new quest
+    → gift. A held tool (item category 'tool') never counts as a gift and falls
+    back to talking, so the starter hoe can't be gifted accidentally. Weekly
+    quests re-open 7 days after their doneDay.
+27. **Heart-tier dialogue key is "2", not "0" (M3).** The first M3 dialogue content
+    used byHeart tier "0", which always matched at hearts>=0 and starved the
+    weather/season/time pools — visibly freezing dialogue variety. All six NPCs
+    now key their heart pool at tiers 2/5/8 so greenhorn players see season and
+    weather lines change as intended.
+28. **Schedule targets are content-validated to be walkable (M3).** assertScheduleRule
+    and homeAnchor require the legend glyph at every scheduled tile to be walkable;
+    the rule caught the worker's juniper clinic anchor inside a building 'h' tile
+    and it was moved to the porch floor (8,20). NPCs can never be authored to stand
+    in water, trees, or walls.
