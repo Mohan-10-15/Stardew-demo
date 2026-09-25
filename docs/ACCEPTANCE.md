@@ -41,7 +41,7 @@ Playwright · `sim+browser` = sim covered now, browser check pending.
 | Season change alters visuals and crops available | sim+browser | growth.ts seasonal gating + view palette/swap; visual deferred |
 | A chopped tree regrows | sim | forage/stump regrow test (seed-based respawn) |
 
-## M3 — People: PASS (commit cfe48de + M3 follow-ups)
+## M3 — People: PASS (commit 1c32b36)
 
 | Step | Cov | Where |
 |------|-----|-------|
