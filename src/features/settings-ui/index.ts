@@ -5,6 +5,7 @@ registerFeature(settingsUi);
 
 export { createSettingsUi } from './settings';
 export { settingsUi } from './settings';
+export { settingsPanelModel, togglePrefs, type SettingsPanelModel } from './panel-model';
 export {
   DEFAULT_AUDIO_PREFS,
   normalizeAudioPrefs,

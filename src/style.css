@@ -1,22 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap');
 
+/*
+ * Global shell tokens (WORKER-3 lane, T-0503). The palette is the Minecraft-GUI
+ * one: near-black page, dark slate panels with hard 2px light/dark bevels, and
+ * light text with a 2px drop shadow. `ui-kit.css` builds every panel, button
+ * and slot out of these; nothing in the UI uses a rounded corner, a blur or a
+ * soft gradient.
+ */
 :root {
-  --eh-bg: #1b1308;
-  --eh-panel: #4a2f18;
-  --eh-panel-border: #2a1a0c;
-  --eh-panel-hi: #8a5a30;
-  --eh-panel-lo: #3a2312;
-  --eh-parchment: #ecd9a8;
-  --eh-parchment-2: #f3e6c3;
-  --eh-ink: #3a2a18;
-  --eh-ink-dim: #6b5538;
+  --eh-bg: #0d0d11;
+  --eh-panel: #2b2b32;
+  --eh-panel-border: #08080b;
+  --eh-panel-hi: #565660;
+  --eh-panel-lo: #141419;
+  --eh-parchment: #212128;
+  --eh-parchment-2: #3b3b44;
+  --eh-ink: #e9e9ef;
+  --eh-ink-dim: #a2a2b0;
   --eh-text: var(--eh-ink);
   --eh-text-dim: var(--eh-ink-dim);
-  --eh-accent: #c96a2a;
-  --eh-accent-2: #4f83c9;
-  --eh-health: #c0493f;
-  --eh-energy: #4f9a63;
-  color-scheme: light;
+  --eh-accent: #7cc24a;
+  --eh-accent-2: #6f96d8;
+  --eh-health: #c0392b;
+  --eh-energy: #3f9a4a;
+  color-scheme: dark;
 }
 
 * {

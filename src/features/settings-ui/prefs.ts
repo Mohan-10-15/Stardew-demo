@@ -10,7 +10,10 @@ export interface AudioPrefs {
 }
 
 export const DEFAULT_AUDIO_PREFS: AudioPrefs = {
-  musicEnabled: false,
+  // A new game plays music; the K panel is the only thing that turns it off.
+  // (music:ui reads this at boot and never overrides it, so the toggle the
+  // player sees always matches what they hear.)
+  musicEnabled: true,
   musicVolume: 0.6,
 };
 

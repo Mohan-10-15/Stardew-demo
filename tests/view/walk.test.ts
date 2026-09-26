@@ -239,7 +239,7 @@ describe('engine:sim player:interact', () => {
 
     store.dispatch({ type: 'player:interact', payload: {} });
 
-    expect(seen).toEqual([{ tile: { x: 3, y: 4 }, toolId: 'hoe-t0' }]);
+    expect(seen).toEqual([{ tile: { mapId: 'farm', x: 3, y: 4 }, toolId: 'hoe-t0' }]);
   });
 
   it('emits hand when the selected slot is empty', async () => {
@@ -250,6 +250,6 @@ describe('engine:sim player:interact', () => {
 
     store.dispatch({ type: 'player:interact', payload: {} });
 
-    expect(seen).toEqual([{ tile: { x: 3, y: 4 }, toolId: 'hand' }]);
+    expect(seen).toEqual([{ tile: { mapId: 'farm', x: 3, y: 4 }, toolId: 'hand' }]);
   });
 });

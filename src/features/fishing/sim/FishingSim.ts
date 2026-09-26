@@ -21,7 +21,7 @@ import type { EventBus } from '@game/core/events';
 import type { ContentDb } from '@game/core/content';
 import type { Rng } from '@game/core/rng';
 import { addStackToInventory } from '../../inventory/sim/InventorySim';
-import type { GameState, QualityTier, TilePos } from '@game/core/types';
+import type { GameState, QualityTier, WorldPos } from '@game/core/types';
 import type { FishDef } from '@game/core/schemas';
 import { bumpStat } from '../../farming/sim/summary';
 
@@ -121,8 +121,12 @@ export interface FishingDeps {
   content: ContentDb;
 }
 
-function tileIsWater(state: GameState, tile: TilePos, deps: FishingDeps): boolean {
-  const mapId = state.player.position.mapId;
+function tileIsWater(state: GameState, tile: WorldPos, deps: FishingDeps): boolean {
+  // Resolve the map from the TILE, not from where the player happens to be
+  // standing: the two were conflated here while the bus payload's mapId was
+  // being dropped, which is the same class of bug as the missing-mapId defect
+  // in tool:use-requested. `tile.mapId` is what the emitter sends.
+  const mapId = tile.mapId;
   const map = state.maps[mapId];
   const def = deps.content.maps.get(mapId);
   if (!map || !def) return false;
@@ -133,10 +137,10 @@ function tileIsWater(state: GameState, tile: TilePos, deps: FishingDeps): boolea
   return glyph?.water === true;
 }
 
-export function castFishing(state: GameState, tile: TilePos, toolId: string, rng: Rng, deps: FishingDeps): GameState {
+export function castFishing(state: GameState, tile: WorldPos, toolId: string, rng: Rng, deps: FishingDeps): GameState {
   const ext = readFishingExt(state);
   if (ext.session) return state; // the line is already out
-  const mapId = state.player.position.mapId;
+  const mapId = tile.mapId;
   if (!tileIsWater(state, tile, deps)) {
     deps.bus.emit('tool:failed', { tile: { ...tile, mapId }, toolId, reason: 'not-water' });
     return state;
@@ -222,10 +226,11 @@ export const fishingSim: FeatureModule = defineFeature({
     const deps: FishingDeps = { bus: ctx.bus, content: ctx.content };
 
     ctx.store.registerReducer('fishing:cast', (st, action, rng) => {
-      const payload = action.payload as { tile?: TilePos; toolId?: unknown } | null;
-      if (!payload || typeof payload.tile !== 'object' || payload.tile === null) return st;
+      const payload = action.payload as { tile?: WorldPos; toolId?: unknown } | null;
+      const tile = payload?.tile;
+      if (!tile || typeof tile.mapId !== 'string') return st;
       const toolId = typeof payload.toolId === 'string' ? payload.toolId : 'fishing-rod-t0';
-      return castFishing(st, payload.tile as TilePos, toolId, rng, deps);
+      return castFishing(st, tile, toolId, rng, deps);
     });
     ctx.store.registerReducer('fishing:reel', (st, _action, rng) => reelFishing(st, rng, deps));
     ctx.store.registerReducer('time:tick', (st) => tickFishing(st, deps));
@@ -244,12 +249,18 @@ export const fishingSim: FeatureModule = defineFeature({
     // Claim rod interactions from the shared tool-use event. With a session
     // already running the rod press is a reel (cancel while waiting, catch on
     // the hook); otherwise it is a cast.
-    ctx.bus.on('tool:use-requested', (payload: { tile: TilePos; toolId: string }) => {
+    // The bus is loosely typed, so this handler must not assume it received
+    // anything: `payload.toolId` used to be read off a possibly-null payload,
+    // and `payload.tile` is a WorldPos because that is what the emitter sends
+    // (the cast reducer drops a payload with no mapId rather than guessing).
+    ctx.bus.on('tool:use-requested', (payload: { tile?: WorldPos; toolId?: string | null } | null) => {
+      const tile = payload?.tile;
+      if (!tile || typeof tile.mapId !== 'string') return;
       if (!isRod(payload.toolId, ctx.content)) return;
       if (readFishingExt(ctx.store.state).session) {
-        ctx.store.dispatch({ type: 'fishing:reel', payload: { tile: payload.tile } });
+        ctx.store.dispatch({ type: 'fishing:reel', payload: { tile } });
       } else {
-        ctx.store.dispatch({ type: 'fishing:cast', payload: { tile: payload.tile, toolId: payload.toolId } });
+        ctx.store.dispatch({ type: 'fishing:cast', payload: { tile, toolId: payload.toolId as string } });
       }
     });
   },

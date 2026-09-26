@@ -50,7 +50,9 @@ export interface PlayerWarpedEvent {
 }
 
 export interface ToolUseRequest {
-  tile: TilePos;
+  /** Always carries mapId: consumers resolve the map through it, so a tile
+   *  without one silently degrades to "no-map" (decision 39). */
+  tile: WorldPos;
   toolId: string;
 }
 
@@ -268,10 +270,17 @@ export function registerEngineSim({ store, bus, content }: EngineSimDeps): void 
 
   store.registerReducer('player:interact', (state: GameState, _action: SimAction<string, unknown>, _rng: unknown): GameState => {
     const player = state.player;
-    const tile = tileInFront(player.position, player.facing);
+    const front = tileInFront(player.position, player.facing);
     const stack = player.inventory.slots[player.inventory.selected];
     const toolId = stack ? stack.id : 'hand';
-    bus.emit<ToolUseRequest>('tool:use-requested', { tile, toolId });
+    // The request must name the map, not just the tile: farming:sim and
+    // machines:sim both resolve `state.maps[tile.mapId]`, and a bare TilePos
+    // made every tool swing in the real game fail with 'no-map' while the
+    // unit tests (which dispatched farming:till directly) stayed green.
+    bus.emit<ToolUseRequest>('tool:use-requested', {
+      tile: { mapId: player.position.mapId, x: front.x, y: front.y },
+      toolId,
+    });
     return state;
   });
 }

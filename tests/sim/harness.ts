@@ -7,7 +7,7 @@
 import { EventBus } from '@game/core/events';
 import { Rng } from '@game/core/rng';
 import { Store } from '@game/core/store';
-import { createInitialState } from '@game/core/state';
+import { createInitialState, mapStateFromDef } from '@game/core/state';
 import { loadContent, type ContentDb } from '@game/core/content';
 import { MemorySaveStore, wrapSave, type SaveFile } from '@game/core/save';
 import {
@@ -20,14 +20,21 @@ import {
 } from '@game/core/types';
 import { advanceClock } from '@game/core/time';
 import type { FeatureContext, FeatureModule } from '@game/core/feature';
+import { engineSim, type ToolUseRequest } from '@game/features/engine/sim/PlayerPosition';
 import { farmingSim } from '@game/features/farming/sim/FarmingSim';
 import { shippingSim } from '@game/features/farming/sim/ShippingSim';
 import { seedWeatherSim } from '@game/features/farming/sim/SeedWeatherSim';
 import { inventorySim } from '@game/features/inventory/sim/InventorySim';
 import { shopSim } from '@game/features/shop/sim/ShopSim';
 import { tileKey } from '@game/features/farming/sim/utils';
+import type { Facing } from '@game/core/types';
 
+// engineSim comes first on purpose: it owns `player:interact`, the action every
+// real player gesture goes through. Without it a test cannot reach the bus the
+// way the running game does, which is exactly how the missing-mapId bug hid
+// behind 300+ green assertions.
 export const DEFAULT_MODULES: readonly FeatureModule[] = [
+  engineSim,
   farmingSim,
   shippingSim,
   seedWeatherSim,
@@ -111,9 +118,95 @@ export class SimFixture {
     this.dispatch('farming:tool-use', { tile, toolId });
   }
 
-  /** What WORKER-1's player:interact reducer emits; exercises the bus path. */
+  /**
+   * DEPRECATED — do not use in new tests. Emits `tool:use-requested` with a
+   * hand-built WorldPos, skipping the whole input layer.
+   *
+   * It cannot detect the class of bug this harness exists to catch: the running
+   * game never constructs the payload, `player:interact` does, and that emitter
+   * once shipped a tile with no `mapId` so every tool swing died with
+   * 'no-map' while all of these assertions stayed green. Kept only for the
+   * tests that specifically probe the bus handler's own tolerance of a hostile
+   * payload. New coverage belongs in `interactFront()`.
+   */
   requestTool(tile: WorldPos, toolId: string): void {
     this.bus.emit('tool:use-requested', { tile, toolId });
+  }
+
+  // ---------------------------------------------------------------------
+  // The REAL input path. Everything below goes through `player:interact`
+  // exactly as pressing Space / E / clicking the world does, so these helpers
+  // exercise the emitter, the bus and every subscriber.
+  // ---------------------------------------------------------------------
+
+  /** Put the player on a tile facing a direction (not a walk — see faceTile). */
+  standAt(mapId: string, x: number, y: number, facing: Facing): void {
+    const player = this.store.state.player;
+    this.store.replaceState({
+      ...this.store.state,
+      player: { ...player, position: { mapId, x, y }, facing },
+    });
+  }
+
+  /**
+   * Select a hotbar slot holding `itemId`, creating a 1-stack if the bag has
+   * none. Returns the slot index. Mirrors a player clicking the hotbar.
+   */
+  holdItem(itemId: string, qty = 1, quality: 0 | 1 | 2 = 0): number {
+    const existing = this.store.state.player.inventory.slots.findIndex(
+      (s) => s !== null && s.id === itemId && s.quality === quality,
+    );
+    const slot = existing === -1 ? this.giveItem(itemId, qty, quality) : existing;
+    this.selectSlot(slot);
+    return slot;
+  }
+
+  /**
+   * Select an EMPTY hotbar slot, so `player:interact` sends toolId 'hand'.
+   * Crops and forage are only pickable with bare hands (farming:sim routes
+   * every named tool to its own effect), so a real player harvesting a crop has
+   * nothing in hand — reaching for that state is the point of this helper.
+   */
+  holdHands(): number {
+    const slots = this.store.state.player.inventory.slots;
+    const empty = slots.findIndex((s) => s === null);
+    if (empty === -1) throw new Error('no free slot for holdHands (clear one first)');
+    this.selectSlot(empty);
+    return empty;
+  }
+
+  /** The payload `player:interact` actually put on the bus, read back verbatim. */
+  interactPayload(): ToolUseRequest {
+    const expectedMap = this.store.state.player.position.mapId;
+    const captured: ToolUseRequest[] = [];
+    const off = this.bus.on<ToolUseRequest>('tool:use-requested', (p) => captured.push(p));
+    // EventBus replays its buffer to late subscribers, so everything captured
+    // before the dispatch is history, not this interaction.
+    const baseline = captured.length;
+    this.dispatch('player:interact', {});
+    off();
+    const fresh = captured.slice(baseline);
+    if (fresh.length === 0) throw new Error('player:interact emitted no tool:use-requested');
+    const payload = fresh[0]!;
+    if (payload.tile?.mapId !== expectedMap) {
+      throw new Error(
+        `tool:use-requested tile is missing mapId (got ${String(payload.tile?.mapId)}, want ${expectedMap})`,
+      );
+    }
+    return payload;
+  }
+
+  /**
+   * THE input path: dispatch `player:interact` with the player standing where
+   * `standAt` put them. Returns the tile the game computed as "in front" — read
+   * off the actual `tool:use-requested` payload, not recomputed by the test, so
+   * a test can assert the resolved coordinates rather than the ones it hoped
+   * for. Throws if the payload arrived without a `mapId`: that is the exact
+   * defect that made every tool swing fail in the running game while the
+   * hand-built-payload tests stayed green.
+   */
+  interactFront(): WorldPos {
+    return this.interactPayload().tile;
   }
 
   plant(tile: WorldPos, seedId: string): void {
@@ -155,6 +248,21 @@ export class SimFixture {
 
   placed(mapId: string, x: number, y: number) {
     return this.store.state.maps[mapId]?.placed[tileKey(x, y)];
+  }
+
+  /**
+   * Install a REAL authored map (legend, water, warps, initial placed objects)
+   * into the live state, the way a new game builds its maps from content. Use
+   * this whenever a test needs a tile the synthetic testFarmMap does not have —
+   * water in particular, since fishing reads `legend[code].water` off the map
+   * the player is standing on.
+   */
+  installMap(mapId: string): MapState {
+    const def = this.content.maps.get(mapId);
+    if (!def) throw new Error(`no map '${mapId}' in content`);
+    const map = mapStateFromDef(def);
+    this.store.state.maps[mapId] = map;
+    return map;
   }
 
   cropData(mapId: string, x: number, y: number): Record<string, unknown> | undefined {

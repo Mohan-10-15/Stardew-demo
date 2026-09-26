@@ -1,6 +1,7 @@
 /**
- * UI kit entry point (WORKER-3 lane). Re-exports the headless-safe kit factory
- * and the shared i18n table. Importing this module has no DOM side effects.
+ * UI kit entry point (WORKER-3 lane). Re-exports the headless-safe kit factory,
+ * the shared i18n table and the procedural pixel-icon module. Importing this
+ * module has no DOM side effects (the icon canvas is only built on demand).
  */
 export { createUiKit } from './ui-kit';
 export type {
@@ -21,3 +22,17 @@ export type {
 } from './ui-kit';
 export { MESSAGES, en, type Messages } from './i18n/en';
 export { replaceTokens } from './template';
+export {
+  applyItemIcon,
+  buildItemIcon,
+  clearIconCache,
+  hashId,
+  ICON_SIZE,
+  iconBackground,
+  iconDataUrl,
+  iconSpriteFor,
+  iconSpriteKeys,
+  iconSpriteRows,
+  shade,
+} from './icons';
+export type { IconPixels, IconSpec } from './icons';

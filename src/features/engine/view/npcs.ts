@@ -109,15 +109,19 @@ function buildHumanoidGeometry(definition: NpcDef | undefined): THREE.BufferGeom
   const profile = definition?.baseProfile ?? {};
   const tunic = profileColor(profile, 'color', DEFAULT_TUNIC);
   const hair = profileColor(profile, 'hairColor', DEFAULT_HAIR);
+  // Minecraft proportions, matching buildPlayer(): 0.25x0.75x0.25 limbs,
+  // a 0.5x0.75x0.25 torso, a 0.5 cube head with a hair cap and front eyes.
   const parts = [
-    coloredBox(0.13, 0.34, 0.13, -0.09, 0.17, 0, PANTS_COLOR),
-    coloredBox(0.13, 0.34, 0.13, 0.09, 0.17, 0, PANTS_COLOR),
-    coloredBox(0.36, 0.34, 0.22, 0, 0.5, 0, tunic),
-    coloredBox(0.1, 0.3, 0.1, -0.25, 0.52, 0, tunic),
-    coloredBox(0.1, 0.3, 0.1, 0.25, 0.52, 0, tunic),
-    coloredBox(0.26, 0.26, 0.26, 0, 0.84, 0, hair),
-    coloredBox(0.18, 0.11, 0.025, 0, 0.84, 0.14, SKIN_COLOR),
-    coloredBox(0.065, 0.045, 0.035, 0, 0.835, 0.165, FACE_COLOR),
+    coloredBox(0.25, 0.75, 0.25, -0.13, 0.375, 0, PANTS_COLOR),
+    coloredBox(0.25, 0.75, 0.25, 0.13, 0.375, 0, PANTS_COLOR),
+    coloredBox(0.5, 0.75, 0.25, 0, 1.125, 0, tunic),
+    coloredBox(0.25, 0.75, 0.25, -0.375, 1.41, 0, tunic),
+    coloredBox(0.25, 0.75, 0.25, 0.375, 1.41, 0, tunic),
+    coloredBox(0.5, 0.5, 0.5, 0, 1.75, 0, hair),
+    coloredBox(0.54, 0.14, 0.54, 0, 2.05, 0, hair),
+    coloredBox(0.42, 0.22, 0.02, 0, 1.7, 0.25, SKIN_COLOR),
+    coloredBox(0.09, 0.09, 0.02, -0.11, 1.78, 0.26, FACE_COLOR),
+    coloredBox(0.09, 0.09, 0.02, 0.11, 1.78, 0.26, FACE_COLOR),
   ];
   const geometry = mergeGeometries(parts, false);
   for (const part of parts) part.dispose();

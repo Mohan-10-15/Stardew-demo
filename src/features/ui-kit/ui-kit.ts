@@ -110,6 +110,20 @@ function hasDocument(): boolean {
   return typeof document !== 'undefined';
 }
 
+/**
+ * Every open dialog in the page. The UI is modal one layer deep — opening the
+ * journal while the settings panel is up must not leave two backdrops stacked,
+ * with the older one waiting behind an invisible scrim.
+ */
+const openDialogs: Set<() => void> = new Set();
+
+function closeOtherDialogs(keep: () => void): void {
+  for (const close of [...openDialogs]) {
+    if (close === keep) continue;
+    close();
+  }
+}
+
 function createElement<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
@@ -374,14 +388,24 @@ export function createUiKit(container?: HTMLElement | null): UiKit {
       }
       maybeAppend(opts, backdrop);
       const base = makeHandle<HTMLDivElement>(backdrop);
+      const close = (): void => {
+        openDialogs.delete(close);
+        if (backdrop) backdrop.classList.remove('is-open');
+        opts.onClose?.();
+      };
       const handle: DialogHandle = {
         ...base,
         open(): void {
-          if (backdrop) backdrop.classList.add('is-open');
+          closeOtherDialogs(close);
+          if (backdrop) {
+            backdrop.classList.add('is-open');
+            openDialogs.add(close);
+          }
         },
-        close(): void {
-          if (backdrop) backdrop.classList.remove('is-open');
-          opts.onClose?.();
+        close,
+        dispose(): void {
+          openDialogs.delete(close);
+          base.dispose();
         },
         setContent(child: Node | ElementHandle | string | null): void {
           const target = bodyEl;
