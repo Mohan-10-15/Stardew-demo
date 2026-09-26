@@ -15,6 +15,7 @@
 import { defineFeature } from '../../core/feature';
 import { Rng } from '@game/core/rng';
 import type { SeasonIndex, Weather } from '@game/core/types';
+import { readAudioPrefs } from '../settings-ui/prefs';
 
 export type MusicMood = 'dawn' | 'day' | 'dusk' | 'night' | 'late' | 'home' | 'cave' | 'danger';
 
@@ -345,6 +346,10 @@ export class MusicEngine {
     return this.enabled;
   }
 
+  getVolume(): number {
+    return this.volume;
+  }
+
   currentTheme(): string | null {
     return this.currentId;
   }
@@ -419,7 +424,10 @@ export const musicUi = defineFeature({
   lane: 'ui',
   setup(ctx): void {
     const engine = new MusicEngine(ctx.rng.fork('music').int(1, 0x7fffffff));
+    const report = (): void => ctx.bus.emit('music:changed', { enabled: engine.isEnabled(), volume: engine.getVolume() });
     engine.setEnabled(false);
+    engine.setVolume(readAudioPrefs().musicVolume);
+    report();
     const refresh = (): void => {
       const s = ctx.store.state;
       engine.setTheme(
@@ -434,13 +442,20 @@ export const musicUi = defineFeature({
     };
     refresh();
     const off = ctx.bus.on('state:changed', refresh);
-    ctx.bus.on('music:set-enabled', (e: { enabled: boolean }) => engine.setEnabled(Boolean(e?.enabled)));
-    ctx.bus.on('music:set-volume', (e: { volume: number }) => engine.setVolume(Number(e?.volume)));
+    ctx.bus.on('music:set-enabled', (e: { enabled: boolean }) => {
+      engine.setEnabled(Boolean(e?.enabled));
+      report();
+    });
+    ctx.bus.on('music:set-volume', (e: { volume: number }) => {
+      engine.setVolume(Number(e?.volume));
+      report();
+    });
     let started = false;
     const offMoved = ctx.bus.on('player:moved', () => {
       if (!started) {
         started = true;
         engine.setEnabled(true);
+        report();
       }
     });
     moduleCleanup = () => {

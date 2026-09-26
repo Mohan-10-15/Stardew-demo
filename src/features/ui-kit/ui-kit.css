@@ -400,6 +400,44 @@
   padding-top: 6px;
 }
 
+.eh-hud-status {
+  position: absolute;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  pointer-events: none;
+  max-width: 60vw;
+}
+
+.eh-hud-buffs,
+.eh-hud-hint {
+  display: none;
+  font-size: 13px;
+  color: var(--eh-ui-text-strong);
+  background: rgba(12, 26, 16, 0.72);
+  color: #cfe8cf;
+  border: 1px solid rgba(142, 196, 142, 0.45);
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.eh-hud-buffs {
+  font-size: 12px;
+  color: #ffd9a0;
+  border-color: rgba(232, 178, 92, 0.5);
+  background: rgba(26, 18, 8, 0.7);
+}
+
+.eh-hud-buffs.is-visible,
+.eh-hud-hint.is-visible {
+  display: inline-block;
+}
+
 .eh-hud-hotbar {
   position: absolute;
   bottom: 16px;
@@ -807,6 +845,58 @@
   border-radius: 5px;
   background: linear-gradient(90deg, #a0526f, #c96a7a);
   transition: width 160ms ease;
+}
+
+.eh-settings-dialog .eh-dialog {
+  min-width: 340px;
+}
+
+.eh-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.eh-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eh-settings-label {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--eh-ui-text);
+  min-width: 56px;
+}
+
+.eh-settings-value {
+  flex: 0 0 auto;
+  min-width: 40px;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-settings-toggle {
+  appearance: none;
+  border: 2px solid var(--eh-ui-panel-border);
+  border-radius: 16px;
+  background: var(--eh-ui-parchment-2);
+  color: var(--eh-ui-text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 14px;
+  cursor: pointer;
+}
+
+.eh-settings-toggle[aria-checked='true'] {
+  background: rgba(63, 122, 82, 0.2);
+  border-color: #3f7a52;
+  color: #2f5c3d;
 }
 
 @media (max-width: 720px) {

@@ -39,6 +39,16 @@ export function machineDefOf(content: ContentDb, obj: PlacedObject | undefined):
   return { machineId: id, data: obj.data ?? {} };
 }
 
+/** The machine placed at `tile`, or null when the tile holds no machine. */
+export function machineAtTile(state: GameState, tile: WorldPos): { obj: PlacedObject; machineId: string } | null {
+  const map = mapAt(state, tile);
+  if (!map) return null;
+  const obj = map.placed[`${tile.x},${tile.y}`];
+  const id = machineIdOf(obj?.id ?? '');
+  if (!id || !obj) return null;
+  return { obj, machineId: id };
+}
+
 export function mapAt(state: GameState, tile: WorldPos): MapState | undefined {
   return state.maps[tile.mapId];
 }
@@ -134,6 +144,23 @@ export function collectMachine(state: GameState, tile: WorldPos, deps: MachineDe
   return { state: { ...st, maps: { ...st.maps, [tile.mapId]: { ...map, placed } } }, ok: true };
 }
 
+/**
+ * Context-aware interact (T-0405): a working machine stays busy, a finished
+ * one is collected into the bag, and an idle one is loaded from the selected
+ * hotbar slot (the normal-play path — walking up and pressing Space).
+ */
+export function interactMachine(state: GameState, tile: WorldPos, deps: MachineDeps): MachineResult {
+  const at = machineAtTile(state, tile);
+  if (!at) return denyState(state, deps, 'no-machine', { tile });
+  const loaded = at.obj.data?.loaded;
+  const remaining = (at.obj.data?.remainingTicks as number | undefined) ?? 0;
+  if (loaded === 1) {
+    if (remaining > 0) return denyState(state, deps, 'busy', { tile, machineId: at.machineId });
+    return collectMachine(state, tile, deps);
+  }
+  return insertMachine(state, tile, state.player.inventory.selected, deps);
+}
+
 /** Advance every loaded machine by one 10-minute tick. */
 export function tickMachines(state: GameState, content: ContentDb, bus: EventBus): GameState {
   let changed = false;
@@ -185,6 +212,19 @@ export const machinesSim: FeatureModule = defineFeature({
       const p = action.payload as { tile?: WorldPos } | null;
       if (!p || !p.tile) return st;
       return collectMachine(st, p.tile, deps).state;
+    });
+    ctx.store.registerReducer('machines:interact', (st, action, _rng) => {
+      const p = action.payload as { tile?: WorldPos } | null;
+      if (!p || !p.tile) return st;
+      return interactMachine(st, p.tile, deps).state;
+    });
+    // T-0405: route the shared interact bus here when the front tile is a
+    // machine (farming:sim defers on machine tiles, mirroring rod handling).
+    ctx.bus.on('tool:use-requested', (payload: { tile?: WorldPos; toolId?: string | null } | null) => {
+      const tile = payload?.tile;
+      if (!tile) return;
+      if (!machineAtTile(ctx.store.state, tile)) return;
+      ctx.store.dispatch({ type: 'machines:interact', payload: { tile } });
     });
     // Count machines down on the same tick the core clock advances.
     ctx.store.registerReducer('time:tick', (st, _action, _rng) => tickMachines(st, ctx.content, ctx.bus));

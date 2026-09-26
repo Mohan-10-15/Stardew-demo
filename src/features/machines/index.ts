@@ -6,7 +6,9 @@ registerFeature(machinesSim);
 export {
   collectMachine,
   insertMachine,
+  interactMachine,
   isTileWalkable,
+  machineAtTile,
   machineDefOf,
   machineIdOf,
   machinesSim,

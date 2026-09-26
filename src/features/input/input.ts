@@ -82,6 +82,10 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       ctx.bus.emit('ui:open-crafting', {});
       return;
     }
+    if (action.type === 'settings') {
+      ctx.bus.emit('ui:open-settings', {});
+      return;
+    }
     const sim = actionToSim(action);
     if (sim) ctx.store.dispatch(sim as SimAction<string, unknown>);
   }

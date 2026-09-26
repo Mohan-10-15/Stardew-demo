@@ -61,6 +61,28 @@ export const en = {
       aria: 'Shipping bin, {count} items',
       count: 'Items: {count}',
     },
+    buffs: {
+      row: '{stat} +{amount} · {time} left',
+      aria: 'Active buffs: {text}',
+      stat: {
+        farming: 'Farming',
+        foraging: 'Foraging',
+        fishing: 'Fishing',
+        mining: 'Mining',
+        combat: 'Combat',
+        luck: 'Luck',
+      },
+    },
+    hint: {
+      line: '{action} {name}',
+      aria: 'In front: {action} {name}',
+      action: {
+        load: 'Load',
+        collect: 'Collect',
+        busy: 'Working on',
+        interact: 'Interact with',
+      },
+    },
   },
   uiKit: {
     dialog: {
@@ -133,6 +155,11 @@ export const en = {
     loves: 'Loves: {items}',
     skillLevel: '{skill} · Level {level}',
     xp: '{xp} xp',
+    xpProgress: '{xp} / {xpMax} xp',
+    profession: 'Profession: {name}',
+    professionNone: 'No profession yet',
+    recipeCount: '{count} recipes unlocked',
+    recipesList: 'Recipes: {recipes}',
   },
   crafting: {
     title: 'Crafting',
@@ -147,6 +174,16 @@ export const en = {
     shortBadge: ' (have {have})',
     noRecipes: 'No recipes here yet.',
     unknownItem: 'Unknown item',
+  },
+  settings: {
+    title: 'Settings',
+    music: 'Music',
+    musicToggle: 'Music: {state}',
+    musicAria: 'Music {state}',
+    volume: 'Volume',
+    volumePercent: '{percent}%',
+    on: 'On',
+    off: 'Off',
   },
 } as const;
 

@@ -37,13 +37,18 @@ export interface CraftingInputAction {
   type: 'crafting';
 }
 
+export interface SettingsInputAction {
+  type: 'settings';
+}
+
 export type InputAction =
   | MoveInputAction
   | InteractInputAction
   | SelectSlotInputAction
   | ShopInputAction
   | JournalInputAction
-  | CraftingInputAction;
+  | CraftingInputAction
+  | SettingsInputAction;
 
 export interface KeyBinding {
   /** Normalized keys that trigger this action. */
@@ -74,6 +79,7 @@ export const DEFAULT_KEYMAP: readonly KeyBinding[] = [
   { keys: ['f'], action: { type: 'shop' } },
   { keys: ['j'], action: { type: 'journal' } },
   { keys: ['c'], action: { type: 'crafting' } },
+  { keys: ['k'], action: { type: 'settings' } },
   ...SLOT_BINDINGS,
 ];
 
@@ -112,6 +118,8 @@ export function actionToSim(action: InputAction): InputSimAction | null {
     case 'journal':
       return null;
     case 'crafting':
+      return null;
+    case 'settings':
       return null;
   }
 }

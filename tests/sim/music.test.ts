@@ -203,6 +203,22 @@ describe('music:ui engine (headless-safe)', () => {
     expect(engine.currentTheme()).toBeNull();
   });
 
+  it('exposes volume/enabled accessors for the settings panel (T-0405)', () => {
+    const engine = new MusicEngine(7);
+    expect(engine.getVolume()).toBe(0.6);
+    expect(engine.isEnabled()).toBe(false);
+    engine.setVolume(1.5);
+    expect(engine.getVolume()).toBe(1);
+    engine.setVolume(-3);
+    expect(engine.getVolume()).toBe(0);
+    engine.setVolume(0.35);
+    expect(engine.getVolume()).toBe(0.35);
+    engine.setEnabled(true);
+    expect(engine.isEnabled()).toBe(true);
+    engine.setEnabled(false);
+    expect(engine.isEnabled()).toBe(false);
+  });
+
   it('registers with the shared registry under the ui lane', async () => {
     await import('@game/features/auto-import');
     const { getFeatures } = await import('@game/core/registry');
