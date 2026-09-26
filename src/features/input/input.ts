@@ -23,6 +23,65 @@ function isFormTarget(target: unknown): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
+/** Input types that actually take typed characters. */
+const TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
+  'text',
+  'search',
+  'url',
+  'tel',
+  'email',
+  'password',
+  'number',
+  'date',
+  'datetime-local',
+  'month',
+  'time',
+  'week',
+]);
+
+function isTextEntry(target: unknown): boolean {
+  if (!isFormTarget(target)) return false;
+  const tag = (target as HTMLElement).tagName;
+  if (tag !== 'INPUT') return true;
+  const type = (target as HTMLInputElement).type.toLowerCase();
+  return TEXT_INPUT_TYPES.has(type);
+}
+
+function isRangeTarget(target: unknown): boolean {
+  return (
+    isFormTarget(target) &&
+    (target as HTMLElement).tagName === 'INPUT' &&
+    (target as HTMLInputElement).type.toLowerCase() === 'range'
+  );
+}
+
+/**
+ * Keys a focused slider owns. The arrows nudge the volume, so they must not also
+ * walk the player around; every other hotkey has to keep working, or touching
+ * the volume slider would silently kill K/J/C/F until the player clicked
+ * somewhere else.
+ */
+const SLIDER_KEYS: ReadonlySet<string> = new Set([
+  'arrowleft',
+  'arrowright',
+  'arrowup',
+  'arrowdown',
+  'home',
+  'end',
+  'pageup',
+  'pagedown',
+  'space',
+  'enter',
+  'escape',
+]);
+
+/** True when a focused form control, not the game, should handle this key. */
+export function shouldSwallowKey(target: unknown, key: string): boolean {
+  if (isTextEntry(target)) return true;
+  if (isRangeTarget(target)) return SLIDER_KEYS.has(key);
+  return false;
+}
+
 function ownerFlag(): { __EH_INPUT_OWNED__?: boolean } {
   return globalThis as unknown as { __EH_INPUT_OWNED__?: boolean };
 }
@@ -56,8 +115,8 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (isFormTarget(event.target)) return;
     const key = normalizeKey(event.key);
+    if (shouldSwallowKey(event.target, key)) return;
     const binding = keyIndex.get(key);
     if (!binding) {
       if (key === 'shift') modifiers.add('shift');

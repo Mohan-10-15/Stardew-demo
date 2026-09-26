@@ -329,13 +329,22 @@ export function applyToolUse(
   rng: Rng,
   row: ToolRow,
 ): GameState {
-  const tile = payload.tile;
+  // The bus is loosely typed: farming:tool-use is also dispatched straight from
+  // `tool:use-requested`, so a payload can arrive with no tile at all. Reject it
+  // here rather than dereferencing undefined into a thrown reducer.
+  const tile = payload?.tile;
+  if (!tile || typeof tile.mapId !== 'string') return state;
   const toolId = payload.toolId ?? '';
   const kind = toolKindOf(toolId);
 
   // Machine tiles belong to machines:sim (T-0405, decision 38): farming has
   // nothing to do here, so no spurious tool:failed reaches audio/UI.
   if (machineAtTile(state, tile)) return state;
+
+  // A machine item in hand means "place this", which machines:sim claims from
+  // the same event (T-0502, decision 40). Defer for the same reason: farming
+  // would otherwise report 'nothing' for a placement that is about to succeed.
+  if (row.content.machines.has(toolId)) return state;
 
   // Winter: the soil is frozen — tilling is rejected, state unchanged (m2 §4).
   if (kind === 'hoe' && state.world.calendar.seasonIndex === 3) {
@@ -402,7 +411,8 @@ export const farmingSim: FeatureModule = defineFeature({
     ctx.store.registerReducer('forage:roll', (st, _action: SimAction, rng) =>
       applyForageRoll(st, rng, ctx.content),
     );
-    ctx.bus.on('tool:use-requested', (payload: ToolUsePayload) => {
+    ctx.bus.on('tool:use-requested', (payload: ToolUsePayload | null) => {
+      if (!payload?.tile) return;
       ctx.store.dispatch({ type: 'farming:tool-use', payload });
     });
   },

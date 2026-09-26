@@ -8,6 +8,11 @@
  * is deterministic given a seed, so the headless bot and the browser hear the
  * same arrangement for the same game (tests/…/music.test.ts).
  *
+ * The engine shares the one game-wide AudioContext and the `music` bus with the
+ * cue engine (see ./context.ts), which is what keeps the soundtrack tucked
+ * under the SFX. On/off and volume come from the audio prefs the K panel writes,
+ * so the toggle is authoritative — the engine never turns itself on.
+ *
  * Registered by src/features/audio/index.ts. Headless-safe: in Node the
  * MusicEngine never starts a timer or an AudioContext; every event hook
  * degrades to a no-op and all logic still has unit coverage.
@@ -16,6 +21,7 @@ import { defineFeature } from '../../core/feature';
 import { Rng } from '@game/core/rng';
 import type { SeasonIndex, Weather } from '@game/core/types';
 import { readAudioPrefs } from '../settings-ui/prefs';
+import { audioBuses, installAudioUnlock, type AudioBuses } from './context';
 
 export type MusicMood = 'dawn' | 'day' | 'dusk' | 'night' | 'late' | 'home' | 'cave' | 'danger';
 
@@ -107,9 +113,33 @@ const TIME_PROFILE: Record<Exclude<MusicMood, 'home' | 'cave' | 'danger'>, Profi
 };
 
 const OVERRIDE_PROFILE: Record<'home' | 'cave' | 'danger', Profile & { root: number }> = {
-  home: { bpm: 70, density: 0.5, pad: true, perc: false, leadWave: 'sine', bassWave: 'triangle', root: 53 },
-  cave: { bpm: 84, density: 0.6, pad: false, perc: true, leadWave: 'triangle', bassWave: 'sawtooth', root: 45 },
-  danger: { bpm: 112, density: 0.85, pad: false, perc: true, leadWave: 'sawtooth', bassWave: 'sawtooth', root: 43 },
+  home: {
+    bpm: 70,
+    density: 0.5,
+    pad: true,
+    perc: false,
+    leadWave: 'sine',
+    bassWave: 'triangle',
+    root: 53,
+  },
+  cave: {
+    bpm: 84,
+    density: 0.6,
+    pad: false,
+    perc: true,
+    leadWave: 'triangle',
+    bassWave: 'sawtooth',
+    root: 45,
+  },
+  danger: {
+    bpm: 112,
+    density: 0.85,
+    pad: false,
+    perc: true,
+    leadWave: 'sawtooth',
+    bassWave: 'sawtooth',
+    root: 43,
+  },
 };
 
 /** Root scale per mood (cave = natural minor, danger = phrygian). */
@@ -131,7 +161,10 @@ const PROGRESSIONS: Record<MusicMood, readonly number[]> = {
   danger: [0, 1, 0, 1],
 };
 
-const WEATHER_MOD: Record<Weather, Partial<Pick<MusicTheme, 'leadWave' | 'bright' | 'pad' | 'perc' | 'density'>>> = {
+const WEATHER_MOD: Record<
+  Weather,
+  Partial<Pick<MusicTheme, 'leadWave' | 'bright' | 'pad' | 'perc' | 'density'>>
+> = {
   sun: {},
   rain: { leadWave: 'sine', bright: 12, pad: true, perc: false, density: -0.2 },
   storm: { leadWave: 'sawtooth', bright: 0, pad: false, perc: true, density: 0.1 },
@@ -165,7 +198,9 @@ export function resolveMusicTheme(ctx: MusicContext): MusicTheme {
   const time = TIME_PROFILE[mood as keyof typeof TIME_PROFILE];
   const ovr = OVERRIDE_PROFILE[mood as keyof typeof OVERRIDE_PROFILE] ?? null;
   const root = ovr?.root ?? season.root;
-  const steps = ovr ? OVERRIDE_STEPS[mood as keyof typeof OVERRIDE_STEPS] ?? season.steps : season.steps;
+  const steps = ovr
+    ? (OVERRIDE_STEPS[mood as keyof typeof OVERRIDE_STEPS] ?? season.steps)
+    : season.steps;
 
   const mod = WEATHER_MOD[ctx.weather];
   const theme: MusicTheme = {
@@ -178,10 +213,20 @@ export function resolveMusicTheme(ctx: MusicContext): MusicTheme {
     leadWave: (mod.leadWave ?? ovr?.leadWave ?? time.leadWave) as OscillatorType,
     bassWave: (ovr?.bassWave ?? time.bassWave) as OscillatorType,
     bright: mod.bright ?? 0,
-    pad: mod.pad ?? (ovr?.pad ?? time.pad),
-    perc: mod.perc ?? (ovr?.perc ?? time.perc),
+    pad: mod.pad ?? ovr?.pad ?? time.pad,
+    perc: mod.perc ?? ovr?.perc ?? time.perc,
   };
-  theme.id = [theme.mood, ctx.seasonIndex, ctx.weather, ctx.mapId, theme.bpm, theme.density, theme.perc, theme.leadWave, theme.bright].join('|');
+  theme.id = [
+    theme.mood,
+    ctx.seasonIndex,
+    ctx.weather,
+    ctx.mapId,
+    theme.bpm,
+    theme.density,
+    theme.perc,
+    theme.leadWave,
+    theme.bright,
+  ].join('|');
   return theme;
 }
 
@@ -277,7 +322,10 @@ export function buildBar(theme: MusicTheme, rng: Rng, barIndex: number): MusicPl
 
   const quarters = [0, 1, 2, 3].map((q) => q * 4 * sixteenth);
   const count = theme.density >= 0.75 ? 4 : theme.density >= 0.5 ? 3 : 2;
-  const picked = rng.shuffle([...quarters]).slice(0, count).sort((a, b) => a - b);
+  const picked = rng
+    .shuffle([...quarters])
+    .slice(0, count)
+    .sort((a, b) => a - b);
   const degLo = degree;
   const degHi = Math.min(degree + 5, ladder.length - 1);
   let cursor = degree + rng.int(0, 3);
@@ -309,8 +357,7 @@ export function buildBar(theme: MusicTheme, rng: Rng, barIndex: number): MusicPl
  * run against MusicPlan rather than hardware.
  */
 export class MusicEngine {
-  private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
+  private buses: AudioBuses | null = null;
   private rng: Rng;
   private theme: MusicTheme | null = null;
   private barIndex = 0;
@@ -319,27 +366,25 @@ export class MusicEngine {
   private volume = 0.6;
   private timer: number | null = null;
   private currentId: string | null = null;
+  /** True once the bar clock has been pinned to the context's currentTime. */
+  private anchored = false;
+  /**
+   * Per-engine volume node. The player's 0..1 volume belongs *here*, because
+   * `buses.music` carries the fixed MUSIC_BUS_GAIN staging that keeps the
+   * soundtrack under the SFX — writing the user volume straight onto the shared
+   * bus would silently undo that staging.
+   */
+  private routeNode: GainNode | null = null;
+  private routeTarget: GainNode | null = null;
 
   constructor(seed = 0x9e3779b9) {
     this.rng = new Rng(seed);
   }
 
   ensure(): boolean {
-    if (typeof window === 'undefined') return false;
-    if (!this.ctx) {
-      const w = window as unknown as {
-        AudioContext?: new () => AudioContext;
-        webkitAudioContext?: new () => AudioContext;
-      };
-      const Ctor = w.AudioContext ?? w.webkitAudioContext;
-      if (!Ctor) return false;
-      this.ctx = new Ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.volume;
-      this.master.connect(this.ctx.destination);
-    }
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
-    return this.ctx.state === 'running';
+    const buses = audioBuses();
+    this.buses = buses;
+    return buses !== null && buses.ctx.state !== 'closed';
   }
 
   isEnabled(): boolean {
@@ -356,9 +401,32 @@ export class MusicEngine {
 
   setVolume(v: number): void {
     this.volume = clamp01(v);
-    if (this.master && this.ctx) {
-      this.master.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    const buses = this.buses;
+    if (buses) {
+      this.route(buses)?.gain.setValueAtTime(this.volume, buses.ctx.currentTime);
     }
+  }
+
+  /** The node every note plays into: volume -> the shared staged music bus. */
+  private route(buses: AudioBuses = this.buses!): GainNode | null {
+    if (!buses) return null;
+    if (this.routeNode === null || this.routeTarget !== buses.music) {
+      const node = buses.ctx.createGain();
+      node.gain.setValueAtTime(this.volume, buses.ctx.currentTime);
+      node.connect(buses.music);
+      this.routeNode = node;
+      this.routeTarget = buses.music;
+    }
+    return this.routeNode;
+  }
+
+  /** Stop scheduling and release the per-engine node (bus staging is untouched). */
+  dispose(): void {
+    this.stop();
+    this.routeNode?.disconnect();
+    this.routeNode = null;
+    this.routeTarget = null;
+    this.buses = null;
   }
 
   setEnabled(on: boolean): void {
@@ -379,9 +447,7 @@ export class MusicEngine {
     this.currentId = theme?.id ?? null;
     this.barIndex = 0;
     this.nextBarAt = 0;
-    if (theme && this.ensure()) {
-      this.nextBarAt = this.ctx!.currentTime;
-    }
+    this.anchored = false;
   }
 
   stop(): void {
@@ -390,24 +456,36 @@ export class MusicEngine {
   }
 
   private play(note: MusicNote, when: number): void {
-    if (!this.ensure() || !this.ctx || !this.master) return;
+    if (!this.ensure() || !this.buses) return;
+    const { ctx } = this.buses;
+    const music = this.route();
+    if (!music) return;
     const t0 = when + note.at;
-    const osc = this.ctx.createOscillator();
+    const osc = ctx.createOscillator();
     osc.type = note.wave;
     osc.frequency.setValueAtTime(note.freq, t0);
-    const gain = this.ctx.createGain();
+    const gain = ctx.createGain();
     gain.gain.setValueAtTime(0, t0);
     gain.gain.linearRampToValueAtTime(note.gain, t0 + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + note.dur);
     osc.connect(gain);
-    gain.connect(this.master);
+    gain.connect(music);
     osc.start(t0);
     osc.stop(t0 + note.dur + 0.03);
   }
 
   private scheduler(): void {
-    if (!this.enabled || !this.theme || !this.ensure() || !this.ctx) return;
-    const now = this.ctx.currentTime;
+    if (!this.enabled || !this.theme || !this.ensure()) return;
+    const ctx = this.buses!.ctx;
+    const now = ctx.currentTime;
+    // The theme is usually chosen before any gesture exists, so the bar clock
+    // has to be pinned to the context the first time one shows up. Without this
+    // the loop would try to "catch up" from zero and dump every elapsed bar at
+    // once the moment the player first presses a key.
+    if (!this.anchored) {
+      this.nextBarAt = now;
+      this.anchored = true;
+    }
     while (now + 0.05 >= this.nextBarAt) {
       const plan = buildBar(this.theme, this.rng.fork('music-bar-' + this.barIndex), this.barIndex);
       for (const note of plan.notes) {
@@ -423,10 +501,15 @@ export const musicUi = defineFeature({
   id: 'music:ui',
   lane: 'ui',
   setup(ctx): void {
+    installAudioUnlock();
     const engine = new MusicEngine(ctx.rng.fork('music').int(1, 0x7fffffff));
-    const report = (): void => ctx.bus.emit('music:changed', { enabled: engine.isEnabled(), volume: engine.getVolume() });
-    engine.setEnabled(false);
-    engine.setVolume(readAudioPrefs().musicVolume);
+    const report = (): void =>
+      ctx.bus.emit('music:changed', { enabled: engine.isEnabled(), volume: engine.getVolume() });
+    // The persisted prefs are the source of truth: whatever the player last
+    // chose in the K panel is what boots. Nothing here force-enables music.
+    const prefs = readAudioPrefs();
+    engine.setEnabled(prefs.musicEnabled);
+    engine.setVolume(prefs.musicVolume);
     report();
     const refresh = (): void => {
       const s = ctx.store.state;
@@ -450,18 +533,12 @@ export const musicUi = defineFeature({
       engine.setVolume(Number(e?.volume));
       report();
     });
-    let started = false;
-    const offMoved = ctx.bus.on('player:moved', () => {
-      if (!started) {
-        started = true;
-        engine.setEnabled(true);
-        report();
-      }
-    });
+    // The scheduler arms itself via setEnabled(); the first real gesture builds
+    // the shared context, at which point the bar clock anchors to "now" and the
+    // soundtrack fades in on its own. No event force-enables music.
     moduleCleanup = () => {
-      engine.stop();
+      engine.dispose();
       off();
-      offMoved();
     };
   },
   ui() {

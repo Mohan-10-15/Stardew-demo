@@ -2,10 +2,13 @@
  * engine:view — the Three.js renderer (WORKER-1, lane 'world').
  *
  * Reads sim state every frame; never mutates it. Builds the farm map from
- * state.maps via an asset-ID layer (src/features/engine/view/assets.ts),
- * diff-syncs placed objects, lerps a low-poly player between tiles, runs an
- * angled top-down follow camera with wheel zoom, a facing interaction
- * highlight, and a day/night light ramp driven by world.clock.
+ * state.maps via a voxel block registry (./blocks) + asset-ID layer
+ * (./assets.ts), diff-syncs placed objects, lerps a Minecraft-proportioned
+ * player between tiles, and runs a first-person eye camera (the DEFAULT, with
+ * pointer-lock mouse look) that toggles to an angled top-down follow camera
+ * with the V key. Interaction feedback is unmistakable: a successful
+ * `tool:used` swings the arm and bursts blocky cube particles, while a
+ * `tool:failed` only flashes the targeted block red.
  *
  * Headless guard: in Node (vitest, bot) setup returns a no-op handle and no
  * DOM/three-side is ever touched.
@@ -19,10 +22,8 @@ import { toolKindOf, type ToolKind } from '../../farming/sim/FarmingSim';
 import {
   GRID_CELL,
   hash2,
-  groundGeometry,
   groundMaterials,
   grassInstanceColor,
-  buildFurrow,
   buildTreeAsset,
   buildHouseAsset,
   buildPlacedAsset,
@@ -32,6 +33,14 @@ import {
   type GroundMaterials,
   type HouseSpan,
 } from './assets';
+import {
+  blockRegistry,
+  buildTerrain,
+  disposeTerrain,
+  getBlock,
+  terrainBlocks,
+  type BuiltTerrain,
+} from './blocks';
 import { NpcView } from './npcs';
 import {
   clampPitch,
@@ -57,7 +66,10 @@ const ZOOM_MAX = 1.8;
 const TILE_LERP_SECONDS = 0.11;
 const FOLLOW_LAMBDA = 5;
 const SWING_SECONDS = 0.26;
-const FAIL_FLASH_SECONDS = 0.18;
+const FAIL_FLASH_SECONDS = 0.2;
+
+/** The camera toggle key. NOT 'f' (f is bound to "open shop" in the keymap). */
+export const VIEW_TOGGLE_KEY = 'v';
 
 const BURST_COLOR: Record<ToolKind, number> = {
   hoe: 0x8a5a30,
@@ -97,6 +109,19 @@ const WEATHER_WIND = new THREE.Color(0x90a4b8);
 
 const FOG_NEAR = 26;
 const FOG_FAR = 60;
+
+/** Dev-only inspection handle published to globalThis (see publishDevHandle). */
+interface DevSceneHandle {
+  scene: THREE.Scene;
+  camera: THREE.Camera;
+  renderer: THREE.WebGLRenderer;
+  metrics: () => {
+    particles: number;
+    swinging: boolean;
+    failFlash: boolean;
+    firstPerson: boolean;
+  };
+}
 
 export interface EngineViewHandle extends ViewHandle {
   dispose(): void;
@@ -157,6 +182,26 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   if (!gameRoot) throw new Error('[engine:view] missing #game-root element');
   const rootEl: HTMLElement = gameRoot;
 
+  // Camera-mode hint. A plain overlay (pointer-events: none) so it never steals
+  // focus or blocks clicks; updated by setCameraMode. No stylesheet touch.
+  const cameraHint = document.createElement('div');
+  cameraHint.id = 'eh-camera-hint';
+  cameraHint.style.position = 'absolute';
+  cameraHint.style.left = '12px';
+  cameraHint.style.bottom = '12px';
+  cameraHint.style.padding = '4px 10px';
+  cameraHint.style.background = 'rgba(8, 10, 16, 0.55)';
+  cameraHint.style.color = '#e8f0ff';
+  cameraHint.style.font = '600 12px/1.4 monospace';
+  cameraHint.style.pointerEvents = 'none';
+  cameraHint.style.zIndex = '10';
+  rootEl.appendChild(cameraHint);
+  const setHint = (first: boolean): void => {
+    cameraHint.textContent = first
+      ? 'Click to lock mouse • V = top view • Space = use tool'
+      : 'V = back to first person • Space = use tool';
+  };
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -170,7 +215,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const fog = new THREE.Fog(new THREE.Color().copy(SKY_DAY), FOG_NEAR, FOG_FAR);
   scene.fog = fog;
 
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 200);
 
   const ambient = new THREE.AmbientLight(AMBIENT_DAY, 0.75);
   scene.add(ambient);
@@ -193,30 +238,80 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const npcView = new NpcView(ctx.content.npcs);
   const player = buildPlayer();
   const highlight = buildHighlight();
-  highlight.visible = false;
   scene.add(groundLayer, placedLayer, npcView.group, player, highlight);
 
-  // First-person "voxel" presentation layer (see ./voxel.ts): block columns
-  // for water pools, rim walls, trees and houses. Rebuilt with the ground;
-  // only visible while the first-person camera is active.
+  // First-person "voxel" presentation layer (see ./voxel.ts): extra block
+  // columns for raised rims etc. Only visible with the first-person camera.
   const voxelGroup = new THREE.Group();
   scene.add(voxelGroup);
   const VOXEL_MATERIALS: Record<VoxelKind, THREE.MeshLambertMaterial> = {
-    grass: new THREE.MeshLambertMaterial({ color: 0x61913d, name: 'voxel-grass' }),
-    soil: new THREE.MeshLambertMaterial({ color: 0x7a5637, name: 'voxel-soil' }),
-    path: new THREE.MeshLambertMaterial({ color: 0xcfbd93, name: 'voxel-path' }),
+    grass: new THREE.MeshLambertMaterial({ color: 0x61913d, name: 'voxel-grass', flatShading: true }),
+    soil: new THREE.MeshLambertMaterial({ color: 0x7a5637, name: 'voxel-soil', flatShading: true }),
+    path: new THREE.MeshLambertMaterial({ color: 0xcfbd93, name: 'voxel-path', flatShading: true }),
     water: new THREE.MeshLambertMaterial({
       color: 0x2f6f8f,
       name: 'voxel-water',
+      flatShading: true,
       transparent: true,
       opacity: 0.86,
     }),
-    'water-wall': new THREE.MeshLambertMaterial({ color: 0x5a4a38, name: 'voxel-wall' }),
-    'tree-trunk': new THREE.MeshLambertMaterial({ color: 0x6b4a2f, name: 'voxel-trunk' }),
-    'tree-crown': new THREE.MeshLambertMaterial({ color: 0x4a6b31, name: 'voxel-crown' }),
-    house: new THREE.MeshLambertMaterial({ color: 0xd9b38c, name: 'voxel-house' }),
+    'water-wall': new THREE.MeshLambertMaterial({ color: 0x5a4a38, name: 'voxel-wall', flatShading: true }),
+    'tree-trunk': new THREE.MeshLambertMaterial({ color: 0x6b4a2f, name: 'voxel-trunk', flatShading: true }),
+    'tree-crown': new THREE.MeshLambertMaterial({ color: 0x4a6b31, name: 'voxel-crown', flatShading: true }),
+    house: new THREE.MeshLambertMaterial({ color: 0xd9b38c, name: 'voxel-house', flatShading: true }),
   };
   voxelGroup.visible = false;
+
+  // First-person held hand: a blocky arm in the lower-right of the view.
+  const handGroup = new THREE.Group();
+  handGroup.name = 'fp-hand-group';
+  {
+    const armGeo = new THREE.BoxGeometry(0.16, 0.5, 0.16);
+    const armMat = new THREE.MeshLambertMaterial({ color: 0xc96a3a, name: 'fp-arm', flatShading: true });
+    const hand = new THREE.Mesh(armGeo, armMat);
+    hand.name = 'fp-hand';
+    handGroup.add(hand);
+    const toolGeo = new THREE.BoxGeometry(0.1, 0.62, 0.1);
+    const toolMat = new THREE.MeshLambertMaterial({ color: 0x8a6440, name: 'fp-tool', flatShading: true });
+    const tool = new THREE.Mesh(toolGeo, toolMat);
+    tool.name = 'fp-tool-mesh';
+    tool.position.y = -0.5;
+    handGroup.add(tool);
+  }
+  handGroup.position.set(0.42, -0.4, -0.7);
+  handGroup.rotation.set(-0.5, -0.3, 0.2);
+  handGroup.visible = false;
+  handGroup.renderOrder = 2;
+  // Parented to the camera so the held arm/tool stays pinned in the
+  // lower-right of the view no matter where the player walks.
+  camera.add(handGroup);
+  scene.add(camera);
+
+  // Dev-only scene handle so the browser harness can measure the live scene.
+  let devHandle: DevSceneHandle | null = null;
+  function publishDevHandle(): void {
+    if (!import.meta.env.DEV) return;
+    if (devHandle) return; // guard against double-publishing
+    devHandle = {
+      scene,
+      camera,
+      renderer,
+      metrics: () => ({
+        particles: particles.length,
+        swinging: swingT > 0,
+        failFlash: failFlashT > 0,
+        firstPerson,
+      }),
+    };
+    (globalThis as unknown as { __EH_SCENE__?: DevSceneHandle }).__EH_SCENE__ = devHandle;
+  }
+  function clearDevHandle(): void {
+    if (!devHandle) return;
+    const g = globalThis as unknown as { __EH_SCENE__?: DevSceneHandle };
+    if (g.__EH_SCENE__ === devHandle) delete g.__EH_SCENE__;
+    devHandle = null;
+  }
+  publishDevHandle();
 
   const fxLayer = new THREE.Group();
   scene.add(fxLayer);
@@ -227,31 +322,47 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     max: number;
   }
   const particles: FxParticle[] = [];
-  const PARTICLE_CAP = 40;
+  const PARTICLE_CAP = 64;
   const armR = player.getObjectByName('player-arm-r') ?? null;
+  const legL = player.getObjectByName('player-leg-l') ?? null;
+  const legR = player.getObjectByName('player-leg-r') ?? null;
   let swingT = 0;
   let failFlashT = 0;
 
+  // Shared cube-fragment geometry for particle bursts.
+  const fragGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+
   function spawnBurst(tileWorld: THREE.Vector3, color: number): void {
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 12; i++) {
       if (particles.length >= PARTICLE_CAP) return;
-      const mat = new THREE.MeshBasicMaterial({ color, transparent: true });
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), mat);
+      const mat = new THREE.MeshLambertMaterial({ color, flatShading: true });
+      const mesh = new THREE.Mesh(fragGeo, mat);
       const a = Math.random() * Math.PI * 2;
       mesh.position.copy(tileWorld);
-      mesh.position.y = 0.16;
+      mesh.position.y = 0.4;
       particles.push({
         mesh,
-        vel: new THREE.Vector3(Math.cos(a) * 0.55, 1.4 + Math.random() * 1.3, Math.sin(a) * 0.55),
-        life: 0.5,
-        max: 0.5,
+        vel: new THREE.Vector3(Math.cos(a) * 0.9, 1.8 + Math.random() * 1.6, Math.sin(a) * 0.9),
+        life: 0.55,
+        max: 0.55,
       });
       fxLayer.add(mesh);
     }
   }
 
-  function onToolUsed(e: { tile: { x: number; y: number }; toolId: string }): void {
-    const map = ctx.store.state.maps[ctx.store.state.player.position.mapId];
+  // Deliberately declared BEFORE the bus subscriptions below: EventBus replays
+  // any buffered events synchronously on .on(), so these must exist already or
+  // a buffered tool/cast event would hit a temporal-dead-zone ReferenceError.
+  const worldPos = (map: MapState, col: number, row: number): THREE.Vector3 =>
+    new THREE.Vector3(
+      (col - (map.grid.width - 1) / 2) * GRID_CELL,
+      0,
+      (row - (map.grid.height - 1) / 2) * GRID_CELL,
+    );
+
+  function onToolUsed(e: { tile: { mapId?: string; x: number; y: number }; toolId: string }): void {
+    const mapId = e.tile.mapId ?? ctx.store.state.player.position.mapId;
+    const map = ctx.store.state.maps[mapId];
     if (!map) return;
     swingT = SWING_SECONDS;
     spawnBurst(worldPos(map, e.tile.x, e.tile.y), BURST_COLOR[toolKindOf(e.toolId)]);
@@ -263,11 +374,13 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
   // Fishing bobber: a pulsing float shown at the cast tile while the fishing
   // line is out, driven purely by bus events from fishing:sim.
-  const bobberMat = new THREE.MeshStandardMaterial({ color: 0xd94f4f });
-  const bobber = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), bobberMat);
+  const bobberMat = new THREE.MeshLambertMaterial({ color: 0xd94f4f, flatShading: true });
+  const bobber = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), bobberMat);
   bobber.visible = false;
   scene.add(bobber);
   let bobberMapId: string | null = null;
+  /** Float pulse phase; declared before subscriptions (buffered replays). */
+  let bobberBob = 0;
 
   function hideBobber(): void {
     bobberMapId = null;
@@ -309,24 +422,24 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const placedMesh = new Map<string, THREE.Object3D>();
   const groundMatsRef: { mats: GroundMaterials | null } = { mats: null };
   let seasonApplied: SeasonIndex | null = null;
+  let terrain: BuiltTerrain | null = null;
 
+  // Minecraft is first person: boot into eye mode. Declared false so the
+  // setCameraMode('first') call at the end of setup actually applies the
+  // per-mode visibility (hand on, body off) instead of early-returning.
   let firstPerson = false;
   const lookPose = { yaw: 0, pitch: 0 };
   let bobPhase = 0;
   const prevPlayerEye = new THREE.Vector3();
 
-  const worldPos = (map: MapState, col: number, row: number): THREE.Vector3 =>
-    new THREE.Vector3(
-      (col - (map.grid.width - 1) / 2) * GRID_CELL,
-      0,
-      (row - (map.grid.height - 1) / 2) * GRID_CELL,
-    );
-
   function disposeGroup(group: THREE.Group): void {
     for (const child of [...group.children]) {
       group.remove(child);
       child.traverse((node) => {
-        if (node instanceof THREE.Mesh) {
+        // Geometry + materials owned by the cached block registry must only be
+        // detached here, never disposed (they survive map rebuilds).
+        if (node.userData.sharedBlock === true) return;
+        if (node instanceof THREE.Mesh || node instanceof THREE.LineSegments) {
           node.geometry.dispose();
           const mat = node.material;
           if (Array.isArray(mat)) {
@@ -347,79 +460,55 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     const legend = ctx.content.maps.get(mapId)?.legend ?? {};
 
     disposeGroup(groundLayer);
+    disposeTerrain(terrain);
+    terrain = null;
 
-    const grassCells: Array<[number, number]> = [];
-    const soilCells: Array<[number, number]> = [];
-    const pathCells: Array<[number, number]> = [];
-    const waterCells: Array<[number, number]> = [];
-    const treeCells: Array<[number, number]> = [];
+    // Voxel terrain: one InstancedMesh per block kind, built from the grid.
+    const blocks = terrainBlocks(map, legend);
+    // Trees render as their own asset (a trunk + cube canopy), so skip the
+    // single log block terrain would place under them.
+    const groundBlocks = blocks.filter((b) => b.kind !== 'log');
+    terrain = buildTerrain(groundBlocks, (c, r) => worldPos(map, c, r));
+    groundLayer.add(terrain.group);
 
-    const { width, height } = map.grid;
-    for (let r = 0; r < height; r++) {
-      for (let c = 0; c < width; c++) {
-        const code = codeAt(map, c, r);
-        if (code === 'h') continue;
-        if (code === 't') {
-          treeCells.push([c, r]);
-          continue;
-        }
-        if (code === 's') {
-          soilCells.push([c, r]);
-          continue;
-        }
-        if (code === 'p') {
-          pathCells.push([c, r]);
-          continue;
-        }
-        if (legend[code ?? '']?.water === true) {
-          waterCells.push([c, r]);
-          continue;
-        }
-        grassCells.push([c, r]);
+    // Add subtle per-instance grass tint (kept cheap; the texture carries look).
+    const grassMesh = terrain.meshes.get('grass');
+    if (grassMesh) {
+      grassMesh.instanceColor = new THREE.InstancedBufferAttribute(
+        new Float32Array(grassMesh.count * 3).fill(1),
+        3,
+      );
+      let i = 0;
+      for (const b of groundBlocks) {
+        if (b.kind !== 'grass') continue;
+        const c = grassInstanceColor(b.col, b.row);
+        grassMesh.setColorAt(i, c);
+        i++;
       }
+      if (grassMesh.instanceColor) grassMesh.instanceColor.needsUpdate = true;
     }
 
+    // Flat ground slab material reference for the season palette.
     const mats = groundMaterials();
     groundMatsRef.mats = mats;
     seasonApplied = null;
 
-    function makeInstanced(
-      gridMap: MapState,
-      kind: 'grass' | 'soil' | 'path' | 'water',
-      cells: Array<[number, number]>,
-      material: THREE.Material,
-    ): void {
-      if (cells.length === 0) return;
-      const mesh = new THREE.InstancedMesh(groundGeometry().clone(), material, cells.length);
-      const dummy = new THREE.Object3D();
-      for (let i = 0; i < cells.length; i++) {
-        const [c, r] = cells[i]!;
-        dummy.position.copy(worldPos(gridMap, c, r));
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
-        if (kind === 'grass') mesh.setColorAt(i, grassInstanceColor(c, r));
+    // Authored 's' tiles ARE the farm's tilled soil; they render as farmland
+    // blocks in the terrain InstancedMesh above (terrainBlocks -> 'farmland').
+    // The 'tilled' placed object stacks a fresh furrow on top when the player
+    // tills a grass tile (see buildTilledAsset). One tilled look in both cases.
+
+    for (let row = 0; row < map.grid.height; row++) {
+      for (let col = 0; col < map.grid.width; col++) {
+        if (codeAt(map, col, row) !== 't') continue;
+        const tree = buildTreeAsset(col, row);
+        tree.position.copy(worldPos(map, col, row));
+        groundLayer.add(tree);
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      mesh.receiveShadow = kind !== 'water';
-      groundLayer.add(mesh);
     }
 
-    makeInstanced(map, 'grass', grassCells, mats.grass);
-    makeInstanced(map, 'soil', soilCells, mats.soil);
-    makeInstanced(map, 'path', pathCells, mats.path);
-    makeInstanced(map, 'water', waterCells, mats.water);
-
-    for (const [c, r] of soilCells) {
-      const furrow = buildFurrow(c, r);
-      furrow.position.copy(worldPos(map, c, r));
-      groundLayer.add(furrow);
-    }
-    for (const [c, r] of treeCells) {
-      const tree = buildTreeAsset(c, r);
-      tree.position.copy(worldPos(map, c, r));
-      groundLayer.add(tree);
-    }
+    const width = map.grid.width;
+    const height = map.grid.height;
     for (const span of collectHouseRegions(map)) {
       const house = buildHouseAsset(span);
       house.position.set(
@@ -454,6 +543,17 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     for (const [key, obj] of placedMesh) {
       if (!nextKeys.has(key)) {
         placedLayer.remove(obj);
+        obj.traverse((node) => {
+          if (node instanceof THREE.Mesh) {
+            node.geometry.dispose();
+            const mat = node.material;
+            if (Array.isArray(mat)) {
+              for (const m of mat) m.dispose();
+            } else {
+              mat.dispose();
+            }
+          }
+        });
         placedMesh.delete(key);
       }
     }
@@ -463,7 +563,9 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
       if (!placed) continue;
       const data = placed.data?.stage;
       const stage = typeof data === 'number' ? data : 0;
-      const object = buildPlacedAsset(placed.id, stage, hash2(placed.x, placed.y));
+      // Pass the crop id so per-crop colours resolve; otherwise default.
+      const cropId = placed.id.startsWith('crop:') ? placed.id.slice(5) : 'default';
+      const object = buildPlacedAsset(placed.id, stage, hash2(placed.x, placed.y), cropId);
       object.position.copy(worldPos(map, placed.x, placed.y));
       placedLayer.add(object);
       placedMesh.set(key, object);
@@ -541,8 +643,6 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     const key = `${pos.x},${pos.y}`;
     const continuous = !Number.isInteger(pos.x) || !Number.isInteger(pos.y);
     if (continuous) {
-      // Continuous walk already advances sub-tile positions every frame;
-      // snap straight to the live world position (no lerp lag).
       player.position.copy(worldPos(map, pos.x, pos.y));
       lastTileKey = key;
     } else {
@@ -566,7 +666,22 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
       }
     }
     player.rotation.y = THREE.MathUtils.damp(player.rotation.y, facingRotation(state.player.facing), 10, dt);
+
+    // Walk-cycle legs while the player is moving (continuous walk only).
+    const moving = continuous && state.player.position.x !== lastPlayerTileKeyX;
+    if (moving) {
+      walkPhase += dt * 9;
+      const swing = Math.sin(walkPhase) * 0.5;
+      if (legL) legL.rotation.x = swing;
+      if (legR) legR.rotation.x = -swing;
+    } else if (legL || legR) {
+      if (legL) legL.rotation.x = THREE.MathUtils.damp(legL.rotation.x, 0, 12, dt);
+      if (legR) legR.rotation.x = THREE.MathUtils.damp(legR.rotation.x, 0, 12, dt);
+    }
+    lastPlayerTileKeyX = state.player.position.x;
   }
+  let walkPhase = 0;
+  let lastPlayerTileKeyX = NaN;
 
   function updateHighlight(state: GameState): void {
     const mapId = currentMapId;
@@ -588,16 +703,30 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
     const legend = ctx.content.maps.get(mapId)?.legend ?? {};
     const walkable = isWalkable(map, legend, tile.x, tile.y);
-    const material = highlight.material as THREE.MeshBasicMaterial;
+
+    // Tint the outline + face shell. A failure is a unmistakable red flash;
+    // otherwise a soft gold when the tile is actionable, amber when blocked.
+    const outline = highlight.getObjectByName('highlight-outline') as THREE.LineSegments | undefined;
+    const face = highlight.getObjectByName('highlight-face') as THREE.Mesh | undefined;
     if (failFlashT > 0) {
-      material.color.setHex(0xe05a4f);
-      material.opacity = 0.7;
+      if (outline) (outline.material as THREE.LineBasicMaterial).color.setHex(0xff3b2f);
+      if (face) {
+        const m = face.material as THREE.MeshBasicMaterial;
+        m.color.setHex(0xff3b2f);
+        m.opacity = 0.5;
+      }
     } else {
-      material.color.setHex(walkable ? 0xffcf7a : 0xe56b4f);
-      material.opacity = walkable ? 0.35 : 0.5;
+      if (outline) (outline.material as THREE.LineBasicMaterial).color.setHex(0x1a1410);
+      if (face) {
+        const m = face.material as THREE.MeshBasicMaterial;
+        m.color.setHex(walkable ? 0xffcf7a : 0xe56b4f);
+        m.opacity = walkable ? 0.12 : 0.2;
+      }
     }
+
     highlight.visible = true;
-    highlight.position.copy(worldPos(map, tile.x, tile.y));
+    const p = worldPos(map, tile.x, tile.y);
+    highlight.position.set(p.x, 0.5, p.z);
   }
 
   function updateEffects(dt: number): void {
@@ -606,25 +735,30 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
       p.life -= dt;
       if (p.life <= 0) {
         fxLayer.remove(p.mesh);
-        p.mesh.geometry.dispose();
         (p.mesh.material as THREE.Material).dispose();
         particles.splice(i, 1);
         continue;
       }
       p.vel.y -= 6 * dt;
       p.mesh.position.addScaledVector(p.vel, dt);
-      const mat = p.mesh.material as THREE.MeshBasicMaterial;
-      mat.opacity = Math.max(0, p.life / p.max);
-      p.mesh.scale.setScalar(Math.max(0.06, p.life / p.max));
+      const s = Math.max(0.1, p.life / p.max);
+      p.mesh.scale.setScalar(s);
     }
     if (swingT > 0) {
       swingT = Math.max(0, swingT - dt);
-      if (armR) {
-        const ease = 1 - swingT / SWING_SECONDS;
-        armR.rotation.z = -1.25 * Math.sin(Math.PI * Math.min(1, ease));
+      const ease = 1 - swingT / SWING_SECONDS;
+      const swing = -1.25 * Math.sin(Math.PI * Math.min(1, ease));
+      if (armR) armR.rotation.z = swing;
+      if (handGroup.visible) {
+        handGroup.rotation.x = -0.5 + swing * 0.9;
+        handGroup.position.z = -0.7 - Math.sin(Math.PI * Math.min(1, ease)) * 0.12;
       }
-    } else if (armR && armR.rotation.z !== 0) {
-      armR.rotation.z = 0;
+    } else {
+      if (armR && armR.rotation.z !== 0) armR.rotation.z = 0;
+      if (handGroup.visible) {
+        handGroup.rotation.x = THREE.MathUtils.damp(handGroup.rotation.x, -0.5, 12, dt);
+        handGroup.position.z = THREE.MathUtils.damp(handGroup.position.z, -0.7, 12, dt);
+      }
     }
     if (failFlashT > 0) failFlashT = Math.max(0, failFlashT - dt);
   }
@@ -663,13 +797,23 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     const on = mode === 'first';
     if (on === firstPerson) return;
     firstPerson = on;
-    groundLayer.visible = !firstPerson;
-    voxelGroup.visible = firstPerson;
+    // The real cubic terrain (groundLayer) is the world in BOTH cameras. The
+    // legacy voxel rim/crown columns (voxelGroup) are superseded by
+    // buildTreeAsset/buildHouseAsset + the instanced water mesh, so that layer
+    // stays hidden to avoid double geometry.
+    groundLayer.visible = true;
+    voxelGroup.visible = false;
+    placedLayer.visible = true;
+    // Hide the body you are standing in; show it again in the follow camera.
+    player.visible = !firstPerson;
+    handGroup.visible = firstPerson;
     if (firstPerson) {
       zoom = 1;
       lookPose.yaw = yawOfFacing(ctx.store.state.player.facing);
       lookPose.pitch = 0;
+      cameraSettled = false;
     }
+    setHint(firstPerson);
   }
 
   const lightDay = new THREE.Color();
@@ -749,6 +893,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     groundLayer.traverse((node) => {
       if (node instanceof THREE.Mesh) {
         const material = node.material;
+        if (Array.isArray(material)) return;
         if (material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial) {
           const name = material.name;
           if (name === 'tree-foliage' || name === 'tree-accent') {
@@ -819,8 +964,6 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     updatePrecipitation(dt, state);
   }
 
-  let bobberBob = 0;
-
   /** Bob the float gently; hide it if the player left the bobber's map. */
   function updateBobber(dt: number, state: GameState): void {
     if (!bobber.visible) return;
@@ -874,28 +1017,94 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     zoom = THREE.MathUtils.clamp(zoom * Math.exp(-e.deltaY * 0.0016), ZOOM_MIN, ZOOM_MAX);
   }
 
+  /** True when the keydown is aimed at a text field / editable node. */
+  function isFormTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return (
+      target.isContentEditable ||
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
+    );
+  }
+
+  /** Movement keys main.ts + the input feature listen for (held sets). */
+  const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'];
+
+  /**
+   * A DOM panel stole focus: release pointer lock (browser Esc also does this)
+   * and clear every held movement key so the player stops instantly. A real
+   * window `keyup` for each key clears both main.ts's `held` and the input
+   * feature's `held` set; repeats are ignored, so movement stays stopped until
+   * the user presses the key again.
+   */
+  function releaseMoveKeys(): void {
+    if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+    for (const key of MOVE_KEYS) {
+      window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true, cancelable: true }));
+    }
+  }
+
   function onModeKey(e: KeyboardEvent): void {
-    if (e.code === 'KeyF') setCameraMode(firstPerson ? 'top' : 'first');
+    if (isFormTarget(e.target)) return;
+    if (e.code === 'KeyV' || e.key.toLowerCase() === VIEW_TOGGLE_KEY) {
+      setCameraMode(firstPerson ? 'top' : 'first');
+    }
   }
 
   function onLook(e: MouseEvent): void {
     if (!firstPerson) return;
+    if (document.pointerLockElement !== renderer.domElement) return;
     lookPose.yaw -= e.movementX * LOOK_SPEED;
     lookPose.pitch = clampPitch(lookPose.pitch - e.movementY * LOOK_SPEED);
   }
 
+  // Pointer lock: request on canvas click; Esc (browser default) releases it.
+  // If a UI panel has focus, we release the lock and stop moving so the panel
+  // is usable.
+  function onCanvasClick(): void {
+    if (!firstPerson) return;
+    const el = document.activeElement;
+    if (el instanceof HTMLElement && el !== document.body && el !== renderer.domElement) {
+      // A DOM panel owns focus — don't grab the mouse.
+      if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+      return;
+    }
+    if (document.pointerLockElement !== renderer.domElement) {
+      const req = renderer.domElement.requestPointerLock() as unknown as Promise<void> | undefined;
+      // Chrome returns a promise; older browsers return undefined. Swallow the
+      // rejection (e.g. user-gesture timing) so it never surfaces as an error.
+      if (req && typeof req.catch === 'function') req.catch(() => {});
+    }
+  }
+
+  function onFocusIn(e: FocusEvent): void {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    if (t === document.body || t === renderer.domElement) return;
+    // A panel/UI element gained focus: stop any in-flight movement and release
+    // pointer lock so the panel is usable. Even though the input feature keeps
+    // its own flag/held set, clearing it via window keyup stops the player.
+    releaseMoveKeys();
+  }
+
   window.addEventListener('resize', onResize);
   renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+  renderer.domElement.addEventListener('click', onCanvasClick);
   window.addEventListener('keydown', onModeKey);
   window.addEventListener('mousemove', onLook);
+  document.addEventListener('focusin', onFocusIn);
 
   function dispose(): void {
     if (disposed) return;
     disposed = true;
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
+    renderer.domElement.removeEventListener('click', onCanvasClick);
     window.removeEventListener('keydown', onModeKey);
     window.removeEventListener('mousemove', onLook);
+    document.removeEventListener('focusin', onFocusIn);
+    cameraHint.remove();
     offWarp();
     offUsed();
     offFail();
@@ -906,19 +1115,29 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     offEscape();
     offCancel();
     offNoFish();
+    clearDevHandle();
     scene.remove(bobber);
     bobber.geometry.dispose();
     bobberMat.dispose();
     for (const p of particles) {
       fxLayer.remove(p.mesh);
-      p.mesh.geometry.dispose();
       (p.mesh.material as THREE.Material).dispose();
     }
     particles.length = 0;
+    fragGeo.dispose();
     scene.remove(fxLayer);
+    camera.remove(handGroup);
+    handGroup.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        node.geometry.dispose();
+        (node.material as THREE.Material).dispose();
+      }
+    });
     disposePrecip();
     disposedPlaced();
     npcView.dispose();
+    disposeTerrain(terrain);
+    terrain = null;
     disposeGroup(groundLayer);
     disposeGroup(voxelGroup);
     for (const mat of Object.values(VOXEL_MATERIALS)) mat.dispose();
@@ -933,9 +1152,24 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
         }
       }
     });
+    highlight.traverse((node) => {
+      if (node instanceof THREE.Mesh || node instanceof THREE.LineSegments) {
+        node.geometry.dispose();
+        const mat = node.material;
+        if (Array.isArray(mat)) {
+          for (const m of mat) m.dispose();
+        } else {
+          mat.dispose();
+        }
+      }
+    });
     renderer.dispose();
     if (rootEl.contains(renderer.domElement)) rootEl.removeChild(renderer.domElement);
   }
+
+  // The first-person camera is the DEFAULT presentation. Apply it once now that
+  // the layers exist so the very first frame is eye-level.
+  setCameraMode('first');
 
   return { render, dispose };
 }
@@ -962,3 +1196,12 @@ export const engineView = defineFeature({
     viewHandle = null;
   },
 });
+
+// Keep a reference so block registry materials are constructed once at module
+// import in a browser; in headless this is a no-op that returns a cached map.
+export function viewBlockRegistry(): ReturnType<typeof blockRegistry> {
+  return blockRegistry();
+}
+
+/** Resolve a BlockKind definition (re-export for tests + view consumers). */
+export { getBlock };

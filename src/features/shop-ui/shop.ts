@@ -116,7 +116,8 @@ export function createShopUi(ctx: FeatureContext): UiHandle {
       const name = make('span', 'eh-shop-item');
       if (name) name.textContent = entry.name;
       const qtyEl = make('span', 'eh-shop-qty');
-      if (qtyEl) qtyEl.textContent = replaceTokens(messages.shop.qtyBadge, { qty: String(entry.qty) });
+      if (qtyEl)
+        qtyEl.textContent = replaceTokens(messages.shop.qtyBadge, { qty: String(entry.qty) });
       const priceEl = make('span', 'eh-shop-price');
       if (priceEl) priceEl.textContent = formatMoney(entry.price, messages);
       if (name) info.appendChild(name);
@@ -155,7 +156,9 @@ export function createShopUi(ctx: FeatureContext): UiHandle {
     body.replaceChildren();
 
     const moneyLine = line(
-      replaceTokens(messages.shop.money, { gold: formatMoney(ctx.store.state.player.money, messages) }),
+      replaceTokens(messages.shop.money, {
+        gold: formatMoney(ctx.store.state.player.money, messages),
+      }),
     );
     if (moneyLine) body.appendChild(moneyLine);
 
@@ -173,7 +176,11 @@ export function createShopUi(ctx: FeatureContext): UiHandle {
     if (currentShop.buys) {
       const sellHeader = sectionTitle(messages.shop.sellSection);
       if (sellHeader) body.appendChild(sellHeader);
-      const rows = sellableInventory(ctx.store.state.player.inventory.slots, ctx.content.items, messages);
+      const rows = sellableInventory(
+        ctx.store.state.player.inventory.slots,
+        ctx.content.items,
+        messages,
+      );
       if (rows.length === 0) {
         const empty = line(messages.shop.sellEmpty);
         if (empty) body.appendChild(empty);
@@ -190,8 +197,22 @@ export function createShopUi(ctx: FeatureContext): UiHandle {
     }
   }
 
+  function closeShop(): void {
+    dialog?.close();
+    dialog?.dispose();
+    dialog = null;
+    open = false;
+    body = null;
+    currentShop = undefined;
+  }
+
   function openShop(): void {
     if (!kit || !root) return;
+    if (open) {
+      // F is a toggle, like K: pressing it with the shop up closes it.
+      closeShop();
+      return;
+    }
     const shop = discoverShop();
     currentShop = shop;
     if (dialog) {

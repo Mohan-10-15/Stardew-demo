@@ -114,6 +114,22 @@ async function main(): Promise<void> {
 
   requestAnimationFrame(frame);
   console.info(`[ember-hollow] booted ${runtime.features.length} feature modules, ${content.items.size} items`);
+
+  if (import.meta.env.DEV) {
+    // Dev-only inspection hook for the browser observation harness
+    // (scripts/observe.mjs). Never present in a production build.
+    (globalThis as unknown as { __EH__?: unknown }).__EH__ = {
+      runtime,
+      store: runtime.store,
+      bus: runtime.bus,
+      player: () => runtime.store.state.player,
+      world: () => runtime.store.state.world,
+      map: () => {
+        const pos = runtime.store.state.player.position;
+        return runtime.store.state.maps[pos.mapId];
+      },
+    };
+  }
 }
 
 main().catch((err) => {

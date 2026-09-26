@@ -5,6 +5,7 @@
  * from `mount()`, which guards for a missing `document` (headless tests).
  */
 import { defineFeature, type FeatureContext, type UiHandle } from '../../core/feature';
+import { applyItemIcon, type IconSpec } from '../ui-kit';
 import { createUiKit, type TooltipHandle, type UiKit } from '../ui-kit';
 import { MESSAGES, type Messages } from '../ui-kit/i18n/en';
 import { SEASON_NAMES, type GameState, type ItemStack } from '../../core/types';
@@ -129,8 +130,10 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
     const el = slot.el;
     if (!el) return null;
     el.dataset.slot = String(index);
+    const icon = make('span', 'eh-slot-icon');
     const name = make('span', 'eh-slot-name');
     const count = make('span', 'eh-slot-count');
+    if (icon) el.appendChild(icon);
     if (name) el.appendChild(name);
     if (count) el.appendChild(count);
     el.addEventListener('pointerenter', () => {
@@ -213,6 +216,7 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
       slotEl.classList.toggle('is-selected', selected);
       slotEl.setAttribute('aria-pressed', String(selected));
 
+      const iconEl = slotEl.querySelector<HTMLElement>('.eh-slot-icon');
       const nameEl = slotEl.querySelector<HTMLElement>('.eh-slot-name');
       const countEl = slotEl.querySelector<HTMLElement>('.eh-slot-count');
       const parts: string[] = [replaceTokens(messages.hud.hotbar.slotAria, { number: String(i + 1) })];
@@ -221,6 +225,12 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
         const item = items.get(stack.id);
         const displayName =
           item?.name ?? `${replaceTokens(messages.hud.tooltip.unknownItem, {})} (${stack.id})`;
+        if (iconEl) {
+          // Centered pixel icon; falls back to the text name when there is no
+          // canvas (headless) so a slot is never blank.
+          const painted = applyItemIcon(iconEl, stack.id, item as IconSpec | undefined);
+          iconEl.classList.toggle('is-empty', !painted);
+        }
         if (nameEl) nameEl.textContent = displayName;
         if (countEl) {
           countEl.textContent = stack.qty > 1 ? formatHotbarSlotQty(stack.qty, messages) : '';
@@ -228,6 +238,11 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
         }
         parts.push(replaceTokens(messages.hud.hotbar.itemAria, { name: displayName, qty: String(stack.qty) }));
       } else {
+        if (iconEl) {
+          iconEl.style.backgroundImage = '';
+          iconEl.classList.remove('is-empty');
+          delete iconEl.dataset['item'];
+        }
         if (nameEl) nameEl.textContent = '';
         if (countEl) {
           countEl.textContent = '';

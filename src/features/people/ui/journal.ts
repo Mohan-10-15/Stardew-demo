@@ -142,9 +142,15 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
     const name = npcName(npc, npcId);
     const nameNode = keyed(['eh-journal-row-main'], name);
     const heartsNode = heartsBar(hearts);
-    const heartsText = keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.hearts, { hearts: String(hearts) }));
+    const heartsText = keyed(
+      ['eh-journal-row-meta'],
+      replaceTokens(messages.journal.hearts, { hearts: String(hearts) }),
+    );
     const loves = npc.gift.loves.map((id) => itemName(ctx.content.items.get(id), id)).join(', ');
-    const lovesNode = keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.loves, { items: loves }));
+    const lovesNode = keyed(
+      ['eh-journal-row-meta'],
+      replaceTokens(messages.journal.loves, { items: loves }),
+    );
     const column = el('div');
     if (column) {
       column.className = 'eh-journal-row-copy';
@@ -166,16 +172,42 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
 
   function renderSkillRow(skillRow: SkillPanelRow): HTMLElement | null {
     const skillLabel = messages.summary.skills[skillRow.skillId] ?? skillRow.label;
-    const name = keyed(['eh-journal-row-main'], replaceTokens(messages.journal.skillLevel, { skill: skillLabel, level: String(skillRow.level) }));
+    const name = keyed(
+      ['eh-journal-row-main'],
+      replaceTokens(messages.journal.skillLevel, {
+        skill: skillLabel,
+        level: String(skillRow.level),
+      }),
+    );
     const meta: (HTMLElement | null)[] = [];
     if (skillRow.xpMax > 0) {
-      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.xpProgress, { xp: String(skillRow.xp), xpMax: String(skillRow.xpMax) })));
+      meta.push(
+        keyed(
+          ['eh-journal-row-meta'],
+          replaceTokens(messages.journal.xpProgress, {
+            xp: String(skillRow.xp),
+            xpMax: String(skillRow.xpMax),
+          }),
+        ),
+      );
     } else {
-      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.xp, { xp: String(skillRow.xp) })));
+      meta.push(
+        keyed(
+          ['eh-journal-row-meta'],
+          replaceTokens(messages.journal.xp, { xp: String(skillRow.xp) }),
+        ),
+      );
     }
     if (skillRow.professionName) {
-      const detail = skillRow.professionDescription ? `${skillRow.professionName} — ${skillRow.professionDescription}` : skillRow.professionName;
-      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.profession, { name: detail })));
+      const detail = skillRow.professionDescription
+        ? `${skillRow.professionName} — ${skillRow.professionDescription}`
+        : skillRow.professionName;
+      meta.push(
+        keyed(
+          ['eh-journal-row-meta'],
+          replaceTokens(messages.journal.profession, { name: detail }),
+        ),
+      );
     } else {
       meta.push(keyed(['eh-journal-row-meta'], messages.journal.professionNone));
     }
@@ -184,7 +216,9 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
         ['eh-journal-row-meta'],
         skillRow.recipeIds.length > 0
           ? replaceTokens(messages.journal.recipesList, {
-              recipes: skillRow.recipeIds.map((id) => recipeName(ctx.content.recipes.get(id), id)).join(', '),
+              recipes: skillRow.recipeIds
+                .map((id) => recipeName(ctx.content.recipes.get(id), id))
+                .join(', '),
             })
           : replaceTokens(messages.journal.recipeCount, { count: String(0) }),
       ),
@@ -225,7 +259,12 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
   }
 
   function openJournal(): void {
-    if (!kit || !root || open) return;
+    if (!kit || !root) return;
+    if (open) {
+      // J is a toggle, like K: pressing it with the journal up closes it.
+      close();
+      return;
+    }
     dialog = kit.dialog({
       title: messages.journal.title,
       className: 'eh-journal-dialog',

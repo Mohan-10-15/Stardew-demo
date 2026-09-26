@@ -69,7 +69,10 @@ export function createCraftingUi(ctx: FeatureContext): UiHandle {
       const name = make('span', 'eh-crafting-item');
       if (name) name.textContent = row.name;
       const meta = make('span', 'eh-crafting-meta');
-      if (meta) meta.textContent = row.unlocked ? metaFor(row) : lockLabel(row.lockSkill, row.lockLevel, messages);
+      if (meta)
+        meta.textContent = row.unlocked
+          ? metaFor(row)
+          : lockLabel(row.lockSkill, row.lockLevel, messages);
       if (name) info.appendChild(name);
       if (meta) info.appendChild(meta);
       rowEl.appendChild(info);
@@ -117,8 +120,22 @@ export function createCraftingUi(ctx: FeatureContext): UiHandle {
     }
   }
 
+  function closePanel(): void {
+    dialog?.close();
+    dialog?.dispose();
+    dialog = null;
+    open = false;
+    body = null;
+  }
+
   function openPanel(): void {
     if (!kit || !root) return;
+    if (open) {
+      // The hotkey is a toggle, the same as the settings dialog: pressing C
+      // with the panel up must close it, not silently rebuild it.
+      closePanel();
+      return;
+    }
     if (dialog) {
       dialog.dispose();
       dialog = null;

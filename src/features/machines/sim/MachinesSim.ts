@@ -220,11 +220,21 @@ export const machinesSim: FeatureModule = defineFeature({
     });
     // T-0405: route the shared interact bus here when the front tile is a
     // machine (farming:sim defers on machine tiles, mirroring rod handling).
+    // T-0502: the same bus carries placement. Without it `machines:place` had
+    // no caller anywhere in the product, so a crafted machine could never be
+    // set down and the whole machine loop was unreachable from a new game.
+    // The bus is loosely typed, so nothing here may be assumed present.
     ctx.bus.on('tool:use-requested', (payload: { tile?: WorldPos; toolId?: string | null } | null) => {
       const tile = payload?.tile;
-      if (!tile) return;
-      if (!machineAtTile(ctx.store.state, tile)) return;
-      ctx.store.dispatch({ type: 'machines:interact', payload: { tile } });
+      if (!tile || typeof tile.mapId !== 'string') return;
+      if (machineAtTile(ctx.store.state, tile)) {
+        ctx.store.dispatch({ type: 'machines:interact', payload: { tile } });
+        return;
+      }
+      const inv = ctx.store.state.player.inventory;
+      const held = inv.slots[inv.selected];
+      if (!held || !ctx.content.machines.has(held.id)) return;
+      ctx.store.dispatch({ type: 'machines:place', payload: { tile, itemId: held.id } });
     });
     // Count machines down on the same tick the core clock advances.
     ctx.store.registerReducer('time:tick', (st, _action, _rng) => tickMachines(st, ctx.content, ctx.bus));
