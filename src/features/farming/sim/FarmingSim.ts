@@ -23,6 +23,7 @@ import type {
   WorldPos,
 } from '@game/core/types';
 import { addStackToInventory } from '../../inventory/sim/InventorySim';
+import { machineAtTile } from '../../machines/sim/MachinesSim';
 import { ensureFarmingExt, ensureWeatherExt } from './ext';
 import type { CropDefs } from './growth';
 import { applyFarmRollover, applyForageRoll } from './rollover';
@@ -331,6 +332,10 @@ export function applyToolUse(
   const tile = payload.tile;
   const toolId = payload.toolId ?? '';
   const kind = toolKindOf(toolId);
+
+  // Machine tiles belong to machines:sim (T-0405, decision 38): farming has
+  // nothing to do here, so no spurious tool:failed reaches audio/UI.
+  if (machineAtTile(state, tile)) return state;
 
   // Winter: the soil is frozen — tilling is rejected, state unchanged (m2 §4).
   if (kind === 'hoe' && state.world.calendar.seasonIndex === 3) {

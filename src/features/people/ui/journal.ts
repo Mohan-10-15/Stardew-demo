@@ -10,9 +10,10 @@ import { defineFeature, type FeatureContext, type UiHandle } from '@game/core/fe
 import { createUiKit, type DialogHandle, type TabHandle, type UiKit } from '../../ui-kit';
 import { MESSAGES, type Messages } from '../../ui-kit/i18n/en';
 import { replaceTokens } from '../../ui-kit/template';
-import type { ItemDef, NpcDef, QuestDef } from '@game/core/schemas';
+import type { ItemDef, NpcDef, QuestDef, RecipeDef } from '@game/core/schemas';
 import { questDone, questIsAvailable, questProgress } from '../sim/quests';
 import { readPeopleExt } from '../sim/PeopleSim';
+import { buildSkillRows, type SkillPanelRow } from './skills-panel';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K): HTMLElementTagNameMap[K] | null {
   return typeof document === 'undefined' ? null : document.createElement(tag);
@@ -38,6 +39,10 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
 
   function itemName(item: ItemDef | undefined, id: string): string {
     return item?.name && item.name.length > 0 ? item.name : id;
+  }
+
+  function recipeName(recipe: RecipeDef | undefined, id: string): string {
+    return recipe?.name && recipe.name.length > 0 ? recipe.name : id;
   }
 
   function npcName(npc: NpcDef | undefined, id: string): string {
@@ -159,19 +164,43 @@ export function createJournalUi(ctx: FeatureContext): UiHandle {
     }
   }
 
+  function renderSkillRow(skillRow: SkillPanelRow): HTMLElement | null {
+    const skillLabel = messages.summary.skills[skillRow.skillId] ?? skillRow.label;
+    const name = keyed(['eh-journal-row-main'], replaceTokens(messages.journal.skillLevel, { skill: skillLabel, level: String(skillRow.level) }));
+    const meta: (HTMLElement | null)[] = [];
+    if (skillRow.xpMax > 0) {
+      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.xpProgress, { xp: String(skillRow.xp), xpMax: String(skillRow.xpMax) })));
+    } else {
+      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.xp, { xp: String(skillRow.xp) })));
+    }
+    if (skillRow.professionName) {
+      const detail = skillRow.professionDescription ? `${skillRow.professionName} — ${skillRow.professionDescription}` : skillRow.professionName;
+      meta.push(keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.profession, { name: detail })));
+    } else {
+      meta.push(keyed(['eh-journal-row-meta'], messages.journal.professionNone));
+    }
+    meta.push(
+      keyed(
+        ['eh-journal-row-meta'],
+        skillRow.recipeIds.length > 0
+          ? replaceTokens(messages.journal.recipesList, {
+              recipes: skillRow.recipeIds.map((id) => recipeName(ctx.content.recipes.get(id), id)).join(', '),
+            })
+          : replaceTokens(messages.journal.recipeCount, { count: String(0) }),
+      ),
+    );
+    const column = el('div');
+    if (column) {
+      column.className = 'eh-journal-row-copy';
+      if (name) column.appendChild(name);
+      for (const m of meta) if (m) column.appendChild(m);
+    }
+    return row(column);
+  }
+
   function renderSkills(container: HTMLElement): void {
-    const skills = ctx.store.state.player.skills;
-    const list = Object.entries(skills).sort((a, b) => a[0].localeCompare(b[0]));
-    for (const [id, skill] of list) {
-      const name = keyed(['eh-journal-row-main'], replaceTokens(messages.journal.skillLevel, { skill: id, level: String(skill.level) }));
-      const xp = keyed(['eh-journal-row-meta'], replaceTokens(messages.journal.xp, { xp: String(skill.xp) }));
-      const column = el('div');
-      if (column) {
-        column.className = 'eh-journal-row-copy';
-        if (name) column.appendChild(name);
-        if (xp) column.appendChild(xp);
-      }
-      const r = row(column);
+    for (const skillRow of buildSkillRows(ctx.store.state, ctx.content)) {
+      const r = renderSkillRow(skillRow);
       if (r) container.appendChild(r);
     }
   }

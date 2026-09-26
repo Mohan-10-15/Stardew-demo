@@ -9,16 +9,19 @@ import { createUiKit, type TooltipHandle, type UiKit } from '../ui-kit';
 import { MESSAGES, type Messages } from '../ui-kit/i18n/en';
 import { SEASON_NAMES, type GameState, type ItemStack } from '../../core/types';
 import {
+  activeBuffRows,
   barPercent,
   formatBarAmount,
   formatClock,
   formatDate,
   formatHotbarSlotQty,
   formatMoney,
+  interactionHint,
   itemTooltipLines,
   replaceTokens,
   shippingBoxCount,
 } from './format';
+import { tileInFront } from '../engine/sim/PlayerPosition';
 
 export const HOTBAR_SLOTS = 12;
 
@@ -53,6 +56,8 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
   let healthFill: HTMLElement | null = null;
   let healthText: HTMLElement | null = null;
   let shippingEl: HTMLElement | null = null;
+  let buffsEl: HTMLElement | null = null;
+  let hintEl: HTMLElement | null = null;
   let tooltip: TooltipHandle | null = null;
   const slotEls: HTMLElement[] = [];
 
@@ -157,6 +162,12 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
     if (energyBar) vitals.append(energyBar);
     if (healthBar) vitals.append(healthBar);
     if (shippingEl) vitals.append(shippingEl);
+
+    const status = kit.panel({ className: 'eh-hud-status' });
+    buffsEl = make('div', 'eh-hud-buffs');
+    hintEl = make('div', 'eh-hud-hint');
+    if (buffsEl) status.append(buffsEl);
+    if (hintEl) status.append(hintEl);
 
     const hotbarPanel = kit.panel({ className: 'eh-hud-hotbar' });
     const hotbarLabel = make('span', 'eh-hud-hotbar-label');
@@ -286,6 +297,43 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
     const shipped = shippingBoxCount(state.extensions.farming?.shippingBox);
     shippingEl.textContent = replaceTokens(messages.hud.shipping.count, { count: String(shipped) });
     shippingEl.setAttribute('aria-label', replaceTokens(messages.hud.shipping.aria, { count: String(shipped) }));
+
+    if (buffsEl) {
+      const rows = activeBuffRows(state, messages);
+      if (rows.length > 0) {
+        buffsEl.textContent = rows
+          .map((r) => replaceTokens(messages.hud.buffs.row, { stat: r.statLabel, amount: String(r.amount), time: r.remaining }))
+          .join(' · ');
+        buffsEl.classList.add('is-visible');
+        buffsEl.setAttribute(
+          'aria-label',
+          replaceTokens(messages.hud.buffs.aria, {
+            text: rows
+              .map((r) => replaceTokens(messages.hud.buffs.row, { stat: r.statLabel, amount: String(r.amount), time: r.remaining }))
+              .join('. '),
+          }),
+        );
+      } else {
+        buffsEl.textContent = '';
+        buffsEl.classList.remove('is-visible');
+        buffsEl.setAttribute('aria-label', '');
+      }
+    }
+
+    if (hintEl) {
+      const front = tileInFront(state.player.position, state.player.facing);
+      const hint = interactionHint(state, ctx.content, { ...front, mapId: state.player.position.mapId });
+      if (hint) {
+        const action = messages.hud.hint.action[hint.action];
+        hintEl.textContent = replaceTokens(messages.hud.hint.line, { action, name: hint.name });
+        hintEl.classList.add('is-visible');
+        hintEl.setAttribute('aria-label', replaceTokens(messages.hud.hint.aria, { action, name: hint.name }));
+      } else {
+        hintEl.textContent = '';
+        hintEl.classList.remove('is-visible');
+        hintEl.setAttribute('aria-label', '');
+      }
+    }
 
     renderHotbar(state);
   }

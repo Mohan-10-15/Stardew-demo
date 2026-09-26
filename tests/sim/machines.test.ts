@@ -207,3 +207,66 @@ describe('machines:map coverage', () => {
     expect(fx.placed('farm', FARM_TILE.x, FARM_TILE.y)?.id).toBe('machine:seed-maker');
   });
 });
+
+describe('machines:interact (T-0405 affordance)', () => {
+  it('routes the interact bus to load from the selected hotbar slot', async () => {
+    const fx = await makeFixture();
+    fx.dispatch('machines:place', { tile: FARM_TILE, itemId: 'mayonnaise-machine' });
+    const eggSlot = fx.state.player.inventory.slots.findIndex((s) => s?.id === 'egg');
+    fx.selectSlot(eggSlot);
+    const loaded = fx.capture<any>('machines:loaded');
+    const toolUsed = fx.capture<any>('tool:used');
+    fx.requestTool(FARM_TILE, 'hand');
+    expect(loaded).toEqual([{ tile: FARM_TILE, machineId: 'mayonnaise-machine', itemId: 'egg', qty: 1 }]);
+    expect(placedData(fx)?.['loaded']).toBe(1);
+    expect(placedData(fx)?.['remainingTicks']).toBe(3 * 6);
+    expect(toolUsed).toEqual([]); // farming defers on machine tiles
+    const eggs = fx.state.player.inventory.slots.filter((s) => s?.id === 'egg').reduce((n, s) => n + (s?.qty ?? 0), 0);
+    expect(eggs).toBe(2);
+  });
+
+  it('routes the interact bus to collect a finished machine', async () => {
+    const fx = await makeFixture();
+    fx.dispatch('machines:place', { tile: FARM_TILE, itemId: 'mayonnaise-machine' });
+    const eggSlot = fx.state.player.inventory.slots.findIndex((s) => s?.id === 'egg');
+    fx.dispatch('machines:insert', { tile: FARM_TILE, slot: eggSlot });
+    fx.tickMinutes(3 * 60);
+    const collected = fx.capture<any>('machines:collected');
+    const toolFailed = fx.capture<any>('tool:failed');
+    fx.requestTool(FARM_TILE, 'hand');
+    expect(collected).toHaveLength(1);
+    expect(fx.state.player.inventory.slots.some((s) => s?.id === 'mayonnaise')).toBe(true);
+    expect(placedData(fx)?.['loaded']).toBe(0);
+    expect(toolFailed).toEqual([]);
+  });
+
+  it('denies a working machine as busy', async () => {
+    const fx = await makeFixture();
+    fx.dispatch('machines:place', { tile: FARM_TILE, itemId: 'mayonnaise-machine' });
+    const eggSlot = fx.state.player.inventory.slots.findIndex((s) => s?.id === 'egg');
+    fx.dispatch('machines:insert', { tile: FARM_TILE, slot: eggSlot });
+    fx.tickMinutes(10);
+    const denied = fx.capture<any>('machines:denied');
+    fx.requestTool(FARM_TILE, 'hand');
+    expect(denied).toEqual([{ reason: 'busy', tile: FARM_TILE, machineId: 'mayonnaise-machine' }]);
+  });
+
+  it('denies an idle machine when the selected slot is not its input', async () => {
+    const fx = await makeFixture();
+    fx.dispatch('machines:place', { tile: FARM_TILE, itemId: 'mayonnaise-machine' });
+    const woodSlot = fx.giveItem('wood', 1);
+    fx.selectSlot(woodSlot);
+    const denied = fx.capture<any>('machines:denied');
+    fx.requestTool(FARM_TILE, 'hand');
+    expect(denied[0]?.reason).toBe('not-needed');
+  });
+
+  it('does not claim tiles without a machine (farming continues to work)', async () => {
+    const fx = await makeFixture();
+    const denied = fx.capture<any>('machines:denied');
+    const toolUsed = fx.capture<any>('tool:used');
+    fx.requestTool(FARM_TILE, 'hoe-t0');
+    expect(denied).toEqual([]);
+    expect(toolUsed.some((e: any) => e.effect === 'tilled')).toBe(true);
+  });
+});
