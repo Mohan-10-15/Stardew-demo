@@ -12,12 +12,20 @@
  *
  * Headless guard: in Node (vitest, bot) setup returns a no-op handle and no
  * DOM/three-side is ever touched.
+ *
+ * Camera/facing coherence (T-0504): the first-person camera follows
+ * `player.facing` (eased, never snapped) and free mouse look pushes the facing
+ * back the other way via `player:face`, so the yaw and the 4-way facing can
+ * never disagree and the tile `tileInFront()` returns is always the one under
+ * the crosshair. Nothing in that chain needs pointer lock: the keyboard turns
+ * the camera on its own, and pointer lock only upgrades the mouse to absolute
+ * look (drag-to-look is the fallback).
  */
 import * as THREE from 'three';
 import { defineFeature, type FeatureContext, type ViewHandle } from '../../../core/feature';
 import type { GameState, MapState, SeasonIndex } from '../../../core/types';
 import type { MapLegend } from '../../../core/schemas';
-import { tileInFront, isWalkable } from '../sim/PlayerPosition';
+import { tileInFront, isWalkable, JOG_UNITS_PER_SEC } from '../sim/PlayerPosition';
 import { toolKindOf, type ToolKind } from '../../farming/sim/FarmingSim';
 import {
   GRID_CELL,
@@ -42,14 +50,22 @@ import {
   type BuiltTerrain,
 } from './blocks';
 import { NpcView } from './npcs';
+import { buildCrosshair } from './crosshair';
 import {
-  clampPitch,
-  EYE_HEIGHT,
+  FirstPersonLook,
+  lookInputDelta,
+  lookInputPress,
+  lookInputRelease,
+  lookInputSwallowsClick,
+  newLookInput,
+} from './look';
+import {
+  EYE_ABOVE_GROUND,
+  FOV_DEG,
   headBob,
-  LOOK_SPEED,
   lookVector,
+  targetTileNdc,
   voxelColumns,
-  yawOfFacing,
   type VoxelKind,
 } from './voxel';
 
@@ -67,6 +83,8 @@ const TILE_LERP_SECONDS = 0.11;
 const FOLLOW_LAMBDA = 5;
 const SWING_SECONDS = 0.26;
 const FAIL_FLASH_SECONDS = 0.2;
+/** Pointer travel (px) past which a canvas click counts as a look drag. */
+const DRAG_LOOK_PIXELS = 6;
 
 /** The camera toggle key. NOT 'f' (f is bound to "open shop" in the keymap). */
 export const VIEW_TOGGLE_KEY = 'v';
@@ -120,6 +138,16 @@ interface DevSceneHandle {
     swinging: boolean;
     failFlash: boolean;
     firstPerson: boolean;
+  };
+  /** Look state + whether the mouse is captured, for the browser probes. */
+  look: () => {
+    yaw: number;
+    pitch: number;
+    target: number;
+    facing: string;
+    pointerLocked: boolean;
+    crosshair: boolean;
+    eyeHeight: number;
   };
 }
 
@@ -198,9 +226,14 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   rootEl.appendChild(cameraHint);
   const setHint = (first: boolean): void => {
     cameraHint.textContent = first
-      ? 'Click to lock mouse • V = top view • Space = use tool'
+      ? 'Click to lock mouse • Drag to look • WASD turns • V = top view • Space = use tool'
       : 'V = back to first person • Space = use tool';
   };
+
+  // First-person aim dot. Centred on the viewport, pointer-events none so it
+  // can never eat the click that grabs pointer lock, and below the UI layer.
+  const crosshair = buildCrosshair();
+  rootEl.appendChild(crosshair.el);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -215,7 +248,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   const fog = new THREE.Fog(new THREE.Color().copy(SKY_DAY), FOG_NEAR, FOG_FAR);
   scene.fog = fog;
 
-  const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 200);
+  const camera = new THREE.PerspectiveCamera(FOV_DEG, window.innerWidth / window.innerHeight, 0.05, 200);
 
   const ambient = new THREE.AmbientLight(AMBIENT_DAY, 0.75);
   scene.add(ambient);
@@ -301,6 +334,15 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
         swinging: swingT > 0,
         failFlash: failFlashT > 0,
         firstPerson,
+      }),
+      look: () => ({
+        yaw: look.yaw,
+        pitch: look.pitch,
+        target: look.target,
+        facing: ctx.store.state.player.facing,
+        pointerLocked: document.pointerLockElement === renderer.domElement,
+        crosshair: crosshair.visible(),
+        eyeHeight: EYE_ABOVE_GROUND,
       }),
     };
     (globalThis as unknown as { __EH_SCENE__?: DevSceneHandle }).__EH_SCENE__ = devHandle;
@@ -428,7 +470,8 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   // setCameraMode('first') call at the end of setup actually applies the
   // per-mode visibility (hand on, body off) instead of early-returning.
   let firstPerson = false;
-  const lookPose = { yaw: 0, pitch: 0 };
+  // Yaw/pitch + the camera<->facing agreement rule (./look).
+  const look = new FirstPersonLook();
   let bobPhase = 0;
   const prevPlayerEye = new THREE.Vector3();
 
@@ -452,6 +495,25 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
   }
 
+  /** Tiles the player has hoed: `tilled` placed objects that are still on the map. */
+  function tilledTiles(map: MapState): Set<string> {
+    const out = new Set<string>();
+    for (const key of Object.keys(map.placed)) {
+      const placed = map.placed[key];
+      if (placed && placed.id === 'tilled') out.add(`${placed.x},${placed.y}`);
+    }
+    return out;
+  }
+
+  /**
+   * Grid + tilled tiles, i.e. everything the terrain InstancedMesh is built
+   * from. Tilling/untilling changes the ground, so it has to invalidate the
+   * cached terrain exactly like a grid change does.
+   */
+  function groundKey(map: MapState): string {
+    return `${map.grid.width}x${map.grid.height}:${map.grid.tiles.join('')}|${[...tilledTiles(map)].sort().join(';')}`;
+  }
+
   function rebuildGround(state: GameState): void {
     const mapId = currentMapId;
     if (!mapId) return;
@@ -464,7 +526,9 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     terrain = null;
 
     // Voxel terrain: one InstancedMesh per block kind, built from the grid.
-    const blocks = terrainBlocks(map, legend);
+    // Tilled tiles are part of THIS mesh (see the farmland note below), so
+    // hoeing a tile does not spawn a second, differently-drawn soil block.
+    const blocks = terrainBlocks(map, legend, tilledTiles(map));
     // Trees render as their own asset (a trunk + cube canopy), so skip the
     // single log block terrain would place under them.
     const groundBlocks = blocks.filter((b) => b.kind !== 'log');
@@ -493,10 +557,10 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     groundMatsRef.mats = mats;
     seasonApplied = null;
 
-    // Authored 's' tiles ARE the farm's tilled soil; they render as farmland
-    // blocks in the terrain InstancedMesh above (terrainBlocks -> 'farmland').
-    // The 'tilled' placed object stacks a fresh furrow on top when the player
-    // tills a grass tile (see buildTilledAsset). One tilled look in both cases.
+    // ONE tilled-soil look: authored `s` tiles and player-hoed tiles are both
+    // farmland blocks in the terrain InstancedMesh above, so the two can never
+    // diverge. syncPlaced() therefore skips the 'tilled' placed object — it is
+    // bookkeeping for the sim, not something to draw on top of the ground.
 
     for (let row = 0; row < map.grid.height; row++) {
       for (let col = 0; col < map.grid.width; col++) {
@@ -561,6 +625,9 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
       if (placedMesh.has(key)) continue;
       const placed = map.placed[key];
       if (!placed) continue;
+      // Tilled soil is drawn by the terrain mesh (one look for authored and
+      // player-hoed tiles alike), so it must not be drawn a second time here.
+      if (placed.id === 'tilled') continue;
       const data = placed.data?.stage;
       const stage = typeof data === 'number' ? data : 0;
       // Pass the crop id so per-crop colours resolve; otherwise default.
@@ -577,7 +644,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     lastTileKey = '';
     disposedPlaced();
     const map = state.maps[mapId];
-    gridKey = map ? `${map.grid.width}x${map.grid.height}:${map.grid.tiles.join('')}` : '';
+    gridKey = map ? groundKey(map) : '';
     rebuildGround(state);
     syncPlaced(state);
   }
@@ -608,7 +675,7 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
     const map = state.maps[target];
     if (!map) return;
-    const key = `${map.grid.width}x${map.grid.height}:${map.grid.tiles.join('')}`;
+    const key = groundKey(map);
     if (key !== gridKey) {
       gridKey = key;
       rebuildGround(state);
@@ -649,9 +716,14 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
       if (key !== lastTileKey) {
         const target = worldPos(map, pos.x, pos.y);
         if (lastTileKey === '') {
+          // First frame: no move to ease from, so snap onto the tile. Without
+          // this the group stays at the world origin — which put the
+          // first-person eye in the middle of the map instead of on the player
+          // and put the avatar there in the follow camera.
           lerpFrom.copy(target);
           lerpTo.copy(target);
           lerpT = 1;
+          player.position.copy(target);
         } else {
           lerpFrom.copy(player.position);
           lerpTo.copy(target);
@@ -667,21 +739,33 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
     player.rotation.y = THREE.MathUtils.damp(player.rotation.y, facingRotation(state.player.facing), 10, dt);
 
-    // Walk-cycle legs while the player is moving (continuous walk only).
-    const moving = continuous && state.player.position.x !== lastPlayerTileKeyX;
-    if (moving) {
-      walkPhase += dt * 9;
-      const swing = Math.sin(walkPhase) * 0.5;
+    // Walk cycle. Driven by the distance actually covered this frame on EITHER
+    // axis: the old check compared x only, so walking north/south (dy) never
+    // swung the legs and the avatar read as sliding. Speed-scaled, so the legs
+    // keep stride with the position and never moonwalk, and eased to rest when
+    // the player stops (which is what makes a stop read as a stop).
+    const stepX = pos.x - lastPlayerX;
+    const stepY = pos.y - lastPlayerY;
+    const travelled = Math.hypot(stepX, stepY);
+    lastPlayerX = pos.x;
+    lastPlayerY = pos.y;
+    if (travelled > 1e-5) {
+      const stride = Math.min(1, travelled / (JOG_UNITS_PER_SEC * (1 / 60)));
+      walkPhase += (dt * 9 * (0.35 + 0.65 * stride));
+      const swing = Math.sin(walkPhase) * 0.5 * (0.4 + 0.6 * stride);
       if (legL) legL.rotation.x = swing;
       if (legR) legR.rotation.x = -swing;
+      // Lean into the step so the body is not perfectly rigid while walking.
+      player.position.y = -Math.abs(Math.sin(walkPhase)) * 0.03;
     } else if (legL || legR) {
       if (legL) legL.rotation.x = THREE.MathUtils.damp(legL.rotation.x, 0, 12, dt);
       if (legR) legR.rotation.x = THREE.MathUtils.damp(legR.rotation.x, 0, 12, dt);
+      player.position.y = THREE.MathUtils.damp(player.position.y, 0, 12, dt);
     }
-    lastPlayerTileKeyX = state.player.position.x;
   }
   let walkPhase = 0;
-  let lastPlayerTileKeyX = NaN;
+  let lastPlayerX = NaN;
+  let lastPlayerY = NaN;
 
   function updateHighlight(state: GameState): void {
     const mapId = currentMapId;
@@ -783,13 +867,26 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
   function updateFirstPersonCamera(dt: number, state: GameState): void {
     const map = state.maps[state.player.position.mapId];
     if (!map) return;
+    // The authoritative sim facing re-aims the camera (eased, short way round).
+    // A mouse-look already put the camera where it wants to be, so look.syncFacing
+    // leaves that alone. This is the whole no-pointer-lock guarantee: the camera
+    // follows `facing` whether or not the mouse is captured.
+    look.syncFacing(state.player.facing);
+    look.update(dt);
     if (player.position.distanceToSquared(prevPlayerEye) > 1e-6) bobPhase += dt * 9;
     prevPlayerEye.copy(player.position);
     const eye = player.position.clone();
-    eye.y = EYE_HEIGHT + headBob(bobPhase);
-    const dir = lookVector(lookPose);
+    eye.y = player.position.y + EYE_ABOVE_GROUND + headBob(bobPhase);
+    const dir = lookVector(look);
     camera.position.copy(eye);
     camera.lookAt(eye.x + dir.x, eye.y + dir.y, eye.z + dir.z);
+    // The reticle marks the tile a tool will actually hit, not the middle of the
+    // screen: with a one-tile reach the screen centre is about a tile and a half
+    // away, so a centre-painted crosshair would promise the wrong tile. Same
+    // projection the unit tests pin against three.js; hidden when the target
+    // leaves the frame, so it never lies.
+    const aim = targetTileNdc(look, state.player.facing, EYE_ABOVE_GROUND, FOV_DEG, camera.aspect);
+    crosshair.place(aim.x, aim.y, aim.onScreen);
   }
 
   /** Toggle 'top' (follow) / 'first' (eye) presentation. */
@@ -807,10 +904,12 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     // Hide the body you are standing in; show it again in the follow camera.
     player.visible = !firstPerson;
     handGroup.visible = firstPerson;
+    crosshair.setVisible(firstPerson);
     if (firstPerson) {
       zoom = 1;
-      lookPose.yaw = yawOfFacing(ctx.store.state.player.facing);
-      lookPose.pitch = 0;
+      // Start the look exactly on the compass direction the player faces, at
+      // the pitch that keeps the targeted tile on screen.
+      look.reset(ctx.store.state.player.facing);
       cameraSettled = false;
     }
     setHint(firstPerson);
@@ -1052,30 +1151,96 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     }
   }
 
+  // Pointer lock is a nice-to-have: `./look` owns the rule that turns a pointer
+  // event into a look delta for BOTH cases, and nothing below branches on it.
+  const lookInput = newLookInput();
+
+  /**
+   * Apply a mouse-look delta and push the resulting cardinal into the sim, so
+   * the camera and the 4-way `facing` (which decides what a tool hits) can
+   * never disagree. `player:face` is the same dispatch path the movement
+   * reducers use — one owner of `player.facing`, no second source of truth.
+   */
+  function applyLook(dx: number, dy: number): void {
+    if (dx === 0 && dy === 0) return;
+    const facing = look.look(dx, dy);
+    const current = ctx.store.state.player.facing;
+    if (facing !== current) {
+      ctx.store.dispatch({ type: 'player:face', payload: { facing } });
+    }
+    // Adopt whatever the sim says (it is the authority) so the next frame's
+    // syncFacing recognises this as a mouse-driven turn and does not re-aim.
+    look.syncFacing(ctx.store.state.player.facing);
+  }
+
+  function onMouseDown(e: MouseEvent): void {
+    if (!firstPerson || e.button !== 0) return;
+    lookInputPress(lookInput, e);
+  }
+
+  function onMouseUp(): void {
+    lookInputRelease(lookInput);
+  }
+
   function onLook(e: MouseEvent): void {
     if (!firstPerson) return;
-    if (document.pointerLockElement !== renderer.domElement) return;
-    lookPose.yaw -= e.movementX * LOOK_SPEED;
-    lookPose.pitch = clampPitch(lookPose.pitch - e.movementY * LOOK_SPEED);
+    const { dx, dy } = lookInputDelta(lookInput, e);
+    applyLook(dx, dy);
   }
 
   // Pointer lock: request on canvas click; Esc (browser default) releases it.
   // If a UI panel has focus, we release the lock and stop moving so the panel
   // is usable.
-  function onCanvasClick(): void {
+  function onCanvasClick(e: MouseEvent): void {
     if (!firstPerson) return;
+    if (lookInputSwallowsClick(lookInput, DRAG_LOOK_PIXELS)) {
+      // That was a look drag, not a click: swallow it so the swing does not
+      // fire at a tile the player was only aiming at.
+      e.stopPropagation();
+      return;
+    }
+    if (lookInput.locked) return; // already captured: this click swings the tool
     const el = document.activeElement;
     if (el instanceof HTMLElement && el !== document.body && el !== renderer.domElement) {
       // A DOM panel owns focus — don't grab the mouse.
-      if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+      if (lookInput.locked) document.exitPointerLock();
       return;
     }
-    if (document.pointerLockElement !== renderer.domElement) {
-      const req = renderer.domElement.requestPointerLock() as unknown as Promise<void> | undefined;
-      // Chrome returns a promise; older browsers return undefined. Swallow the
-      // rejection (e.g. user-gesture timing) so it never surfaces as an error.
-      if (req && typeof req.catch === 'function') req.catch(() => {});
+    // Grabbing the mouse is not using the tool: swallow this click so the
+    // input feature's document-level handler does not swing the hoe at nothing.
+    e.stopPropagation();
+    // Optimistic: the lock normally lands in the same task, and a mousemove
+    // between here and the event should already treat the mouse as captured.
+    // Both refusal paths below take the flag back.
+    lookInput.locked = true;
+    const req = renderer.domElement.requestPointerLock() as unknown as Promise<void> | undefined;
+    if (req && typeof req.then === 'function') {
+      // Chrome returns a promise that REJECTS when the grab is refused (no user
+      // gesture, a policy, a sandboxed frame). Hand the flag back so the
+      // unlocked drag fallback keeps working instead of faking a capture.
+      req.catch(() => {
+        lookInput.locked = false;
+        lookInputRelease(lookInput);
+      });
     }
+  }
+
+  /**
+   * Pointer lock refused (no user gesture, a policy, a browser without it): the
+   * camera keeps working — the keyboard still turns it, drag-to-look still
+   * looks — so nothing has to be unlocked or repaired. `lookInput.locked` is
+   * driven by the browser's own answer, not by the fact that we asked, so a
+   * failed request can never leave the input in a fake-locked state.
+   */
+  function onPointerLockChange(): void {
+    lookInput.locked = document.pointerLockElement === renderer.domElement;
+    if (!lookInput.locked) lookInputRelease(lookInput);
+  }
+
+  /** The other refusal signal: the grab was denied, so nothing is captured. */
+  function onPointerLockError(): void {
+    lookInput.locked = false;
+    lookInputRelease(lookInput);
   }
 
   function onFocusIn(e: FocusEvent): void {
@@ -1090,9 +1255,13 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
 
   window.addEventListener('resize', onResize);
   renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+  renderer.domElement.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
   renderer.domElement.addEventListener('click', onCanvasClick);
   window.addEventListener('keydown', onModeKey);
   window.addEventListener('mousemove', onLook);
+  document.addEventListener('pointerlockchange', onPointerLockChange);
+  document.addEventListener('pointerlockerror', onPointerLockError);
   document.addEventListener('focusin', onFocusIn);
 
   function dispose(): void {
@@ -1100,11 +1269,16 @@ function createEngineView(ctx: FeatureContext): EngineViewHandle {
     disposed = true;
     window.removeEventListener('resize', onResize);
     renderer.domElement.removeEventListener('wheel', onWheel);
+    renderer.domElement.removeEventListener('mousedown', onMouseDown);
+    window.removeEventListener('mouseup', onMouseUp);
     renderer.domElement.removeEventListener('click', onCanvasClick);
     window.removeEventListener('keydown', onModeKey);
     window.removeEventListener('mousemove', onLook);
+    document.removeEventListener('pointerlockchange', onPointerLockChange);
+    document.removeEventListener('pointerlockerror', onPointerLockError);
     document.removeEventListener('focusin', onFocusIn);
     cameraHint.remove();
+    crosshair.el.remove();
     offWarp();
     offUsed();
     offFail();

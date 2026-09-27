@@ -53,7 +53,7 @@ describe('audio:ui tone specs', () => {
   it('is headless-safe: no context is created and ensure() returns false', () => {
     const engine = new AudioEngine();
     expect(engine.ensure()).toBe(false);
-    expect(() => engine.play(failTone())).not.toThrow();
+    expect(() => engine.play('tool:failure', failTone())).not.toThrow();
     expect(() => engine.stepTick()).not.toThrow();
   });
 

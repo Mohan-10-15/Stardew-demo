@@ -22,6 +22,7 @@ import { Rng } from '@game/core/rng';
 import type { SeasonIndex, Weather } from '@game/core/types';
 import { readAudioPrefs } from '../settings-ui/prefs';
 import { audioBuses, installAudioUnlock, type AudioBuses } from './context';
+import { recordMusicBar } from './cues';
 
 export type MusicMood = 'dawn' | 'day' | 'dusk' | 'night' | 'late' | 'home' | 'cave' | 'danger';
 
@@ -455,6 +456,13 @@ export class MusicEngine {
     this.setTheme(null);
   }
 
+  /**
+   * Schedule one soundtrack note. Deliberately its own scheduler rather than a
+   * shared helper with `AudioEngine.play()`: the cue recorder in ./cues.ts keys
+   * on the SFX path, and sharing the helper would put every pad and kick on the
+   * SFX cue log and make it meaningless again. This is the separation T-0505
+   * exists to guarantee, so keep it.
+   */
   private play(note: MusicNote, when: number): void {
     if (!this.ensure() || !this.buses) return;
     const { ctx } = this.buses;
@@ -491,6 +499,9 @@ export class MusicEngine {
       for (const note of plan.notes) {
         this.play(note, this.nextBarAt);
       }
+      // Dev-only control log: proves the bed was genuinely playing during a
+      // probe window. It is written to a separate bar log, never the SFX cue log.
+      recordMusicBar(this.barIndex, this.theme.mood, plan.notes.length, this.nextBarAt);
       this.nextBarAt += plan.duration;
       this.barIndex += 1;
     }

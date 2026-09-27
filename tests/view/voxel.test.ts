@@ -12,11 +12,19 @@ import {
   lookVector,
   voxelColumns,
   yawOfFacing,
+  facingOfYaw,
+  yawDelta,
+  dampYaw,
   clampPitch,
+  targetTileNdc,
+  EYE_ABOVE_GROUND,
   EYE_HEIGHT,
+  GROUND_TOP,
   HOUSE_HEIGHT,
+  PITCH_DEFAULT,
   SURFACE_TOP,
   WATER_TOP,
+  YAW_LAMBDA,
   PITCH_MAX,
   PITCH_MIN,
 } from '@game/features/engine/view/voxel';
@@ -137,7 +145,90 @@ describe('first-person pose', () => {
   });
 
   it('eye height sits above the walkable surface', () => {
-    expect(EYE_HEIGHT).toBeGreaterThan(SURFACE_TOP + 0.6);
+    // The eye hangs above GROUND_TOP (the terrain surface the player stands
+    // on), NOT above the hidden legacy voxel layer's SURFACE_TOP.
+    expect(GROUND_TOP).toBe(0);
+    expect(EYE_HEIGHT).toBeCloseTo(EYE_ABOVE_GROUND, 6);
+    expect(EYE_HEIGHT).toBeGreaterThan(GROUND_TOP + 0.6);
     expect(EYE_HEIGHT).toBeLessThan(2);
+  });
+});
+
+describe('camera / facing coherence math', () => {
+  it('maps a yaw back to the nearest cardinal', () => {
+    expect(facingOfYaw(0)).toBe('down');
+    expect(facingOfYaw(Math.PI / 2)).toBe('right');
+    expect(facingOfYaw(Math.PI)).toBe('up');
+    expect(facingOfYaw(-Math.PI / 2)).toBe('left');
+    // wrap-safe: just before north is still west-ish, just after is north-ish
+    expect(facingOfYaw(Math.PI - 0.01)).toBe('up');
+    expect(facingOfYaw(Math.PI + 0.01)).toBe('up');
+    expect(facingOfYaw(-Math.PI - 0.01)).toBe('up');
+    expect(facingOfYaw(2 * Math.PI - 0.01)).toBe('down');
+  });
+
+  it('takes the short way round a yaw turn', () => {
+    expect(yawDelta(0, Math.PI / 2)).toBeCloseTo(Math.PI / 2, 6);
+    // south -> west must be -90°, never +270°
+    expect(yawDelta(0, -Math.PI / 2)).toBeCloseTo(-Math.PI / 2, 6);
+    // ...and the long way round wraps the same way
+    expect(yawDelta(0, (3 * Math.PI) / 2)).toBeCloseTo(-Math.PI / 2, 6);
+  });
+
+  it('damps a yaw turn without overshooting', () => {
+    const start = 0;
+    const goal = Math.PI;
+    let yaw = start;
+    let steps = 0;
+    while (Math.abs(yawDelta(yaw, goal)) > 1e-4 && steps < 600) {
+      const before = Math.abs(yawDelta(yaw, goal));
+      yaw = dampYaw(yaw, goal, YAW_LAMBDA, 1 / 60);
+      const after = Math.abs(yawDelta(yaw, goal));
+      expect(after).toBeLessThanOrEqual(before + 1e-9); // monotone approach
+      expect(after).toBeGreaterThanOrEqual(-1e-9);
+      steps++;
+    }
+    expect(steps).toBeGreaterThan(2); // eased, not a snap
+    expect(yawDelta(yaw, goal)).toBeCloseTo(0, 3);
+  });
+
+  it('projects the targeted tile inside the viewport for every facing', () => {
+    for (const facing of ['down', 'up', 'left', 'right'] as const) {
+      const pose = { yaw: yawOfFacing(facing), pitch: PITCH_DEFAULT };
+      const ndc = targetTileNdc(pose, facing, EYE_HEIGHT, 70, 16 / 9);
+      expect(ndc.onScreen).toBe(true);
+      expect(Math.abs(ndc.x)).toBeLessThan(1);
+      expect(Math.abs(ndc.y)).toBeLessThan(1);
+      // straight ahead, so horizontally centred: the crosshair covers it
+      expect(ndc.x).toBeCloseTo(0, 6);
+      // and it sits low in the frame, leaving the horizon visible near the top
+      expect(ndc.y).toBeLessThan(0);
+      expect(ndc.y).toBeGreaterThan(-0.9);
+    }
+  });
+
+  it('drops the target off screen only when the player looks away from it', () => {
+    // Pitching up far enough takes the one-tile target out of frame. That is the
+    // documented reason the crosshair is gated on this projection instead of
+    // being painted on unconditionally: no reticle, no promise.
+    const up = targetTileNdc({ yaw: 0, pitch: PITCH_MAX }, 'down', EYE_HEIGHT, 70, 16 / 9);
+    expect(up.onScreen).toBe(false);
+    // looking straight down at your own feet still shows it (it fills the frame)
+    const down = targetTileNdc({ yaw: 0, pitch: PITCH_MIN }, 'down', EYE_HEIGHT, 70, 16 / 9);
+    expect(down.onScreen).toBe(true);
+  });
+
+  it('agrees with three.js projection', async () => {
+    const THREE = await import('three');
+    const pose = { yaw: yawOfFacing('down'), pitch: PITCH_DEFAULT };
+    const camera = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 200);
+    camera.position.set(0, EYE_HEIGHT, 0);
+    const dir = lookVector(pose);
+    camera.lookAt(camera.position.x + dir.x, camera.position.y + dir.y, camera.position.z + dir.z);
+    camera.updateMatrixWorld();
+    const v = new THREE.Vector3(0, GROUND_TOP, 1).project(camera);
+    const ndc = targetTileNdc(pose, 'down', EYE_HEIGHT, 70, 16 / 9);
+    expect(ndc.x).toBeCloseTo(v.x, 3);
+    expect(ndc.y).toBeCloseTo(v.y, 3);
   });
 });

@@ -28,6 +28,25 @@ export interface MovePayload {
   dy: number;
 }
 
+/**
+ * Turn-without-moving payload. `player:move` / `player:walk` already derive the
+ * facing from a movement vector, but the first-person mouse look has no
+ * movement vector: it produces a free yaw, and the sim still needs the 4-way
+ * `facing` because `tileInFront()` (what a tool acts on) is keyed on it. This
+ * action is the same mechanism the movement reducers use — one dispatch, one
+ * owner of `player.facing` — so the camera and the interaction target can never
+ * have two sources of truth.
+ */
+export interface FacePayload {
+  facing: Facing;
+}
+
+const FACINGS: readonly Facing[] = ['up', 'down', 'left', 'right'];
+
+export function isFacing(value: unknown): value is Facing {
+  return typeof value === 'string' && (FACINGS as readonly string[]).includes(value);
+}
+
 /** Continuous per-frame movement payload (ADDENDUM B). Coordinates and
  *  distances are in tile units; `speed` is units per second and `dt` the
  *  elapsed seconds since the last dispatch. Dir may combine axes for 8-way. */
@@ -103,6 +122,21 @@ export function tileInFront(pos: WorldPos, facing: Facing): TilePos {
   }
 }
 
+/**
+ * Turn in place: set `player.facing` and nothing else. The mouse-look path in
+ * engine:view dispatches this so the tile a tool hits follows the camera. It
+ * deliberately does NOT move, spend energy or emit a move event — a camera turn
+ * is not a step.
+ */
+export function playerFaceReducer(state: GameState, action: SimAction<string, unknown>): GameState {
+  const payload = action.payload;
+  if (typeof payload !== 'object' || payload === null) return state;
+  const facing = (payload as Partial<FacePayload>).facing;
+  if (!isFacing(facing)) return state;
+  if (state.player.facing === facing) return state;
+  return { ...state, player: { ...state.player, facing } };
+}
+
 /** Pure warp lookup: returns the destination when (x, y) is a warp tile, else null. */
 export function resolveWarp(mapDef: MapDef, x: number, y: number): { map: string; x: number; y: number } | null {
   for (const warp of mapDef.warps) {
@@ -176,10 +210,20 @@ export function playerWalkReducer(state: GameState, action: SimAction<string, un
   if (!mapDef) return state;
 
   const facing = facingFromDelta(dx, dy);
-  const length = Math.hypot(dx, dy);
-  const ux = dx / length;
-  const uy = dy / length;
+
+  // Per-axis speed, NOT a normalised 8-way unit vector. Normalising by
+  // hypot(dx, dy) caps the *combined* displacement at speed*dt, so a diagonal
+  // paid 1/sqrt(2) on each axis and felt ~30% sluggish per axis versus a
+  // single-axis walk. Each held axis instead steps the full speed*dt, which is
+  // what WASD feels like (Minecraft, Stardew): W+D advances x at the full walk
+  // speed AND y at the full walk speed, and only the path length is sqrt(2)x
+  // longer. Math.sign also collapses a degenerate payload (two keys bound to
+  // the same axis, e.g. 'd' + 'arrowright' -> dx=2) to the same single-axis
+  // speed, and removes the divide-by-zero the old hypot normalisation carried
+  // for a zero-length vector.
   const dist = speed * dt;
+  const xDelta = Math.sign(dx) * dist;
+  const yDelta = Math.sign(dy) * dist;
 
   // Axis-separated movement with continuous collision sampling: each axis is
   // stepped in sub-tile increments so a big dt can never tunnel a one-tile
@@ -211,10 +255,8 @@ export function playerWalkReducer(state: GameState, action: SimAction<string, un
     return { value: cursor, warp: null };
   };
 
-  const xDelta = ux * dist;
   let x = position.x;
   let y = position.y;
-  const yDelta = uy * dist;
   const xAxis = stepAxis(x, xDelta, (after) => ({ cx: Math.floor(after), cy: Math.floor(y) }));
   const yAxis = xAxis.warp
     ? null
@@ -267,6 +309,10 @@ export function registerEngineSim({ store, bus, content }: EngineSimDeps): void 
     }
     return next;
   });
+
+  store.registerReducer('player:face', (state: GameState, action: SimAction<string, unknown>, _rng: unknown): GameState =>
+    playerFaceReducer(state, action),
+  );
 
   store.registerReducer('player:interact', (state: GameState, _action: SimAction<string, unknown>, _rng: unknown): GameState => {
     const player = state.player;

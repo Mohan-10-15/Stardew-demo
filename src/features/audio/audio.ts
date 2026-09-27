@@ -12,9 +12,22 @@
  * Registered by src/features/audio/index.ts. Headless-safe: in Node there is no
  * window, `audioBuses()` yields null, and every event hook degrades to a no-op
  * so the sim/test lanes are untouched.
+ *
+ * T-0505: `play()` takes a *required* `SfxCue` label and records the call on the
+ * dev-only cue log (./cues.ts). The label is required, not optional, so a new
+ * sound cannot be added without naming it, and because the soundtrack never
+ * comes through this method the log stays SFX-only — which is what makes the
+ * acceptance probe's "this failed action sounded like *this*" claim checkable
+ * instead of inferred from an oscillator count.
  */
 import { defineFeature, type UiHandle } from '../../core/feature';
-import { audioBuses, installAudioUnlock, type AudioBuses } from './context';
+import { audioBuses, audioContextCount, installAudioUnlock, sharedAudioContext, type AudioBuses } from './context';
+import {
+  publishSfxCueHandle,
+  recordSfxCue,
+  type DevAudioState,
+  type SfxCue,
+} from './cues';
 
 export interface ToneSpec {
   freq: number;
@@ -67,15 +80,25 @@ export class AudioEngine {
     return buses.ctx.state !== 'closed';
   }
 
-  /** Schedule one or more envelope-shaped oscillators starting 'now'. */
-  play(specs: readonly ToneSpec[]): void {
+  /**
+   * Schedule one or more envelope-shaped oscillators starting 'now' onto the
+   * `sfx` bus.
+   *
+   * `cue` is the cue's name and is required: the acceptance harness proves
+   * audio feedback by matching on it, and a new sound without a name would be
+   * unidentifiable in the log. `source` is the free-form trigger that produced
+   * it (e.g. `tool:used hoe->tilled`) and is recorded alongside.
+   */
+  play(cue: SfxCue, specs: readonly ToneSpec[], source = ''): void {
     if (!this.ensure()) return;
     const buses = this.buses;
     if (!buses) return;
     const { ctx, sfx } = buses;
     const now = ctx.currentTime;
+    const scheduledAt: number[] = [];
     for (const spec of specs) {
       const t0 = now + (spec.delay ?? 0);
+      scheduledAt.push(t0);
       const osc = ctx.createOscillator();
       osc.type = spec.type;
       osc.frequency.setValueAtTime(spec.freq, t0);
@@ -92,6 +115,9 @@ export class AudioEngine {
       osc.start(t0);
       osc.stop(t0 + spec.dur + 0.02);
     }
+    // Observability only: the cue log is a no-op outside a dev build, and the
+    // audible path above is identical with or without it.
+    recordSfxCue(cue, 'sfx', source, now, specs, scheduledAt);
   }
 
   /** Footstep tick while moving, throttled so tile crossings don't pile up. */
@@ -102,8 +128,14 @@ export class AudioEngine {
     const now = ctx.currentTime;
     if (now - this.lastStepAt < 0.11) return;
     this.lastStepAt = now;
-    this.play(footstepTone());
+    this.play('player:footstep', footstepTone());
   }
+}
+
+/** Live bus/context facts for the dev handle; null until the first gesture. */
+function devAudioState(): DevAudioState {
+  const ctx = sharedAudioContext();
+  return { bus: ctx ? 'sfx' : null, state: ctx ? ctx.state : 'none', contexts: audioContextCount() };
 }
 
 export const audioUi = defineFeature({
@@ -111,16 +143,23 @@ export const audioUi = defineFeature({
   lane: 'ui',
   setup(ctx): void {
     installAudioUnlock();
+    publishSfxCueHandle(devAudioState);
     const engine = new AudioEngine();
-    ctx.bus.on('tool:used', () => {
-      if (engine.ensure()) engine.play(successTone());
+    ctx.bus.on('tool:used', (e?: { toolId?: string; effect?: string }) => {
+      if (engine.ensure()) {
+        engine.play('tool:success', successTone(), `tool:used ${e?.toolId ?? '?'}->${e?.effect ?? '?'}`);
+      }
     });
-    ctx.bus.on('tool:failed', () => {
-      if (engine.ensure()) engine.play(failTone());
+    ctx.bus.on('tool:failed', (e?: { toolId?: string | null; reason?: string }) => {
+      if (engine.ensure()) {
+        engine.play('tool:failure', failTone(), `tool:failed ${e?.toolId ?? '?'}:${e?.reason ?? '?'}`);
+      }
     });
     ctx.bus.on('player:moved', () => engine.stepTick());
     ctx.bus.on('shipping:report', (report: { sold: readonly unknown[]; total: number }) => {
-      if (engine.ensure() && report.sold.length > 0) engine.play(coinTone());
+      if (engine.ensure() && report.sold.length > 0) {
+        engine.play('sale:coin', coinTone(), `shipping:report ${report.sold.length} lines ${report.total}g`);
+      }
     });
   },
   ui(): UiHandle {

@@ -85,13 +85,17 @@ describe('engine:sim player:walk (continuous)', () => {
     expect(store.state.player.position.x).toBeCloseTo(2 + walkSpeed, 4);
   });
 
-  it('moves diagonally at the same speed (normalized 8-way)', async () => {
-    const { store } = await makeFixture(OPEN, 2, 3);
+  it('moves diagonally at the full single-axis speed on BOTH axes (per-axis, not normalised)', async () => {
+    // A wide/tall open field: at dt=1 a full 4-tile step on each axis must not
+    // run off the map, or the edge would masquerade as a collision.
+    const field = Array.from({ length: 12 }, () => 'g'.repeat(12));
+    const { store } = await makeFixture(field, 6, 6);
 
     store.dispatch({ type: 'player:walk', payload: { dx: 1, dy: -1, dt: 1, speed: JOG_UNITS_PER_SEC } });
 
-    const moved = Math.hypot(store.state.player.position.x - 2, store.state.player.position.y - 3);
-    expect(moved).toBeCloseTo(JOG_UNITS_PER_SEC, 4);
+    // Each axis gets the whole speed*dt: only the path length is sqrt(2) longer.
+    expect(store.state.player.position.x).toBeCloseTo(6 + JOG_UNITS_PER_SEC, 5);
+    expect(store.state.player.position.y).toBeCloseTo(6 - JOG_UNITS_PER_SEC, 5);
     expect(store.state.player.facing).toBe('up');
   });
 
@@ -111,10 +115,10 @@ describe('engine:sim player:walk (continuous)', () => {
 
     store.dispatch({ type: 'player:walk', payload: { dx: 1, dy: -1, dt: 1, speed: JOG_UNITS_PER_SEC } });
 
-    const step = JOG_UNITS_PER_SEC / Math.SQRT2;
-    expect(store.state.player.position.x).toBeCloseTo(4 + step, 4);
+    // The wall is on the row above, so only y is blocked; x slides at full speed.
+    expect(store.state.player.position.x).toBeCloseTo(4 + JOG_UNITS_PER_SEC, 5);
     expect(store.state.player.position.y).toBe(4);
-    expect(store.state.player.energy).toBeCloseTo(100 - WALK_ENERGY_COST * step, 5);
+    expect(store.state.player.energy).toBeCloseTo(100 - WALK_ENERGY_COST * JOG_UNITS_PER_SEC, 5);
   });
 
   it('warps when a walk crosses into the farm east road warp', async () => {
