@@ -12,6 +12,22 @@ registerFeature(musicUi);
 
 export { AudioEngine, audioUi, coinTone, failTone, footstepTone, successTone } from './audio';
 export type { ToneSpec } from './audio';
+export {
+  publishSfxCueHandle,
+  recordMusicBar,
+  recordSfxCue,
+  SfxCueRecorder,
+  sfxCueRecorder,
+} from './cues';
+export type {
+  AudioBusName,
+  DevAudioState,
+  DevSfxHandle,
+  MusicBarEntry,
+  RecordedTone,
+  SfxCue,
+  SfxCueEntry,
+} from './cues';
 export { buildBar, chordMidis, midiToFreq, moodForHour, MusicEngine, musicUi, resolveMusicTheme } from './music';
 export type { MusicContext, MusicMood, MusicNote, MusicPlan, MusicTheme } from './music';
 export {

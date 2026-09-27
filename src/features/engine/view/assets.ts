@@ -111,26 +111,11 @@ export function grassInstanceColor(x: number, z: number): THREE.Color {
   return new THREE.Color(0xffffff).multiplyScalar(f);
 }
 
-// --- Tilled soil: ONE unified look ---------------------------------------
+// --- Tilled soil ----------------------------------------------------------
 //
-// The authored `s` tiles and a freshly tilled `tilled` placed object both come
-// through here, so cultivated ground always reads as the same tilled dirt block
-// with a darker damp top. One visual for one thing.
-
-/** The single, shared tilled-soil visual (delegated to by buildTilledAsset). */
-export function buildFurrow(x: number, z: number): THREE.Object3D {
-  const g = new THREE.Group();
-  const block = blockMesh('farmland');
-  // Sunk so its top face sits flush with the surrounding ground surface.
-  block.position.y = -0.02;
-  g.add(block);
-  g.rotation.y = hash2(x, z) > 0.5 ? Math.PI / 2 : 0;
-  return g;
-}
-
-export function buildTilledAsset(x: number, z: number): THREE.Object3D {
-  return buildFurrow(x, z);
-}
+// Tilled ground is NOT drawn here. Authored `s` tiles and player-hoed tiles are
+// both farmland blocks in the terrain InstancedMesh (see terrainBlocks), which
+// is the only place tilled soil is rendered. One visual for one thing.
 
 // --- Trees ----------------------------------------------------------------
 
@@ -398,7 +383,8 @@ export function buildPlacedAsset(
   hash: number,
   cropId = 'default',
 ): THREE.Object3D {
-  if (assetId === 'tilled') return buildTilledAsset(Math.floor(hash * 97), Math.floor(hash * 31));
+  // 'tilled' is intentionally absent: tilled soil is drawn by the terrain mesh
+  // so authored and player-hoed tiles share one look, and callers skip it.
   if (assetId.startsWith('crop:')) return buildCropAsset(stage, hash, cropId || assetId.slice(5));
   switch (assetId) {
     case 'weed':
@@ -431,6 +417,7 @@ const eyeMat = () => flatMaterial(0x2a1f18, 'player-eye');
  */
 export function buildPlayer(): THREE.Object3D {
   const g = new THREE.Group();
+  g.name = 'player';
 
   // Legs: 0.25 x 0.75 x 0.25 boxes (Minecraft's 12:8 ratio scaled down).
   const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), pantsMat());

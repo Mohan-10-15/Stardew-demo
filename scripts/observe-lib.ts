@@ -210,6 +210,10 @@ export interface WalkTrace {
   movingFrames: number;
   maxStep: number;
   minStep: number;
+  /** Moving frames that advanced less than 90% of the full step. The collision
+   *  sampler legitimately leaves a partial sub-step when a frame clips geometry,
+   *  so a couple of these are not a stutter; a majority of them would be. */
+  partialSteps: number;
   integerPositions: number;
   elapsedMs: number;
   speedPerSec: number;
@@ -245,6 +249,12 @@ export async function holdAndSample(page: Page, keys: string[], ms: number): Pro
   let maxStep = 0;
   let minStep = Number.POSITIVE_INFINITY;
   let integerPositions = 0;
+  // Frames that advanced less than the full step. The collision sampler splits a
+  // frame into MAX_STEP sub-steps and the last one can be a remainder, so a
+  // frame that clips geometry legitimately shows a partial step. What would be a
+  // stutter is a frame that is short for any other reason.
+  let partialSteps = 0;
+  const perFrame: number[] = [];
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1]!;
     const b = samples[i]!;
@@ -252,6 +262,10 @@ export async function holdAndSample(page: Page, keys: string[], ms: number): Pro
     if (step > 1e-6) movingFrames++;
     if (step > maxStep) maxStep = step;
     if (step > 0 && step < minStep) minStep = step;
+    perFrame.push(step);
+  }
+  for (const step of perFrame) {
+    if (step > 0 && step < maxStep * 0.9) partialSteps++;
   }
   for (const s of samples) {
     if (Number.isInteger(s.x) && Number.isInteger(s.y)) integerPositions++;
@@ -266,6 +280,7 @@ export async function holdAndSample(page: Page, keys: string[], ms: number): Pro
     movingFrames,
     maxStep: round(maxStep),
     minStep: Number.isFinite(minStep) ? round(minStep) : 0,
+    partialSteps,
     integerPositions,
     elapsedMs: Math.round(elapsedMs),
     speedPerSec: elapsedMs > 0 ? round((distance / elapsedMs) * 1000) : 0,
@@ -409,8 +424,182 @@ export async function audioSince(page: Page, from: number): Promise<AudioSince> 
   };
 }
 
+/**
+ * Per-axis movement, measured against the time the SIM was actually commanded
+ * to move for, rather than against wall-clock or frame count.
+ *
+ * Why this is the only trustworthy way to measure speed here: this environment
+ * has no GPU, so the renderer runs at 2-11fps under SwiftShader and the frame
+ * delta is clamped (`Math.min(0.1, dt)`). Two time-boxed holds therefore
+ * integrate wildly different amounts of simulated time, wall-clock tiles/sec
+ * swings ~3x between runs on identical code, and a hold that runs into a wall
+ * reports a nonsense average. Neither is a property of the movement code.
+ *
+ * `player:walk` carries `{dx, dy, dt, speed}`, so tapping the store's dispatch
+ * gives the exact commanded time per axis. Displacement divided by commanded
+ * time on the same axis is collision-independent and frame-rate independent.
+ */
+export interface AxisRate {
+  /** Tiles ACTUALLY travelled along each axis, summed over dispatches. */
+  movedX: number;
+  movedY: number;
+  /** Seconds the sim was commanded to move along each axis. */
+  secX: number;
+  secY: number;
+  /** movedX/secX and movedY/secY: the effective per-axis speed. A correct
+   *  diagonal gives the same number on both axes and the same number as a
+   *  single axis. Zero on an axis that was never commanded. */
+  rateX: number;
+  rateY: number;
+  dispatches: number;
+}
+
+/** Wrap the store's dispatch so a subsequent hold can be measured exactly. */
+export async function startAxisRateProbe(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      __EH__?: {
+        store: {
+          dispatch: (a: unknown) => unknown;
+          state: { player: { position: { x: number; y: number } } };
+        };
+      };
+      __EH_AXIS__?: { movedX: number; movedY: number; secX: number; secY: number; n: number };
+    };
+    const store = w.__EH__!.store;
+    const tally = { movedX: 0, movedY: 0, secX: 0, secY: 0, n: 0 };
+    w.__EH_AXIS__ = tally;
+    const original = store.dispatch.bind(store);
+    store.dispatch = (action: unknown): unknown => {
+      const a = action as { type?: string; payload?: { dx?: number; dy?: number; dt?: number } };
+      if (a?.type !== 'player:walk') return original(action);
+      const dx = a.payload?.dx ?? 0;
+      const dy = a.payload?.dy ?? 0;
+      const dt = a.payload?.dt ?? 0;
+      // Measure what the sim ACTUALLY did, not what it was asked to do: read the
+      // position either side of the real dispatch. Summing the unit direction
+      // vector instead would make the ratio 1.0 by construction and prove
+      // nothing, and ignoring walls would credit distance never travelled.
+      const before = store.state.player.position;
+      const result = original(action);
+      const after = store.state.player.position;
+      tally.movedX += Math.abs(after.x - before.x);
+      tally.movedY += Math.abs(after.y - before.y);
+      // Command time accrues per axis actually being driven. Magnitudes, not
+      // signed values: 'up' is dy = -1, and a signed sum would report a
+      // negative speed for a correctly working north walk.
+      if (dx !== 0) tally.secX += dt;
+      if (dy !== 0) tally.secY += dt;
+      tally.n += 1;
+      return result;
+    };
+  });
+}
+
+/** Stop probing and report the per-axis rates. */
+export async function stopAxisRateProbe(page: Page): Promise<AxisRate> {
+  const t = await page.evaluate(() => {
+    const w = window as unknown as {
+      __EH_AXIS__?: { movedX: number; movedY: number; secX: number; secY: number; n: number };
+    };
+    const tally = w.__EH_AXIS__ ?? { movedX: 0, movedY: 0, secX: 0, secY: 0, n: 0 };
+    delete w.__EH_AXIS__;
+    return tally;
+  });
+  return {
+    movedX: t.movedX,
+    movedY: t.movedY,
+    secX: t.secX,
+    secY: t.secY,
+    rateX: t.secX > 0 ? t.movedX / t.secX : 0,
+    rateY: t.secY > 0 ? t.movedY / t.secY : 0,
+    dispatches: t.n,
+  };
+}
+
 export async function audioMark(page: Page): Promise<number> {
   return page.evaluate(() => (window as WindowWithHook).__EH_AUDIO__?.length ?? 0);
+}
+
+/** One SFX cue as recorded by the audio lane's dev-only recorder. Unlike the
+ *  raw oscillator transcript this is per-cue, named and sfx-only, so it can be
+ *  told apart from the continuously playing music. */
+export interface SfxCueTone {
+  freq: number;
+  glide: number | null;
+  type: string;
+  dur: number;
+  gain: number;
+  delay: number;
+}
+
+export interface SfxCue {
+  cue: string;
+  bus: string;
+  source: string;
+  voices: number;
+  tones: SfxCueTone[];
+}
+
+export interface SfxCueLog {
+  count: number;
+  cues: SfxCue[];
+  music: { bars: number; buffered: number; notes: number; lastMood: string | null };
+  audio: { bus: string | null; state: string; contexts: number };
+  oscillators: number;
+}
+
+/** `__EH_SFX__` is method-based (see the audio lane's DevSfxHandle), so every
+ *  read goes through the handle rather than touching fields directly. */
+async function readSfxCueLog(page: Page): Promise<SfxCueLog> {
+  return page.evaluate(() => {
+    const w = window as unknown as {
+      __EH_SFX__?: {
+        cues: () => unknown[];
+        count: () => number;
+        music: () => { bars: number; buffered: number; notes: number; lastMood: string | null };
+        audio: () => { bus: string | null; state: string; contexts: number };
+      };
+      __EH_AUDIO__?: unknown[];
+    };
+    const h = w.__EH_SFX__;
+    return {
+      count: h?.count() ?? 0,
+      cues: (h?.cues() ?? []) as SfxCue[],
+      music: h?.music() ?? { bars: 0, buffered: 0, notes: 0, lastMood: null },
+      audio: h?.audio() ?? { bus: null, state: 'none', contexts: 0 },
+      oscillators: w.__EH_AUDIO__?.length ?? 0,
+    };
+  });
+}
+
+/** The SFX cues recorded since `from`. */
+export async function sfxCuesSince(page: Page, from: number): Promise<SfxCue[]> {
+  return (await readSfxCueLog(page)).cues.slice(from);
+}
+
+export async function sfxCueMark(page: Page): Promise<number> {
+  return (await readSfxCueLog(page)).count;
+}
+
+/**
+ * The control that makes the audio verdicts honest: sit completely idle for
+ * `ms` and report what the game scheduled anyway. The music track plays
+ * continuously, so the raw oscillator count always rises during an idle
+ * window; only the SFX cue count must stay flat. Without this, "we heard
+ * something" is indistinguishable from "the soundtrack was playing".
+ */
+export async function audioIdleControl(page: Page, ms = 4000): Promise<SfxCueLog> {
+  const before = await readSfxCueLog(page);
+  await page.waitForTimeout(ms);
+  const after = await readSfxCueLog(page);
+  return {
+    count: after.count - before.count,
+    cues: after.cues.slice(before.count),
+    music: after.music,
+    audio: after.audio,
+    oscillators: after.oscillators - before.oscillators,
+  };
 }
 
 export async function eventMark(page: Page): Promise<number> {

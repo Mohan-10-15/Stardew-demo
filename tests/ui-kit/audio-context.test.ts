@@ -194,7 +194,7 @@ describe('the single shared context', () => {
     const song = new music.MusicEngine();
     expect(sfx.ensure()).toBe(true);
     expect(song.ensure()).toBe(true);
-    sfx.play(audio.coinTone());
+    sfx.play('sale:coin', audio.coinTone());
     expect(contexts[0]!.oscillators.length).toBe(audio.coinTone().length);
     // ...and a second gesture must not mint a second context.
     fire('pointerdown');

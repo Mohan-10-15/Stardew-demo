@@ -15,17 +15,26 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
       events, quests + journal.
 - [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
       professions. (T-0401 skills, T-0402 fishing, T-0403 animals + hay stock,
-      T-0404 machines/recipes/buffs landed; the checkbox stays open until
-      T-0405 skills panel + UI affordances.)
+      T-0404 machines/recipes/buffs, T-0405 skills panel + UI affordances all
+      landed. The checkbox stays open for the content quota: 9/30 crops and
+      4/8 machines, and because farming/foraging/fishing XP is only partly
+      reachable — there is still no player-facing dispatch for `player:eat`,
+      `shipping:insert` or animal care actions, so parts of the loop cannot be
+      driven from the keyboard yet.)
 - [ ] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
-      voxel presentation over the 2D sim world (T-0406 renderer landed; polish:
-      placed-object blending, pointer-lock look, terrain height), original
-      procedural WebAudio soundtrack with day/night/season/weather/biome/health
-      themes (T-0460 landed; combat tie-in arrives with M5 mines, audio
-      settings UI in T-0405/M7).
+      voxel presentation over the 2D sim world, original procedural WebAudio
+      soundtrack. Landed: T-0406 renderer, T-0460 soundtrack, T-0501 voxel
+      rebuild (424/424 BoxGeometry, flat-shaded, 16×16 nearest textures),
+      T-0503 pixel UI + single-AudioContext staging, T-0504 first-person camera
+      locked to the interaction target with an honest reticle, T-0505 named SFX
+      cue recorder so audio claims are falsifiable. All verified in real
+      Chromium; see docs/ACCEPTANCE.md ADDENDUM B. Still open: terrain height,
+      gamepad, and the audio settings UI (M7).
 - [x] ADDENDUM B: core-loop feel — distinct success/failure feedback (visual +
-      audio), continuous 8-way movement with shift-walk, wood/parchment UI
-      panels + pixel font; playtested per docs/ACCEPTANCE.md.
+      audio), continuous 8-way movement with full-speed diagonals, pixel UI
+      panels + pixel font, first-person voxel presentation. **Verified in real
+      Chromium**, 13/13 harness verdicts, stable over three consecutive runs;
+      playtested per docs/ACCEPTANCE.md.
 - [ ] M5 Mines and combat: 40+ floors, 12+ monsters, 2 bosses, gear, checkpoints.
 - [ ] M6 Story + content completion: Heartstone progression, festivals,
       romance/marriage, collections; hit every quota (30+ crops, 30+ fish,

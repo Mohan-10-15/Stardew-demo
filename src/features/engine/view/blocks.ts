@@ -188,26 +188,26 @@ function cellHash(x: number, z: number): number {
  * Turn a map grid into the list of ground blocks to render. Houses ('h') are
  * skipped (drawn as their own house asset). Walkability is NOT consulted — this
  * is presentation only.
+ *
+ * `tilled` carries the tiles the player has hoed: those render as farmland, the
+ * same block kind the authored `s` tiles use. That is deliberate — the tilled
+ * look is then literally one instanced block kind for both, so authored soil and
+ * player-tilled soil cannot drift apart.
  */
-export function terrainBlocks(map: MapState, legend: MapLegend): TerrainBlock[] {
+export function terrainBlocks(
+  map: MapState,
+  legend: MapLegend,
+  tilled?: ReadonlySet<string>,
+): TerrainBlock[] {
   const out: TerrainBlock[] = [];
   const { width, height } = map.grid;
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const code = map.grid.tiles[row * width + col];
       if (code === undefined || code === 'h') continue;
-      const kind = blockKindForCode(code, legend);
-      // Visual height variation only; a little lift on grass keeps the plain
-      // from reading perfectly flat. Water stays sunken.
-      let stack = 1;
-      if (kind === 'grass' || kind === 'path' || kind === 'farmland') {
-        const h = cellHash(col, row);
-        if (h > 0.86) stack = 2;
-        else if (h < 0.12) stack = 1;
-      } else if (kind === 'water') {
-        stack = 1;
-      }
-      out.push({ kind, col, row, height: stack, hash: cellHash(col, row) });
+      const tilledHere = tilled?.has(`${col},${row}`) === true;
+      const kind: BlockKind = tilledHere ? 'farmland' : blockKindForCode(code, legend);
+      out.push({ kind, col, row, height: 1, hash: cellHash(col, row) });
     }
   }
   return out;
@@ -251,9 +251,13 @@ export function buildTerrain(
     for (let i = 0; i < list.length; i++) {
       const b = list[i]!;
       const p = worldPos(b.col, b.row);
-      // Stack `height` whole blocks; a height-1 block sits tight to the
-      // walkable surface and a height-2 block lifts one block above it.
-      dummy.position.set(p.x, b.height / 2 - 0.5 + (b.height - 1) / 2, p.z);
+      // The walkable surface is exactly y = 0 (GROUND_TOP), which is what the
+      // player, the NPCs, placed assets and the highlight are authored against:
+      // a height-1 block is centred half a block BELOW its tile, and any extra
+      // stacked block is lifted above the surface. Blocks used to sit half a
+      // block high, which buried every placeable and put the interaction
+      // target above the first-person eye.
+      dummy.position.set(p.x, b.height - 1.5, p.z);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }

@@ -28,6 +28,7 @@ import {
   TEX_SIZE,
 } from '@game/features/engine/view/textures';
 import { buildPlacedAsset, buildCropAsset } from '@game/features/engine/view/assets';
+import { GROUND_TOP } from '@game/features/engine/view/voxel';
 
 describe('block registry', () => {
   it('resolves every block kind to a shared geometry plus material(s)', () => {
@@ -135,7 +136,8 @@ describe('legend + placed coverage', () => {
     for (const def of content.maps.values()) {
       for (const p of def.initialPlaced) ids.add(p.id);
     }
-    ids.add('tilled');
+    // 'tilled' is deliberately NOT here: tilled soil is a terrain block kind, so
+    // authored and player-hoed tiles share one look (see the tilled test below).
     ids.add('crop:parsnip');
     for (const id of ids) {
       const obj = buildPlacedAsset(id, 2, 0.5);
@@ -184,13 +186,77 @@ describe('voxel terrain from a real map', () => {
     }
   });
 
-  it('gives the farm a grass top height of 1 or 2 (visual variation only)', async () => {
+  it('gives every walkable tile the same flat surface at y = 0', async () => {
+    // T-0504: the surface must be exactly GROUND_TOP, because that is where the
+    // player, the NPCs, placed objects and the highlight all stand, and where
+    // the one-tile interaction target's top face is. A raised "visual variation"
+    // block put a walkable tile half a block above the eye and buried every
+    // placeable, so terrain is now flat and buildTerrain sinks each block half
+    // a cube below its tile.
     const content = await loadContent();
     const def = content.maps.get('farm')!;
     const map = mapStateFromDef(def);
     const blocks = terrainBlocks(map, def.legend);
     const grass = blocks.filter((b) => b.kind === 'grass');
     expect(grass.length).toBeGreaterThan(0);
-    for (const g of grass) expect([1, 2]).toContain(g.height);
+    for (const b of blocks) expect(b.height).toBe(1);
+
+    const built = buildTerrain(blocks, (col, row) => new THREE.Vector3(col, 0, row));
+    const matrix = new THREE.Matrix4();
+    for (const mesh of built.meshes.values()) {
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        const y = new THREE.Vector3().setFromMatrixPosition(matrix).y;
+        // centred at -0.5 => its top face is exactly 0
+        expect(y).toBeCloseTo(-0.5, 6);
+        expect(y + 0.5).toBeCloseTo(GROUND_TOP, 6);
+      }
+    }
+  });
+
+  it('renders player-hoed tiles with the same farmland block as authored soil', async () => {
+    // T-0504: one tilled-soil look. Authored `s` tiles and tiles the player has
+    // tilled must resolve to the SAME block kind, so they cannot diverge — the
+    // sim's 'tilled' placed object is bookkeeping, not a second soil mesh.
+    const content = await loadContent();
+    const def = content.maps.get('farm')!;
+    const map = mapStateFromDef(def);
+    const blocks = terrainBlocks(map, def.legend);
+
+    // an authored soil tile
+    const soil = blocks.find((b) => b.kind === 'farmland');
+    expect(soil, 'farm map has authored soil tiles').toBeDefined();
+
+    // a grass tile the player hoes
+    const target = blocks.find((b) => b.kind === 'grass')!;
+    const tilled = new Set([`${target.col},${target.row}`]);
+    const after = terrainBlocks(map, def.legend, tilled);
+    const tilledBlock = after.find((b) => b.col === target.col && b.row === target.row)!;
+    expect(tilledBlock.kind).toBe('farmland');
+    expect(tilledBlock.kind).toBe(soil!.kind);
+    expect(tilledBlock.height).toBe(soil!.height);
+
+    // ...and it really is the same instanced mesh/material as authored soil
+    const worldPos = (col: number, row: number): THREE.Vector3 => new THREE.Vector3(col, 0, row);
+    const beforeBuilt = buildTerrain(blocks.filter((b) => b.kind !== 'log'), worldPos);
+    const afterBuilt = buildTerrain(after.filter((b) => b.kind !== 'log'), worldPos);
+    const beforeFarmland = beforeBuilt.meshes.get('farmland')!;
+    const afterFarmland = afterBuilt.meshes.get('farmland')!;
+    expect(afterFarmland.count).toBe(beforeFarmland.count + 1);
+    expect(afterFarmland.material).toBe(beforeFarmland.material);
+    expect(afterFarmland.geometry).toBe(beforeFarmland.geometry);
+  });
+
+  it('leaves authored soil alone when a tilled set is not supplied', () => {
+    const map = {
+      id: 'farm',
+      grid: { tiles: ['s', 'g', 'g'], width: 3, height: 1 },
+      placed: {},
+      npcs: {},
+      version: 1,
+    };
+    const legend = { s: { walkable: true, water: false }, g: { walkable: true, water: false } };
+    const blocks = terrainBlocks(map as never, legend as never);
+    expect(blocks.map((b) => b.kind)).toEqual(['farmland', 'grass', 'grass']);
   });
 });
