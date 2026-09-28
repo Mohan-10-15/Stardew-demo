@@ -9,7 +9,7 @@
  * docs/ACCEPTANCE.md.
  */
 import type { Page } from 'playwright';
-import { observe, playerState, eventMark, eventsSince, placedObjects, shot } from './scripts/observe-lib';
+import { observe, playerState, eventMark, eventsSince, placedObjects, shot } from './observe-lib';
 
 const URL = process.env['EH_URL'] ?? 'http://localhost:2026/';
 const results: Array<{ ok: boolean; label: string; detail: string }> = [];
@@ -824,7 +824,7 @@ async function main(): Promise<void> {
 
   // ============================================================ console
   say('');
-  const realErrors = obs.errors.filter((e) => !e.text.includes('favicon'));
+  const realErrors = obs.errors.filter((e: { text: string }) => !e.text.includes('favicon'));
   say(`console errors: ${realErrors.length}`);
   for (const e of realErrors) say(`  ${e.type}: ${e.text}`);
   check(realErrors.length === 0, 'no console errors during the whole run');

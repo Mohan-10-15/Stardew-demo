@@ -214,9 +214,9 @@ export interface WalkTrace {
   movingFrames: number;
   maxStep: number;
   minStep: number;
-  /** Moving frames that advanced less than 90% of the full step. The collision
-   *  sampler legitimately leaves a partial sub-step when a frame clips geometry,
-   *  so a couple of these are not a stutter; a majority of them would be. */
+  /** Moving frames that advanced less than 90% of the distance their own elapsed
+   *  time allowed - i.e. time that was never converted into movement. This is a
+   *  stutter; a frame merely being shorter than the longest frame is not. */
   partialSteps: number;
   integerPositions: number;
   elapsedMs: number;
@@ -253,11 +253,20 @@ export async function holdAndSample(page: Page, keys: string[], ms: number): Pro
   let maxStep = 0;
   let minStep = Number.POSITIVE_INFINITY;
   let integerPositions = 0;
-  // Frames that advanced less than the full step. The collision sampler splits a
-  // frame into MAX_STEP sub-steps and the last one can be a remainder, so a
-  // frame that clips geometry legitimately shows a partial step. What would be a
-  // stutter is a frame that is short for any other reason.
-  let partialSteps = 0;
+  // A stutter is a frame that moved LESS than its own time budget allowed, not
+  // simply a frame shorter than the longest one. The previous version compared
+  // each frame against maxStep, which on a variable-pace software renderer
+  // flags 64% of frames as "partial" purely because real frame times differ -
+  // and it read a reassuring 8% back when movement was dispatched once per
+  // frame, because that arithmetic happened to land on multiples of MAX_STEP.
+  //
+  // Comparing each frame against the distance it had time to travel is
+  // self-calibrating (no speed constant needed) and it is the property that
+  // actually matters: time that is never converted into distance. Only frames
+  // where the player was actually moving are judged - including stationary
+  // frames would let a paused player be reported as stuttering, and made the
+  // tally exceed the number of moving frames.
+  let stalledFrames = 0;
   const perFrame: number[] = [];
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1]!;
@@ -268,9 +277,21 @@ export async function holdAndSample(page: Page, keys: string[], ms: number): Pro
     if (step > 0 && step < minStep) minStep = step;
     perFrame.push(step);
   }
-  for (const step of perFrame) {
-    if (step > 0 && step < maxStep * 0.9) partialSteps++;
+  const totalElapsedS = samples.length > 1 ? (samples[samples.length - 1]!.t - samples[0]!.t) / 1000 : 0;
+  const totalDistance = Math.hypot(after.x - before.x, after.y - before.y);
+  const meanSpeed = totalElapsedS > 0 ? totalDistance / totalElapsedS : 0;
+  let movingInteger = 0;
+  for (let i = 1; i < samples.length; i++) {
+    const step = perFrame[i - 1]!;
+    if (step <= 1e-6) continue;
+    const frameS = (samples[i]!.t - samples[i - 1]!.t) / 1000;
+    const expected = meanSpeed * frameS;
+    if (expected > 1e-6 && step < expected * 0.9) stalledFrames++;
+    const b = samples[i]!;
+    if (Number.isInteger(b.x) && Number.isInteger(b.y)) movingInteger++;
   }
+  integerPositions = movingInteger;
+  const partialSteps = stalledFrames;
   for (const s of samples) {
     if (Number.isInteger(s.x) && Number.isInteger(s.y)) integerPositions++;
   }

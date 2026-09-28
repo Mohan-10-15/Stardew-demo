@@ -191,20 +191,27 @@ head('MOVEMENT - hold D for 2s');
   kv('facing now', (await playerState(page)).facing);
   kv('energy before', before.energy);
   kv('energy after', (await playerState(page)).energy);
+  // "Smooth" means no single frame jumps and the player is not snapping between
+  // whole tiles. The old test counted samples landing on integer coordinates,
+  // which is a proxy that flips on a variable-pace renderer for no gameplay
+  // reason; a jump relative to the mean moving step is the thing a player would
+  // actually see.
+  const jumpRatio = trace.movingFrames > 0 ? trace.maxStep / (trace.distance / trace.movingFrames) : 0;
+  const smooth = trace.movingFrames > 8 && jumpRatio < 2.5;
   say(
-    `  VERDICT smooth=${trace.movingFrames > 8 && trace.integerPositions < trace.frames * 0.5 ? 'YES' : 'NO (snapping)'}`,
+    `  VERDICT smooth=${smooth ? 'YES' : 'NO (snapping)'} (largest frame ${jumpRatio === 0 ? 'n/a' : Math.round(jumpRatio * 100) / 100}x the mean moving step, ${trace.integerPositions} of ${trace.movingFrames} moving samples on a tile corner)`,
   );
-  // Step uniformity is the frame-rate independent part of "smooth". A frame that
-  // clips geometry legitimately ends on a partial MAX_STEP sub-step, so a couple
-  // of short frames are fine; a majority of them would be a visible stutter.
-  // Wall-clock tiles/sec is NOT used as evidence: a 2s hold on this software
-  // renderer has been observed sampling anywhere from 2.4 to 11 frames, so
-  // tiles/sec swings by 3x between runs on identical code.
+  // Step uniformity is the frame-rate independent part of "smooth": no frame
+  // should fail to convert its own elapsed time into distance. Wall-clock
+  // tiles/sec is NOT used as evidence: a 2s hold on this software renderer has
+  // been observed sampling anywhere from 2.4 to 11 frames, so tiles/sec swings
+  // by 3x between runs on identical code. A *uniform* rate loss is a different
+  // defect and is measured against the authored speed in scripts/wasd-speed.ts.
   const partialPct = trace.movingFrames > 0 ? trace.partialSteps / trace.movingFrames : 1;
   const uniform = trace.movingFrames > 0 && partialPct <= 0.25;
-  kv('frames with a partial step', `${trace.partialSteps} of ${trace.movingFrames}`);
+  kv('frames that lost time', `${trace.partialSteps} of ${trace.movingFrames}`);
   say(
-    `  VERDICT step-uniform=${uniform ? `YES (${Math.round(partialPct * 100)}% partial, from the collision sampler)` : `NO (${Math.round(partialPct * 100)}% partial, steps ranged ${trace.minStep}..${trace.maxStep})`}`,
+    `  VERDICT step-uniform=${uniform ? `YES (${Math.round(partialPct * 100)}% of frames lost time)` : `NO (${Math.round(partialPct * 100)}% of frames lost time, steps ${trace.minStep}..${trace.maxStep})`}`,
   );
   kv('per-frame step', Math.round((trace.distance / Math.max(1, trace.movingFrames)) * 10000) / 10000);
 }
