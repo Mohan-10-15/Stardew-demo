@@ -32,5 +32,17 @@
   "flounder": { "id": "flounder", "itemId": "flounder", "name": "Flounder", "seasons": [2, 3], "time": { "from": 700, "to": 1900 }, "difficulty": 40, "xp": 8 },
   "mackerel": { "id": "mackerel", "itemId": "mackerel", "name": "Mackerel", "seasons": [0, 2], "time": { "from": 600, "to": 2000 }, "difficulty": 25, "xp": 6 },
   "tuna": { "id": "tuna", "itemId": "tuna", "name": "Tuna", "seasons": [1, 2], "time": { "from": 1200, "to": 2600 }, "difficulty": 65, "xp": 11 },
-  "cod": { "id": "cod", "itemId": "cod", "name": "Cod", "seasons": [2, 3], "time": { "from": 600, "to": 2200 }, "difficulty": 40, "xp": 8 }
+  "cod": { "id": "cod", "itemId": "cod", "name": "Cod", "seasons": [2, 3], "time": { "from": 600, "to": 2200 }, "difficulty": 40, "xp": 8 },
+  "cinder-shrimp": { "id": "cinder-shrimp", "itemId": "cinder-shrimp", "name": "Cinder Shrimp", "seasons": [0, 1], "time": { "from": 600, "to": 2000 }, "difficulty": 15, "xp": 4 },
+  "rainbow-smelt": { "id": "rainbow-smelt", "itemId": "rainbow-smelt", "name": "Rainbow Smelt", "seasons": [0, 1], "time": { "from": 600, "to": 1200 }, "difficulty": 20, "xp": 5 },
+  "hollow-perch": { "id": "hollow-perch", "itemId": "hollow-perch", "name": "Hollow Perch", "time": { "from": 1800, "to": 2600 }, "difficulty": 30, "xp": 6 },
+  "ember-bass": { "id": "ember-bass", "itemId": "ember-bass", "name": "Ember Bass", "seasons": [1], "time": { "from": 600, "to": 2100 }, "difficulty": 45, "xp": 8 },
+  "moonray": { "id": "moonray", "itemId": "moonray", "name": "Moonray", "seasons": [1], "time": { "from": 1900, "to": 2600 }, "difficulty": 70, "xp": 12 },
+  "ember-carp": { "id": "ember-carp", "itemId": "ember-carp", "name": "Ember Carp", "seasons": [2, 3], "time": { "from": 600, "to": 1800 }, "difficulty": 35, "xp": 7 },
+  "bonefish": { "id": "bonefish", "itemId": "bonefish", "name": "Bonefish", "seasons": [2, 3], "time": { "from": 600, "to": 2000 }, "difficulty": 50, "xp": 9 },
+  "frost-sole": { "id": "frost-sole", "itemId": "frost-sole", "name": "Frost Sole", "seasons": [2, 3], "time": { "from": 700, "to": 1800 }, "difficulty": 35, "xp": 7 },
+  "winter-char": { "id": "winter-char", "itemId": "winter-char", "name": "Winter Char", "seasons": [3], "time": { "from": 700, "to": 1500 }, "difficulty": 55, "xp": 9 },
+  "glowfin": { "id": "glowfin", "itemId": "glowfin", "name": "Glowfin", "seasons": [3], "time": { "from": 1900, "to": 2600 }, "difficulty": 60, "xp": 11 },
+  "crystal-fish": { "id": "crystal-fish", "itemId": "crystal-fish", "name": "Crystal Fish", "time": { "from": 600, "to": 2400 }, "difficulty": 70, "xp": 12 },
+  "lantern-koi": { "id": "lantern-koi", "itemId": "lantern-koi", "name": "Lantern Koi", "time": { "from": 2000, "to": 2600 }, "difficulty": 75, "xp": 13 }
 }

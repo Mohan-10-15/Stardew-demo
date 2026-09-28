@@ -25,7 +25,7 @@ import { ensureFarmingExt, ensureWeatherExt, readFarmingExt, writeFarmingExt } f
 import type { CropDefs } from './growth';
 import { applyFarmRollover } from './rollover';
 import { bumpStat, closeDay, openDayNeedsClosing } from './summary';
-import { clampInt, nextDayMorning } from './utils';
+import { nextDayMorning } from './utils';
 
 /** Quality multipliers: 0 normal x1, 1 silver x1.25, 2 gold x1.5. */
 export const QUALITY_MULT: readonly number[] = [1, 1.25, 1.5];
@@ -75,15 +75,30 @@ export function payoutShipping(state: GameState, bus: EventBus, content: Content
   return st;
 }
 
+/** Categories that must never go in the box: selling one would delete a tool,
+ * a machine or a quest item for pocket change. */
+export const NON_SHIPPABLE_CATEGORIES: readonly string[] = ['tool', 'weapon', 'quest', 'machine'];
+
+function denyShipping(state: GameState, bus: EventBus, reason: string, extra: Record<string, unknown>): GameState {
+  bus.emit('shipping:denied', { reason, ...extra });
+  return state;
+}
+
 /** Move a whole hotbar stack into the shipping box. */
-export function shippingInsert(state: GameState, slot: number, bus: EventBus): GameState {
+export function shippingInsert(state: GameState, slot: number, bus: EventBus, content: ContentDb): GameState {
   const inv = state.player.inventory;
-  const idx = clampInt(slot, 0, Math.max(0, inv.capacity - 1));
-  const stack = inv.slots[idx];
-  if (!stack) return state;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= inv.slots.length) {
+    return denyShipping(state, bus, 'bad-slot', { slot });
+  }
+  const stack = inv.slots[slot];
+  if (!stack) return denyShipping(state, bus, 'no-slot', { slot });
+  const def = content.items.get(stack.id);
+  if (def && NON_SHIPPABLE_CATEGORIES.includes(def.category)) {
+    return denyShipping(state, bus, 'not-shippable', { slot, itemId: stack.id, category: def.category });
+  }
   const ext = readFarmingExt(state);
   const slots = [...inv.slots];
-  slots[idx] = null;
+  slots[slot] = null;
   const mergeIdx = ext.shippingBox.findIndex(
     (b) => b.id === stack.id && b.quality === stack.quality,
   );
@@ -95,7 +110,7 @@ export function shippingInsert(state: GameState, slot: number, bus: EventBus): G
     { ...state, player: { ...state.player, inventory: { ...inv, slots } } },
     { ...ext, shippingBox: box },
   );
-  bus.emit('shipping:inserted', { slot: idx, itemId: stack.id, qty: stack.qty });
+  bus.emit('shipping:inserted', { slot, itemId: stack.id, qty: stack.qty });
   return next;
 }
 
@@ -153,8 +168,12 @@ export const shippingSim: FeatureModule = defineFeature({
     const persist = ctx.persist;
 
     ctx.store.registerReducer('shipping:insert', (st, action) => {
-      const payload = action.payload as { slot: number };
-      return shippingInsert(st, payload.slot, bus);
+      const p = action.payload as { slot?: unknown } | null;
+      if (!p || typeof p.slot !== 'number' || !Number.isInteger(p.slot)) {
+        bus.emit('shipping:denied', { reason: 'bad-request' });
+        return st;
+      }
+      return shippingInsert(st, p.slot, bus, content);
     });
     ctx.store.registerReducer('player:sleep', (st, _action, rng) =>
       sleepReducer(st, cropDefs, rng, bus, content, persist),

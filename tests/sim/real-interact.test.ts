@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSim, DEFAULT_MODULES, type SimFixture } from './harness';
 import { fishingSim, readFishingExt } from '@game/features/fishing/sim/FishingSim';
+import { craftingSim } from '@game/features/crafting/sim/CraftingSim';
 import { machinesSim } from '@game/features/machines/sim/MachinesSim';
 import { skillsSim, skillLevelOf, skillXpOf } from '@game/features/skills/sim/SkillsSim';
 import type { ToolFailedEvent, ToolUsedEvent } from '@game/features/farming/sim/FarmingSim';
@@ -517,5 +518,158 @@ describe('everything the sim lane registers, from a fresh game, no cheats', () =
     // Sleeping dismisses the line (day-end), so the save carries no session.
     expect((saved!.state.extensions['fishing'] as { session: unknown }).session).toBeNull();
     expect(live.mapId).toBe(MAP);
+  });
+});
+
+// ===========================================================================
+/**
+ * T-0510 — the content expansion is only real if a fresh save can reach it
+ * through normal play. No `giveItem` anywhere below: gold comes from shipping
+ * what you grew, the new seeds come from the seed shop, and the new machines
+ * come from the crafting menu using materials the general store sells.
+ *
+ * The one shortcut is `skills:grant-xp`, which is the very reducer the day
+ * close dispatches from `day:summary` — standing in for 25 harvests, not for a
+ * different code path.
+ */
+describe('T-0510 content is reachable from a fresh game through normal play', () => {
+  const FIELD: Tile = { x: 3, y: 7 };
+  const KILN_TILE: Tile = { x: 9, y: 9 };
+  const KILN_STAND: Tile = { x: 9, y: 10 };
+
+  function work(f: SimFixture, tile: Tile, stand: Tile, tool: string, qty = 1): void {
+    f.holdItem(tool, qty);
+    swingNeighbour(f, tile, stand, 'up');
+  }
+
+  /** Plant `seedId` on every tile, water it nightly and harvest it. Normal play only. */
+  function growAndHarvest(f: SimFixture, seedId: string, cropId: string, tiles: Tile[]): number {
+    const nights = f.content.crops.get(cropId)?.days.length ?? 4;
+    for (const t of tiles) {
+      work(f, t, { x: t.x, y: t.y + 1 }, 'hoe-t0');
+      work(f, t, { x: t.x, y: t.y + 1 }, seedId);
+    }
+    for (let night = 0; night < nights; night++) {
+      for (const t of tiles) work(f, t, { x: t.x, y: t.y + 1 }, 'watering-can-t0');
+      f.sleepWithWeather('sun');
+    }
+    for (const t of tiles) {
+      expect(
+        f.cropData(MAP, t.x, t.y)?.['stage'],
+        `${cropId} reached its last growth day`,
+      ).toBe(nights);
+    }
+    f.holdHands();
+    for (const t of tiles) swingNeighbour(f, t, { x: t.x, y: t.y + 1 }, 'up');
+    const got = f.state.player.inventory.slots
+      .filter((s) => s?.id === cropId)
+      .reduce((n, s) => n + (s?.qty ?? 0), 0);
+    expect(got, `harvested ${cropId}`).toBe(tiles.length);
+    return got;
+  }
+
+  it('buys a T-0510 seed with starting gold and grows it in the field', async () => {
+    const f = await fx();
+    f.installMap(MAP);
+    const start = f.money();
+    expect(start, 'a new save must be able to afford the new seeds').toBeGreaterThanOrEqual(45);
+
+    f.buy('seed-shop', 'turnip-seed', 1);
+    expect(f.money()).toBe(start - 45);
+    expect(f.state.player.inventory.slots.some((s) => s?.id === 'turnip-seed')).toBe(true);
+
+    const sold = growAndHarvest(f, 'turnip-seed', 'turnip', [FIELD]);
+    f.insertSlot(f.state.player.inventory.slots.findIndex((s) => s?.id === 'turnip')!);
+    f.sleepWithWeather('sun');
+    // Turnip sells for 50 base; a normal-quality crop pays out at 1.0x.
+    expect(sold).toBe(1);
+    expect(f.money()).toBe(start - 45 + 50);
+  });
+
+  it('crafts, places, loads and collects a T-0510 machine, then sells its product', async () => {
+    const f = await fx([machinesSim, craftingSim, skillsSim]);
+    f.installMap(MAP);
+
+    // Step 1: earn the 620g the kiln costs by shipping a starter harvest.
+    growAndHarvest(f, 'parsnip-seed', 'parsnip', [FIELD, { x: 4, y: 7 }, { x: 5, y: 7 }, { x: 6, y: 7 }]);
+    for (const id of ['parsnip']) {
+      const slot = f.state.player.inventory.slots.findIndex((s) => s?.id === id);
+      if (slot >= 0) f.insertSlot(slot);
+    }
+    f.sleepWithWeather('sun');
+    expect(f.money(), 'four parsnips must fund the kiln').toBeGreaterThanOrEqual(620);
+
+    // Step 2: buy the exact inputs. Stone is sold per-unit, clay and coal in bulk.
+    f.buy('general-store', 'stone', 28);
+    f.buy('general-store', 'clay', 10);
+    f.buy('general-store', 'coal', 5);
+    expect(f.money()).toBeGreaterThan(0);
+    for (const [id, qty] of [
+      ['stone', 28],
+      ['clay', 10],
+      ['coal', 5],
+    ] as const) {
+      const have = f.state.player.inventory.slots
+        .filter((s) => s?.id === id)
+        .reduce((n, s) => n + (s?.qty ?? 0), 0);
+      expect(have, `bought ${id}`).toBe(qty);
+    }
+    // Step 3: the kiln is a farming-4 recipe; that is the day-close XP reducer.
+    f.dispatch('skills:grant-xp', { skill: 'farming', amount: 1000 });
+    expect(skillLevelOf(f.state, 'farming')).toBeGreaterThanOrEqual(4);
+
+    f.dispatch('crafting:craft', { recipeId: 'glass-furnace' });
+    const kilnSlot = f.state.player.inventory.slots.findIndex((s) => s?.id === 'glass-furnace');
+    expect(kilnSlot, 'the kiln was crafted').toBeGreaterThanOrEqual(0);
+
+    // Step 4: place it the way a player does — hold it and press Space.
+    f.holdItem('glass-furnace');
+    swingNeighbour(f, KILN_TILE, KILN_STAND, 'up');
+    expect(f.placed(MAP, KILN_TILE.x, KILN_TILE.y)?.id).toBe('machine:glass-furnace');
+
+    // Step 5: load 3 stone and wait out the 6-hour cycle.
+    f.holdItem('stone', 3);
+    swingNeighbour(f, KILN_TILE, KILN_STAND, 'up');
+    expect(f.cropData(MAP, KILN_TILE.x, KILN_TILE.y)?.['loaded']).toBe(1);
+    f.tickMinutes(6 * 60);
+    expect(f.cropData(MAP, KILN_TILE.x, KILN_TILE.y)?.['remainingTicks']).toBe(0);
+
+    // Step 6: collect by walking up and pressing Space again.
+    f.holdHands();
+    swingNeighbour(f, KILN_TILE, KILN_STAND, 'up');
+    const glass = f.state.player.inventory.slots
+      .filter((s) => s?.id === 'glass')
+      .reduce((n, s) => n + (s?.qty ?? 0), 0);
+    expect(glass, 'the kiln produced glass').toBe(1);
+    expect(f.cropData(MAP, KILN_TILE.x, KILN_TILE.y)?.['loaded']).toBe(0);
+
+    // Step 7: it is a real good — ship it and get paid.
+    const before = f.money();
+    f.insertSlot(f.state.player.inventory.slots.findIndex((s) => s?.id === 'glass')!);
+    f.sleepWithWeather('sun');
+    expect(f.money()).toBeGreaterThan(before);
+  });
+
+  it('never lets a player ship a machine away and lose it', async () => {
+    const f = await fx([machinesSim, craftingSim, skillsSim]);
+    f.installMap(MAP);
+    // Any craftable machine proves the rule; the churn is the cheapest one a
+    // fresh save can afford outright (wood 12 + stone 8 + clay-pot).
+    f.dispatch('skills:grant-xp', { skill: 'foraging', amount: 300 });
+    f.buy('general-store', 'stone', 8);
+    f.buy('general-store', 'clay', 3);
+    f.buy('general-store', 'wood', 12);
+    const crafted = f.capture<{ itemId: string }>('crafting:crafted');
+    // Two crafts, in order: the pot, then the churn that consumes it.
+    f.dispatch('crafting:craft', { recipeId: 'clay-pot' });
+    f.dispatch('crafting:craft', { recipeId: 'butter-churn' });
+    expect(crafted.map((c) => c.itemId)).toEqual(['clay-pot', 'butter-churn']);
+
+    const denied = f.capture<{ reason: string; itemId?: string }>('shipping:denied');
+    const slot = f.state.player.inventory.slots.findIndex((s) => s?.id === 'butter-churn');
+    expect(slot, 'the churn is in the bag').toBeGreaterThanOrEqual(0);
+    f.insertSlot(slot);
+    expect(denied.at(-1)).toMatchObject({ reason: 'not-shippable', itemId: 'butter-churn' });
+    expect(f.state.player.inventory.slots[slot]?.id).toBe('butter-churn');
   });
 });

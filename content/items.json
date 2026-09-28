@@ -789,9 +789,2002 @@
     "name": "Seed Maker",
     "description": "Sifts one crop into its own seeds.",
     "category": "machine",
-    "price": { "base": 900 },
+    "price": { "base": 1000 },
     "canStack": false,
     "tags": ["machine"],
     "asset": "machine-seed-maker"
+  },
+  "turnip-seed": {
+    "name": "Turnip Seeds",
+    "description": "A hardy spring root. Ready in 5 days.",
+    "category": "seed",
+    "price": { "base": 2, "buy": 45 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-turnip"
+  },
+  "turnip": {
+    "name": "Turnip",
+    "description": "A crisp white root crowned in purple.",
+    "category": "crop",
+    "price": { "base": 50 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-turnip"
+  },
+  "ember-root-seed": {
+    "name": "Ember Root Seeds",
+    "description": "A glowing spring root. Ready in 6 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 90 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-ember-root"
+  },
+  "ember-root": {
+    "name": "Ember Root",
+    "description": "A squat ember-red root with a pale core, still warm to hold.",
+    "category": "crop",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-ember-root"
+  },
+  "hollow-onion-seed": {
+    "name": "Hollow Onion Seeds",
+    "description": "A hollow spring bulb. Ready in 7 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 110 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-hollow-onion"
+  },
+  "hollow-onion": {
+    "name": "Hollow Onion",
+    "description": "A papery bronze onion with a hollow, faintly sweet core.",
+    "category": "crop",
+    "price": { "base": 95 },
+    "canStack": true,
+    "tags": ["crop:bulb"],
+    "asset": "crop-hollow-onion"
+  },
+  "lettuce-seed": {
+    "name": "Lettuce Seeds",
+    "description": "A quick spring leaf. Ready in 6 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 60 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-lettuce"
+  },
+  "lettuce": {
+    "name": "Lettuce",
+    "description": "Crisp pale-green leaves in a loose, open head.",
+    "category": "crop",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["crop:vegetable"],
+    "asset": "crop-lettuce"
+  },
+  "snap-pea-seed": {
+    "name": "Snap Pea Seeds",
+    "description": "A climbing spring pea. Ready in 11 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 80 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-snap-pea"
+  },
+  "snap-pea": {
+    "name": "Snap Pea",
+    "description": "Fat green pods full of peas that snap clean in half.",
+    "category": "crop",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["crop:vegetable"],
+    "asset": "crop-snap-pea"
+  },
+  "spring-melon-seed": {
+    "name": "Spring Melon Seeds",
+    "description": "A sweet spring melon. Ready in 9 days.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 150 },
+    "canStack": true,
+    "tags": ["seed", "season:spring"],
+    "asset": "seed-spring-melon"
+  },
+  "spring-melon": {
+    "name": "Spring Melon",
+    "description": "A pale green melon banded with thin lighter stripes.",
+    "category": "crop",
+    "price": { "base": 170 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-spring-melon"
+  },
+  "okra-seed": {
+    "name": "Okra Seeds",
+    "description": "A summer pod crop. Ready in 9 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 55 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-okra"
+  },
+  "okra": {
+    "name": "Okra",
+    "description": "Ridged green pods, best picked while still small.",
+    "category": "crop",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["crop:vegetable"],
+    "asset": "crop-okra"
+  },
+  "spice-pod-seed": {
+    "name": "Spice Pod Seeds",
+    "description": "A fiery summer pepper. Ready in 6 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 75 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-spice-pod"
+  },
+  "spice-pod": {
+    "name": "Spice Pod",
+    "description": "Thin scarlet pods that stain your fingers orange.",
+    "category": "crop",
+    "price": { "base": 65 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-spice-pod"
+  },
+  "sunflower-seed": {
+    "name": "Sunflower Seeds",
+    "description": "A tall summer flower. Ready in 8 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 70 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-sunflower"
+  },
+  "sunflower": {
+    "name": "Sunflower",
+    "description": "A heavy golden head on a thick stalk, always facing the sun.",
+    "category": "crop",
+    "price": { "base": 85 },
+    "canStack": true,
+    "tags": ["crop:flower"],
+    "asset": "crop-sunflower"
+  },
+  "sun-corn-seed": {
+    "name": "Sun Corn Seeds",
+    "description": "A tall summer grain. Ready in 14 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 65 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-sun-corn"
+  },
+  "sun-corn": {
+    "name": "Sun Corn",
+    "description": "Bright yellow ears wrapped in pale, papery husks.",
+    "category": "crop",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["crop:grain"],
+    "asset": "crop-sun-corn"
+  },
+  "watermelon-seed": {
+    "name": "Watermelon Seeds",
+    "description": "A long summer melon. Ready in 15 days.",
+    "category": "seed",
+    "price": { "base": 5, "buy": 200 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-watermelon"
+  },
+  "watermelon": {
+    "name": "Watermelon",
+    "description": "A dark-striped melon, heavy and cool to hold.",
+    "category": "crop",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-watermelon"
+  },
+  "ember-melon-seed": {
+    "name": "Ember Melon Seeds",
+    "description": "A prized summer melon. Ready in 12 days.",
+    "category": "seed",
+    "price": { "base": 6, "buy": 260 },
+    "canStack": true,
+    "tags": ["seed", "season:summer"],
+    "asset": "seed-ember-melon"
+  },
+  "ember-melon": {
+    "name": "Ember Melon",
+    "description": "A deep orange melon veined through with ember-red.",
+    "category": "crop",
+    "price": { "base": 260 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-ember-melon"
+  },
+  "barley-seed": {
+    "name": "Barley Seeds",
+    "description": "An autumn grain. Ready in 8 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 50 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-barley"
+  },
+  "barley": {
+    "name": "Barley",
+    "description": "Pale golden stalks, heavy with plump grain.",
+    "category": "crop",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["crop:grain"],
+    "asset": "crop-barley"
+  },
+  "yam-seed": {
+    "name": "Yam Seeds",
+    "description": "A climbing autumn tuber. Ready in 10 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 80 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-yam"
+  },
+  "yam": {
+    "name": "Yam",
+    "description": "A hairy tuber with a sweet, starchy skin.",
+    "category": "crop",
+    "price": { "base": 105 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-yam"
+  },
+  "cranberry-seed": {
+    "name": "Cranberry Seeds",
+    "description": "A boggy fall berry. Ready in 7 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 65 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-cranberry"
+  },
+  "cranberry": {
+    "name": "Cranberry",
+    "description": "Tart red berries on low, trailing vines.",
+    "category": "crop",
+    "price": { "base": 75 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-cranberry"
+  },
+  "frost-berry-seed": {
+    "name": "Frostberry Seeds",
+    "description": "A late-fall berry. Ready in 6 days, regrows.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 85 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-frost-berry"
+  },
+  "frost-berry": {
+    "name": "Frostberry",
+    "description": "Pale blue berries dusted with frost even in daylight.",
+    "category": "crop",
+    "price": { "base": 95 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-frost-berry"
+  },
+  "elderberry-seed": {
+    "name": "Elderberry Seeds",
+    "description": "A late-fall shrub. Ready in 9 days, regrows.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 120 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-elderberry"
+  },
+  "elderberry": {
+    "name": "Elderberry",
+    "description": "Clusters of small dark berries, heavy on the branch.",
+    "category": "crop",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-elderberry"
+  },
+  "autumn-gourd-seed": {
+    "name": "Autumn Gourd Seeds",
+    "description": "A heavy fall gourd. Ready in 12 days.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 160 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-autumn-gourd"
+  },
+  "autumn-gourd": {
+    "name": "Autumn Gourd",
+    "description": "A ribbed orange gourd with a dry, hollow rind.",
+    "category": "crop",
+    "price": { "base": 195 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-autumn-gourd"
+  },
+  "hollow-pumpkin-seed": {
+    "name": "Hollow Pumpkin Seeds",
+    "description": "A prize fall pumpkin. Ready in 15 days.",
+    "category": "seed",
+    "price": { "base": 6, "buy": 300 },
+    "canStack": true,
+    "tags": ["seed", "season:fall"],
+    "asset": "seed-hollow-pumpkin"
+  },
+  "hollow-pumpkin": {
+    "name": "Hollow Pumpkin",
+    "description": "A vast hollow pumpkin, ridged and ember-orange.",
+    "category": "crop",
+    "price": { "base": 330 },
+    "canStack": true,
+    "tags": ["crop:fruit"],
+    "asset": "crop-hollow-pumpkin"
+  },
+  "winter-root-seed": {
+    "name": "Winter Root Seeds",
+    "description": "A hardy winter root. Ready in 7 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 70 },
+    "canStack": true,
+    "tags": ["seed", "season:winter"],
+    "asset": "seed-winter-root"
+  },
+  "winter-root": {
+    "name": "Winter Root",
+    "description": "A chalk-white root that shrugs off the frost.",
+    "category": "crop",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-winter-root"
+  },
+  "blackberry-seed": {
+    "name": "Blackberry Seeds",
+    "description": "A bramble cane. Ready in 8 days, regrows.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 60 },
+    "canStack": true,
+    "tags": ["seed", "season:winter"],
+    "asset": "seed-blackberry"
+  },
+  "blackberry": {
+    "name": "Blackberry",
+    "description": "Glossy near-black berries on thorny canes.",
+    "category": "crop",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["crop:berry"],
+    "asset": "crop-blackberry"
+  },
+  "snow-lily-seed": {
+    "name": "Snow Lily Seeds",
+    "description": "A winter wildflower. Ready in 9 days.",
+    "category": "seed",
+    "price": { "base": 4, "buy": 130 },
+    "canStack": true,
+    "tags": ["seed", "season:winter"],
+    "asset": "seed-snow-lily"
+  },
+  "snow-lily": {
+    "name": "Snow Lily",
+    "description": "White petals around a pale, warm gold heart.",
+    "category": "crop",
+    "price": { "base": 145 },
+    "canStack": true,
+    "tags": ["crop:flower"],
+    "asset": "crop-snow-lily"
+  },
+  "winter-wheat-seed": {
+    "name": "Winter Wheat Seeds",
+    "description": "A cold-hardy grain. Ready in 14 days.",
+    "category": "seed",
+    "price": { "base": 3, "buy": 60 },
+    "canStack": true,
+    "tags": ["seed", "season:winter"],
+    "asset": "seed-winter-wheat"
+  },
+  "winter-wheat": {
+    "name": "Winter Wheat",
+    "description": "Blue-green stalks that stand straight through snow.",
+    "category": "crop",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["crop:grain"],
+    "asset": "crop-winter-wheat"
+  },
+  "crystal-root-seed": {
+    "name": "Crystal Root Seeds",
+    "description": "A rare winter root. Ready in 16 days.",
+    "category": "seed",
+    "price": { "base": 8, "buy": 420 },
+    "canStack": true,
+    "tags": ["seed", "season:winter"],
+    "asset": "seed-crystal-root"
+  },
+  "crystal-root": {
+    "name": "Crystal Root",
+    "description": "A root of clear crystal, faintly lit from within.",
+    "category": "crop",
+    "price": { "base": 420 },
+    "canStack": true,
+    "tags": ["crop:root"],
+    "asset": "crop-crystal-root"
+  },
+  "butter-churn": {
+    "name": "Butter Churn",
+    "description": "Churns fresh milk into a block of butter.",
+    "category": "machine",
+    "price": { "base": 1100 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-butter-churn"
+  },
+  "preserves-jar": {
+    "name": "Preserves Jar",
+    "description": "Slow-cooks soft fruit into a thick, sealed jam.",
+    "category": "machine",
+    "price": { "base": 1300 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-preserves-jar"
+  },
+  "keg": {
+    "name": "Keg",
+    "description": "Ferments fruit over days into a strong drink.",
+    "category": "machine",
+    "price": { "base": 1800 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-keg"
+  },
+  "glass-furnace": {
+    "name": "Glass Furnace",
+    "description": "Melts stone into clear panes of glass.",
+    "category": "machine",
+    "price": { "base": 1600 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-glass-furnace"
+  },
+  "quern": {
+    "name": "Quern",
+    "description": "Grinds grain into fine flour by hand.",
+    "category": "machine",
+    "price": { "base": 900 },
+    "canStack": false,
+    "tags": ["machine"],
+    "asset": "machine-quern"
+  },
+  "butter": {
+    "name": "Butter",
+    "description": "A pale, salted block churned from farm milk.",
+    "category": "animal_product",
+    "price": { "base": 190 },
+    "canStack": true,
+    "tags": ["animal_product", "processed"],
+    "asset": "product-butter"
+  },
+  "strawberry-jam": {
+    "name": "Strawberry Jam",
+    "description": "A bright, seed-speckled jam sealed in a small jar.",
+    "category": "cooking",
+    "price": { "base": 260 },
+    "canStack": true,
+    "tags": ["processed", "food"],
+    "asset": "food-strawberry-jam"
+  },
+  "elderberry-wine": {
+    "name": "Elderberry Wine",
+    "description": "A deep, sweet wine the colour of late dusk.",
+    "category": "cooking",
+    "price": { "base": 420 },
+    "canStack": true,
+    "tags": ["processed", "food"],
+    "asset": "food-elderberry-wine"
+  },
+  "glass": {
+    "name": "Glass",
+    "description": "A clear, cold pane melted from common stone.",
+    "category": "resource",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-glass"
+  },
+  "flour": {
+    "name": "Flour",
+    "description": "Soft white flour, still faintly warm from the quern.",
+    "category": "resource",
+    "price": { "base": 65 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-flour"
+  },
+  "dandelion": {
+    "name": "Dandelion",
+    "description": "A bright yellow weed with a puff of white seed.",
+    "category": "forage",
+    "price": { "base": 25 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-dandelion"
+  },
+  "wild-mint": {
+    "name": "Wild Mint",
+    "description": "Sharp green leaves that crush cool between the fingers.",
+    "category": "forage",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-wild-mint"
+  },
+  "bracken": {
+    "name": "Bracken Fern",
+    "description": "A tough fern with a curl of tightly furled fronds.",
+    "category": "forage",
+    "price": { "base": 20 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-bracken"
+  },
+  "thistle": {
+    "name": "Thistle",
+    "description": "A spiky purple head that stings if you grab it bare.",
+    "category": "forage",
+    "price": { "base": 30 },
+    "canStack": true,
+    "tags": ["forage"],
+    "asset": "forage-thistle"
+  },
+  "glowcap": {
+    "name": "Glowcap",
+    "description": "A pale mushroom that glows faintly in a dark hand.",
+    "category": "forage",
+    "price": { "base": 150 },
+    "canStack": true,
+    "tags": ["forage", "rare"],
+    "asset": "forage-glowcap"
+  },
+  "spring-onion": {
+    "name": "Wild Spring Onion",
+    "description": "Slim green onion tops with a small white bulb.",
+    "category": "forage",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["forage", "season:0"],
+    "asset": "forage-spring-onion"
+  },
+  "wild-plum": {
+    "name": "Wild Plum",
+    "description": "A small dusky plum, sour before it is sweet.",
+    "category": "forage",
+    "price": { "base": 50 },
+    "canStack": true,
+    "tags": ["forage", "season:0"],
+    "asset": "forage-wild-plum"
+  },
+  "sweet-pea": {
+    "name": "Sweet Pea",
+    "description": "A climbing vine of white and rose-pink blossoms.",
+    "category": "forage",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["forage", "season:0"],
+    "asset": "forage-sweet-pea"
+  },
+  "morel": {
+    "name": "Morel",
+    "description": "A honeycomb-capped spring fungus worth the search.",
+    "category": "forage",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["forage", "season:0", "rare"],
+    "asset": "forage-morel"
+  },
+  "chanterelle": {
+    "name": "Chanterelle",
+    "description": "A golden trumpet mushroom with a faintly apricot scent.",
+    "category": "forage",
+    "price": { "base": 110 },
+    "canStack": true,
+    "tags": ["forage", "season:1"],
+    "asset": "forage-chanterelle"
+  },
+  "bramble-berry": {
+    "name": "Brambleberry",
+    "description": "Small dusky berries, each one dusted with bloom.",
+    "category": "forage",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["forage", "season:1"],
+    "asset": "forage-bramble-berry"
+  },
+  "heath-lily": {
+    "name": "Heath Lily",
+    "description": "A low summer flower, cream inside and rust outside.",
+    "category": "forage",
+    "price": { "base": 65 },
+    "canStack": true,
+    "tags": ["forage", "season:1"],
+    "asset": "forage-heath-lily"
+  },
+  "sun-berry": {
+    "name": "Sunberry",
+    "description": "A translucent amber berry that glows in late light.",
+    "category": "forage",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["forage", "season:1"],
+    "asset": "forage-sun-berry"
+  },
+  "huckleberry": {
+    "name": "Huckleberry",
+    "description": "Flat blue berries with a sharp, dry tartness.",
+    "category": "forage",
+    "price": { "base": 75 },
+    "canStack": true,
+    "tags": ["forage", "season:2"],
+    "asset": "forage-huckleberry"
+  },
+  "ember-cap": {
+    "name": "Ember Cap",
+    "description": "A rare fall mushroom that smoulders like a coal.",
+    "category": "forage",
+    "price": { "base": 180 },
+    "canStack": true,
+    "tags": ["forage", "season:2", "rare"],
+    "asset": "forage-ember-cap"
+  },
+  "foxglove": {
+    "name": "Foxglove",
+    "description": "Tall pink bells, beautiful and quietly poisonous.",
+    "category": "forage",
+    "price": { "base": 85 },
+    "canStack": true,
+    "tags": ["forage", "season:2"],
+    "asset": "forage-foxglove"
+  },
+  "crab-apple": {
+    "name": "Crab Apple",
+    "description": "A hard, sour apple, best left for a long cook.",
+    "category": "forage",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["forage", "season:2"],
+    "asset": "forage-crab-apple"
+  },
+  "winter-berry": {
+    "name": "Winterberry",
+    "description": "A scarlet winter berry that holds on all season.",
+    "category": "forage",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["forage", "season:3"],
+    "asset": "forage-winter-berry"
+  },
+  "ice-berry": {
+    "name": "Iceberry",
+    "description": "A pale blue berry, hard as a marble until it warms.",
+    "category": "forage",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["forage", "season:3"],
+    "asset": "forage-ice-berry"
+  },
+  "frost-fern": {
+    "name": "Frost Fern",
+    "description": "A pale winter frond rimed white along every edge.",
+    "category": "forage",
+    "price": { "base": 20 },
+    "canStack": true,
+    "tags": ["forage", "season:3"],
+    "asset": "forage-frost-fern"
+  },
+  "quartz": {
+    "name": "Quartz",
+    "description": "A milky white crystal that rings when tapped.",
+    "category": "mineral",
+    "price": { "base": 70, "buy": 150 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "lapis": {
+    "name": "Lapis Lazuli",
+    "description": "A deep blue stone flecked with flecks of gold.",
+    "category": "mineral",
+    "price": { "base": 110, "buy": 240 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "citrine": {
+    "name": "Citrine",
+    "description": "A warm honey-coloured gem cut to catch the dawn.",
+    "category": "mineral",
+    "price": { "base": 180, "buy": 400 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "garnet": {
+    "name": "Garnet",
+    "description": "A dark red stone the colour of banked coals.",
+    "category": "mineral",
+    "price": { "base": 200, "buy": 430 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "moonstone": {
+    "name": "Moonstone",
+    "description": "A pale blue gem with a slow, liquid sheen.",
+    "category": "mineral",
+    "price": { "base": 260, "buy": 560 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "aquamarine": {
+    "name": "Aquamarine",
+    "description": "A sea-green gem, clear as a river over sand.",
+    "category": "mineral",
+    "price": { "base": 240, "buy": 500 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "jade": {
+    "name": "Jade",
+    "description": "A smooth green stone, cool and very heavy.",
+    "category": "mineral",
+    "price": { "base": 300, "buy": 650 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "ruby": {
+    "name": "Ruby",
+    "description": "A small, fierce red stone with a fire inside it.",
+    "category": "mineral",
+    "price": { "base": 380, "buy": 800 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "sapphire": {
+    "name": "Sapphire",
+    "description": "A deep cornflower blue that refuses to fade.",
+    "category": "mineral",
+    "price": { "base": 340, "buy": 720 },
+    "canStack": true,
+    "tags": ["mineral", "gift"]
+  },
+  "diamond": {
+    "name": "Diamond",
+    "description": "A rare clear stone that throws rainbows at the edges.",
+    "category": "mineral",
+    "price": { "base": 620, "buy": 1200 },
+    "canStack": true,
+    "tags": ["mineral", "gift", "rare"]
+  },
+  "geode": {
+    "name": "Geode",
+    "description": "A dull grey rock, hollow and glittering within.",
+    "category": "mineral",
+    "price": { "base": 50, "buy": 100 },
+    "canStack": true,
+    "tags": ["mineral", "resource"]
+  },
+  "refined-quartz": {
+    "name": "Refined Quartz",
+    "description": "Quartz ground to a bright, even, glassy powder.",
+    "category": "mineral",
+    "price": { "base": 90, "buy": 190 },
+    "canStack": true,
+    "tags": ["mineral", "refined"]
+  },
+  "marble": {
+    "name": "Marble",
+    "description": "A pale veined stone, quarried smooth and cold.",
+    "category": "mineral",
+    "price": { "base": 60, "buy": 130 },
+    "canStack": true,
+    "tags": ["mineral", "resource"]
+  },
+  "slate": {
+    "name": "Slate",
+    "description": "A flat, dark stone that splits into clean sheets.",
+    "category": "mineral",
+    "price": { "base": 20, "buy": 40 },
+    "canStack": true,
+    "tags": ["mineral", "resource"]
+  },
+  "sap": {
+    "name": "Sap",
+    "description": "Sticky amber tree sap, tapped from a fresh cut branch.",
+    "category": "resource",
+    "price": { "base": 4, "buy": 8 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-sap"
+  },
+  "clay": {
+    "name": "Clay",
+    "description": "Wet grey clay dug from a riverbank.",
+    "category": "resource",
+    "price": { "base": 12, "buy": 22 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-clay"
+  },
+  "gravel": {
+    "name": "Gravel",
+    "description": "Loose rounded pebbles, good for foundations.",
+    "category": "resource",
+    "price": { "base": 8, "buy": 15 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-gravel"
+  },
+  "coal": {
+    "name": "Coal",
+    "description": "A black, brittle lump of compressed ancient heat.",
+    "category": "resource",
+    "price": { "base": 40, "buy": 70 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-coal"
+  },
+  "copper-ore": {
+    "name": "Copper Ore",
+    "description": "Reddish rock threaded with green metal veins.",
+    "category": "resource",
+    "price": { "base": 55, "buy": 95 },
+    "canStack": true,
+    "tags": ["resource", "ore"],
+    "asset": "res-copper-ore"
+  },
+  "iron-ore": {
+    "name": "Iron Ore",
+    "description": "Heavy grey rock shot through with dull metal.",
+    "category": "resource",
+    "price": { "base": 110, "buy": 180 },
+    "canStack": true,
+    "tags": ["resource", "ore"],
+    "asset": "res-iron-ore"
+  },
+  "gold-ore": {
+    "name": "Gold Ore",
+    "description": "Dark rock flecked bright with raw gold.",
+    "category": "resource",
+    "price": { "base": 200, "buy": 330 },
+    "canStack": true,
+    "tags": ["resource", "ore"],
+    "asset": "res-gold-ore"
+  },
+  "salt": {
+    "name": "Salt",
+    "description": "A coarse grey crystal, sharp on the tongue.",
+    "category": "resource",
+    "price": { "base": 15, "buy": 30 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-salt"
+  },
+  "twine": {
+    "name": "Twine",
+    "description": "Thin, strong cord, twisted from a long grass.",
+    "category": "resource",
+    "price": { "base": 18, "buy": 32 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-twine"
+  },
+  "resin": {
+    "name": "Resin",
+    "description": "A golden gum that seals wood against the weather.",
+    "category": "resource",
+    "price": { "base": 26, "buy": 45 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-resin"
+  },
+  "charcoal": {
+    "name": "Charcoal",
+    "description": "Wood burned to a matte black, and slowly cool.",
+    "category": "resource",
+    "price": { "base": 32, "buy": 55 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-charcoal"
+  },
+  "moss": {
+    "name": "Moss",
+    "description": "A damp green cushion of moss, good for poultices.",
+    "category": "resource",
+    "price": { "base": 10, "buy": 18 },
+    "canStack": true,
+    "tags": ["resource"],
+    "asset": "res-moss"
+  },
+  "roasted-parsnip": {
+    "name": "Roasted Parsnip",
+    "description": "A whole parsnip, roasted until the edges caramelise.",
+    "category": "cooking",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-roasted-parsnip"
+  },
+  "mashed-potato": {
+    "name": "Mashed Potato",
+    "description": "Whipped smooth with a knob of butter on top.",
+    "category": "cooking",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-mashed-potato"
+  },
+  "garlic-butter-toast": {
+    "name": "Garlic Butter Toast",
+    "description": "Thick dough, fried in garlic butter until crisp.",
+    "category": "cooking",
+    "price": { "base": 150 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-garlic-butter-toast"
+  },
+  "cauliflower-cheese": {
+    "name": "Cauliflower Cheese",
+    "description": "Cauliflower baked under a blanket of melted cheese.",
+    "category": "cooking",
+    "price": { "base": 320 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-cauliflower-cheese"
+  },
+  "strawberry-shortcake": {
+    "name": "Strawberry Shortcake",
+    "description": "Split cake, strawberries and thick cream.",
+    "category": "cooking",
+    "price": { "base": 280 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-strawberry-shortcake"
+  },
+  "green-bean-casserole": {
+    "name": "Green Bean Casserole",
+    "description": "Beans under crisp onions and a rich cheese sauce.",
+    "category": "cooking",
+    "price": { "base": 240 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-green-bean-casserole"
+  },
+  "turnip-soup": {
+    "name": "Turnip Soup",
+    "description": "A thin, peppery white soup warmed through.",
+    "category": "cooking",
+    "price": { "base": 160 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-turnip-soup"
+  },
+  "ember-root-soup": {
+    "name": "Ember Root Soup",
+    "description": "A thick red broth that warms you right through.",
+    "category": "cooking",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ember-root-soup"
+  },
+  "onion-rings": {
+    "name": "Onion Rings",
+    "description": "A crisp golden stack of battered hollow onion.",
+    "category": "cooking",
+    "price": { "base": 230 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-onion-rings"
+  },
+  "garden-salad": {
+    "name": "Garden Salad",
+    "description": "Torn lettuce, tomato and spring onion, lightly dressed.",
+    "category": "cooking",
+    "price": { "base": 190 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-garden-salad"
+  },
+  "snap-pea-stew": {
+    "name": "Snap Pea Stew",
+    "description": "Green pods and potato, thickened and herbed.",
+    "category": "cooking",
+    "price": { "base": 220 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-snap-pea-stew"
+  },
+  "spring-melon-sorbet": {
+    "name": "Spring Melon Sorbet",
+    "description": "A pale green frozen scrape sharpened with wild mint.",
+    "category": "cooking",
+    "price": { "base": 300 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-spring-melon-sorbet"
+  },
+  "blueberry-pancakes": {
+    "name": "Blueberry Pancakes",
+    "description": "A tall stack of pancakes, berries and butter between.",
+    "category": "cooking",
+    "price": { "base": 380 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-blueberry-pancakes"
+  },
+  "tomato-soup": {
+    "name": "Tomato Soup",
+    "description": "A bright red soup finished with a knob of butter.",
+    "category": "cooking",
+    "price": { "base": 260 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-tomato-soup"
+  },
+  "hot-sauce": {
+    "name": "Ember Hot Sauce",
+    "description": "A sealed bottle of scarlet heat that seeps through the cork.",
+    "category": "cooking",
+    "price": { "base": 240 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-hot-sauce"
+  },
+  "okra-fritters": {
+    "name": "Okra Fritters",
+    "description": "Cornstarch-crusted okra, crisp and green inside.",
+    "category": "cooking",
+    "price": { "base": 250 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-okra-fritters"
+  },
+  "ember-corn-roast": {
+    "name": "Ember Corn Roast",
+    "description": "Charred corn kernels, salted and rolled in butter.",
+    "category": "cooking",
+    "price": { "base": 270 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ember-corn-roast"
+  },
+  "roasted-sunflower-seeds": {
+    "name": "Roasted Sunflower Seeds",
+    "description": "A warm handful of striped seeds, salt-cracked open.",
+    "category": "cooking",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-roasted-sunflower-seeds"
+  },
+  "watermelon-bowl": {
+    "name": "Watermelon Bowl",
+    "description": "Chunks of cold melon, rind left on for luck.",
+    "category": "cooking",
+    "price": { "base": 290 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-watermelon-bowl"
+  },
+  "ember-melon-tart": {
+    "name": "Ember Melon Tart",
+    "description": "A deep orange tart under a lattice of dark pastry.",
+    "category": "cooking",
+    "price": { "base": 520 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ember-melon-tart"
+  },
+  "mushroom-skewer": {
+    "name": "Mushroom Skewer",
+    "description": "Plain and morel mushrooms, charred over a hot pan.",
+    "category": "cooking",
+    "price": { "base": 290 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-mushroom-skewer"
+  },
+  "dandelion-salad": {
+    "name": "Dandelion Salad",
+    "description": "Tender greens, bitter and bright, tossed in mayo.",
+    "category": "cooking",
+    "price": { "base": 170 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-dandelion-salad"
+  },
+  "mint-tea": {
+    "name": "Wild Mint Tea",
+    "description": "A pale infusion steeped from crushed wild mint.",
+    "category": "cooking",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-mint-tea"
+  },
+  "ember-cap-stew": {
+    "name": "Ember Cap Stew",
+    "description": "A slow stew that glows faintly as you ladle it out.",
+    "category": "cooking",
+    "price": { "base": 460 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ember-cap-stew"
+  },
+  "chanterelle-saute": {
+    "name": "Chanterelle Saute",
+    "description": "Golden trumpets seared in butter with coarse salt.",
+    "category": "cooking",
+    "price": { "base": 340 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-chanterelle-saute"
+  },
+  "bramble-crumble": {
+    "name": "Bramble Crumble",
+    "description": "Bitter-sweet berries under a crumbling butter crust.",
+    "category": "cooking",
+    "price": { "base": 350 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-bramble-crumble"
+  },
+  "heath-lily-salad": {
+    "name": "Heath Lily Salad",
+    "description": "Creamy lily petals among crisp summer leaves.",
+    "category": "cooking",
+    "price": { "base": 250 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-heath-lily-salad"
+  },
+  "sunberry-glaze": {
+    "name": "Sunberry Glaze",
+    "description": "Amber berries reduced to a sticky, honeyed glaze.",
+    "category": "cooking",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-sunberry-glaze"
+  },
+  "huckleberry-pie": {
+    "name": "Huckleberry Pie",
+    "description": "A deep-dish pie, dark and sharp against the crust.",
+    "category": "cooking",
+    "price": { "base": 480 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-huckleberry-pie"
+  },
+  "crab-apple-sauce": {
+    "name": "Crab Apple Sauce",
+    "description": "Sour apples cooked down to a russet, set sauce.",
+    "category": "cooking",
+    "price": { "base": 300 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-crab-apple-sauce"
+  },
+  "frostberry-slush": {
+    "name": "Frostberry Slush",
+    "description": "Pale blue ice scraped to a frost, sharpened by fish.",
+    "category": "cooking",
+    "price": { "base": 330 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-frostberry-slush"
+  },
+  "elderberry-tart": {
+    "name": "Elderberry Tart",
+    "description": "Dark berries set in a buttery shell, almost purple.",
+    "category": "cooking",
+    "price": { "base": 520 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-elderberry-tart"
+  },
+  "autumn-gourd-stew": {
+    "name": "Autumn Gourd Stew",
+    "description": "Thick orange stew sweetened with goat milk.",
+    "category": "cooking",
+    "price": { "base": 430 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-autumn-gourd-stew"
+  },
+  "hollow-pumpkin-pie": {
+    "name": "Hollow Pumpkin Pie",
+    "description": "A whole pumpkin filled and baked, still smelling of the field.",
+    "category": "cooking",
+    "price": { "base": 640 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-hollow-pumpkin-pie"
+  },
+  "winter-root-bake": {
+    "name": "Winter Root Bake",
+    "description": "Halved roots baked in butter until their edges brown.",
+    "category": "cooking",
+    "price": { "base": 240 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-winter-root-bake"
+  },
+  "bramble-toast": {
+    "name": "Bramble Toast",
+    "description": "Thick bread spread with jam and crushed blackberries.",
+    "category": "cooking",
+    "price": { "base": 290 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-bramble-toast"
+  },
+  "snow-lily-ice": {
+    "name": "Snow Lily Ice",
+    "description": "Clear ice holding a whole white bloom, untouched.",
+    "category": "cooking",
+    "price": { "base": 400 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-snow-lily-ice"
+  },
+  "winter-wheat-flatbread": {
+    "name": "Winter Wheat Flatbread",
+    "description": "A dense, dark round, still warm from the pan.",
+    "category": "cooking",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-winter-wheat-flatbread"
+  },
+  "crystal-root-candy": {
+    "name": "Crystal Root Candy",
+    "description": "Clear, glassy sweets that ring against the teeth.",
+    "category": "cooking",
+    "price": { "base": 700 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-crystal-root-candy"
+  },
+  "anchovy-fry": {
+    "name": "Anchovy Fry",
+    "description": "Tiny salted fish fried crisp in a light batter.",
+    "category": "cooking",
+    "price": { "base": 250 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-anchovy-fry"
+  },
+  "sardine-pie": {
+    "name": "Sardine Pie",
+    "description": "A hot, salty pie with a crisp potato lid.",
+    "category": "cooking",
+    "price": { "base": 280 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-sardine-pie"
+  },
+  "fish-and-chips": {
+    "name": "Fish and Chips",
+    "description": "Battered cod beside a mountain of thick-cut chips.",
+    "category": "cooking",
+    "price": { "base": 420 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-fish-and-chips"
+  },
+  "river-perch-skewer": {
+    "name": "River Perch Skewer",
+    "description": "Striped perch with green pods, grilled over mint.",
+    "category": "cooking",
+    "price": { "base": 330 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-river-perch-skewer"
+  },
+  "sturgeon-steak": {
+    "name": "Sturgeon Steak",
+    "description": "A thick cut from a fall leviathan, seared in butter.",
+    "category": "cooking",
+    "price": { "base": 700 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-sturgeon-steak"
+  },
+  "salmon-soup": {
+    "name": "Salmon Soup",
+    "description": "A rich pink broth with potato and cream.",
+    "category": "cooking",
+    "price": { "base": 390 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-salmon-soup"
+  },
+  "trout-jerky": {
+    "name": "Trout Jerky",
+    "description": "Salt-cured strips dried hard enough to keep for weeks.",
+    "category": "cooking",
+    "price": { "base": 450 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-trout-jerky"
+  },
+  "seared-tuna": {
+    "name": "Seared Tuna",
+    "description": "A rare-cured steak, bright against mint and salt.",
+    "category": "cooking",
+    "price": { "base": 620 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-seared-tuna"
+  },
+  "winter-broth": {
+    "name": "Winter Broth",
+    "description": "A clear, warming broth with roots and cream.",
+    "category": "cooking",
+    "price": { "base": 360 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-winter-broth"
+  },
+  "egg-mayo-roll": {
+    "name": "Egg and Mayo Roll",
+    "description": "A warm bread roll filled with egg, mayo and cheese.",
+    "category": "cooking",
+    "price": { "base": 300 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-egg-mayo-roll"
+  },
+  "duck-egg-custard": {
+    "name": "Duck Egg Custard",
+    "description": "A pale, dense custard set with duck egg and cream.",
+    "category": "cooking",
+    "price": { "base": 330 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-duck-egg-custard"
+  },
+  "goat-cheese-toast": {
+    "name": "Goat Cheese Toast",
+    "description": "Sharp goat cheese on fried bread, salted on top.",
+    "category": "cooking",
+    "price": { "base": 350 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-goat-cheese-toast"
+  },
+  "minnow-fritters": {
+    "name": "Minnow Fritters",
+    "description": "Small whole fish fried crisp, best eaten with fingers.",
+    "category": "cooking",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-minnow-fritters"
+  },
+  "catfish-chowder": {
+    "name": "Catfish Chowder",
+    "description": "A thick, creamy chowder with potato and corn.",
+    "category": "cooking",
+    "price": { "base": 420 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-catfish-chowder"
+  },
+  "brook-trout-cakes": {
+    "name": "Brook Trout Cakes",
+    "description": "Trout and potato patties, fried golden on both sides.",
+    "category": "cooking",
+    "price": { "base": 430 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-brook-trout-cakes"
+  },
+  "ice-fish-croquettes": {
+    "name": "Ice Fish Croquettes",
+    "description": "Cold white fish formed into crisp little patties.",
+    "category": "cooking",
+    "price": { "base": 400 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-ice-fish-croquettes"
+  },
+  "morel-saute": {
+    "name": "Morel Saute",
+    "description": "Honeycomb morels browned in butter with garlic.",
+    "category": "cooking",
+    "price": { "base": 520 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-morel-saute"
+  },
+  "spice-pod-curry": {
+    "name": "Spice Pod Curry",
+    "description": "A slow orange curry that stains the bowl red.",
+    "category": "cooking",
+    "price": { "base": 400 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-spice-pod-curry"
+  },
+  "halibut-cakes": {
+    "name": "Halibut Cakes",
+    "description": "Mashed spring flatfish formed into a crisp crust.",
+    "category": "cooking",
+    "price": { "base": 300 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-halibut-cakes"
+  },
+  "pike-stew": {
+    "name": "Pike Stew",
+    "description": "Firm white fish stewed with potato and wild mint.",
+    "category": "cooking",
+    "price": { "base": 380 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-pike-stew"
+  },
+  "midnight-carp-stew": {
+    "name": "Midnight Carp Stew",
+    "description": "A dark, quiet stew that warms you to the bone.",
+    "category": "cooking",
+    "price": { "base": 520 },
+    "canStack": true,
+    "tags": ["cooking", "food"],
+    "asset": "food-midnight-carp-stew"
+  },
+  "rope": {
+    "name": "Rope",
+    "description": "Strong cord twisted from four bundles of fiber.",
+    "category": "crafted",
+    "price": { "base": 22 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-rope"
+  },
+  "torch": {
+    "name": "Torch",
+    "description": "Sap-soaked wood on a stick; burns for about an hour.",
+    "category": "crafted",
+    "price": { "base": 14 },
+    "canStack": true,
+    "tags": ["crafted", "light"],
+    "asset": "craft-torch"
+  },
+  "paper": {
+    "name": "Paper",
+    "description": "A rough sheet of pressed wood pulp.",
+    "category": "crafted",
+    "price": { "base": 28 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-paper"
+  },
+  "sign": {
+    "name": "Sign",
+    "description": "A hand-lettered board on two twine-bound posts.",
+    "category": "crafted",
+    "price": { "base": 18 },
+    "canStack": true,
+    "tags": ["crafted", "sign"],
+    "asset": "craft-sign"
+  },
+  "cobblestone-path": {
+    "name": "Cobblestone Path",
+    "description": "A single laid tile of stone and gravel.",
+    "category": "crafted",
+    "price": { "base": 6 },
+    "canStack": true,
+    "tags": ["crafted", "path"],
+    "asset": "craft-cobblestone-path"
+  },
+  "polished-stone": {
+    "name": "Polished Stone",
+    "description": "Stone rubbed smooth until it reflects the sky.",
+    "category": "crafted",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-polished-stone"
+  },
+  "clay-brick": {
+    "name": "Clay Brick",
+    "description": "A fired brick, red-brown and slightly warped.",
+    "category": "crafted",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-clay-brick"
+  },
+  "mortar": {
+    "name": "Mortar",
+    "description": "Wet grey paste that sets hard overnight.",
+    "category": "crafted",
+    "price": { "base": 65 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-mortar"
+  },
+  "wooden-fence": {
+    "name": "Wooden Fence",
+    "description": "One post-and-rail section of plain fence.",
+    "category": "crafted",
+    "price": { "base": 9 },
+    "canStack": true,
+    "tags": ["crafted", "fence"],
+    "asset": "craft-wooden-fence"
+  },
+  "clay-pot": {
+    "name": "Clay Pot",
+    "description": "A wide unglazed pot, heavy and porous.",
+    "category": "crafted",
+    "price": { "base": 48 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-clay-pot"
+  },
+  "lamp-oil": {
+    "name": "Lamp Oil",
+    "description": "A slow, clear-burning oil drawn from pine resin.",
+    "category": "crafted",
+    "price": { "base": 70 },
+    "canStack": true,
+    "tags": ["crafted", "light"],
+    "asset": "craft-lamp-oil"
+  },
+  "fire-starter": {
+    "name": "Fire Starter",
+    "description": "A resin-bound tinder bundle that catches from a spark.",
+    "category": "crafted",
+    "price": { "base": 24 },
+    "canStack": true,
+    "tags": ["crafted", "light"],
+    "asset": "craft-fire-starter"
+  },
+  "reinforced-rope": {
+    "name": "Reinforced Rope",
+    "description": "Rope sealed in resin; it will not stretch or fray.",
+    "category": "crafted",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-reinforced-rope"
+  },
+  "charcoal-filter": {
+    "name": "Charcoal Filter",
+    "description": "A porous canister of burnt charcoal and gravel.",
+    "category": "crafted",
+    "price": { "base": 120 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-charcoal-filter"
+  },
+  "moss-poultice": {
+    "name": "Moss Poultice",
+    "description": "Crushed moss and sap, wrapped in a cloth square.",
+    "category": "crafted",
+    "price": { "base": 95 },
+    "canStack": true,
+    "tags": ["crafted", "medicine"],
+    "asset": "craft-moss-poultice"
+  },
+  "copper-bar": {
+    "name": "Copper Bar",
+    "description": "A soft orange bar of smelted copper ore.",
+    "category": "crafted",
+    "price": { "base": 115 },
+    "canStack": true,
+    "tags": ["crafted", "bar"],
+    "asset": "craft-copper-bar"
+  },
+  "iron-bar": {
+    "name": "Iron Bar",
+    "description": "A cold grey bar of smelted iron ore.",
+    "category": "crafted",
+    "price": { "base": 185 },
+    "canStack": true,
+    "tags": ["crafted", "bar"],
+    "asset": "craft-iron-bar"
+  },
+  "gold-bar": {
+    "name": "Gold Bar",
+    "description": "A heavy, soft bar of raw village gold.",
+    "category": "crafted",
+    "price": { "base": 330 },
+    "canStack": true,
+    "tags": ["crafted", "bar"],
+    "asset": "craft-gold-bar"
+  },
+  "iron-grate": {
+    "name": "Iron Grate",
+    "description": "A charcoal-lined grate that holds heat all night.",
+    "category": "crafted",
+    "price": { "base": 210 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-iron-grate"
+  },
+  "copper-wire": {
+    "name": "Copper Wire",
+    "description": "A long coil of drawn copper, warm to the touch.",
+    "category": "crafted",
+    "price": { "base": 150 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-copper-wire"
+  },
+  "gold-filings": {
+    "name": "Gold Filings",
+    "description": "Fine gold curls, gathered from a polishing wheel.",
+    "category": "crafted",
+    "price": { "base": 380 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-gold-filings"
+  },
+  "lantern": {
+    "name": "Lantern",
+    "description": "A glass lantern on an iron frame, coal-fed.",
+    "category": "crafted",
+    "price": { "base": 340 },
+    "canStack": false,
+    "tags": ["crafted", "light"],
+    "asset": "craft-lantern"
+  },
+  "storm-lantern": {
+    "name": "Storm Lantern",
+    "description": "A brass hurricane lamp that burns in any weather.",
+    "category": "crafted",
+    "price": { "base": 820 },
+    "canStack": false,
+    "tags": ["crafted", "light"],
+    "asset": "craft-storm-lantern"
+  },
+  "gold-charm": {
+    "name": "Gold Charm",
+    "description": "A warm gold disc hung on a quartz loop.",
+    "category": "crafted",
+    "price": { "base": 520 },
+    "canStack": false,
+    "tags": ["crafted", "gift"],
+    "asset": "craft-gold-charm"
+  },
+  "glass-lens": {
+    "name": "Glass Lens",
+    "description": "A ground glass disc that magnifies a fingertip.",
+    "category": "crafted",
+    "price": { "base": 280 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-glass-lens"
+  },
+  "sprinkler": {
+    "name": "Sprinkler",
+    "description": "Waters the four tiles around it every morning.",
+    "category": "crafted",
+    "price": { "base": 300 },
+    "canStack": false,
+    "tags": ["crafted", "machine"],
+    "asset": "craft-sprinkler"
+  },
+  "quality-sprinkler": {
+    "name": "Quality Sprinkler",
+    "description": "Waters nearby tiles and never misses a morning.",
+    "category": "crafted",
+    "price": { "base": 940 },
+    "canStack": false,
+    "tags": ["crafted", "machine"],
+    "asset": "craft-quality-sprinkler"
+  },
+  "dough": {
+    "name": "Dough",
+    "description": "A pale ball of flour and egg, ready to roll.",
+    "category": "crafted",
+    "price": { "base": 55 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-dough"
+  },
+  "flour-sack": {
+    "name": "Flour Sack",
+    "description": "A heavy cloth sack of milled flour, tied at the top.",
+    "category": "crafted",
+    "price": { "base": 300 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-flour-sack"
+  },
+  "surveyors-chain": {
+    "name": "Surveyor's Chain",
+    "description": "A fine measuring chain with a brass tally at one end.",
+    "category": "crafted",
+    "price": { "base": 260 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-surveyors-chain"
+  },
+  "ember-glass": {
+    "name": "Ember Glass",
+    "description": "Glass clouded with charcoal; it glows faintly at dusk.",
+    "category": "crafted",
+    "price": { "base": 380 },
+    "canStack": true,
+    "tags": ["crafted"],
+    "asset": "craft-ember-glass"
+  },
+  "stone-basin": {
+    "name": "Stone Basin",
+    "description": "A deep polished basin, hollowed from two stones.",
+    "category": "crafted",
+    "price": { "base": 180 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-stone-basin"
+  },
+  "iron-bucket": {
+    "name": "Iron Bucket",
+    "description": "A riveted iron pail that has outlasted three farms.",
+    "category": "crafted",
+    "price": { "base": 175 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-iron-bucket"
+  },
+  "copper-pan": {
+    "name": "Copper Pan",
+    "description": "A wide copper pan that heats faster than it looks.",
+    "category": "crafted",
+    "price": { "base": 130 },
+    "canStack": false,
+    "tags": ["crafted"],
+    "asset": "craft-copper-pan"
+  },
+  "wooden-crate": {
+    "name": "Wooden Crate",
+    "description": "A nailed box with a rope handle.",
+    "category": "crafted",
+    "price": { "base": 60 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-wooden-crate"
+  },
+  "storage-chest": {
+    "name": "Storage Chest",
+    "description": "A wide banded chest that keeps a season of crops.",
+    "category": "crafted",
+    "price": { "base": 380 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-storage-chest"
+  },
+  "bookshelf": {
+    "name": "Bookshelf",
+    "description": "A tall shelf of pressed-paper volumes and bluebird eggs.",
+    "category": "crafted",
+    "price": { "base": 480 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-bookshelf"
+  },
+  "book": {
+    "name": "Book",
+    "description": "A hand-bound field guide, cornered and soft.",
+    "category": "crafted",
+    "price": { "base": 140 },
+    "canStack": true,
+    "tags": ["crafted", "gift"],
+    "asset": "craft-book"
+  },
+  "table": {
+    "name": "Table",
+    "description": "A plain scrubbed table that seats two.",
+    "category": "crafted",
+    "price": { "base": 200 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-table"
+  },
+  "chair": {
+    "name": "Chair",
+    "description": "A solid plank chair, comfortably worn.",
+    "category": "crafted",
+    "price": { "base": 120 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-chair"
+  },
+  "rug": {
+    "name": "Rug",
+    "description": "A hand-woven rug in faded red and undyed wool.",
+    "category": "crafted",
+    "price": { "base": 240 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-rug"
+  },
+  "banner": {
+    "name": "Banner",
+    "description": "A long cloth festival banner stitched with a wheat motif.",
+    "category": "crafted",
+    "price": { "base": 200 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-banner"
+  },
+  "scarecrow": {
+    "name": "Scarecrow",
+    "description": "A cross of old cloth, straw stuffing and a burlap face.",
+    "category": "crafted",
+    "price": { "base": 220 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-scarecrow"
+  },
+  "campfire": {
+    "name": "Campfire",
+    "description": "A ring of stones around a slow-burning wood fire.",
+    "category": "crafted",
+    "price": { "base": 260 },
+    "canStack": false,
+    "tags": ["crafted", "furniture", "light"],
+    "asset": "craft-campfire"
+  },
+  "sundial": {
+    "name": "Sundial",
+    "description": "A copper dial on polished stone; it keeps fair time.",
+    "category": "crafted",
+    "price": { "base": 450 },
+    "canStack": false,
+    "tags": ["crafted", "furniture"],
+    "asset": "craft-sundial"
+  },
+  "herbal-tincture": {
+    "name": "Herbal Tincture",
+    "description": "A small green vial of mint and glowcap distillate.",
+    "category": "crafted",
+    "price": { "base": 260 },
+    "canStack": true,
+    "tags": ["crafted", "medicine", "gift"],
+    "asset": "craft-herbal-tincture"
+  },
+  "gate": {
+    "name": "Gate",
+    "description": "A rope-hung gate that swings on a wooden post.",
+    "category": "crafted",
+    "price": { "base": 45 },
+    "canStack": true,
+    "tags": ["crafted", "fence"],
+    "asset": "craft-gate"
+  },
+  "cinder-shrimp": {
+    "name": "Cinder Shrimp",
+    "description": "A tiny translucent shrimp that turns pink over a pan.",
+    "category": "fish",
+    "price": { "base": 25 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:1"],
+    "asset": "fish-cinder-shrimp"
+  },
+  "rainbow-smelt": {
+    "name": "Rainbow Smelt",
+    "description": "A slender silver smelt, pink along the flank at dawn.",
+    "category": "fish",
+    "price": { "base": 40 },
+    "canStack": true,
+    "tags": ["fish", "season:0", "season:1"],
+    "asset": "fish-rainbow-smelt"
+  },
+  "hollow-perch": {
+    "name": "Hollow Perch",
+    "description": "A barred perch that never leaves the shaded banks.",
+    "category": "fish",
+    "price": { "base": 60 },
+    "canStack": true,
+    "tags": ["fish"],
+    "asset": "fish-hollow-perch"
+  },
+  "ember-bass": {
+    "name": "Ember Bass",
+    "description": "A heavy bass barred in deep, dark red.",
+    "category": "fish",
+    "price": { "base": 130 },
+    "canStack": true,
+    "tags": ["fish", "season:1"],
+    "asset": "fish-ember-bass"
+  },
+  "moonray": {
+    "name": "Moonray",
+    "description": "A flat ray that scatters moonlight across the surface.",
+    "category": "fish",
+    "price": { "base": 480 },
+    "canStack": true,
+    "tags": ["fish", "season:1", "rare"],
+    "asset": "fish-moonray"
+  },
+  "ember-carp": {
+    "name": "Ember Carp",
+    "description": "A slow red carp that holds warmth like a buried coal.",
+    "category": "fish",
+    "price": { "base": 90 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "season:3"],
+    "asset": "fish-ember-carp"
+  },
+  "bonefish": {
+    "name": "Bonefish",
+    "description": "A pale fish whose flat bones show through the flesh.",
+    "category": "fish",
+    "price": { "base": 190 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "season:3"],
+    "asset": "fish-bonefish"
+  },
+  "frost-sole": {
+    "name": "Frost Sole",
+    "description": "A cold flatfish with a frost-white edge to its fin.",
+    "category": "fish",
+    "price": { "base": 95 },
+    "canStack": true,
+    "tags": ["fish", "season:2", "season:3"],
+    "asset": "fish-frost-sole"
+  },
+  "winter-char": {
+    "name": "Winter Char",
+    "description": "A cold-water char with pale rose speckles along its flank.",
+    "category": "fish",
+    "price": { "base": 170 },
+    "canStack": true,
+    "tags": ["fish", "season:3"],
+    "asset": "fish-winter-char"
+  },
+  "glowfin": {
+    "name": "Glowfin",
+    "description": "A winter fish with a row of lit blue fins down its flank.",
+    "category": "fish",
+    "price": { "base": 380 },
+    "canStack": true,
+    "tags": ["fish", "season:3", "rare"],
+    "asset": "fish-glowfin"
+  },
+  "crystal-fish": {
+    "name": "Crystal Fish",
+    "description": "A clear fish, nearly invisible, with one glassy hard bone.",
+    "category": "fish",
+    "price": { "base": 540 },
+    "canStack": true,
+    "tags": ["fish", "rare"],
+    "asset": "fish-crystal-fish"
+  },
+  "lantern-koi": {
+    "name": "Lantern Koi",
+    "description": "A pale koi that carries its own small, steady light.",
+    "category": "fish",
+    "price": { "base": 620 },
+    "canStack": true,
+    "tags": ["fish", "rare"],
+    "asset": "fish-lantern-koi"
   }
 }

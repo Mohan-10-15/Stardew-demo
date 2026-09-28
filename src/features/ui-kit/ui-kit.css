@@ -1041,3 +1041,321 @@
     min-width: 300px;
   }
 }
+
+/* ==========================================================================
+   T-0511 day loop (WORKER-3): action bar, farm dialog, toasts, tutorial card.
+   Hard-edged like everything else: 2px borders, inset bevels, no radius, and
+   the #ui-root id prefix so these can opt back out of the layer's blanket
+   pointer-events: auto without a specificity fight.
+   ========================================================================== */
+
+#ui-root > .eh-actionbar,
+#ui-root > .eh-toasts {
+  pointer-events: none;
+}
+
+.eh-actionbar {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  background: var(--eh-ui-panel-bg);
+  border: 2px solid var(--eh-ui-panel-border);
+  box-shadow:
+    inset 2px 2px 0 0 var(--eh-ui-panel-hi),
+    inset -2px -2px 0 0 var(--eh-ui-panel-lo),
+    2px 2px 0 rgba(0, 0, 0, 0.5);
+  color: var(--eh-ui-text);
+  text-shadow: var(--eh-ui-shadow);
+}
+
+.eh-actionbar-title {
+  font-size: 12px;
+}
+
+.eh-actionbar-title.is-empty {
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-actionbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.eh-actionbar-chip {
+  padding: 1px 5px;
+  font-size: 11px;
+  border: 2px solid var(--eh-ui-panel-lo);
+  background: var(--eh-ui-slot);
+  color: var(--eh-ui-text);
+}
+
+.eh-actionbar-chip.eh-action-ship {
+  border-color: #3b5a2a;
+}
+
+.eh-actionbar-chip.eh-action-eat {
+  border-color: #5a3b2a;
+}
+
+.eh-actionbar-context {
+  display: none;
+}
+
+.eh-actionbar-context.is-visible {
+  display: block;
+}
+
+.eh-actionbar-chip.eh-action-use {
+  border-color: #2a4a5a;
+  color: var(--eh-ui-accent);
+  font-weight: 700;
+}
+
+.eh-actionbar-chip.eh-action-use.is-busy {
+  border-color: var(--eh-ui-panel-lo);
+  color: var(--eh-ui-text-dim);
+  font-weight: 400;
+}
+
+
+.eh-actionbar-chip.is-none {
+  color: var(--eh-ui-text-dim);
+  border-style: dashed;
+}
+
+.eh-actionbar-legend {
+  color: var(--eh-ui-text-dim);
+  letter-spacing: 0.02em;
+}
+
+.eh-actionbar-prompt {
+  display: none;
+  color: var(--eh-ui-accent);
+  font-weight: 700;
+}
+
+.eh-actionbar-prompt.is-visible {
+  display: block;
+}
+
+.eh-actionbar-btn {
+  pointer-events: auto;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.eh-toasts {
+  position: absolute;
+  right: 12px;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 320px;
+}
+
+.eh-toast {
+  padding: 6px 10px;
+  font-size: 11px;
+  text-align: right;
+  background: var(--eh-ui-panel-lo);
+  border: 2px solid var(--eh-ui-panel-border);
+  box-shadow: inset 2px 2px 0 0 var(--eh-ui-panel-hi);
+  color: var(--eh-ui-text);
+  text-shadow: var(--eh-ui-shadow);
+}
+
+.eh-farm-dialog .eh-dialog {
+  min-width: 380px;
+  max-width: min(560px, 92vw);
+}
+
+.eh-farm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eh-farm-line {
+  font-size: 12px;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-farm-total {
+  color: var(--eh-ui-accent);
+  font-weight: 700;
+}
+
+.eh-farm-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eh-ui-text-dim);
+  border-bottom: 2px solid var(--eh-ui-panel-lo);
+  padding-bottom: 3px;
+  margin-top: 4px;
+}
+
+.eh-farm-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.eh-farm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.eh-farm-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.eh-farm-item {
+  font-size: 12px;
+}
+
+.eh-farm-meta {
+  font-size: 11px;
+  color: var(--eh-ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The keyboard-driven barn row: a hard left rule, no rounding, so it reads as
+   "this is the row 1/2/3 act on" without a hover state to depend on. */
+.eh-animal-row.is-selected {
+  border-left: 3px solid var(--eh-ui-accent);
+  padding-left: 6px;
+  margin-left: -3px;
+}
+
+.eh-farm-keyhint {
+  font-size: 11px;
+  color: var(--eh-ui-text-dim);
+  white-space: nowrap;
+}
+
+.eh-farm-nav {
+  color: var(--eh-ui-text-dim);
+  font-size: 11px;
+}
+
+
+.eh-farm-product {
+  font-size: 11px;
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-farm-product.is-ready {
+  color: var(--eh-ui-accent);
+  font-weight: 700;
+}
+
+.eh-farm-status {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.eh-farm-status.is-busy {
+  color: var(--eh-ui-accent-2);
+}
+
+.eh-farm-status.is-ready {
+  color: var(--eh-ui-accent);
+  font-weight: 700;
+}
+
+.eh-farm-status.is-empty {
+  color: var(--eh-ui-text-dim);
+}
+
+.eh-farm-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eh-farm-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.eh-farm-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.eh-tutorial {
+  position: absolute;
+  left: 12px;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+  padding: 10px 12px;
+  background: var(--eh-ui-panel-bg);
+  border: 2px solid var(--eh-ui-panel-border);
+  box-shadow:
+    inset 2px 2px 0 0 var(--eh-ui-panel-hi),
+    inset -2px -2px 0 0 var(--eh-ui-panel-lo),
+    2px 2px 0 rgba(0, 0, 0, 0.5);
+  color: var(--eh-ui-text);
+  text-shadow: var(--eh-ui-shadow);
+}
+
+.eh-tutorial.is-hidden {
+  display: none;
+}
+
+.eh-tutorial-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.eh-tutorial-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.eh-tutorial-progress {
+  font-size: 11px;
+  color: var(--eh-ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eh-tutorial-body {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.eh-tutorial-skip {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+@media (max-width: 720px) {
+  .eh-actionbar {
+    font-size: 10px;
+  }
+
+  .eh-tutorial {
+    width: 200px;
+  }
+}

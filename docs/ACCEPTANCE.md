@@ -122,6 +122,77 @@ draw calls is trivial for any GPU; the 2–11fps is the CPU rasteriser, not the
 scene.
 
 
+## ADDENDUM C — A full playable day: PASS, VERIFIED IN A REAL BROWSER
+
+ADDENDUM B proved the game *looks* and *moves* right. It did not prove the game
+is playable, and it was not: with only walk, tool-swing, slot-select and
+open-a-panel bound to keys, a player could not ship a crop, eat, tend a machine
+or sleep, so **the game could not be played through a single day.** The sim for
+all of it already existed and was unit-tested; it was simply unreachable. The
+distinction matters — a green suite over unreachable code is exactly how a demo
+gets mistaken for a game.
+
+Harness: `npx vite-node scripts/day-loop.ts`. Every game action is a real
+`keyboard.press`; nothing dispatches a sim action directly, because that is the
+shortcut that hid the missing-`mapId` bug in T-0502. Growth is waited out over
+real in-game days, never fast-forwarded. `faceTile` is used only to line the
+camera up on a tile and is logged as `teleport-setup` wherever it is used; it
+can fake a stance but not an action.
+
+| Step | Result observed in Chromium |
+|------|------|
+| Hoe a grass tile | `Space` on bare grass at (4,6) → `placed.id=tilled` |
+| Plant a seed | slot 8 `parsnip-seed` → `placed.id=crop:parsnip` |
+| Water it | watering can → `data={"stage":0,"watered":true,…}` |
+| Sleep advances the day | day 1→2→3→4→5, clock reset to 06:00 each morning, on **every** night |
+| The crop actually grows | `stage` 0→1→2→3→4 over four watered nights |
+| Harvest by hand | ripe crop picked up with an empty hand |
+| Ship it | `X` on the parsnip → slot emptied (money is paid at day close, not on insert) |
+| Get paid | money **500 → 535** after the day closed — exactly the authored 35g parsnip price |
+| Crafting is reachable | `C` opened 1 crafting dialog listing **119** recipe rows |
+| A refused action explains itself | `G` on a hoe → toast **"That is not food. Cook something with C first."** |
+| Refusals name the item | `X` on a hoe → toast **"Basic Hoe cannot go in the shipping bin."** |
+| Contextual use explains itself | `Q` on bare grass → toast **"There is no machine there."** |
+| No console errors | 0 real game errors. The single `net::ERR_FAILED` is the Google Fonts stylesheet **the harness itself aborts**; verified by capturing `requestfailed` URLs, the only one is `fonts.googleapis.com/css2?family=Silkscreen`. Reported separately so a run cannot hide a real error behind a known-benign one |
+
+**11/11 verdicts, ALL GREEN.** `artifacts/dayloop-0*.png` are the screenshots.
+
+### What four "failures" in this script turned out to be
+
+Worth recording, because three of them were the *harness* being wrong and one
+was the *game* being right. Reporting any of them as a game bug would have been
+the easy mistake:
+
+- **`till` failed on six tiles in a row** — the probe picked any *walkable* tile,
+  but a hoe only bites grass (`code === 'g'`). Tilling a path is correctly
+  refused. The existing ADDENDUM B script already filtered on `code === 'g'`.
+- **`till` then failed on a genuine grass tile** — the stance was computed as
+  `plot + dir` instead of `plot - dir`, so the hoe was aimed two tiles away at
+  nothing. The sim was right; the arithmetic was wrong.
+- **"the crafting panel does not open"** — it opens, as
+  `.eh-crafting-dialog.is-open`. It carries **classes, not an `id`**, so an
+  `[id*=craft]` selector finds nothing. 119 recipes were listed all along.
+- **"eating shows no feedback"** — toasts live in `.eh-toast` and are mounted
+  **outside `#game-root`**, so scanning the HUD's textContent missed them. A
+  separate probe also showed the toast *does* appear. Related: a first attempt
+  at a "Q gives feedback" check reported a **false PASS** because the regex
+  matched the static hint bar ("Space = use tool") rather than a real refusal;
+  that check now reads `.eh-toast` only.
+- **the crop vanished overnight** — not a bug. `parsnip` has `waterNeed: 1`, and
+  the script watered once then slept six nights, so the sim correctly killed an
+  unattended field. The loop now waters every morning, as a player must. Calling
+  this a bug would have meant "fixing" correct behaviour.
+
+### Content quota, measured from the loaded content tree
+
+33 crops · 9 machines · 312 obtainable items · 34 fish · 5 animals · 119 recipes.
+Every item is sourced from something the player can actually obtain; no recipe is
+gated behind mining or combat, which do not exist yet.
+
+**Honest gap:** mining and combat XP are unreachable, so those two skills cannot
+level. No fake XP source was invented to make the number look better; M5 owns it.
+
+
 ## M4 — Life skills (pending)
 
 fish gated by season/time · animal buy/feed/product quality · machine processes ·
@@ -137,7 +208,7 @@ buff food changes stats · skill level unlocks recipe + profession at 5/10.
 | Buy an animal, feed it daily, hunger + heart growth, product quality from friendship | sim (PASS) | tests/sim/animals.test.ts (gold/cap/uid buying; fed morning goal + hunger/streak decay and the bond gate; product ready only once hearts >= 2 for a cared herd; quality tiers from happy+bond; feed/pet/deny; collect + reschedule; inventory-full keeps the animal ready; per-species products; sleep AND forced pass-out rollover, idempotent; save/load herd) |
 | Machine processes convert inputs over time (keg/preserves/etc.) | sim (PASS) | tests/sim/machines.test.ts (crafted machine placed on free walkable tile; insert one input bundle; 10-min countdown with `machines:finished`; collect output; every `machines:denied` branch incl. occupied/blocked/busy/not-ready; inventory-full keeps the machine loaded+ready; in-flight work survives save) |
 | Cooked food applies a timed stat buff when eaten | sim (PASS) | tests/sim/crafting.test.ts (always-known + unlock-gated recipes; atomic craft full-bag/missing-ingredients leaves the bag untouched; eat applies energy/health deltas capped at maxima; buff arming at expiresAt = now + hours and pruning on `time:tick`; non-food/empty-slot denials; active buffs survive save) |
-| Crafting menu lists known/locked recipes and crafts from the bag (browser panel: C key, sections, Craft buttons) | browser (deferred — logic PASS) | tests/ui-kit/crafting-ui.test.ts (row split by kind over real content; unlock gating flips with level-up; canCraft flips on short ingredients; have-counts drain after a craft; lock/ingredient/food/buff labels) |
+| Crafting menu lists known/locked recipes and crafts from the bag (browser panel: C key, sections, Craft buttons) | browser (PASS) | browser: `C` opened `.eh-crafting-dialog.is-open` listing 119 recipe rows over real content. Unit: tests/ui-kit/crafting-ui.test.ts (row split by kind over real content; unlock gating flips with level-up; canCraft flips on short ingredients; have-counts drain after a craft; lock/ingredient/food/buff labels) |
 | First-person voxel presentation: `V` camera toggle + block world over the same sim map, camera locked to the interaction target | sim+browser | browser: 424/424 BoxGeometry, flat-shaded, 16×16 nearest textures; camera dot vs facing 0.991–1.000 on all four directions with no pointer lock; reticle projected onto the real target. Unit: tests/view/voxel.test.ts, tests/view/look.test.ts, tests/view/face-action.test.ts, tests/view/blocks.test.ts |
 | Original procedural soundtrack: day/night/season/weather/biome + low-health themes change with context (browser listen — sim logic PASS) | sim (PASS) | tests/sim/music.test.ts (mood/time/weather/season resolution, home/cave/danger overrides, deterministic bars, audible notes in-scale, headless engine) |
 

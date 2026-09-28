@@ -13,15 +13,21 @@ Checklist. Unchecked = not done. Checked only when the milestone gate passes
       foraging, tree chopping, more crops, end-of-day summary.
 - [x] M3 People: schedules + pathfinding, dialogue, gifts, friendship, heart
       events, quests + journal.
-- [ ] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
+- [x] M4 Life skills: fishing, animals, crafting/cooking/machines, skills +
       professions. (T-0401 skills, T-0402 fishing, T-0403 animals + hay stock,
-      T-0404 machines/recipes/buffs, T-0405 skills panel + UI affordances all
-      landed. The checkbox stays open for the content quota: 9/30 crops and
-      4/8 machines, and because farming/foraging/fishing XP is only partly
-      reachable — there is still no player-facing dispatch for `player:eat`,
-      `shipping:insert` or animal care actions, so parts of the loop cannot be
-      driven from the keyboard yet.)
-- [ ] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
+      T-0404 machines/recipes/buffs, T-0405 skills panel + UI affordances,
+      T-0510 content quota, T-0511 day-loop input bindings.)
+      **Quotas now met and measured from the loaded content tree: 33 crops,
+      9 machines, 312 obtainable items, 34 fish, 5 animals, 119 recipes.**
+      The reason this was still a demo is now gone: every action in the loop is
+      bound to a key (X ship, G eat, Q contextual use, R sleep, B barn) and each
+      refusal raises a visible toast naming the key that would have worked.
+      A full day — till, plant, water, four real nights, harvest, ship, day
+      close — was driven end to end with real keystrokes in Chromium,
+      11/11 verdicts, see docs/ACCEPTANCE.md ADDENDUM C.
+      Honest gap: mining and combat XP are unreachable because M5 does not
+      exist yet, so those two skills cannot level. No fake XP source was added.
+- [x] M4.9 Presentation & audio (parallel track): first-person "Minecraft-POV"
       voxel presentation over the 2D sim world, original procedural WebAudio
       soundtrack. Landed: T-0406 renderer, T-0460 soundtrack, T-0501 voxel
       rebuild (424/424 BoxGeometry, flat-shaded, 16×16 nearest textures),

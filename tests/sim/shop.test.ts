@@ -108,11 +108,12 @@ describe('shopping (shop:sim)', () => {
   it('denies unknown goods and zero/negative quantities', async () => {
     const sim = await createSim();
     const denied = sim.capture<DeniedEvent>('shop:denied');
-    sim.buy('general-store', 'diamond', 1);
+    // rainbow-prism is a real item but this shop does not stock it.
+    sim.buy('general-store', 'rainbow-prism', 1);
     sim.buy('general-store', 'wood', 0);
     sim.buy('general-store', 'wood', -2);
     expect(denied).toEqual([
-      { reason: 'stock', shopId: 'general-store', itemId: 'diamond' },
+      { reason: 'stock', shopId: 'general-store', itemId: 'rainbow-prism' },
       { reason: 'stock', shopId: 'general-store', itemId: 'wood' },
       { reason: 'stock', shopId: 'general-store', itemId: 'wood' },
     ]);

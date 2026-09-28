@@ -70,14 +70,27 @@ describe('hud interaction hint', () => {
     const tile = { mapId: 'farm', x: 5, y: 5 };
     fx.dispatch('machines:place', { tile, itemId: 'mayonnaise-machine' });
 
-    expect(interactionHint(fx.state, fx.content, tile)).toEqual({ name: 'Mayonnaise Machine', action: 'load' });
+    expect(interactionHint(fx.state, fx.content, tile)).toEqual({
+      name: 'Mayonnaise Machine',
+      action: 'load',
+      detail: '',
+    });
 
     const eggSlot = fx.state.player.inventory.slots.findIndex((s) => s?.id === 'egg');
     fx.dispatch('machines:insert', { tile, slot: eggSlot });
-    expect(interactionHint(fx.state, fx.content, tile)).toEqual({ name: 'Mayonnaise Machine', action: 'busy' });
+    const busy = interactionHint(fx.state, fx.content, tile)!;
+    expect(busy.action).toBe('busy');
+    expect(busy.name).toBe('Mayonnaise Machine');
+    // T-0511: a working machine carries its remaining time, so the corner HUD
+    // can show a live countdown without opening a panel.
+    expect(busy.detail).toBe('3h');
 
     fx.tickMinutes(3 * 60);
-    expect(interactionHint(fx.state, fx.content, tile)).toEqual({ name: 'Mayonnaise Machine', action: 'collect' });
+    expect(interactionHint(fx.state, fx.content, tile)).toEqual({
+      name: 'Mayonnaise Machine',
+      action: 'collect',
+      detail: '',
+    });
   });
 
   it('computes the player-facing tile via the real interact route', async () => {
