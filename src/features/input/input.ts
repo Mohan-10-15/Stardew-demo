@@ -86,16 +86,33 @@ function ownerFlag(): { __EH_INPUT_OWNED__?: boolean } {
   return globalThis as unknown as { __EH_INPUT_OWNED__?: boolean };
 }
 
+/**
+ * One sim step. Movement is spent in slices of this size so the distance
+ * travelled depends on real seconds rather than on how many frames happened to
+ * be drawn.
+ */
+const FIXED_DT = 1 / 60;
+
+/** How often the movement timer samples the clock. 4ms keeps key-to-movement
+ *  latency at a few milliseconds even when the renderer is crawling. */
+const TICK_MS = 4;
+
+/** A stall longer than this (backgrounded tab) is dropped rather than fast
+ *  forwarded. Comfortably above any real frame time, so it never eats play. */
+const MAX_CATCHUP_S = 0.25;
+
 export function createInputUi(ctx: FeatureContext): UiHandle {
   const keyIndex = buildKeyIndex();
   const held = new Set<string>();
   const modifiers = new Set<string>();
 
-  let owned = false;
-  let running = false;
-  let rafId = 0;
-  let lastTime = 0;
-  let uiRoot: HTMLElement | null = null;
+let owned = false;
+let running = false;
+let timerId = 0;
+let lastTime = 0;
+/** Unconsumed real time, drained in FIXED_DT slices by `tick`. */
+let accumulator = 0;
+let uiRoot: HTMLElement | null = null;
 
   function hasDom(): boolean {
     return typeof document !== 'undefined' && typeof window !== 'undefined';
@@ -178,16 +195,52 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
     modifiers.clear();
   }
 
-  function frame(timestamp: number): void {
+  /**
+   * Movement runs on a fixed timestep driven by a timer, NOT by
+   * requestAnimationFrame, and the elapsed real time is accumulated rather than
+   * clamped away.
+   *
+   * Two defects came out of sampling movement per rendered frame:
+   *
+   *  - Latency. Input was only read once per frame, so on a machine rendering at
+   *    8fps a keypress waited ~265ms before the player moved. A person calls
+   *    that "WASD is broken"; the keys are fine, the sampling was not.
+   *  - Speed. `dt` was clamped to 0.1s per frame to protect the collision
+   *    sampler, but that sampler already sub-steps at MAX_STEP = 0.25 tiles and
+   *    cannot tunnel. So the clamp was redundant *and* it silently discarded
+   *    time: at 8fps every frame threw away 26ms, and holding a key for three
+   *    real seconds moved the player 2.87 tiles/sec against an authored 4 -
+   *    72% of the promised speed. The controls were lying.
+   *
+   * Accumulating real time and spending it in fixed slices makes distance a
+   *    function of real seconds at any frame rate, and a 4ms timer keeps the
+   *    keypress-to-movement latency at a few ms even when rendering crawls.
+   */
+  function tick(): void {
     if (!running || !owned) return;
-    const dt = lastTime === 0 ? 0 : Math.min(0.1, (timestamp - lastTime) / 1000);
-    lastTime = timestamp;
-    const dir = heldDir();
-    if (dir.dx !== 0 || dir.dy !== 0) {
-      const speed = JOG_UNITS_PER_SEC * (modifiers.has('shift') ? WALK_SPEED_MULT : 1);
-      ctx.store.dispatch({ type: 'player:walk', payload: { dx: dir.dx, dy: dir.dy, dt, speed } });
+    const now = performance.now();
+    if (lastTime === 0) {
+      // First tick after mount has no previous timestamp to measure from.
+      lastTime = now;
+      return;
     }
-    rafId = window.requestAnimationFrame(frame);
+    let elapsed = (now - lastTime) / 1000;
+    lastTime = now;
+    // Only a genuine stall (backgrounded tab, long GC pause) is discarded. This
+    // is far above any real frame time, so normal play never loses a step.
+    if (elapsed > MAX_CATCHUP_S) elapsed = MAX_CATCHUP_S;
+    accumulator += elapsed;
+
+    const dir = heldDir();
+    if (dir.dx === 0 && dir.dy === 0) {
+      accumulator = 0;
+      return;
+    }
+    const speed = JOG_UNITS_PER_SEC * (modifiers.has('shift') ? WALK_SPEED_MULT : 1);
+    while (accumulator >= FIXED_DT) {
+      accumulator -= FIXED_DT;
+      ctx.store.dispatch({ type: 'player:walk', payload: { dx: dir.dx, dy: dir.dy, dt: FIXED_DT, speed } });
+    }
   }
 
   function onClick(event: MouseEvent): void {
@@ -208,17 +261,20 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       window.addEventListener('blur', onBlur);
       document.addEventListener('click', onClick);
       lastTime = 0;
+      accumulator = 0;
       running = true;
-      rafId = window.requestAnimationFrame(frame);
+      timerId = window.setInterval(tick, TICK_MS);
     },
     dispose(): void {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('click', onClick);
-      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+      if (timerId !== 0) window.clearInterval(timerId);
       running = false;
-      rafId = 0;
+      timerId = 0;
+      lastTime = 0;
+      accumulator = 0;
       owned = false;
       uiRoot = null;
       ownerFlag().__EH_INPUT_OWNED__ = false;
