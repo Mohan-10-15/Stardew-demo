@@ -27,6 +27,359 @@
     "ingredients": [{ "itemId": "wood", "qty": 20 }, { "itemId": "stone", "qty": 12 }, { "itemId": "fiber", "qty": 5 }],
     "unlock": { "skill": "farming", "level": 2 }
   },
+  "butter-churn": {
+    "name": "Butter Churn",
+    "kind": "crafting",
+    "output": { "itemId": "butter-churn", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 12 }, { "itemId": "stone", "qty": 8 }, { "itemId": "clay-pot", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 2 }
+  },
+  "quern": {
+    "name": "Quern",
+    "kind": "crafting",
+    "output": { "itemId": "quern", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 10 }, { "itemId": "stone", "qty": 15 }, { "itemId": "clay", "qty": 4 }],
+    "unlock": { "skill": "farming", "level": 3 }
+  },
+  "preserves-jar": {
+    "name": "Preserves Jar",
+    "kind": "crafting",
+    "output": { "itemId": "preserves-jar", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 8 }, { "itemId": "clay", "qty": 6 }, { "itemId": "clay-pot", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 3 }
+  },
+  "keg": {
+    "name": "Keg",
+    "kind": "crafting",
+    "output": { "itemId": "keg", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 20 }, { "itemId": "stone", "qty": 12 }, { "itemId": "clay-brick", "qty": 4 }],
+    "unlock": { "skill": "fishing", "level": 7 }
+  },
+  "glass-furnace": {
+    "name": "Glass Furnace",
+    "kind": "crafting",
+    "output": { "itemId": "glass-furnace", "qty": 1 },
+    "ingredients": [{ "itemId": "stone", "qty": 25 }, { "itemId": "clay", "qty": 10 }, { "itemId": "coal", "qty": 5 }],
+    "unlock": { "skill": "farming", "level": 4 }
+  },
+  "rope": {
+    "name": "Rope",
+    "kind": "crafting",
+    "output": { "itemId": "rope", "qty": 1 },
+    "ingredients": [{ "itemId": "fiber", "qty": 4 }]
+  },
+  "torch": {
+    "name": "Torch",
+    "kind": "crafting",
+    "output": { "itemId": "torch", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 2 }, { "itemId": "sap", "qty": 1 }]
+  },
+  "paper": {
+    "name": "Paper",
+    "kind": "crafting",
+    "output": { "itemId": "paper", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 3 }, { "itemId": "sap", "qty": 1 }]
+  },
+  "sign": {
+    "name": "Sign",
+    "kind": "crafting",
+    "output": { "itemId": "sign", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 2 }, { "itemId": "twine", "qty": 1 }]
+  },
+  "cobblestone-path": {
+    "name": "Cobblestone Path",
+    "kind": "crafting",
+    "output": { "itemId": "cobblestone-path", "qty": 1 },
+    "ingredients": [{ "itemId": "stone", "qty": 1 }, { "itemId": "gravel", "qty": 1 }]
+  },
+  "wooden-fence": {
+    "name": "Wooden Fence",
+    "kind": "crafting",
+    "output": { "itemId": "wooden-fence", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 3 }]
+  },
+  "fire-starter": {
+    "name": "Fire Starter",
+    "kind": "crafting",
+    "output": { "itemId": "fire-starter", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 1 }, { "itemId": "resin", "qty": 1 }, { "itemId": "fiber", "qty": 2 }]
+  },
+  "dough": {
+    "name": "Dough",
+    "kind": "crafting",
+    "output": { "itemId": "dough", "qty": 1 },
+    "ingredients": [{ "itemId": "flour", "qty": 2 }, { "itemId": "egg", "qty": 1 }]
+  },
+  "clay-pot": {
+    "name": "Clay Pot",
+    "kind": "crafting",
+    "output": { "itemId": "clay-pot", "qty": 1 },
+    "ingredients": [{ "itemId": "clay", "qty": 3 }]
+  },
+  "copper-bar": {
+    "name": "Copper Bar",
+    "kind": "crafting",
+    "output": { "itemId": "copper-bar", "qty": 1 },
+    "ingredients": [{ "itemId": "copper-ore", "qty": 2 }, { "itemId": "coal", "qty": 1 }]
+  },
+  "iron-bar": {
+    "name": "Iron Bar",
+    "kind": "crafting",
+    "output": { "itemId": "iron-bar", "qty": 1 },
+    "ingredients": [{ "itemId": "iron-ore", "qty": 2 }, { "itemId": "coal", "qty": 1 }]
+  },
+  "lamp-oil": {
+    "name": "Lamp Oil",
+    "kind": "crafting",
+    "output": { "itemId": "lamp-oil", "qty": 1 },
+    "ingredients": [{ "itemId": "resin", "qty": 2 }, { "itemId": "coal", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 1 }
+  },
+  "polished-stone": {
+    "name": "Polished Stone",
+    "kind": "crafting",
+    "output": { "itemId": "polished-stone", "qty": 1 },
+    "ingredients": [{ "itemId": "stone", "qty": 2 }, { "itemId": "gravel", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 1 }
+  },
+  "clay-brick": {
+    "name": "Clay Brick",
+    "kind": "crafting",
+    "output": { "itemId": "clay-brick", "qty": 1 },
+    "ingredients": [{ "itemId": "clay", "qty": 2 }, { "itemId": "coal", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 1 }
+  },
+  "reinforced-rope": {
+    "name": "Reinforced Rope",
+    "kind": "crafting",
+    "output": { "itemId": "reinforced-rope", "qty": 1 },
+    "ingredients": [{ "itemId": "rope", "qty": 2 }, { "itemId": "resin", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 1 }
+  },
+  "gate": {
+    "name": "Gate",
+    "kind": "crafting",
+    "output": { "itemId": "gate", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 5 }, { "itemId": "rope", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 1 }
+  },
+  "mortar": {
+    "name": "Mortar",
+    "kind": "crafting",
+    "output": { "itemId": "mortar", "qty": 1 },
+    "ingredients": [{ "itemId": "clay", "qty": 1 }, { "itemId": "gravel", "qty": 1 }, { "itemId": "stone", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 2 }
+  },
+  "copper-pan": {
+    "name": "Copper Pan",
+    "kind": "crafting",
+    "output": { "itemId": "copper-pan", "qty": 1 },
+    "ingredients": [{ "itemId": "copper-bar", "qty": 1 }, { "itemId": "wood", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 2 }
+  },
+  "iron-bucket": {
+    "name": "Iron Bucket",
+    "kind": "crafting",
+    "output": { "itemId": "iron-bucket", "qty": 1 },
+    "ingredients": [{ "itemId": "iron-bar", "qty": 1 }, { "itemId": "wood", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 2 }
+  },
+  "moss-poultice": {
+    "name": "Moss Poultice",
+    "kind": "crafting",
+    "output": { "itemId": "moss-poultice", "qty": 1 },
+    "ingredients": [{ "itemId": "moss", "qty": 5 }, { "itemId": "sap", "qty": 2 }],
+    "unlock": { "skill": "foraging", "level": 3 }
+  },
+  "charcoal-filter": {
+    "name": "Charcoal Filter",
+    "kind": "crafting",
+    "output": { "itemId": "charcoal-filter", "qty": 1 },
+    "ingredients": [{ "itemId": "charcoal", "qty": 3 }, { "itemId": "gravel", "qty": 2 }],
+    "unlock": { "skill": "foraging", "level": 3 }
+  },
+  "scarecrow": {
+    "name": "Scarecrow",
+    "kind": "crafting",
+    "output": { "itemId": "scarecrow", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 5 }, { "itemId": "fiber", "qty": 10 }, { "itemId": "cloth", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 }
+  },
+  "campfire": {
+    "name": "Campfire",
+    "kind": "crafting",
+    "output": { "itemId": "campfire", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 10 }, { "itemId": "stone", "qty": 8 }, { "itemId": "coal", "qty": 2 }],
+    "unlock": { "skill": "farming", "level": 3 }
+  },
+  "copper-wire": {
+    "name": "Copper Wire",
+    "kind": "crafting",
+    "output": { "itemId": "copper-wire", "qty": 1 },
+    "ingredients": [{ "itemId": "copper-bar", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 }
+  },
+  "iron-grate": {
+    "name": "Iron Grate",
+    "kind": "crafting",
+    "output": { "itemId": "iron-grate", "qty": 1 },
+    "ingredients": [{ "itemId": "iron-bar", "qty": 1 }, { "itemId": "charcoal", "qty": 2 }],
+    "unlock": { "skill": "farming", "level": 4 }
+  },
+  "gold-bar": {
+    "name": "Gold Bar",
+    "kind": "crafting",
+    "output": { "itemId": "gold-bar", "qty": 1 },
+    "ingredients": [{ "itemId": "gold-ore", "qty": 2 }, { "itemId": "coal", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 4 }
+  },
+  "stone-basin": {
+    "name": "Stone Basin",
+    "kind": "crafting",
+    "output": { "itemId": "stone-basin", "qty": 1 },
+    "ingredients": [{ "itemId": "polished-stone", "qty": 2 }, { "itemId": "clay-brick", "qty": 1 }, { "itemId": "marble", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 3 }
+  },
+  "sprinkler": {
+    "name": "Sprinkler",
+    "kind": "crafting",
+    "output": { "itemId": "sprinkler", "qty": 1 },
+    "ingredients": [{ "itemId": "copper-bar", "qty": 1 }, { "itemId": "iron-bar", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 }
+  },
+  "wooden-crate": {
+    "name": "Wooden Crate",
+    "kind": "crafting",
+    "output": { "itemId": "wooden-crate", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 8 }, { "itemId": "rope", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 }
+  },
+  "storage-chest": {
+    "name": "Storage Chest",
+    "kind": "crafting",
+    "output": { "itemId": "storage-chest", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 20 }, { "itemId": "iron-bar", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 }
+  },
+  "quality-sprinkler": {
+    "name": "Quality Sprinkler",
+    "kind": "crafting",
+    "output": { "itemId": "quality-sprinkler", "qty": 1 },
+    "ingredients": [{ "itemId": "gold-bar", "qty": 1 }, { "itemId": "iron-bar", "qty": 2 }, { "itemId": "refined-quartz", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 6 }
+  },
+  "gold-filings": {
+    "name": "Gold Filings",
+    "kind": "crafting",
+    "output": { "itemId": "gold-filings", "qty": 1 },
+    "ingredients": [{ "itemId": "gold-bar", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 6 }
+  },
+  "bookshelf": {
+    "name": "Bookshelf",
+    "kind": "crafting",
+    "output": { "itemId": "bookshelf", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 18 }, { "itemId": "paper", "qty": 6 }],
+    "unlock": { "skill": "farming", "level": 6 }
+  },
+  "table": {
+    "name": "Table",
+    "kind": "crafting",
+    "output": { "itemId": "table", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 12 }, { "itemId": "cloth", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 7 }
+  },
+  "chair": {
+    "name": "Chair",
+    "kind": "crafting",
+    "output": { "itemId": "chair", "qty": 1 },
+    "ingredients": [{ "itemId": "wood", "qty": 8 }, { "itemId": "fiber", "qty": 6 }],
+    "unlock": { "skill": "farming", "level": 7 }
+  },
+  "rug": {
+    "name": "Rug",
+    "kind": "crafting",
+    "output": { "itemId": "rug", "qty": 1 },
+    "ingredients": [{ "itemId": "cloth", "qty": 3 }, { "itemId": "fiber", "qty": 20 }],
+    "unlock": { "skill": "farming", "level": 7 }
+  },
+  "banner": {
+    "name": "Banner",
+    "kind": "crafting",
+    "output": { "itemId": "banner", "qty": 1 },
+    "ingredients": [{ "itemId": "cloth", "qty": 2 }, { "itemId": "wood", "qty": 2 }, { "itemId": "twine", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 7 }
+  },
+  "book": {
+    "name": "Book",
+    "kind": "crafting",
+    "output": { "itemId": "book", "qty": 1 },
+    "ingredients": [{ "itemId": "paper", "qty": 2 }, { "itemId": "fiber", "qty": 4 }, { "itemId": "twine", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 7 }
+  },
+  "lantern": {
+    "name": "Lantern",
+    "kind": "crafting",
+    "output": { "itemId": "lantern", "qty": 1 },
+    "ingredients": [{ "itemId": "glass", "qty": 1 }, { "itemId": "iron-bar", "qty": 1 }, { "itemId": "coal", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 5 }
+  },
+  "sundial": {
+    "name": "Sundial",
+    "kind": "crafting",
+    "output": { "itemId": "sundial", "qty": 1 },
+    "ingredients": [{ "itemId": "copper-bar", "qty": 1 }, { "itemId": "glass", "qty": 1 }, { "itemId": "refined-quartz", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 8 }
+  },
+  "storm-lantern": {
+    "name": "Storm Lantern",
+    "kind": "crafting",
+    "output": { "itemId": "storm-lantern", "qty": 1 },
+    "ingredients": [{ "itemId": "lantern", "qty": 1 }, { "itemId": "gold-bar", "qty": 1 }, { "itemId": "refined-quartz", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 8 }
+  },
+  "flour-sack": {
+    "name": "Flour Sack",
+    "kind": "crafting",
+    "output": { "itemId": "flour-sack", "qty": 1 },
+    "ingredients": [{ "itemId": "flour", "qty": 3 }, { "itemId": "cloth", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 8 }
+  },
+  "gold-charm": {
+    "name": "Gold Charm",
+    "kind": "crafting",
+    "output": { "itemId": "gold-charm", "qty": 1 },
+    "ingredients": [{ "itemId": "gold-bar", "qty": 1 }, { "itemId": "refined-quartz", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 9 }
+  },
+  "ember-glass": {
+    "name": "Ember Glass",
+    "kind": "crafting",
+    "output": { "itemId": "ember-glass", "qty": 1 },
+    "ingredients": [{ "itemId": "glass", "qty": 2 }, { "itemId": "charcoal", "qty": 1 }, { "itemId": "resin", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 9 }
+  },
+  "glass-lens": {
+    "name": "Glass Lens",
+    "kind": "crafting",
+    "output": { "itemId": "glass-lens", "qty": 1 },
+    "ingredients": [{ "itemId": "glass", "qty": 2 }, { "itemId": "refined-quartz", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 6 }
+  },
+  "herbal-tincture": {
+    "name": "Herbal Tincture",
+    "kind": "crafting",
+    "output": { "itemId": "herbal-tincture", "qty": 1 },
+    "ingredients": [{ "itemId": "wild-mint", "qty": 3 }, { "itemId": "glowcap", "qty": 1 }, { "itemId": "resin", "qty": 2 }],
+    "unlock": { "skill": "foraging", "level": 5 }
+  },
+  "surveyors-chain": {
+    "name": "Surveyor's Chain",
+    "kind": "crafting",
+    "output": { "itemId": "surveyors-chain", "qty": 1 },
+    "ingredients": [{ "itemId": "iron-bar", "qty": 1 }, { "itemId": "copper-wire", "qty": 1 }, { "itemId": "rope", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 4 }
+  },
   "fried-egg": {
     "name": "Fried Egg",
     "kind": "cooking",
@@ -48,5 +401,459 @@
     "output": { "itemId": "ember-bloom-tea", "qty": 1 },
     "ingredients": [{ "itemId": "ember-bloom", "qty": 1 }, { "itemId": "fiber", "qty": 3 }],
     "food": { "energy": 15, "health": 6, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  },
+  "roasted-parsnip": {
+    "name": "Roasted Parsnip",
+    "kind": "cooking",
+    "output": { "itemId": "roasted-parsnip", "qty": 1 },
+    "ingredients": [{ "itemId": "parsnip", "qty": 1 }],
+    "food": { "energy": 25, "health": 10, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "mashed-potato": {
+    "name": "Mashed Potato",
+    "kind": "cooking",
+    "output": { "itemId": "mashed-potato", "qty": 1 },
+    "ingredients": [{ "itemId": "potato", "qty": 2 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 2 },
+    "food": { "energy": 40, "health": 14, "buffs": [{ "stat": "max-energy", "amount": 2, "hours": 4 }] }
+  },
+  "garlic-butter-toast": {
+    "name": "Garlic Butter Toast",
+    "kind": "cooking",
+    "output": { "itemId": "garlic-butter-toast", "qty": 1 },
+    "ingredients": [{ "itemId": "dough", "qty": 1 }, { "itemId": "garlic", "qty": 1 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 35, "health": 12, "buffs": [{ "stat": "energy", "amount": 5, "hours": 4 }] }
+  },
+  "cauliflower-cheese": {
+    "name": "Cauliflower Cheese",
+    "kind": "cooking",
+    "output": { "itemId": "cauliflower-cheese", "qty": 1 },
+    "ingredients": [{ "itemId": "cauliflower", "qty": 1 }, { "itemId": "cheese", "qty": 1 }, { "itemId": "milk", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 4 },
+    "food": { "energy": 55, "health": 22, "buffs": [{ "stat": "farming", "amount": 1, "hours": 4 }] }
+  },
+  "strawberry-shortcake": {
+    "name": "Strawberry Shortcake",
+    "kind": "cooking",
+    "output": { "itemId": "strawberry-shortcake", "qty": 1 },
+    "ingredients": [{ "itemId": "strawberry", "qty": 3 }, { "itemId": "flour", "qty": 1 }, { "itemId": "egg", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 50, "health": 18, "buffs": [{ "stat": "luck", "amount": 1, "hours": 4 }] }
+  },
+  "green-bean-casserole": {
+    "name": "Green Bean Casserole",
+    "kind": "cooking",
+    "output": { "itemId": "green-bean-casserole", "qty": 1 },
+    "ingredients": [{ "itemId": "green-bean", "qty": 2 }, { "itemId": "mayonnaise", "qty": 1 }, { "itemId": "cheese", "qty": 1 }],
+    "food": { "energy": 42, "health": 16, "buffs": [{ "stat": "health", "amount": 3, "hours": 5 }] }
+  },
+  "turnip-soup": {
+    "name": "Turnip Soup",
+    "kind": "cooking",
+    "output": { "itemId": "turnip-soup", "qty": 1 },
+    "ingredients": [{ "itemId": "turnip", "qty": 2 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 38, "health": 14, "buffs": [{ "stat": "health", "amount": 4, "hours": 4 }] }
+  },
+  "ember-root-soup": {
+    "name": "Ember Root Soup",
+    "kind": "cooking",
+    "output": { "itemId": "ember-root-soup", "qty": 1 },
+    "ingredients": [{ "itemId": "ember-root", "qty": 2 }, { "itemId": "wood", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 45, "health": 16, "buffs": [{ "stat": "mining", "amount": 1, "hours": 4 }] }
+  },
+  "onion-rings": {
+    "name": "Onion Rings",
+    "kind": "cooking",
+    "output": { "itemId": "onion-rings", "qty": 1 },
+    "ingredients": [{ "itemId": "hollow-onion", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 40, "health": 12, "buffs": [{ "stat": "health", "amount": 2, "hours": 4 }] }
+  },
+  "garden-salad": {
+    "name": "Garden Salad",
+    "kind": "cooking",
+    "output": { "itemId": "garden-salad", "qty": 1 },
+    "ingredients": [{ "itemId": "lettuce", "qty": 1 }, { "itemId": "tomato", "qty": 1 }, { "itemId": "spring-onion", "qty": 1 }, { "itemId": "mayonnaise", "qty": 1 }],
+    "food": { "energy": 32, "health": 14, "buffs": [{ "stat": "health", "amount": 3, "hours": 5 }] }
+  },
+  "snap-pea-stew": {
+    "name": "Snap Pea Stew",
+    "kind": "cooking",
+    "output": { "itemId": "snap-pea-stew", "qty": 1 },
+    "ingredients": [{ "itemId": "snap-pea", "qty": 3 }, { "itemId": "potato", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 42, "health": 15, "buffs": [{ "stat": "farming", "amount": 1, "hours": 3 }] }
+  },
+  "spring-melon-sorbet": {
+    "name": "Spring Melon Sorbet",
+    "kind": "cooking",
+    "output": { "itemId": "spring-melon-sorbet", "qty": 1 },
+    "ingredients": [{ "itemId": "spring-melon", "qty": 1 }, { "itemId": "wild-mint", "qty": 1 }],
+    "food": { "energy": 34, "health": 12, "buffs": [{ "stat": "speed", "amount": 2, "hours": 3 }] }
+  },
+  "blueberry-pancakes": {
+    "name": "Blueberry Pancakes",
+    "kind": "cooking",
+    "output": { "itemId": "blueberry-pancakes", "qty": 1 },
+    "ingredients": [{ "itemId": "blueberry", "qty": 3 }, { "itemId": "flour", "qty": 2 }, { "itemId": "egg", "qty": 1 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 58, "health": 20, "buffs": [{ "stat": "energy", "amount": 8, "hours": 4 }] }
+  },
+  "tomato-soup": {
+    "name": "Tomato Soup",
+    "kind": "cooking",
+    "output": { "itemId": "tomato-soup", "qty": 1 },
+    "ingredients": [{ "itemId": "tomato", "qty": 3 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 45, "health": 18, "buffs": [{ "stat": "farming", "amount": 1, "hours": 3 }] }
+  },
+  "hot-sauce": {
+    "name": "Ember Hot Sauce",
+    "kind": "cooking",
+    "output": { "itemId": "hot-sauce", "qty": 1 },
+    "ingredients": [{ "itemId": "hot-pepper", "qty": 3 }, { "itemId": "salt", "qty": 1 }, { "itemId": "resin", "qty": 1 }],
+    "food": { "energy": 30, "health": 10, "buffs": [{ "stat": "combat", "amount": 1, "hours": 3 }] }
+  },
+  "okra-fritters": {
+    "name": "Okra Fritters",
+    "kind": "cooking",
+    "output": { "itemId": "okra-fritters", "qty": 1 },
+    "ingredients": [{ "itemId": "okra", "qty": 2 }, { "itemId": "egg", "qty": 1 }, { "itemId": "flour", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 44, "health": 15, "buffs": [{ "stat": "health", "amount": 2, "hours": 4 }] }
+  },
+  "ember-corn-roast": {
+    "name": "Ember Corn Roast",
+    "kind": "cooking",
+    "output": { "itemId": "ember-corn-roast", "qty": 1 },
+    "ingredients": [{ "itemId": "sun-corn", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 48, "health": 16, "buffs": [{ "stat": "mining", "amount": 1, "hours": 4 }] }
+  },
+  "roasted-sunflower-seeds": {
+    "name": "Roasted Sunflower Seeds",
+    "kind": "cooking",
+    "output": { "itemId": "roasted-sunflower-seeds", "qty": 1 },
+    "ingredients": [{ "itemId": "sunflower", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 28, "health": 10, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  },
+  "watermelon-bowl": {
+    "name": "Watermelon Bowl",
+    "kind": "cooking",
+    "output": { "itemId": "watermelon-bowl", "qty": 1 },
+    "ingredients": [{ "itemId": "watermelon", "qty": 2 }],
+    "food": { "energy": 36, "health": 16, "buffs": [{ "stat": "health", "amount": 3, "hours": 4 }] }
+  },
+  "ember-melon-tart": {
+    "name": "Ember Melon Tart",
+    "kind": "cooking",
+    "output": { "itemId": "ember-melon-tart", "qty": 1 },
+    "ingredients": [{ "itemId": "ember-melon", "qty": 1 }, { "itemId": "flour", "qty": 2 }, { "itemId": "egg", "qty": 1 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 },
+    "food": { "energy": 62, "health": 24, "buffs": [{ "stat": "max-energy", "amount": 4, "hours": 6 }] }
+  },
+  "mushroom-skewer": {
+    "name": "Mushroom Skewer",
+    "kind": "cooking",
+    "output": { "itemId": "mushroom-skewer", "qty": 1 },
+    "ingredients": [{ "itemId": "common-mushroom", "qty": 2 }, { "itemId": "morel", "qty": 1 }, { "itemId": "wild-mint", "qty": 1 }],
+    "food": { "energy": 46, "health": 16, "buffs": [{ "stat": "foraging", "amount": 1, "hours": 3 }] }
+  },
+  "dandelion-salad": {
+    "name": "Dandelion Salad",
+    "kind": "cooking",
+    "output": { "itemId": "dandelion-salad", "qty": 1 },
+    "ingredients": [{ "itemId": "dandelion", "qty": 3 }, { "itemId": "tomato", "qty": 1 }, { "itemId": "mayonnaise", "qty": 1 }],
+    "food": { "energy": 34, "health": 12, "buffs": [{ "stat": "foraging", "amount": 1, "hours": 3 }] }
+  },
+  "mint-tea": {
+    "name": "Wild Mint Tea",
+    "kind": "cooking",
+    "output": { "itemId": "mint-tea", "qty": 1 },
+    "ingredients": [{ "itemId": "wild-mint", "qty": 2 }, { "itemId": "sap", "qty": 1 }],
+    "food": { "energy": 24, "health": 9, "buffs": [{ "stat": "speed", "amount": 1, "hours": 3 }] }
+  },
+  "ember-cap-stew": {
+    "name": "Ember Cap Stew",
+    "kind": "cooking",
+    "output": { "itemId": "ember-cap-stew", "qty": 1 },
+    "ingredients": [{ "itemId": "ember-cap", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 5 },
+    "food": { "energy": 60, "health": 22, "buffs": [{ "stat": "mining", "amount": 2, "hours": 4 }] }
+  },
+  "chanterelle-saute": {
+    "name": "Chanterelle Saute",
+    "kind": "cooking",
+    "output": { "itemId": "chanterelle-saute", "qty": 1 },
+    "ingredients": [{ "itemId": "chanterelle", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 50, "health": 18, "buffs": [{ "stat": "foraging", "amount": 1, "hours": 3 }] }
+  },
+  "bramble-crumble": {
+    "name": "Bramble Crumble",
+    "kind": "cooking",
+    "output": { "itemId": "bramble-crumble", "qty": 1 },
+    "ingredients": [{ "itemId": "bramble-berry", "qty": 3 }, { "itemId": "flour", "qty": 2 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 52, "health": 19, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  },
+  "heath-lily-salad": {
+    "name": "Heath Lily Salad",
+    "kind": "cooking",
+    "output": { "itemId": "heath-lily-salad", "qty": 1 },
+    "ingredients": [{ "itemId": "heath-lily", "qty": 2 }, { "itemId": "lettuce", "qty": 1 }, { "itemId": "tomato", "qty": 1 }],
+    "food": { "energy": 38, "health": 14, "buffs": [{ "stat": "foraging", "amount": 1, "hours": 3 }] }
+  },
+  "sunberry-glaze": {
+    "name": "Sunberry Glaze",
+    "kind": "cooking",
+    "output": { "itemId": "sunberry-glaze", "qty": 1 },
+    "ingredients": [{ "itemId": "sun-berry", "qty": 2 }, { "itemId": "resin", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 32, "health": 12, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  },
+  "huckleberry-pie": {
+    "name": "Huckleberry Pie",
+    "kind": "cooking",
+    "output": { "itemId": "huckleberry-pie", "qty": 1 },
+    "ingredients": [{ "itemId": "huckleberry", "qty": 3 }, { "itemId": "flour", "qty": 2 }, { "itemId": "egg", "qty": 1 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 },
+    "food": { "energy": 58, "health": 20, "buffs": [{ "stat": "luck", "amount": 2, "hours": 4 }] }
+  },
+  "crab-apple-sauce": {
+    "name": "Crab Apple Sauce",
+    "kind": "cooking",
+    "output": { "itemId": "crab-apple-sauce", "qty": 1 },
+    "ingredients": [{ "itemId": "crab-apple", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "resin", "qty": 1 }],
+    "food": { "energy": 40, "health": 14, "buffs": [{ "stat": "health", "amount": 3, "hours": 4 }] }
+  },
+  "frostberry-slush": {
+    "name": "Frostberry Slush",
+    "kind": "cooking",
+    "output": { "itemId": "frostberry-slush", "qty": 1 },
+    "ingredients": [{ "itemId": "frost-berry", "qty": 2 }, { "itemId": "ice-fish", "qty": 1 }],
+    "food": { "energy": 44, "health": 15, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "elderberry-tart": {
+    "name": "Elderberry Tart",
+    "kind": "cooking",
+    "output": { "itemId": "elderberry-tart", "qty": 1 },
+    "ingredients": [{ "itemId": "elderberry", "qty": 3 }, { "itemId": "flour", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "egg", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 },
+    "food": { "energy": 60, "health": 22, "buffs": [{ "stat": "foraging", "amount": 2, "hours": 4 }] }
+  },
+  "autumn-gourd-stew": {
+    "name": "Autumn Gourd Stew",
+    "kind": "cooking",
+    "output": { "itemId": "autumn-gourd-stew", "qty": 1 },
+    "ingredients": [{ "itemId": "autumn-gourd", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "goat-milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 5 },
+    "food": { "energy": 58, "health": 22, "buffs": [{ "stat": "max-energy", "amount": 3, "hours": 5 }] }
+  },
+  "hollow-pumpkin-pie": {
+    "name": "Hollow Pumpkin Pie",
+    "kind": "cooking",
+    "output": { "itemId": "hollow-pumpkin-pie", "qty": 1 },
+    "ingredients": [{ "itemId": "hollow-pumpkin", "qty": 1 }, { "itemId": "flour", "qty": 2 }, { "itemId": "egg", "qty": 2 }, { "itemId": "butter", "qty": 2 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 6 },
+    "food": { "energy": 75, "health": 28, "buffs": [{ "stat": "max-energy", "amount": 5, "hours": 6 }] }
+  },
+  "winter-root-bake": {
+    "name": "Winter Root Bake",
+    "kind": "cooking",
+    "output": { "itemId": "winter-root-bake", "qty": 1 },
+    "ingredients": [{ "itemId": "winter-root", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 48, "health": 17, "buffs": [{ "stat": "mining", "amount": 1, "hours": 4 }] }
+  },
+  "bramble-toast": {
+    "name": "Bramble Toast",
+    "kind": "cooking",
+    "output": { "itemId": "bramble-toast", "qty": 1 },
+    "ingredients": [{ "itemId": "blackberry", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "egg", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 46, "health": 16, "buffs": [{ "stat": "foraging", "amount": 1, "hours": 3 }] }
+  },
+  "snow-lily-ice": {
+    "name": "Snow Lily Ice",
+    "kind": "cooking",
+    "output": { "itemId": "snow-lily-ice", "qty": 1 },
+    "ingredients": [{ "itemId": "snow-lily", "qty": 1 }, { "itemId": "ice-berry", "qty": 2 }, { "itemId": "snow-perch", "qty": 1 }],
+    "food": { "energy": 50, "health": 18, "buffs": [{ "stat": "luck", "amount": 2, "hours": 4 }] }
+  },
+  "winter-wheat-flatbread": {
+    "name": "Winter Wheat Flatbread",
+    "kind": "cooking",
+    "output": { "itemId": "winter-wheat-flatbread", "qty": 1 },
+    "ingredients": [{ "itemId": "winter-wheat", "qty": 2 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 42, "health": 13, "buffs": [{ "stat": "max-energy", "amount": 2, "hours": 4 }] }
+  },
+  "crystal-root-candy": {
+    "name": "Crystal Root Candy",
+    "kind": "cooking",
+    "output": { "itemId": "crystal-root-candy", "qty": 1 },
+    "ingredients": [{ "itemId": "crystal-root", "qty": 1 }, { "itemId": "resin", "qty": 2 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 6 },
+    "food": { "energy": 66, "health": 24, "buffs": [{ "stat": "luck", "amount": 3, "hours": 5 }] }
+  },
+  "anchovy-fry": {
+    "name": "Anchovy Fry",
+    "kind": "cooking",
+    "output": { "itemId": "anchovy-fry", "qty": 1 },
+    "ingredients": [{ "itemId": "anchovy", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 1 },
+    "food": { "energy": 44, "health": 14, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "sardine-pie": {
+    "name": "Sardine Pie",
+    "kind": "cooking",
+    "output": { "itemId": "sardine-pie", "qty": 1 },
+    "ingredients": [{ "itemId": "sardine", "qty": 2 }, { "itemId": "potato", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 1 },
+    "food": { "energy": 48, "health": 16, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "fish-and-chips": {
+    "name": "Fish and Chips",
+    "kind": "cooking",
+    "output": { "itemId": "fish-and-chips", "qty": 1 },
+    "ingredients": [{ "itemId": "cod", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 2 },
+    "food": { "energy": 62, "health": 22, "buffs": [{ "stat": "energy", "amount": 6, "hours": 4 }] }
+  },
+  "river-perch-skewer": {
+    "name": "River Perch Skewer",
+    "kind": "cooking",
+    "output": { "itemId": "river-perch-skewer", "qty": 1 },
+    "ingredients": [{ "itemId": "river-perch", "qty": 1 }, { "itemId": "snap-pea", "qty": 1 }, { "itemId": "wild-mint", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 50, "health": 17, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "sturgeon-steak": {
+    "name": "Sturgeon Steak",
+    "kind": "cooking",
+    "output": { "itemId": "sturgeon-steak", "qty": 1 },
+    "ingredients": [{ "itemId": "sturgeon", "qty": 1 }, { "itemId": "butter", "qty": 1 }, { "itemId": "potato", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 5 },
+    "food": { "energy": 80, "health": 30, "buffs": [{ "stat": "mining", "amount": 2, "hours": 4 }] }
+  },
+  "salmon-soup": {
+    "name": "Salmon Soup",
+    "kind": "cooking",
+    "output": { "itemId": "salmon-soup", "qty": 1 },
+    "ingredients": [{ "itemId": "salmon", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 2 },
+    "food": { "energy": 58, "health": 20, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 4 }] }
+  },
+  "trout-jerky": {
+    "name": "Trout Jerky",
+    "kind": "cooking",
+    "output": { "itemId": "trout-jerky", "qty": 1 },
+    "ingredients": [{ "itemId": "trout", "qty": 2 }, { "itemId": "salt", "qty": 1 }, { "itemId": "resin", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 3 },
+    "food": { "energy": 60, "health": 20, "buffs": [{ "stat": "max-energy", "amount": 3, "hours": 4 }] }
+  },
+  "seared-tuna": {
+    "name": "Seared Tuna",
+    "kind": "cooking",
+    "output": { "itemId": "seared-tuna", "qty": 1 },
+    "ingredients": [{ "itemId": "tuna", "qty": 1 }, { "itemId": "salt", "qty": 1 }, { "itemId": "wild-mint", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 5 },
+    "food": { "energy": 68, "health": 24, "buffs": [{ "stat": "speed", "amount": 3, "hours": 4 }] }
+  },
+  "winter-broth": {
+    "name": "Winter Broth",
+    "kind": "cooking",
+    "output": { "itemId": "winter-broth", "qty": 1 },
+    "ingredients": [{ "itemId": "walleye", "qty": 1 }, { "itemId": "winter-root", "qty": 1 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 2 },
+    "food": { "energy": 56, "health": 20, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 4 }] }
+  },
+  "egg-mayo-roll": {
+    "name": "Egg and Mayo Roll",
+    "kind": "cooking",
+    "output": { "itemId": "egg-mayo-roll", "qty": 1 },
+    "ingredients": [{ "itemId": "mayonnaise", "qty": 1 }, { "itemId": "egg", "qty": 1 }, { "itemId": "cheese", "qty": 1 }, { "itemId": "flour", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 52, "health": 18, "buffs": [{ "stat": "health", "amount": 3, "hours": 4 }] }
+  },
+  "duck-egg-custard": {
+    "name": "Duck Egg Custard",
+    "kind": "cooking",
+    "output": { "itemId": "duck-egg-custard", "qty": 1 },
+    "ingredients": [{ "itemId": "duck-egg", "qty": 2 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 50, "health": 18, "buffs": [{ "stat": "luck", "amount": 1, "hours": 3 }] }
+  },
+  "goat-cheese-toast": {
+    "name": "Goat Cheese Toast",
+    "kind": "cooking",
+    "output": { "itemId": "goat-cheese-toast", "qty": 1 },
+    "ingredients": [{ "itemId": "cheese", "qty": 1 }, { "itemId": "flour", "qty": 1 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 3 },
+    "food": { "energy": 56, "health": 19, "buffs": [{ "stat": "health", "amount": 4, "hours": 4 }] }
+  },
+  "minnow-fritters": {
+    "name": "Minnow Fritters",
+    "kind": "cooking",
+    "output": { "itemId": "minnow-fritters", "qty": 1 },
+    "ingredients": [{ "itemId": "minnow", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "egg", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "food": { "energy": 40, "health": 13, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 2 }] }
+  },
+  "catfish-chowder": {
+    "name": "Catfish Chowder",
+    "kind": "cooking",
+    "output": { "itemId": "catfish-chowder", "qty": 1 },
+    "ingredients": [{ "itemId": "catfish", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 3 },
+    "food": { "energy": 60, "health": 21, "buffs": [{ "stat": "fishing", "amount": 2, "hours": 3 }] }
+  },
+  "brook-trout-cakes": {
+    "name": "Brook Trout Cakes",
+    "kind": "cooking",
+    "output": { "itemId": "brook-trout-cakes", "qty": 1 },
+    "ingredients": [{ "itemId": "brook-trout", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "egg", "qty": 1 }, { "itemId": "butter", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 2 },
+    "food": { "energy": 62, "health": 21, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 4 }] }
+  },
+  "ice-fish-croquettes": {
+    "name": "Ice Fish Croquettes",
+    "kind": "cooking",
+    "output": { "itemId": "ice-fish-croquettes", "qty": 1 },
+    "ingredients": [{ "itemId": "ice-fish", "qty": 2 }, { "itemId": "potato", "qty": 1 }, { "itemId": "flour", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 2 },
+    "food": { "energy": 58, "health": 20, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "morel-saute": {
+    "name": "Morel Saute",
+    "kind": "cooking",
+    "output": { "itemId": "morel-saute", "qty": 1 },
+    "ingredients": [{ "itemId": "morel", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "garlic", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "foraging", "level": 3 },
+    "food": { "energy": 66, "health": 24, "buffs": [{ "stat": "foraging", "amount": 2, "hours": 4 }] }
+  },
+  "spice-pod-curry": {
+    "name": "Spice Pod Curry",
+    "kind": "cooking",
+    "output": { "itemId": "spice-pod-curry", "qty": 1 },
+    "ingredients": [{ "itemId": "spice-pod", "qty": 2 }, { "itemId": "potato", "qty": 2 }, { "itemId": "butter", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "farming", "level": 4 },
+    "food": { "energy": 64, "health": 22, "buffs": [{ "stat": "combat", "amount": 2, "hours": 4 }] }
+  },
+  "halibut-cakes": {
+    "name": "Halibut Cakes",
+    "kind": "cooking",
+    "output": { "itemId": "halibut-cakes", "qty": 1 },
+    "ingredients": [{ "itemId": "halibut", "qty": 2 }, { "itemId": "flour", "qty": 1 }, { "itemId": "egg", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 1 },
+    "food": { "energy": 50, "health": 17, "buffs": [{ "stat": "fishing", "amount": 1, "hours": 3 }] }
+  },
+  "pike-stew": {
+    "name": "Pike Stew",
+    "kind": "cooking",
+    "output": { "itemId": "pike-stew", "qty": 1 },
+    "ingredients": [{ "itemId": "pike", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "wild-mint", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 3 },
+    "food": { "energy": 60, "health": 20, "buffs": [{ "stat": "combat", "amount": 1, "hours": 3 }] }
+  },
+  "midnight-carp-stew": {
+    "name": "Midnight Carp Stew",
+    "kind": "cooking",
+    "output": { "itemId": "midnight-carp-stew", "qty": 1 },
+    "ingredients": [{ "itemId": "midnight-carp", "qty": 1 }, { "itemId": "potato", "qty": 2 }, { "itemId": "milk", "qty": 1 }, { "itemId": "salt", "qty": 1 }],
+    "unlock": { "skill": "fishing", "level": 5 },
+    "food": { "energy": 68, "health": 24, "buffs": [{ "stat": "luck", "amount": 2, "hours": 4 }] }
   }
 }

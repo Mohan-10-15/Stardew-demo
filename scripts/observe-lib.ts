@@ -132,7 +132,11 @@ export async function observe(
   page.on('console', (m) => lines.push({ type: m.type(), text: m.text() }));
   page.on('pageerror', (e) => lines.push({ type: 'pageerror', text: e.message }));
   await page.addInitScript(PAGE_TAP);
-  await page.goto(url, { waitUntil: 'load' });
+  // The page pulls the pixel font from Google Fonts. Offline that request hangs
+  // for ~25s and the `load` event never fires in time, so the font is cut and
+  // readiness is judged on the dev hook instead of on `load`.
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   let booted = false;
   try {
     await page.waitForFunction(() => Boolean((window as WindowWithHook).__EH__), undefined, {

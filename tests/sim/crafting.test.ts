@@ -112,7 +112,41 @@ describe('cooking and eating', () => {
     const fx = await makeFixture();
     const denied = fx.capture<any>('crafting:denied');
     fx.dispatch('player:eat', { slot: 99 });
-    expect(denied[0]?.reason).toBe('no-slot');
+    expect(denied[0]?.reason).toBe('bad-slot');
+    const empty = fx.state.player.inventory.slots.findIndex((s) => s === null);
+    fx.dispatch('player:eat', { slot: empty });
+    expect(denied[1]?.reason).toBe('no-slot');
+    expect(fx.state.player.energy).toBe(270);
+  });
+
+  it('eats the clicked stack, not another stack of the same food', async () => {
+    const fx = await makeFixture();
+    fx.dispatch('crafting:craft', { recipeId: 'fried-egg' });
+    fx.giveItem('fried-egg', 2, 0);
+    const slots = fx.state.player.inventory.slots
+      .map((s, i) => (s?.id === 'fried-egg' ? i : -1))
+      .filter((i) => i >= 0);
+    expect(slots.length).toBe(2);
+    const eaten = fx.capture<any>('food:eaten');
+    fx.dispatch('player:eat', { slot: slots[1]! });
+    expect(fx.state.player.inventory.slots[slots[0]!]).toEqual({ id: 'fried-egg', qty: 1, quality: 0 });
+    expect(fx.state.player.inventory.slots[slots[1]!]).toEqual({ id: 'fried-egg', qty: 1, quality: 0 });
+    expect(eaten).toHaveLength(1);
+  });
+
+  it('denies malformed crafting and eating payloads instead of silently ignoring them', async () => {
+    const fx = await makeFixture();
+    const denied = fx.capture<any>('crafting:denied');
+    fx.dispatch('crafting:craft', { recipeId: 7 });
+    fx.dispatch('crafting:craft', null);
+    fx.dispatch('player:eat', { slot: 'two' });
+    fx.dispatch('player:eat', null);
+    expect(denied.map((d) => d.reason)).toEqual([
+      'bad-request',
+      'bad-request',
+      'bad-request',
+      'bad-request',
+    ]);
   });
 
   it('adds instant energy/health and reports food:eaten', async () => {

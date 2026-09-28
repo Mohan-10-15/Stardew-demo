@@ -13,7 +13,7 @@
 import { defineFeature, type FeatureContext, type UiHandle } from '../../core/feature';
 import type { SimAction } from '../../core/types';
 import { actionToSim, buildKeyIndex, normalizeKey } from './keymap';
-import { JOG_UNITS_PER_SEC, WALK_SPEED_MULT } from '../engine/sim/PlayerPosition';
+import { JOG_UNITS_PER_SEC, WALK_SPEED_MULT, tileInFront } from '../engine/sim/PlayerPosition';
 
 function isFormTarget(target: unknown): boolean {
   if (typeof HTMLElement === 'undefined') return false;
@@ -145,7 +145,25 @@ export function createInputUi(ctx: FeatureContext): UiHandle {
       ctx.bus.emit('ui:open-settings', {});
       return;
     }
-    const sim = actionToSim(action);
+    if (action.type === 'barn') {
+      ctx.bus.emit('ui:open-barn', {});
+      return;
+    }
+    if (action.type === 'sleep') {
+      // Two-press confirmation lives in day-loop:ui so the day can never end
+      // from a single stray key.
+      ctx.bus.emit('ui:toggle-sleep', {});
+      return;
+    }
+    // 'ship' and 'eat' act on whatever stack is selected, so the slot is read
+    // from the live store here rather than baked into the keymap.
+    const player = ctx.store.state.player;
+    const front = tileInFront(player.position, player.facing);
+    const sim = actionToSim(action, player.inventory.selected, {
+      mapId: player.position.mapId,
+      x: front.x,
+      y: front.y,
+    });
     if (sim) ctx.store.dispatch(sim as SimAction<string, unknown>);
   }
 

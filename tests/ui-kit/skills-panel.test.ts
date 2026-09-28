@@ -49,7 +49,41 @@ describe('skills-panel rows', () => {
     expect(row.professionId).toBe('tiller');
     expect(row.professionName).toBe('Tiller');
     expect(row.professionDescription).toContain('sell for 10% more');
-    expect(row.recipeIds).toEqual(['cheese-omelette', 'cheese-press', 'seed-maker']);
+    expect(row.recipeIds).toEqual([
+      'autumn-gourd-stew',
+      'blueberry-pancakes',
+      'bramble-crumble',
+      'bramble-toast',
+      'campfire',
+      'cauliflower-cheese',
+      'cheese-omelette',
+      'cheese-press',
+      'copper-pan',
+      'copper-wire',
+      'egg-mayo-roll',
+      'elderberry-tart',
+      'ember-melon-tart',
+      'garlic-butter-toast',
+      'gate',
+      'glass-furnace',
+      'goat-cheese-toast',
+      'gold-bar',
+      'huckleberry-pie',
+      'iron-bucket',
+      'iron-grate',
+      'okra-fritters',
+      'onion-rings',
+      'quern',
+      'reinforced-rope',
+      'scarecrow',
+      'seed-maker',
+      'spice-pod-curry',
+      'sprinkler',
+      'storage-chest',
+      'strawberry-shortcake',
+      'surveyors-chain',
+      'wooden-crate',
+    ]);
   });
 
   it('caps xpMax at zero for a maxed skill', async () => {

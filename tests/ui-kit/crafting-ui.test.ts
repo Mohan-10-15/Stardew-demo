@@ -42,17 +42,12 @@ describe('buildRecipeRows — knowledge + craftability', () => {
   it('covers every authored recipe split by kind', async () => {
     const fx = await makeFixture();
     const rows = buildRecipeRows(fx.content, fx.state);
-    expect(rows.map((r) => r.recipeId)).toEqual([
-      'mayonnaise-machine',
-      'cheese-press',
-      'loom',
-      'seed-maker',
-      'fried-egg',
-      'cheese-omelette',
-      'ember-bloom-tea',
-    ]);
-    expect(rows.filter((r) => r.kind === 'crafting')).toHaveLength(4);
-    expect(rows.filter((r) => r.kind === 'cooking')).toHaveLength(3);
+    const authored = [...fx.content.recipes.keys()];
+    expect(rows.map((r) => r.recipeId)).toEqual(authored);
+    const kindOf = (kind: 'crafting' | 'cooking') =>
+      [...fx.content.recipes.values()].filter((r) => r.kind === kind).length;
+    expect(rows.filter((r) => r.kind === 'crafting')).toHaveLength(kindOf('crafting'));
+    expect(rows.filter((r) => r.kind === 'cooking')).toHaveLength(kindOf('cooking'));
   });
 
   it('always-known cooking recipes are unlocked and craftable at level 0', async () => {

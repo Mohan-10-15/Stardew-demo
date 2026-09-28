@@ -127,7 +127,12 @@ export interface EatResult {
 }
 
 export function eatItem(state: GameState, slot: number, content: ContentDb, emit: (type: string, payload: unknown) => void): EatResult {
-  const stack = state.player.inventory.slots[slot];
+  const inv = state.player.inventory;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= inv.slots.length) {
+    emit('crafting:denied', { reason: 'bad-slot', slot });
+    return { state, ok: false, reason: 'bad-slot' };
+  }
+  const stack = inv.slots[slot];
   if (!stack) {
     emit('crafting:denied', { reason: 'no-slot', slot });
     return { state, ok: false, reason: 'no-slot' };
@@ -137,17 +142,20 @@ export function eatItem(state: GameState, slot: number, content: ContentDb, emit
     emit('crafting:denied', { reason: 'not-food', slot });
     return { state, ok: false, reason: 'not-food' };
   }
-  const removed = removeStackFromInventory(state, stack.id, 1);
-  if (removed.removed < 1) {
-    emit('crafting:denied', { reason: 'not-food', slot });
-    return { state, ok: false, reason: 'not-food' };
-  }
-  const player = removed.state.player;
+  // Consume the clicked slot itself: a second stack of the same food elsewhere in
+  // the bag must not be the one that disappears.
+  const slots = [...inv.slots];
+  const left = stack.qty - 1;
+  slots[slot] = left > 0 ? { ...stack, qty: left } : null;
+  const player = state.player;
   const energy = Math.min(player.energyMax, player.energy + food.energy);
   const health = Math.min(player.healthMax, player.health + food.health);
-  const now = absoluteMinutes(removed.state);
+  const now = absoluteMinutes(state);
   const buffs = food.buffs.map((b) => ({ stat: b.stat, amount: b.amount, expiresAt: now + b.hours * 60 }));
-  const fixed = { ...removed.state, player: { ...player, energy, health } };
+  const fixed = {
+    ...state,
+    player: { ...player, energy, health, inventory: { ...inv, slots } },
+  };
   const ext = readCraftingExt(fixed);
   const next = writeCraftingExt(fixed, { buffs: [...ext.buffs, ...buffs] });
   emit('food:eaten', { itemId: stack.id, energy: food.energy, health: food.health, buffs });
@@ -172,12 +180,18 @@ export const craftingSim: FeatureModule = defineFeature({
 
     ctx.store.registerReducer('crafting:craft', (st: GameState, action, _rng: Rng) => {
       const p = action.payload as { recipeId?: unknown } | null;
-      if (!p || typeof p.recipeId !== 'string') return st;
+      if (!p || typeof p.recipeId !== 'string') {
+        emit('crafting:denied', { reason: 'bad-request' });
+        return st;
+      }
       return craftRecipe(st, p.recipeId, ctx.content, emit).state;
     });
     ctx.store.registerReducer('player:eat', (st, action, _rng) => {
       const p = action.payload as { slot?: unknown } | null;
-      if (!p || typeof p.slot !== 'number') return st;
+      if (!p || typeof p.slot !== 'number') {
+        emit('crafting:denied', { reason: 'bad-request' });
+        return st;
+      }
       return eatItem(st, p.slot, ctx.content, emit).state;
     });
     // Core advances time first; prune buffs against the new absolute minute.

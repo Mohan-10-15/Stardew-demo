@@ -22,5 +22,35 @@
     "input": [{ "itemId": "parsnip", "qty": 1 }],
     "output": [{ "itemId": "parsnip-seed", "qty": 1 }],
     "hours": 1
+  },
+  "butter-churn": {
+    "name": "Butter Churn",
+    "input": [{ "itemId": "milk", "qty": 1 }],
+    "output": [{ "itemId": "butter", "qty": 1 }],
+    "hours": 2
+  },
+  "quern": {
+    "name": "Quern",
+    "input": [{ "itemId": "barley", "qty": 2 }],
+    "output": [{ "itemId": "flour", "qty": 1 }],
+    "hours": 2
+  },
+  "preserves-jar": {
+    "name": "Preserves Jar",
+    "input": [{ "itemId": "strawberry", "qty": 3 }],
+    "output": [{ "itemId": "strawberry-jam", "qty": 1 }],
+    "hours": 4
+  },
+  "keg": {
+    "name": "Keg",
+    "input": [{ "itemId": "elderberry", "qty": 2 }],
+    "output": [{ "itemId": "elderberry-wine", "qty": 1 }],
+    "hours": 72
+  },
+  "glass-furnace": {
+    "name": "Glass Furnace",
+    "input": [{ "itemId": "stone", "qty": 3 }],
+    "output": [{ "itemId": "glass", "qty": 1 }],
+    "hours": 6
   }
 }

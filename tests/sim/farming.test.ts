@@ -234,8 +234,9 @@ describe('foraging (m2 §3)', () => {
       expect(`${obj.x},${obj.y}`).not.toBe(tileKey(10, 10));
     }
     const ids = batch.map((o) => o.id.slice('forage:'.length));
+    const eligible = forageItemIds(sim.content, sim.state.world.calendar.seasonIndex);
     for (const id of ids) {
-      expect(['daffodil', 'leek', 'wild-horseradish', 'common-mushroom', 'ember-bloom']).toContain(id);
+      expect(eligible, `${id} must be an eligible forage item`).toContain(id);
     }
   });
 
@@ -286,12 +287,29 @@ describe('foraging (m2 §3)', () => {
 
   it('only shines for eligible seasons (tagged or untagged)', async () => {
     const sim = await createSim();
+    const UNTAGGED = [
+      'bracken',
+      'common-mushroom',
+      'dandelion',
+      'ember-bloom',
+      'glowcap',
+      'thistle',
+      'wild-horseradish',
+      'wild-mint',
+    ];
     const spring = forageItemIds(sim.content, 0).sort();
-    expect(spring).toEqual(
-      ['common-mushroom', 'daffodil', 'ember-bloom', 'leek', 'wild-horseradish'].sort(),
-    );
     const summer = forageItemIds(sim.content, 1).sort();
-    expect(summer).toEqual(['common-mushroom', 'ember-bloom', 'wild-horseradish'].sort());
+    expect(spring).toEqual(
+      [...UNTAGGED, 'daffodil', 'leek', 'morel', 'spring-onion', 'sweet-pea', 'wild-plum'].sort(),
+    );
+    expect(summer).toEqual(
+      [...UNTAGGED, 'bramble-berry', 'chanterelle', 'heath-lily', 'sun-berry'].sort(),
+    );
+    // A winter-only forage is never eligible in a warmer season.
+    expect(spring).not.toContain('frost-fern');
+    expect(summer).not.toContain('frost-fern');
+    // A spring-only forage is not eligible in summer.
+    expect(summer).not.toContain('daffodil');
   });
 
   it('draws 3..7 from the count formula', () => {

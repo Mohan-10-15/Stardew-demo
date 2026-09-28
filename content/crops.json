@@ -59,6 +59,66 @@
     "quality": true,
     "waterNeed": 1
   },
+  "turnip": {
+    "name": "Turnip",
+    "seedId": "turnip-seed",
+    "days": [1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 50 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "ember-root": {
+    "name": "Ember Root",
+    "seedId": "ember-root-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 70 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "hollow-onion": {
+    "name": "Hollow Onion",
+    "seedId": "hollow-onion-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 95 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "lettuce": {
+    "name": "Lettuce",
+    "seedId": "lettuce-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": 2,
+    "seasons": [0],
+    "sell": { "base": 60 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "snap-pea": {
+    "name": "Snap Pea",
+    "seedId": "snap-pea-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 5,
+    "seasons": [0],
+    "sell": { "base": 45 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "spring-melon": {
+    "name": "Spring Melon",
+    "seedId": "spring-melon-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [0],
+    "sell": { "base": 170 },
+    "quality": true,
+    "waterNeed": 1
+  },
   "blueberry": {
     "name": "Blueberry",
     "seedId": "blueberry-seed",
@@ -86,6 +146,186 @@
     "regrow": 3,
     "seasons": [1],
     "sell": { "base": 40 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "okra": {
+    "name": "Okra",
+    "seedId": "okra-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 3,
+    "seasons": [1],
+    "sell": { "base": 40 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "spice-pod": {
+    "name": "Spice Pod",
+    "seedId": "spice-pod-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": 4,
+    "seasons": [1],
+    "sell": { "base": 65 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "sunflower": {
+    "name": "Sunflower",
+    "seedId": "sunflower-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 6,
+    "seasons": [1],
+    "sell": { "base": 85 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "sun-corn": {
+    "name": "Sun Corn",
+    "seedId": "sun-corn-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [1],
+    "sell": { "base": 55 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "watermelon": {
+    "name": "Watermelon",
+    "seedId": "watermelon-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [1],
+    "sell": { "base": 210 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "ember-melon": {
+    "name": "Ember Melon",
+    "seedId": "ember-melon-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [1],
+    "sell": { "base": 260 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "barley": {
+    "name": "Barley",
+    "seedId": "barley-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [2],
+    "sell": { "base": 55 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "yam": {
+    "name": "Yam",
+    "seedId": "yam-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [2],
+    "sell": { "base": 105 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "cranberry": {
+    "name": "Cranberry",
+    "seedId": "cranberry-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1],
+    "regrow": 5,
+    "seasons": [2],
+    "sell": { "base": 75 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "frost-berry": {
+    "name": "Frostberry",
+    "seedId": "frost-berry-seed",
+    "days": [1, 1, 1, 1, 1, 1],
+    "regrow": 4,
+    "seasons": [2],
+    "sell": { "base": 95 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "elderberry": {
+    "name": "Elderberry",
+    "seedId": "elderberry-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 6,
+    "seasons": [2],
+    "sell": { "base": 130 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "autumn-gourd": {
+    "name": "Autumn Gourd",
+    "seedId": "autumn-gourd-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [2],
+    "sell": { "base": 195 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "hollow-pumpkin": {
+    "name": "Hollow Pumpkin",
+    "seedId": "hollow-pumpkin-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [2],
+    "sell": { "base": 330 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "winter-root": {
+    "name": "Winter Root",
+    "seedId": "winter-root-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [3],
+    "sell": { "base": 90 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "blackberry": {
+    "name": "Blackberry",
+    "seedId": "blackberry-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": 4,
+    "seasons": [3],
+    "sell": { "base": 60 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "snow-lily": {
+    "name": "Snow Lily",
+    "seedId": "snow-lily-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [3],
+    "sell": { "base": 145 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "winter-wheat": {
+    "name": "Winter Wheat",
+    "seedId": "winter-wheat-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [3],
+    "sell": { "base": 70 },
+    "quality": true,
+    "waterNeed": 1
+  },
+  "crystal-root": {
+    "name": "Crystal Root",
+    "seedId": "crystal-root-seed",
+    "days": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "regrow": null,
+    "seasons": [3],
+    "sell": { "base": 420 },
     "quality": true,
     "waterNeed": 1
   }

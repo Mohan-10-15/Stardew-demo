@@ -273,8 +273,9 @@ export function collectAnimal(
   const quality = rollAnimalQuality(rng, animal.happy, animal.hearts, def.heartsMax);
   const added = addStackToInventory(state, { id: def.productId, qty: 1, quality });
   if (!added.added) {
+    // The product stays on the animal: a full bag must never lose it.
     deps.bus.emit('inventory:full', { animalId, itemId: def.productId });
-    return { state, ok: false, reason: 'inventory-full' };
+    return denyState(state, deps, 'inventory-full', { animalId, itemId: def.productId });
   }
   const happy = Math.min(HAPPY_MAX, animal.happy + 2);
   const animals = ext.animals.map((a, i) =>
@@ -298,26 +299,30 @@ export const animalsSim: FeatureModule = defineFeature({
   setup(ctx: FeatureContext) {
     ctx.store.replaceState(ensureAnimalsExt(ctx.store.state));
     const deps: AnimalsDeps = { bus: ctx.bus, content: ctx.content };
+    const badRequest = (st: GameState): GameState => {
+      ctx.bus.emit('animals:denied', { reason: 'bad-request' });
+      return st;
+    };
 
     ctx.store.registerReducer('animals:buy', (st, action, _rng) => {
-      const p = action.payload as { species?: unknown; qty?: number } | null;
-      if (!p || typeof p.species !== 'string') return st;
+      const p = action.payload as { species?: unknown; qty?: unknown } | null;
+      if (!p || typeof p.species !== 'string') return badRequest(st);
       const qty = typeof p.qty === 'number' ? p.qty : 1;
       return buyAnimals(st, p.species, qty, deps).state;
     });
     ctx.store.registerReducer('animals:feed', (st, action, _rng) => {
       const p = action.payload as { animalId?: unknown } | null;
-      if (!p || typeof p.animalId !== 'string') return st;
+      if (!p || typeof p.animalId !== 'string') return badRequest(st);
       return feedAnimal(st, p.animalId, deps).state;
     });
     ctx.store.registerReducer('animals:pet', (st, action, _rng) => {
       const p = action.payload as { animalId?: unknown } | null;
-      if (!p || typeof p.animalId !== 'string') return st;
+      if (!p || typeof p.animalId !== 'string') return badRequest(st);
       return petAnimal(st, p.animalId, deps).state;
     });
     ctx.store.registerReducer('animals:collect', (st, action, rng) => {
       const p = action.payload as { animalId?: unknown } | null;
-      if (!p || typeof p.animalId !== 'string') return st;
+      if (!p || typeof p.animalId !== 'string') return badRequest(st);
       return collectAnimal(st, p.animalId, rng, deps).state;
     });
     // Forced pass-out morning: core advances time first, so world.dayCount is

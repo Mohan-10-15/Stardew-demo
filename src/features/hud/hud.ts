@@ -340,9 +340,23 @@ export function createHudUi(ctx: FeatureContext): UiHandle {
       const hint = interactionHint(state, ctx.content, { ...front, mapId: state.player.position.mapId });
       if (hint) {
         const action = messages.hud.hint.action[hint.action];
-        hintEl.textContent = replaceTokens(messages.hud.hint.line, { action, name: hint.name });
+        // A machine's remaining time rides along on the same line, so a
+        // countdown is readable from the corner without opening a panel.
+        const line = hint.detail
+          ? replaceTokens(messages.hud.hint.detailLine, {
+              action,
+              name: hint.name,
+              detail: replaceTokens(messages.hud.hint.detail.left, { time: hint.detail }),
+            })
+          : replaceTokens(messages.hud.hint.line, { action, name: hint.name });
+        hintEl.textContent = line;
         hintEl.classList.add('is-visible');
-        hintEl.setAttribute('aria-label', replaceTokens(messages.hud.hint.aria, { action, name: hint.name }));
+        hintEl.setAttribute(
+          'aria-label',
+          hint.detail
+            ? replaceTokens(messages.hud.hint.ariaDetail, { action, name: hint.name, detail: hint.detail })
+            : replaceTokens(messages.hud.hint.aria, { action, name: hint.name }),
+        );
       } else {
         hintEl.textContent = '';
         hintEl.classList.remove('is-visible');

@@ -172,6 +172,7 @@ describe('sprite resolution', () => {
     expect([...categories].sort()).toEqual([
       'animal_product',
       'cooking',
+      'crafted',
       'crop',
       'fish',
       'food',

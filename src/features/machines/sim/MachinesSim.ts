@@ -53,6 +53,18 @@ export function mapAt(state: GameState, tile: WorldPos): MapState | undefined {
   return state.maps[tile.mapId];
 }
 
+/**
+ * Payload guard: a structurally valid tile the sim can act on, or null for a
+ * malformed action. Coordinates are NOT range-checked here — an off-map or
+ * out-of-bounds position is well-formed, and `isTileWalkable` / `no-map`
+ * report it as 'blocked' / 'no-map', which names the real problem.
+ */
+export function isTile(tile: unknown): tile is WorldPos {
+  if (!tile || typeof tile !== 'object') return false;
+  const t = tile as { mapId?: unknown; x?: unknown; y?: unknown };
+  return typeof t.mapId === 'string' && Number.isInteger(t.x) && Number.isInteger(t.y);
+}
+
 /** Tile walkable per the authored map legend, ignoring placed objects. */
 export function isTileWalkable(content: ContentDb, tile: WorldPos): boolean {
   const map = content.maps.get(tile.mapId);
@@ -200,22 +212,34 @@ export const machinesSim: FeatureModule = defineFeature({
 
     ctx.store.registerReducer('machines:place', (st, action, _rng) => {
       const p = action.payload as { tile?: WorldPos; itemId?: unknown } | null;
-      if (!p || typeof p.itemId !== 'string' || !p.tile) return st;
+      if (!p || typeof p.itemId !== 'string' || !isTile(p.tile)) {
+        ctx.bus.emit('machines:denied', { reason: 'bad-request' });
+        return st;
+      }
       return placeMachine(st, p.tile, p.itemId, deps).state;
     });
     ctx.store.registerReducer('machines:insert', (st, action, _rng) => {
-      const p = action.payload as { tile?: WorldPos; slot?: number } | null;
-      if (!p || !p.tile || typeof p.slot !== 'number') return st;
+      const p = action.payload as { tile?: WorldPos; slot?: unknown } | null;
+      if (!p || !isTile(p.tile) || typeof p.slot !== 'number' || !Number.isInteger(p.slot)) {
+        ctx.bus.emit('machines:denied', { reason: 'bad-request' });
+        return st;
+      }
       return insertMachine(st, p.tile, p.slot, deps).state;
     });
     ctx.store.registerReducer('machines:collect', (st, action, _rng) => {
       const p = action.payload as { tile?: WorldPos } | null;
-      if (!p || !p.tile) return st;
+      if (!p || !isTile(p.tile)) {
+        ctx.bus.emit('machines:denied', { reason: 'bad-request' });
+        return st;
+      }
       return collectMachine(st, p.tile, deps).state;
     });
     ctx.store.registerReducer('machines:interact', (st, action, _rng) => {
       const p = action.payload as { tile?: WorldPos } | null;
-      if (!p || !p.tile) return st;
+      if (!p || !isTile(p.tile)) {
+        ctx.bus.emit('machines:denied', { reason: 'bad-request' });
+        return st;
+      }
       return interactMachine(st, p.tile, deps).state;
     });
     // T-0405: route the shared interact bus here when the front tile is a

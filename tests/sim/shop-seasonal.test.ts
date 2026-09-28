@@ -44,13 +44,30 @@ describe('seasonal shop stock (shop:sim)', () => {
     const offered = await merchantStockSet(sim);
     expect(offered).toHaveLength(4);
     for (const id of offered) {
-      expect(['amethyst', 'emerald', 'topaz', 'opal', 'chocolate', 'rainbow-prism', 'strawberry-seed', 'hot-pepper-seed']).toContain(id);
+      expect(
+        [
+          'amethyst',
+          'emerald',
+          'topaz',
+          'opal',
+          'chocolate',
+          'rainbow-prism',
+          'strawberry-seed',
+          'hot-pepper-seed',
+          'ember-melon-seed',
+          'hollow-pumpkin-seed',
+          'crystal-root-seed',
+          'diamond',
+        ],
+      ).toContain(id);
     }
 
     const pick = offered[0]!;
-    sim.buy('traveling-merchant', pick, 1);
+    const stocked = shopExt(sim).stock['traveling-merchant']?.[pick] ?? 0;
+    expect(stocked).toBeGreaterThan(0);
+    sim.buy('traveling-merchant', pick, stocked);
     expect(shopExt(sim).stock['traveling-merchant']?.[pick]).toBe(0);
-    sim.buy('traveling-merchant', pick, 2);
+    sim.buy('traveling-merchant', pick, 1);
     expect(denied).toEqual([
       { reason: 'stock', shopId: 'traveling-merchant', itemId: pick },
     ]);
