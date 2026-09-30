@@ -3,6 +3,7 @@
     "rootNamespace": "EmberHollow.Tests.PlayMode",
     "references": [
         "EmberHollow.Core",
+        "EmberHollow.Content",
         "EmberHollow.Runtime",
         "Unity.Cinemachine",
         "UnityEngine.TestRunner"

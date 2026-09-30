@@ -51,6 +51,7 @@
     <Compile Include="Assets\Tests\EditMode\RngTests.cs" />
     <Compile Include="Assets\Tests\EditMode\EventBusTests.cs" />
     <Compile Include="Assets\Tests\EditMode\ArtPackImportTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\SimulationRunnerTests.cs" />
     <Compile Include="Assets\Tests\EditMode\GameClockTests.cs" />
     <Compile Include="Assets\Tests\EditMode\FarmSceneTests.cs" />
     <Compile Include="Assets\Tests\EditMode\StateFactoryTests.cs" />
@@ -1148,6 +1149,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="EmberHollow.Core.csproj" />
+    <ProjectReference Include="EmberHollow.Content.csproj" />
     <ProjectReference Include="EmberHollow.Runtime.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

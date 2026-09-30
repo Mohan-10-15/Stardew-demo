@@ -272,7 +272,16 @@ namespace EmberHollow.Core
                 AdvanceCalendarOneDay(next.Calendar, ref seasonRolled, ref yearRolled);
             }
 
-            next.Clock = new Clock { Hour = remaining / 60, Minute = remaining % 60 };
+            // Clock.Hour is a display hour, where 6:00 is the start of the day.
+            // Writing the raw overflow here would put the new morning at 00:00,
+            // which ToAbsoluteMinutes reads back as 18:00 the previous day, so
+            // the very next tick would roll the day over again, forever.
+            int displayMinutes = remaining + (GameConstants.DayStartHour * 60);
+            next.Clock = new Clock
+            {
+                Hour = displayMinutes / 60,
+                Minute = displayMinutes % 60,
+            };
             next.DayCount = world.DayCount + days;
             next.PassedOut = passedOut;
             daysRolled = days;

@@ -85,6 +85,25 @@ namespace EmberHollow.Core
         public QualityTier Quality;
     }
 
+    /// <summary>Payload for <see cref="GameEvents.CropAdvanced"/>.</summary>
+    public sealed class CropAdvancedEvent
+    {
+        public WorldPos Tile;
+
+        public string CropId = string.Empty;
+
+        /// <summary>The stage just reached; equals <c>CropDef.MatureStage</c> when ripe.</summary>
+        public int Stage;
+    }
+
+    /// <summary>Payload for <see cref="GameEvents.CropWithered"/>.</summary>
+    public sealed class CropWitheredEvent
+    {
+        public WorldPos Tile;
+
+        public string CropId = string.Empty;
+    }
+
     /// <summary>Payload for <see cref="GameEvents.CropPlantRejected"/>.</summary>
     public sealed class CropPlantRejectedEvent
     {

@@ -3,6 +3,7 @@
     "rootNamespace": "EmberHollow.Engine",
     "references": [
         "EmberHollow.Core",
+        "EmberHollow.Content",
         "Unity.Cinemachine",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Universal.Runtime"

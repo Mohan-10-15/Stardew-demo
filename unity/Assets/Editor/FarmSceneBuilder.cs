@@ -71,6 +71,7 @@ namespace EmberHollow.EditorTools
             placed += BuildEnvironment();
             placed += BuildFarmstead();
             placed += BuildPlayer();
+            placed += BuildSimulation();
             placed += BuildLighting();
             placed += BuildCamera();
 
@@ -223,6 +224,18 @@ namespace EmberHollow.EditorTools
             return 1;
         }
 
+        /// <summary>
+        /// Owns GameState, the EventBus and the clock for the whole scene. One
+        /// runner per session, so views and UI can resolve it from the scene
+        /// instead of each keeping their own copy of the state.
+        /// </summary>
+        private static int BuildSimulation()
+        {
+            var go = new GameObject("Simulation");
+            go.AddComponent<SimulationRunner>();
+            return 1;
+        }
+
         private static int BuildLighting()
         {
             var sunGo = new GameObject("Sun");
@@ -234,7 +247,6 @@ namespace EmberHollow.EditorTools
             sun.shadowStrength = 0.75f;
 
             var dayNight = sunGo.AddComponent<DayNightController>();
-            sunGo.AddComponent<CinemachineBrain>();
             dayNight.Apply();
 
             var fill = new GameObject("Fill");
