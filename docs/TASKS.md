@@ -101,7 +101,23 @@ and a `CropHarvested` event on the bus.
 
 ### Running the game
 
-`scripts/serve-webgl.ps1` serves the build and opens it:
+**As a native app** (recommended for local play — a real window, no browser):
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\run-windows.ps1
+```
+
+Build it first:
+
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.WindowsBuilder.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\windows-build.log"
+```
+
+`WindowsBuilder.Build` uses the Mono backend for fast iteration;
+`-executeMethod EmberHollow.EditorTools.WindowsBuilder.BuildRelease` compiles with
+IL2CPP for a shipping build. Output is `unity/Builds/Windows/EmberHollow.exe`.
+
+**As a WebGL build** (the primary delivery target):
 
 ```
 powershell -ExecutionPolicy Bypass -File scripts\serve-webgl.ps1
@@ -109,8 +125,14 @@ powershell -ExecutionPolicy Bypass -File scripts\serve-webgl.ps1
 
 Then play at <http://localhost:8000/>. The script exists because Unity's WebGL
 output is Brotli compressed (`.wasm.br`, `.data.br`) and the loader only
-decompresses when the response carries `Content-Encoding: br`; opening
-`index.html` from disk or from a naive static server gives a blank screen.
+decompresses when the response carries `Content-Encoding: br`. It also answers
+the byte-range requests Unity's loader streams its data files with, and streams
+responses in chunks; opening `index.html` from disk, or serving it from a naive
+static server, gives a blank screen.
+
+A WebGL player cannot be launched as a standalone application: it is web
+technology and needs a browser engine, which is why the native build above
+exists.
 
 ### T-0102 completion notes
 
