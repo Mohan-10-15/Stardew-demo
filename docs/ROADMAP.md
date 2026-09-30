@@ -38,20 +38,30 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
 - [x] **T-0102** WORKER-1: walkable lit farm scene built by script with a
       Cinemachine angled third-person follow — EditMode **171/171**,
       PlayMode **11/11**, WebGL **17.5 MB** 0 errors
-- [x] **T-0103** WORKER-2: `SimulationRunner` owning `GameState`, `EventBus` and
+ - [x] **T-0103** WORKER-2: `SimulationRunner` owning `GameState`, `EventBus` and
       `Rng` on a fixed timestep, plus `DailyTick` for crop growth, withering and
       weather — EditMode **189/189**, PlayMode **17/17**, WebGL **18.4 MB**
-- [ ] **T-0104** WORKER-3: UI Toolkit base style (parchment + wood border, real
-      pixel font), HUD, and the Input System action map
+ - [~] **T-0104** WORKER-3: UI Toolkit base style (parchment + wood border, real
+      pixel font), HUD, and the Input System action map — **HUD, hotbar, target
+      line, action feedback and the input map are done and playable; the pixel
+      font is still missing, so the HUD renders in Unity's built-in font**
+      (EditMode **199/199**, PlayMode **22/22**)
+ - [x] **T-0105** Playable slice: `FarmGrid` tile mapping, `PlayerInteractionController`
+      (hotbar, stow, use-in-front), `FarmTileView` pooled tile overlays, and the
+      UI Toolkit HUD — till → plant → water → grow → harvest driven through the
+      real scene by `FarmInteractionPlayModeTests`
+ - [ ] **T-0106** WORKER-3: a real pixel font for the UI, replacing the built-in
+      font, plus the shipping-bin and money panels
 
 ---
 
 ## M1 — Core loop
 
 - [ ] Calendar and energy
-- [ ] Tools: hoe, watering can, axe, pickaxe, scythe, fishing rod
-- [ ] Till → plant → water → harvest loop
-- [ ] Hotbar
+- [~] Tools: hoe, watering can, axe, pickaxe, scythe, fishing rod — the sim and
+      the controls exist; only the tool-specific feedback is thin
+- [x] Till → plant → water → harvest loop
+- [x] Hotbar
 - [ ] Shipping bin and money
 - [ ] Sleep and day rollover
 - [ ] Save / load, 3 slots

@@ -7,4 +7,6 @@
   <Project Path="EmberHollow.Tests.PlayMode.csproj" />
   <Project Path="EmberHollow.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="EmberHollow.UI.csproj" />
+  <Project Path="EmberHollow.View.csproj" />
 </Solution>

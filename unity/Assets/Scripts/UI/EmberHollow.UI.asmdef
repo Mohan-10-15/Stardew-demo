@@ -1,19 +1,13 @@
 {
-    "name": "EmberHollow.Editor",
-    "rootNamespace": "EmberHollow.EditorTools",
+    "name": "EmberHollow.UI",
+    "rootNamespace": "EmberHollow.UI",
     "references": [
-        "EmberHollow.Runtime",
-        "EmberHollow.View",
-        "EmberHollow.UI",
         "EmberHollow.Core",
         "EmberHollow.Content",
-        "Unity.Cinemachine",
-        "Unity.Cinemachine.Editor",
-        "Unity.InputSystem"
+        "EmberHollow.Runtime",
+        "EmberHollow.View"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
