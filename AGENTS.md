@@ -169,10 +169,12 @@ docs/DECISIONS.md before deleting or moving any of it.
 Unity 6000.3.25f1 + WebGL module installed, verified, and **licensed** (Unity
 Personal, with the `com.unity.editor.headless` entitlement) on 2026-09-30.
 
-M0 pipeline is proven: EditMode **171/171** and PlayMode **11/11** pass, and a
+M0 pipeline is proven: EditMode **189/189** and PlayMode **17/17** pass, and a
 real WebGL `BuildPipeline.BuildPlayer` succeeds with the farm scene
-(17.5 MB, 0 errors). The engine-free `EmberHollow.Core` assembly carries the
+(18.4 MB, 0 errors). The engine-free `EmberHollow.Core` assembly carries the
 ported clock, EventBus, RNG, inventory and farming sim with EditMode coverage.
 `Assets/Scenes/Farm.unity` is built entirely by
-`EmberHollow.EditorTools.FarmSceneBuilder.Build` from imported CC0 prefabs.
+`EmberHollow.EditorTools.FarmSceneBuilder.Build` from imported CC0 prefabs, and
+`SimulationRunner` is the single owner of `GameState`/`EventBus`/`Rng` in it.
+Play the build with `scripts/serve-webgl.ps1` (see docs/TASKS.md).
 See docs/ROADMAP.md for the first unchecked item.

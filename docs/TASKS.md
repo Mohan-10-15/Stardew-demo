@@ -55,8 +55,62 @@ Docs are the orchestrator's; put doc-worthy notes in the task report.
 | T-0001 | ORCHESTRATOR | M0 pipeline bootstrap: project, packages, asmdefs, Core port, runner, WebGL builder, docs | **DONE** — EditMode 154/154, PlayMode 5/5, WebGL 15.33 MB |
 | T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | **DONE** — KayKit Adventurers + Quaternius FarmBuildings, 45 prefabs, 85 shared URP materials, EditMode 164/164, PlayMode 5/5 |
 | T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | **DONE** — `Assets/Scenes/Farm.unity`, 45 objects, EditMode 171/171, PlayMode 11/11, WebGL 17.5 MB |
-| T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | queued |
+| T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | **DONE** — EditMode 189/189, PlayMode 17/17, WebGL 18.4 MB |
 | T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | queued |
+
+### T-0103 completion notes
+
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "...t0103-scene.log"
+```
+
+`SimulationRunner` is now the single owner of `GameState`, `EventBus`, `Rng` and
+`ContentDb` for a session, and the farm scene carries exactly one of them. Time
+moves as a **fixed step**: `Update` converts elapsed real time into whole
+`GameConstants.TickMinutes` steps with a per-frame cap, so the simulation behaves
+identically at 30, 60 or 144 FPS and a hitch cannot fast-forward a day. `Step`
+lets a test or a cutscene drive the clock by hand and honours `Paused`;
+`StepForced` is the explicit escape hatch.
+
+Three genuine bugs were found by the new tests rather than by playing:
+
+- **`SimulationRunner` discarded the clock.** `GameClock.Advance` is pure and
+  returns the rolled `WorldState` on the transition. Not adopting it meant the
+  clock never moved at all, while `TickCount` happily climbed.
+- **`GameClock.RollForward` wrote an absolute hour where a display hour was
+  expected.** After a rollover the clock read back as already past midnight, so
+  every following tick rolled another day. See D-0013.
+- **Crops could never ripen.** Nothing ever incremented `PlacedObject.Stage`, and
+  nothing consumed the forecast. `DailyTick` now owns both. See D-0014.
+
+Content ids also had to be reconciled: `StateFactory.StarterItems` hands the player
+`hoe-t0` and `parsnip-seed`, so `DefaultContent` had to use exactly those ids or a
+new game started holding undefined tools and planting always failed with
+`no-seed`. Two tests now lock that pairing in both directions.
+
+`SimulationRunnerTests` builds a bare runner with no scene and covers: the farm
+map coming from content, one tick advancing exactly `TickMinutes`, twenty ticks
+matching twenty calls of one, same-seed determinism, different seeds diverging, the
+day roll publishing one `DayEnded` then one `DayStarted`, a 28-day season rolling
+over, pause and resume, the RNG resuming from the save seed, and a complete
+till -> plant -> water -> grow -> harvest loop that ends with parsnips in the bag
+and a `CropHarvested` event on the bus.
+
+`FarmSimulationPlayModeTests` drives that runner inside the shipped
+`Farm.unity` over real frames.
+
+### Running the game
+
+`scripts/serve-webgl.ps1` serves the build and opens it:
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\serve-webgl.ps1
+```
+
+Then play at <http://localhost:8000/>. The script exists because Unity's WebGL
+output is Brotli compressed (`.wasm.br`, `.data.br`) and the loader only
+decompresses when the response carries `Content-Encoding: br`; opening
+`index.html` from disk or from a naive static server gives a blank screen.
 
 ### T-0102 completion notes
 
