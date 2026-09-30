@@ -20,3 +20,9 @@ unity/Logs/
 unity/UserSettings/
 unity/MemoryCaptures/
 unity/Recordings/
+
+# Unity-generated IDE project files (regenerated on open)
+*.csproj
+*.sln
+*.user
+
