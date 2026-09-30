@@ -1,68 +1,174 @@
-# Ember Hollow — Game Design Doc (GDD)
+# EMBER HOLLOW — Game Design Document
 
-Working title: **Ember Hollow**.
+**Genre:** farming-life sim with combat, crafting and village social systems
+**Target:** WebGL primary (shareable link, runs in a browser), Windows standalone later
+**Engine:** Unity 6 LTS 6000.3.25f1, URP, Cinemachine, Input System, UI Toolkit
+**Target hardware:** RTX 2050-class, 60 FPS in WebGL
+**Session shape:** a day is ~10 real minutes; a full year is 112 in-game days
 
-## Premise
+Original IP. Genre-inspired, never copying another game's names, art or specific
+mechanics.
 
-Long ago, the mountain valley of Ember Hollow prospered around the Heartstone, a
-hearth-shaped monument in the middle of Ember Square. Each spring the people of
-the valley carried embers from their home hearths to the stone to renew the
-promise of the valley's guardian, the Sunherd. When the mine collapsed and the
-rail line died, the hollow emptied. You inherit **Rustleaf Farm**, Grandpa
-Roscoe's forgotten homestead, together with his old journal: restore the
-Heartstone by completing the four **Valley Collections**, and the Sunherd will
-wake to bless a final Emberfall festival.
+---
 
-## Main goal (progression)
+## 1. Premise
 
-- Every item category has a collection: **Crops, Fish, Minerals, Recipes,
-  Critters** (animals) and **Friends** (NPC friendships).
-- Completing a collection restores a **shard** of the Heartstone and usually
-  unlocks a gated area or feature (e.g. full Crop collection -> broken bridge to
-  the mountain repaired; all Fish -> the Sunherd's pond).
-- Restore all 12 shards -> the Emberfall festival -> ending/credits -> free play
-  continues.
+The ash-fall took the old road and the valley's Heartstone with it. You inherit
+a burnt-out farm plot in Ember Hollow and work it back to life — soil, livestock,
+mines, and the twelve people who stayed. Restoring the Heartstone is the spine
+of the progression; everything else you build is yours to keep afterwards.
 
-## Systems (mapped to milestones)
+## 2. Pillars
 
-See docs/ARCHITECTURE.md and docs/ROADMAP.md. Scope list is in AGENTS section
-and docs. Four seasons x 28 days; day/night; weather with forecasts; energy and
-health; farming/foraging/fishing/mining/combat skills; animals and a horse;
-8 processing machines; 40+ mine floors with 2 bosses; 12+ NPCs with hearts,
-birthdays and heart events, romance/marriage; a quest board; 8 festivals;
-shipping bin and 5+ shops; 3 save slots.
+1. **The day has weight.** Energy and time are the real constraint. Every swing,
+   every step, every conversation costs something, so choosing what to do with a
+   finite day is the game.
+2. **Feedback is never ambiguous.** Success and failure always look and sound
+   different (see `docs/DECISIONS.md` D-0008). The player must be able to tell
+   what happened without reading text.
+3. **The valley is populated.** NPCs have schedules, opinions and birthdays. They
+   are not vending machines with dialogue.
+4. **Nothing is wasted.** Weather, seasons, tools and layout all compose. A crop
+   planted in the wrong season still teaches you something.
 
-## Creative direction (ADDENDUM A)
+## 3. Core loop
 
-- **Setting**: a terraced mountain valley stalled in late summer, crossed by the
-  Emberbrook river, with a misty coastal marsh to the east where the river meets
-  the sea. The valley is a collapsed mining-and-rail town ringed by a ruined
-  mountain track (mines) upstream.
-- **Tone**: warm and cozy with a little mystery — the valley is held together by
-  the quietly magical Heartstone and the legend of the Sunherd; the mine
-  collapse left secrets underneath. Wholesome neighbors, gentle humor, one or
-  two shadows.
-- **Signature mechanic**: the **Emberfall restoration** — completing the four
-  Valley Collections re-lights Heartstone shards that unlock gated areas and
-  festivals, and each shard blooms one season of the hollow (thematically richer,
-  more forage, an NPC's better mood). On **windy** days, red **ember wisps**
-  drift across every map; catching one briefly reveals hidden foragables and
-  gives a small energy blessing, rewarding exploration on otherwise quiet days.
-  This ties the long-term story goal into everyday play.
+```
+wake ──► plan the day ──► work (farm / forage / fish / mine / social)
+  ▲                                              │
+  │                                              ▼
+  └────── sleep ◄── ship, tidy, spend ◄── end-of-day summary
+```
 
-## Place
+A day runs 06:00 → 02:00, at 10 in-game minutes per tick. At 02:00 the farmer
+collapses, is carried home, and loses money; sleeping in your own bed skips to
+the summary with no penalty.
 
-Farm; village (Ember Square); forest; river/lake; beach; mountain; mine
-entrance; shops. 10+ styled maps with seasonal looks.
+## 4. Feature scope
 
-## Feel
+All of the following is mandatory and must be reachable from a new game through
+normal play, with no dev cheats, and must survive save → reload.
 
-Stardew-likes: cozy, deterministic, readable. Stylized low-poly art, soft
-shadows, warm palette, an original cast and an original soundtrack. Genre
-inspired only — no copied names, maps, characters, dialogue, art or music.
+### 4.1 Time and world
+4 seasons × 28 days. Day/night cycle. Weather: sun, rain, storm, snow, wind,
+with a forecast. Energy and health. Passing out. Sleep → end-of-day summary.
+**10+ scenes**: farm, village, forest, beach, river/lake, mountain, mine
+entrance, home, shop interiors. Seasonal lighting and colour changes. Ambient
+life.
 
-## Ending / credits
+### 4.2 Farming
+Hoe, watering can, axe, pickaxe, scythe, and a fishing rod with **4 upgrade
+tiers**. Till / plant / water / fertilize / harvest. **30+ crops** including
+regrowing varieties and fruit trees, with quality tiers. Sprinklers, scarecrows,
+greenhouse. Weeds and debris. Placeable objects with a ghost preview. Farm
+buildings and house upgrades.
 
-First year of the Heartstone restored = ending; credits roll; play continues.
-No ending cutscene can be replayed from a completed save except by starting a
-new game.
+### 4.3 Foraging
+Trees, rocks, seasonal forageables, bushes, with regrowth.
+
+### 4.4 Fishing
+Cast plus a skill minigame. **30+ fish** gated by place, season, weather and time
+of day. Bait, tackle, traps.
+
+### 4.5 Animals
+**5+ species**. Coop and barn. Feeding. Friendship. Products with quality. A pet
+and a rideable horse.
+
+### 4.6 Crafting, cooking, machines
+Recipes unlocked by skills, friendships and shops. Buff foods. **8+ processing
+machines** with timers. **300+ item definitions** overall.
+
+### 4.7 Skills
+Farming, Foraging, Mining, Fishing, Combat. Levels 1–10. Professions at 5 and 10.
+Recipe unlocks on level-up.
+
+### 4.8 Mines and combat
+**40+ seeded floors**. Ores and gems. Checkpoints every 5 floors. **12+ monsters**
+with distinct AI. **2 bosses**. Weapons, armor, rings. Readable attack telegraphs
+and hit feedback.
+
+### 4.9 Economy
+Shipping bin. Shops: general, blacksmith, carpenter, ranch, fish, and a
+traveling merchant. Seasonal stock. Tool upgrades. Quality-based pricing.
+
+### 4.10 People
+**12+ original NPCs** with day/season/weather schedules and NavMesh pathfinding.
+Contextual dialogue. Gift tastes. Friendship hearts. **3+ scripted heart events**
+each. Birthdays. Romance and marriage for **6+**. Quest board.
+
+### 4.11 Story
+A main progression goal (collections unlocking areas and features). A
+collections log. An ending and credits scene, after which free play continues.
+**8+ festivals**, two per season.
+
+### 4.12 UI and UX — all UI Toolkit
+HUD. Hotbar plus expandable backpack. Drag-and-drop inventory. Tooltips.
+Crafting. Map. Journal. Skills / relationships / collections tabs. Dialogue with
+portraits. Shop UI. Title screen with new game and load. Character and farm
+creator. Options: audio, graphics, remappable keys via the Input System, UI scale,
+colourblind mode. Pause. Keyboard/mouse and gamepad.
+
+### 4.13 Audio
+Music per location, season and time of day (**12+ loops**). Ambience. SFX for
+every action. Volume sliders.
+
+### 4.14 Saves
+3 slots. Autosave on sleep. Versioned and migrated. Corruption-safe.
+Export/import.
+
+### 4.15 Polish and release
+Transitions, particles, camera juice, pickup popups. Tutorial across the first
+in-game days. **All strings in a table**, i18n-ready. Credits. README. WebGL
+build plus a Windows standalone build.
+
+### 4.16 Dev tooling
+Content validators as EditMode tests. A dev console (skip day, set money,
+teleport) stripped from release builds. A PlayMode bot that drives 2 in-game years
+to catch crashes and soft-locks. An economy balance report.
+
+### Out of scope
+Online multiplayer. Mod tools. Mobile touch controls.
+
+## 5. Economy model
+
+Tuned so that a competent player comfortably buys their first house upgrade in
+Spring of Year 1, and a first tool upgrade (1000g) by late Summer Year 1.
+
+| Source | Typical value |
+|---|---|
+| Parsnip (4-day crop) | 35g base |
+| Shipping bin payout | base × quality multiplier (1× / 1.25× / 1.5×) |
+| Tool upgrade costs | 1000g / 2500g / 5000g / 10000g |
+| Starting money | 500g |
+| Starting bag | 12 slots, incl. 15 parsnip seeds |
+
+Harvest quality is ~94% normal, ~5% silver, ~1% gold, rolled on a dedicated RNG
+stream so it cannot perturb other outcomes.
+
+The M8 economy report measures actual earnings per in-game day against this table
+and the balance is adjusted until a realistic Year-1 income lands in range.
+
+## 6. Art direction
+
+Stylized and detailed, from free CC0 packs — not blocky primitives, and not an
+attempt at photorealism.
+
+- **KayKit** for rigged, animated characters (player, NPCs).
+- **Quaternius** for buildings, animated farm animals and nature.
+- **Kenney.nl** as a supplementary source.
+
+Cohesion matters more than any single asset's fidelity, so nothing outside these
+three packs is mixed in. See `docs/DECISIONS.md` D-0010 and
+`docs/ASSET_LICENSES.md`.
+
+## 7. Accessibility
+
+Colourblind mode (at minimum a shape/pattern cue for item quality, not colour
+alone). UI scale. Remappable keys. Full gamepad support. Readable attack
+telegraphs that do not rely on colour.
+
+## 8. Win condition
+
+Restore the Heartstone by completing the collection milestones that unlock each
+valley area, then see the ending and credits. Free play continues afterwards —
+nothing is taken away, and the credits are reachable from the pause menu.

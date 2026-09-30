@@ -52,7 +52,6 @@ namespace EmberHollow.Core
                 return 0;
             }
 
-            int limit = stack.MaxStack > 0 ? stack.MaxStack : MaxStack;
             int remaining = stack.Qty;
 
             for (int i = 0; i < slots.Count && remaining > 0; i++)
@@ -68,8 +67,7 @@ namespace EmberHollow.Core
                     continue;
                 }
 
-                int cap = slot.MaxStack > 0 ? slot.MaxStack : MaxStack;
-                int room = Math.Min(cap, limit) - slot.Qty;
+                int room = MaxStack - slot.Qty;
                 if (room <= 0)
                 {
                     continue;
@@ -316,7 +314,7 @@ namespace EmberHollow.Core
 
             InventoryState inv = state.Player.Inventory;
             int next = SimUtil.ClampInt(slot, 0, Math.Max(0, inv.Capacity - 1));
-            bus?.Emit(new InventorySelectedEvent { Slot = next });
+            bus?.Emit(GameEvents.InventorySelected, new InventorySelectedEvent { Slot = next });
             inv.Selected = next;
             return next;
         }
@@ -376,7 +374,7 @@ namespace EmberHollow.Core
                 slots[fi] = b ?? ItemStack.Empty();
             }
 
-            bus?.Emit(new InventoryMovedEvent { From = fi, To = ti });
+            bus?.Emit(GameEvents.InventoryMoved, new InventoryMovedEvent { From = fi, To = ti });
             return true;
         }
 

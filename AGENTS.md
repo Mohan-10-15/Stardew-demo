@@ -166,5 +166,10 @@ docs/DECISIONS.md before deleting or moving any of it.
 
 ## 9. Current status
 
-Unity 6000.3.25f1 + WebGL module installed and verified 2026-09-30. **Licence
-not yet activated** — see docs/ROADMAP.md M0 blockers. Nothing built yet.
+Unity 6000.3.25f1 + WebGL module installed, verified, and **licensed** (Unity
+Personal, with the `com.unity.editor.headless` entitlement) on 2026-09-30.
+
+M0 pipeline is proven: EditMode **154/154** and PlayMode **5/5** pass, and a
+real WebGL `BuildPipeline.BuildPlayer` succeeds. The engine-free `EmberHollow.Core`
+assembly carries the ported clock, EventBus, RNG, inventory and farming sim with
+EditMode coverage. See docs/ROADMAP.md for the first unchecked item.

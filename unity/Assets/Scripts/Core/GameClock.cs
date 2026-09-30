@@ -131,7 +131,9 @@ namespace EmberHollow.Core
             }
 
             WorldState next = world.Copy();
-            AdvanceCalendarOneDay(next.Calendar, out _, out _);
+            bool seasonRolled = false;
+            bool yearRolled = false;
+            AdvanceCalendarOneDay(next.Calendar, ref seasonRolled, ref yearRolled);
             next.Clock = new Clock { Hour = GameConstants.DayStartHour, Minute = 0 };
             next.DayCount = world.DayCount + 1;
             next.PassedOut = false;
@@ -275,15 +277,6 @@ namespace EmberHollow.Core
             next.PassedOut = passedOut;
             daysRolled = days;
             return next;
-        }
-
-        private static void AdvanceCalendarOneDay(TimeCalendar calendar, out bool seasonRolled, out bool yearRolled)
-        {
-            bool season = false;
-            bool year = false;
-            AdvanceCalendarOneDay(calendar, ref season, ref year);
-            seasonRolled = season;
-            yearRolled = year;
         }
 
         private static void AdvanceCalendarOneDay(TimeCalendar calendar, ref bool seasonRolled, ref bool yearRolled)

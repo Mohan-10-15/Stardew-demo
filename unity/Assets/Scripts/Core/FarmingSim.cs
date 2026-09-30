@@ -169,9 +169,10 @@ namespace EmberHollow.Core
         public const int ForageXp = 12;
 
         /// <summary>
-        /// Energy per swing. Charged on any tool swing the farmer can afford,
-        /// including a wasted one; the fishing family is excluded because
-        /// <c>fish:sim</c> claims it off the bus.
+        /// Energy per swing. Charged on any swing the farmer can afford,
+        /// including one that turns out to do nothing, so swinging at a wall
+        /// teaches the cost rather than being free. The fishing family is
+        /// excluded because <c>fish:sim</c> claims it off the bus.
         /// </summary>
         public static int EnergyCost(ToolKind kind)
         {
@@ -241,7 +242,11 @@ namespace EmberHollow.Core
             return ToolKind.Hands;
         }
 
-        /// <summary>Maps a tool id to the upgrade tier encoded in its id, or 0.</summary>
+        /// <summary>
+        /// Maps a tool id to the upgrade tier encoded in its id, or 0. Ids are
+        /// authored as <c>&lt;name&gt;-t&lt;tier&gt;</c> (for example
+        /// <c>pickaxe-t3</c>), and a bare numeric suffix is also accepted.
+        /// </summary>
         public static int TierOf(string? toolId)
         {
             if (string.IsNullOrEmpty(toolId))
@@ -255,7 +260,13 @@ namespace EmberHollow.Core
                 return 0;
             }
 
-            return int.TryParse(toolId.Substring(dash + 1), out int tier) ? tier : 0;
+            string suffix = toolId.Substring(dash + 1);
+            if (suffix.Length > 1 && (suffix[0] == 't' || suffix[0] == 'T'))
+            {
+                suffix = suffix.Substring(1);
+            }
+
+            return int.TryParse(suffix, out int tier) ? tier : 0;
         }
 
         /// <summary>
@@ -515,9 +526,16 @@ namespace EmberHollow.Core
                 return PickForage(state, tile, bus);
             }
 
-            if (!string.IsNullOrEmpty(toolId) && content.CropForSeed(toolId) != null)
+            // Planting. If the tile is bare soil, treat the held item as a
+            // planting attempt regardless of whether it is a known seed, so an
+            // unrecognised seed bag reports "no-crop" rather than the useless
+            // "nothing is here". On other tiles only a real seed attempts a
+            // plant, so picking up a rock still says "nothing".
+            bool onTilledSoil = obj != null && string.Equals(obj.Id, TilledId, StringComparison.Ordinal);
+            bool isKnownSeed = !string.IsNullOrEmpty(toolId) && content.CropForSeed(toolId) != null;
+            if (onTilledSoil || isKnownSeed)
             {
-                return ApplyPlant(state, tile, toolId!, content, bus);
+                return ApplyPlant(state, tile, toolId ?? string.Empty, content, bus);
             }
 
             return ToolResult.Fail("nothing");
