@@ -8,3 +8,15 @@ coverage/
 *.local
 .vite/
 artifacts/
+
+# Unity
+unity/Library/
+unity/Temp/
+unity/Obj/
+unity/obj/
+unity/Builds/
+unity/Binaries/
+unity/Logs/
+unity/UserSettings/
+unity/MemoryCaptures/
+unity/Recordings/

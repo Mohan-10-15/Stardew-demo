@@ -1,0 +1,21 @@
+{
+    "name": "EmberHollow.Tests.PlayMode",
+    "rootNamespace": "EmberHollow.Tests.PlayMode",
+    "references": [
+        "EmberHollow.Core",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
