@@ -29,7 +29,7 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
 - [x] WebGL build succeeded — 15.33 MB, 0 errors
 - [x] Docs: GDD, ARCHITECTURE, ROADMAP, TASKS, DECISIONS, ASSET_LICENSES
 - [x] **WebGL build re-verified after the Core port**
-- [ ] M0 checkpoint committed
+- [x] M0 checkpoint committed — `1c4f20a`
 
 ### M0 — dispatched worker tasks
 

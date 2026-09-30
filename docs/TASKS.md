@@ -1,7 +1,8 @@
 # TASKS
 
 Task index and worker assignments. One file per task at `docs/tasks/T-####.md`.
-Dispatch with `oc-send`.
+Dispatch with the opencode `Task` tool — one subagent per task, briefed from
+its task file.
 
 Workers report back in exactly this form:
 
@@ -53,6 +54,6 @@ Docs are the orchestrator's; put doc-worthy notes in the task report.
 |------|------|-------------|--------|
 | T-0001 | ORCHESTRATOR | M0 pipeline bootstrap: project, packages, asmdefs, Core port, runner, WebGL builder, docs | **DONE** — EditMode 154/154, PlayMode 5/5, WebGL 15.33 MB |
 | T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | queued |
-| T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | queued |
+| T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | queued, after T-0101 |
 | T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | queued |
 | T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | queued |
