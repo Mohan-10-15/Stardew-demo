@@ -418,3 +418,29 @@ UI Toolkit ships as a built-in module in Unity 6, so `com.unity.ui` is not
 installed and the usual `DefaultRuntimeTheme.tss` path does not exist. The theme
 is therefore generated as a one-line `.tss` importing `unity-theme://default`,
 which is what the editor's own "create panel settings" would have assigned.
+
+## D-0020 - A compressed WebGL asset is served under its decoded Content-Type
+
+**Date:** 2026-09-30
+
+`WebGL.wasm.br` must be served as `Content-Type: application/wasm` **and**
+`Content-Encoding: br`. Those look contradictory but are not: the browser decodes
+the body first, and `WebAssembly.compile` then rejects anything that is not
+`application/wasm`. `WebAssembly.compileStreaming` fails outright on the wrong
+type, and the fallback to an ArrayBuffer fails too, so the loader never recovers.
+
+The server keyed its lookup off the file extension, which for a compressed build
+is always `.br`, so every brotli asset was served as `application/octet-stream`.
+The type now comes from the extension *before* `.br`.
+
+The connection failures in the same console were a second, unrelated fault: the
+server process had been killed, so the requests that followed the failed compile
+found nothing listening. `GetContext` is now wrapped so a client abandoning a
+request mid-stream cannot take the listener down for the assets still to come.
+
+`scripts/verify-webgl.mjs` exists because this class of bug is invisible from the
+terminal. It fetches every asset the loader asks for, asserts status, type,
+encoding and range behaviour, then confirms the client transparently decoded the
+brotli and that `WebAssembly.validate` accepts the result: a real 59.9 MB module
+with 612 exports. A server that cannot pass that check will not load in a browser
+either, which is a far cheaper thing to discover than a blank page.

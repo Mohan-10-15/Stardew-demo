@@ -70,7 +70,22 @@ if (-not $NoBrowser) {
 
 try {
     while ($listener.IsListening) {
-        $context = $listener.GetContext()
+        # Accepting a connection is outside the per-request handler below, and it
+        # is the part a browser can disturb: it opens several connections at once
+        # and abandons the ones it no longer wants. Losing the server partway
+        # through a load turned into ERR_CONNECTION_REFUSED on the remaining
+        # assets, which reads like a broken build rather than a dead server.
+        $context = $null
+        try {
+            $context = $listener.GetContext()
+        }
+        catch {
+            if (-not $listener.IsListening) { break }
+            Write-Warning "Accept failed, continuing: $($_.Exception.Message)"
+            Start-Sleep -Milliseconds 50
+            continue
+        }
+
         try {
             $relative = [System.Uri]::UnescapeDataString($context.Request.Url.AbsolutePath.TrimStart('/'))
             if ([string]::IsNullOrWhiteSpace($relative)) { $relative = "index.html" }
@@ -92,12 +107,22 @@ try {
             }
 
             $ext = [System.IO.Path]::GetExtension($full).ToLowerInvariant()
-            $context.Response.ContentType = if ($mime.ContainsKey($ext)) { $mime[$ext] } else { "application/octet-stream" }
+            $encoded = $ext -eq ".br"
+
+            # The Content-Type has to describe what the browser ends up holding,
+            # not what is on disk. A brotli-compressed build stores WebGL.wasm.br,
+            # but the browser decompresses it before WebAssembly.compile sees it,
+            # and that call rejects anything but "application/wasm". Keying the
+            # lookup off ".br" instead sent octet-stream, and the loader died with
+            # "Incorrect response MIME type. Expected 'application/wasm'" before
+            # falling back to a path that then also failed.
+            $mimeKey = if ($encoded) { [System.IO.Path]::GetExtension($full.Substring(0, $full.Length - 3)).ToLowerInvariant() } else { $ext }
+            $context.Response.ContentType = if ($mime.ContainsKey($mimeKey)) { $mime[$mimeKey] } else { "application/octet-stream" }
             $context.Response.Headers.Add("Accept-Ranges", "bytes")
             $context.Response.Headers.Add("Cache-Control", "no-store")
 
             # The whole reason this script exists.
-            if ($ext -eq ".br") {
+            if ($encoded) {
                 $context.Response.Headers.Add("Content-Encoding", "br")
             }
 

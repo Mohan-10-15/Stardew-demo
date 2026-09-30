@@ -130,6 +130,24 @@ the byte-range requests Unity's loader streams its data files with, and streams
 responses in chunks; opening `index.html` from disk, or serving it from a naive
 static server, gives a blank screen.
 
+**The Content-Type of a `.br` file must describe the decoded content, not the
+file.** `WebGL.wasm.br` has to be served as `application/wasm` with
+`Content-Encoding: br`, because the browser decompresses it before
+`WebAssembly.compile` sees it and that call rejects anything else. Keying the
+lookup off the `.br` extension sends `application/octet-stream` and the loader
+dies with *"Incorrect response MIME type. Expected 'application/wasm'"*.
+
+Check a running server end to end, without a browser:
+
+```
+node scripts\verify-webgl.mjs http://localhost:8123/
+```
+
+It fetches every asset the loader requests, asserts the status, content type,
+encoding and range behaviour, then decompresses the wasm and asks
+`WebAssembly.validate` whether the result is a real module. All checks pass
+before the build is worth opening in a browser.
+
 A WebGL player cannot be launched as a standalone application: it is web
 technology and needs a browser engine, which is why the native build above
 exists.
