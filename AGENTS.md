@@ -1,62 +1,170 @@
-# Agreed Rules (M0) — read before any work
+`C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe`
 
-## 0. WHAT "DONE" MEANS (copy from the brief, verbatim)
+# Ember Hollow — Team Rulebook (Unity 6 LTS)
 
-This is NOT a prototype, tech demo or vertical slice. The finished product is a game a stranger could download, play for 40+ hours and reach an ending in. Every feature in the scope must be reachable from a new game through normal play, work end to end, survive save/load, and have automated tests wherever there is logic. No stubs, no "TODO: implement", no placeholder menus, no "coming soon" buttons, no grey-box art in the final build. If scope feels too big, split it into smaller tasks; never cut features silently. Anything deferred goes into docs/ROADMAP.md as an unchecked item.
+> **The line above is the ONLY verified Unity Editor on this machine.** Every
+> headless `-executeMethod`, test, and `BuildPipeline.BuildPlayer` invocation in
+> this project must use that exact path. It was confirmed on 2026-09-30 via
+> `Unity Hub.exe -- --headless editors -i`, which reported:
+>
+> ```
+> 6000.3.25f1 installed at C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe
+> ```
+>
+> Note the location is **not** `C:\Program Files\Unity\Hub\Editor`. This box has
+> no elevated shell, and Hub's MSIX-packaged installer fails there with
+> `The Windows elevation prompt was cancelled or timed out`. See
+> docs/DECISIONS.md entry D-0001.
 
-## Shared-tree rules
+## 0. Canonical editor invocation
 
-- Every file has exactly one owning lane (see LANES below), and a worker never edits outside its lane — it asks the orchestrator instead.
-- Only the ORCHESTRATOR runs git commits; workers must never commit, reset, stash or checkout.
-- Docs are the orchestrator's; workers put doc-worthy notes in their report and the orchestrator folds them in.
-- Dev servers use distinct ports (orchestrator 2026, workers 5171-5173).
-- Workers run only the tests for their own module; the orchestrator runs the full suite at integration points.
-- NEW (adapted 2026-09): this environment has no oc-grid; workers are opencode subagents, each dispatched by brief. Keep reports in the exact `DONE T-#### | ...` format.
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" ^
+  -batchmode -projectPath "C:\mohan\Game\Stardew dmeo\unity" ^
+  -executeMethod Namespace.ClassName.MethodName ^
+  -logFile "C:\mohan\Game\Stardew dmeo\unity\Logs\<name>.log"
+```
 
-## Lanes
+The Unity project root is **`unity/`**, a subdirectory of this repo — NOT the repo
+root. The repo root still holds the legacy `node_modules/` tree, and Unity would
+try to import every file in it as an asset. Never pass the repo root as
+`-projectPath`.
 
-| Lane        | Owner     | Owns |
-|-------------|-----------|------|
-| world/view  | WORKER-1  | rendering, camera, lighting, day/night/weather/season visuals, maps/terrain, animation, particles, asset pipeline, performance |
-| sim         | WORKER-2  | time/calendar, farming, inventory, tools, economy, skills, crafting/cooking, fishing, animals, mines, combat |
-| people/ui   | WORKER-3  | NPCs, schedules, dialogue, quests, events/festivals, all DOM UI, audio, settings, tutorial |
-| core        | ORCHESTRATOR | src/core contracts, content schemas, build config, test infra, docs, integration glue |
+Verified working on 2026-09-30: EditMode 2/2 passed, PlayMode 1/1 passed, and a
+real WebGL `BuildPipeline.BuildPlayer` succeeded (15.33 MB, 0 errors, 866s).
+Run both test tiers with `scripts/run-tests.ps1`; build WebGL with
+`-executeMethod EmberHollow.EditorTools.WebGlBuilder.Build`.
 
-Content ownership: maps -> WORKER-1; items/crops/recipes/fish/monsters/animals -> WORKER-2; NPCs/dialogue/schedules/quests/festivals -> WORKER-3.
+Unity Hub (installed, but its CLI install path is unreliable here):
 
-## 6. QUALITY GATES (copy from the brief, verbatim)
+```
+"C:\Program Files\WindowsApps\UnityTechnologies.UnityHub_3.22.0.65535_x64__2vrhnee42bhxm\app\Unity Hub.exe" -- --headless <cmd>
+```
 
-- `npm run check` passes: typecheck + lint + unit/sim tests + content validation (created in M0).
-- The feature works from a fresh new game through normal play (no dev cheats) and survives save -> reload.
-- A headless sim/bot test covers its core loop. A Playwright boot smoke test also passes; if a browser can't run here, the sim-level tests are the gate.
+## 1. THE RULE THAT MAKES THIS WORK WITH A CLI-ONLY TEAM
+
+Nobody can open the Unity Editor and click. Anything that would normally mean
+dragging a GameObject into a scene, wiring an Inspector reference, or
+right-clicking to create an asset MUST instead be a C# Editor script under an
+`Editor/` folder (`UnityEditor` namespace) with a static method, run headlessly
+via the invocation above, using `GameObject.CreatePrimitive`,
+`AssetDatabase.CreateAsset`, `PrefabUtility.SaveAsPrefabAsset`,
+`EditorSceneManager.SaveScene`, `AssetDatabase.ImportAsset`, etc. If a task
+can't be expressed this way, restructure it — never leave a note asking a human
+to finish something in the Editor.
+
+## 2. Lanes
+
+| Lane          | Owner       | Owns |
+|---------------|-------------|------|
+| World & Engine | WORKER-1    | scenes/prefabs (via the automation pattern), Cinemachine camera, lighting, day/night, weather VFX (Particle System), terrain/maps, animation, asset/material pipeline, URP settings, performance |
+| Simulation    | WORKER-2    | time/calendar, farming, inventory, tools, economy, skills, crafting/cooking, fishing, animals, mines, combat — plain C# classes, no MonoBehaviour/scene dependency |
+| People & Interface | WORKER-3 | NPCs, schedules, dialogue, quests, events/festivals, ALL UI via UI Toolkit (UXML/USS), audio, settings, tutorial |
+| core          | ORCHESTRATOR | project/package setup, GameState/EventBus core, ScriptableObject schemas, Editor-automation conventions, build/test scripts, docs, integration, git commits |
+
+Folder convention mirrors the lanes:
+`Assets/Scripts/Features/<name>/{Sim,View,UI}/` — Sim=WORKER-2, View=WORKER-1,
+UI=WORKER-3. Engine-level movement/camera sim stays with WORKER-1.
+
+## 3. Shared-tree rules
+
+- Only the ORCHESTRATOR runs git commits; workers never commit, reset, stash or checkout.
+- Workers never edit outside their lane — they ask the orchestrator instead.
+- Docs are the orchestrator's; workers put doc-worthy notes in their report.
+- Workers are opencode subagents, dispatched by brief. Reports use the exact
+  format `DONE T-#### | files changed | how to verify | open issues`, and must
+  state the actual `-executeMethod` invocation for anything built via the
+  automation pattern.
+
+## 4. Architecture rules
+
+- Simulation state lives in plain C# POCOs (`GameState` + per-feature state
+  classes) with zero `UnityEngine` dependency where possible, so EditMode tests
+  construct state, call logic and assert with no scene loaded. Heaviest tier —
+  use it.
+- MonoBehaviours are thin: read input (Input System), call into POCO logic,
+  reflect results into transforms/animation/particles/audio. No gameplay logic
+  in a MonoBehaviour.
+- EventBus pattern in Core/ is how features communicate. Every interact-style
+  action publishes a clearly distinct success event AND a clearly distinct
+  failure event (see `FarmingSim.cs`'s `InteractSucceeded`/`InteractFailed`).
+  Mandatory for fishing, mining, combat, gifting. Success and failure must never
+  look or sound the same.
+- Content is data: every definition is a ScriptableObject (`CropDefinition`,
+  `ItemDefinition`, `NpcDefinition`, `RecipeDefinition`, `MapDefinition`, ...)
+  created as `.asset` via `AssetDatabase.CreateAsset`, never hand-placed.
+  Cross-references validated by an EditMode test that loads all of them.
+- Art: real modeled/textured/animated assets from free CC0 packs — KayKit
+  (characters), Quaternius (buildings, animals, nature), Kenney.nl
+  (supplementary). Imported into `Assets/Art/<pack-name>/`. Stylized and
+  detailed, not primitives and not photoreal. Stay within these packs so the
+  game reads as one deliberate style. Every pack logged in
+  docs/ASSET_LICENSES.md with source URL and license.
+- 60 FPS in the WebGL build on RTX 2050-class hardware: static batching, GPU
+  instancing for repeated props, object pooling for particles, no per-frame
+  allocations in hot paths. KayKit characters share one texture atlas — keep to
+  similarly optimized assets.
+- Original IP only: genre-inspired, never copy Stardew Valley's or Minecraft's
+  actual names, art, or mechanics verbatim.
+- Save files: `JsonUtility` (or a small custom serializer), versioned + migrated,
+  corruption-safe.
+
+## 5. Tech stack (fixed)
+
+Unity 6 LTS 6000.3.25f1, C# with nullable reference types enabled, URP,
+Cinemachine (angled third-person follow camera), Input System package (not
+legacy Input Manager), UI Toolkit (UXML + USS) for every menu/HUD/dialogue box,
+Unity Test Framework (NUnit) for EditMode + PlayMode tests. WebGL is the
+primary iteration target; Windows standalone is a later deliverable.
+
+## 6. Quality gates
+
+- EditMode AND PlayMode tests green, with actual pass/fail counts from real
+  results — not a claim that tests exist.
+- Works from a fresh new game through normal play (no dev cheats), survives
+  save -> reload.
+- At least one PlayMode test drives the feature's core loop by simulating real
+  frames/input and asserting on resulting state.
+- A successful WebGL build via `BuildPipeline.BuildPlayer` at every milestone
+  boundary. "Compiles in the Editor" is not verified.
 - No TODO/FIXME/stub left behind (grep before accepting).
-- Docs updated: ROADMAP checkbox, ARCHITECTURE notes, a DECISIONS entry for any non-obvious choice.
+- Docs updated: ROADMAP checkbox, ARCHITECTURE notes, DECISIONS entry for any
+  non-obvious choice.
 
-## Acceptance playtests (ADDENDUM A)
+## 7. Milestones
 
-- docs/ACCEPTANCE.md holds the per-milestone playtest script. A milestone is NOT
-  done until its script passes (driven by the headless bot and/or sim tests,
-  since no browser runs here) and the result is recorded in the status report.
-- Steps are marked `sim` (covered by headless tests) or `browser` (deferred to
-  Playwright once a browser is available); `browser` steps must never be the
-  only coverage for a feature's logic.
+- **M0** Foundations: project + packages (URP, Cinemachine, Input System),
+  URP config, Editor-automation convention, folder structure, docs (GDD,
+  ARCHITECTURE, ROADMAP, TASKS, DECISIONS, ASSET_LICENSES), Core scripts, an
+  EditMode+PlayMode test runner, a real WebGL build. Then: WORKER-1 builds one
+  walkable lit farm scene with a Cinemachine follow using an imported KayKit
+  character + Quaternius farm pack; WORKER-2 wires Core logic to a MonoBehaviour
+  adapter with EditMode tests; WORKER-3 builds the UI Toolkit base style
+  (parchment/wood, real pixel font) + HUD + Input System action map.
+- **M1** Core loop: calendar/energy, tools, till->plant->water->harvest, hotbar,
+  shipping bin, money, sleep/rollover, save/load, first crops. Continuous 8-dir
+  movement from day one. Distinct success vs failure feedback from day one.
+- **M2** Village and economy: village scene, shops, seasons + weather,
+  foraging, tree chopping, more crops, end-of-day summary.
+- **M3** People: schedules + NavMesh pathfinding, dialogue, gifts, friendship,
+  first events, quests + journal.
+- **M4** Life skills: fishing, animals, crafting/cooking/machines, skills +
+  professions.
+- **M5** Mines and combat.
+- **M6** Story and content completion: progression goal, festivals,
+  romance/marriage, collections; hit every quota.
+- **M7** Polish: audio pass, UI/UX pass, performance, accessibility, gamepad,
+  tutorial, title screen, credits.
+- **M8** Balance, QA, release: 2-year PlayMode bot run, economy report, WebGL +
+  Windows standalone builds via `BuildPipeline.BuildPlayer`, README.
 
-## Commands
+## 8. Legacy web build
 
-```
-npm run dev          # Vite dev server on :2026 (always keep working)
-npm run check        # typecheck + lint + all tests + content validation (gate)
-npm run test         # vitest run
-npm run build        # production build
-npm run format       # prettier
-```
+The previous TypeScript + Vite + Three.js implementation (M0-M3) is still in
+this repo. Its rulebook is archived at docs/legacy-web/AGENTS-web.md. See
+docs/DECISIONS.md before deleting or moving any of it.
 
-## Current status
+## 9. Current status
 
-M0-M2 committed. M3 (people: schedules + pathfinding, dialogue, gifts,
-friendship, heart events, quests + journal) in progress. See docs/ROADMAP.md and
-docs/TASKS.md.
-
-## Tech stack (fixed)
-
-TypeScript (strict), Vite, Three.js. DOM/CSS UI overlay. Vitest. ESLint + Prettier. Zod for content. Playwright smoke tests. WebAudio. IndexedDB saves. Everything from the terminal.
+Unity 6000.3.25f1 + WebGL module installed and verified 2026-09-30. **Licence
+not yet activated** — see docs/ROADMAP.md M0 blockers. Nothing built yet.
