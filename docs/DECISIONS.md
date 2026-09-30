@@ -198,6 +198,27 @@ at all (`player:exhausted` fires first).
 
 ---
 
+## D-0010 — Art is real CC0 pack content, not procedural primitives
+
+**Date:** 2026-09-30
+
+The art direction was changed from "flat-shaded primitives only" to real
+modelled/textured/animated CC0 assets, because primitives produce a toy that
+cannot meet the stated quality bar.
+
+Sources, restricted to keep the game reading as one deliberate style:
+
+- **KayKit** — rigged, animated characters (player, NPCs).
+- **Quaternius** — buildings, animated farm animals, nature.
+- **Kenney.nl** — supplementary.
+
+Imported into `Assets/Art/<pack-name>/` and referenced from prefabs built by the
+same Editor-automation pattern as everything else. Every pack is logged in
+`docs/ASSET_LICENSES.md` with source URL and license. CC0 needs no attribution;
+it is logged for our own record.
+
+Cohesion is treated as more important than any single asset's fidelity, so no
+one-off downloads from outside these three packs.
 ## D-0011 — Engine code lives in `EmberHollow.Runtime`, not Assembly-CSharp
 
 **Date:** 2026-09-30
@@ -242,24 +263,63 @@ than the template's SampleScene.
 
 ---
 
-## D-0010 — Art is real CC0 pack content, not procedural primitives
+
+---
+
+## D-0013 - `Clock.Hour` is a display hour, and a day is 6:00 AM to midnight
 
 **Date:** 2026-09-30
 
-The art direction was changed from "flat-shaded primitives only" to real
-modelled/textured/animated CC0 assets, because primitives produce a toy that
-cannot meet the stated quality bar.
+`GameClock` held two incompatible conventions for `Clock.Hour` in the same file.
+`Advance` and `StateFactory` wrote a **display** hour, where 6:00 is the start of
+the day and `ToAbsoluteMinutes` maps an `Hour < 6` back through `+18h`.
+`RollForward` wrote the **raw rollover overflow** with no offset.
 
-Sources, restricted to keep the game reading as one deliberate style:
+The consequence was not cosmetic. After a rollover the clock held, say, `0:05`.
+`ToAbsoluteMinutes` read that as 18:05 the previous day, so the clock was already
+past the day boundary again and **every subsequent tick rolled another day**. A
+planted crop would have ripened and the season would have turned inside a single
+in-game minute of real time.
 
-- **KayKit** — rigged, animated characters (player, NPCs).
-- **Quaternius** — buildings, animated farm animals, nature.
-- **Kenney.nl** — supplementary.
+The ported web build had hidden it because its test asserted the buggy output: 108
+ticks to reach midnight, then 12 more ticks of a broken clock to reach the 2 AM
+collapse, and the test called that 120.
 
-Imported into `Assets/Art/<pack-name>/` and referenced from prefabs built by the
-same Editor-automation pattern as everything else. Every pack is logged in
-`docs/ASSET_LICENSES.md` with source URL and license. CC0 needs no attribution;
-it is logged for our own record.
+`RollForward` now applies the same `DayStartHour` offset as `Advance`, and
+`GameClockTests` pins the real contract:
 
-Cohesion is treated as more important than any single asset's fidelity, so no
-one-off downloads from outside these three packs.
+- A playable day is **6:00 AM to midnight, 108 ten-minute ticks**.
+- The 2:00 AM collapse is a **clamp for a stalled frame**, not a scheduled event.
+  Once the day rolls at midnight the clock is back at 6:00 AM, so ordinary ticking
+  can never reach 2 AM; reaching it needs one oversized tick.
+- A new test asserts the day *after* a rollover is also a full 108 ticks. That is
+  the assertion that fails loudly if the offset is ever dropped again.
+
+## D-0014 - `DailyTick` owns the once-a-day rules, and the runner calls it
+
+**Date:** 2026-09-30
+
+`GameState.PlacedObject` carried `Stage`, `GrownDays` and `MissedWater`, and
+harvest refused anything below `CropDef.MatureStage`, but **nothing in the project
+ever incremented `Stage`**. `WorldState.Forecast` and
+`GameClock.SeasonWeatherWeights` were likewise written but never consumed. A crop
+could be tilled, planted and watered and would then never ripen.
+
+`DailyTick.Run(state, content, rng, bus)` in `EmberHollow.Core` now owns the
+per-day work: crops advance a stage, unwatered crops wither on the third
+consecutive missed day, today's weather comes off yesterday's forecast, and a new
+day is rolled onto the end of it. It takes an injected `Rng` and a `ContentDb`, so
+a fortnight can be replayed in an EditMode test with no scene loaded.
+
+`SimulationRunner.AdvanceOneTick` calls it on `DayRolled` **before** publishing
+`DayStarted`, so a panel reacting to the new day already sees fully grown crops
+and settled weather instead of having to wait a frame for them.
+
+Two smaller things fell out of the same work and are worth not undoing:
+
+- `SimulationRunner.Step` honours `Paused`, because a system calling it every
+  frame would otherwise quietly defeat the pause. `StepForced` is the explicit
+  escape hatch for save migration and tests.
+- `EventBus.On` replays buffered events to a late subscriber. That is deliberate,
+  so a HUD built mid-session still learns the current day, and the day-rollover
+  test asserts the full sequence including that replay.
