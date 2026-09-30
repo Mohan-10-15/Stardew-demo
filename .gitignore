@@ -26,3 +26,8 @@ unity/Recordings/
 *.sln
 *.user
 
+
+# Build, test and browser-check output (logs, screenshots, json reports)
+Logs/
+*.png
+!unity/Assets/**/*.png
