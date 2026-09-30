@@ -48,7 +48,17 @@
     <Analyzer Include="C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Core\PipelineProbe.cs" />
+    <Compile Include="Assets\Scripts\Core\StateFactory.cs" />
+    <Compile Include="Assets\Scripts\Core\ContentDb.cs" />
+    <Compile Include="Assets\Scripts\Core\InventorySim.cs" />
+    <Compile Include="Assets\Scripts\Core\FarmingSim.cs" />
+    <Compile Include="Assets\Scripts\Core\GameClock.cs" />
+    <Compile Include="Assets\Scripts\Core\GameState.cs" />
+    <Compile Include="Assets\Scripts\Core\Rng.cs" />
+    <Compile Include="Assets\Scripts\Core\GameEvents.cs" />
+    <Compile Include="Assets\Scripts\Core\SimUtil.cs" />
+    <Compile Include="Assets\Scripts\Core\EventBus.cs" />
+    <Compile Include="Assets\Scripts\Core\GameTypes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Core\EmberHollow.Core.asmdef" />

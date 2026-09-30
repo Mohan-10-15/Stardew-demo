@@ -139,8 +139,11 @@ namespace EmberHollow.Core
         }
 
         /// <summary>
-        /// Spawns an independent child stream so one subsystem cannot shift
-        /// another's results by consuming extra draws.
+        /// Spawns an independent child stream, so one subsystem cannot shift
+        /// another's results. The child captures a seed at fork time and is
+        /// therefore immune to anything the parent does afterwards; note that
+        /// forking itself consumes exactly one draw from the parent, which keeps
+        /// the parent's own sequence deterministic for a fixed call order.
         /// </summary>
         public Rng Fork(string? label = null)
         {

@@ -46,6 +46,13 @@ namespace EmberHollow.Core
         /// Subscribes to <paramref name="type"/>, replaying any buffered events
         /// of that type so late subscribers (UI booting after the sim) still see
         /// what they missed.
+        ///
+        /// Note: because replay is unconditional, a handler that subscribes
+        /// <em>during</em> the delivery of an event it is interested in will
+        /// receive that same in-flight event immediately via the replay buffer,
+        /// in addition to joining subsequent deliveries. Emission iterates a
+        /// snapshot taken before any handler runs, so the in-flight delivery
+        /// order itself is never mutated.
         /// </summary>
         public IDisposable On(string type, Action<object?> handler)
         {

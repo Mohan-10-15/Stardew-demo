@@ -94,7 +94,10 @@ namespace EmberHollow.Core
             };
         }
 
-        /// <summary>Seeds a new game with a map state for every authored map.</summary>
+        /// <summary>
+        /// Seeds a new game with a map state for every authored map, replacing
+        /// the placeholder maps the default factory allocated.
+        /// </summary>
         public static void BuildInitialMaps(GameState state, IEnumerable<MapDef> defs)
         {
             if (state == null)
@@ -109,8 +112,33 @@ namespace EmberHollow.Core
 
             foreach (MapDef def in defs)
             {
-                state.EnsureMap(MapFromDef(def));
+                ReplaceMap(state, MapFromDef(def));
             }
+        }
+
+        /// <summary>Inserts the map, or replaces the existing map with that id.</summary>
+        public static void ReplaceMap(GameState state, MapState map)
+        {
+            if (state == null)
+            {
+                throw new ArgumentNullException(nameof(state));
+            }
+
+            if (map == null)
+            {
+                throw new ArgumentNullException(nameof(map));
+            }
+
+            for (int i = 0; i < state.Maps.Count; i++)
+            {
+                if (string.Equals(state.Maps[i].Id, map.Id, StringComparison.Ordinal))
+                {
+                    state.Maps[i] = map;
+                    return;
+                }
+            }
+
+            state.Maps.Add(map);
         }
 
         /// <summary>
@@ -237,7 +265,7 @@ namespace EmberHollow.Core
                 state.EnsureMap(EmptyMap("farm", 48, 40));
             }
 
-            state.Progression.SetFlag("started");
+            state.SetFlag("started");
             return state;
         }
 

@@ -39,41 +39,41 @@ namespace EmberHollow.Core
     /// <summary>Placed-object id prefixes owned by specific features.</summary>
     public static class PlacedIdPrefix
     {
-        public const string Crop = "crop:";
+        public const string CropPrefix = "crop:";
 
-        public const string Forage = "forage:";
+        public const string ForagePrefix = "forage:";
 
         /// <summary>Strips the crop prefix, or returns null when the id is not a crop.</summary>
         public static string? CropIdOf(string? placedId)
         {
-            if (string.IsNullOrEmpty(placedId) || !placedId!.StartsWith(Crop, StringComparison.Ordinal))
+            if (string.IsNullOrEmpty(placedId) || !placedId!.StartsWith(CropPrefix, StringComparison.Ordinal))
             {
                 return null;
             }
 
-            return placedId.Substring(Crop.Length);
+            return placedId.Substring(CropPrefix.Length);
         }
 
         public static string Crop(string cropId)
         {
-            return Crop + cropId;
+            return CropPrefix + cropId;
         }
 
         /// <summary>Strips the forage prefix, or returns null when it is absent.</summary>
         public static string? ForageIdOf(string? placedId)
         {
-            if (string.IsNullOrEmpty(placedId) || !placedId!.StartsWith(Forage, StringComparison.Ordinal))
+            if (string.IsNullOrEmpty(placedId) || !placedId!.StartsWith(ForagePrefix, StringComparison.Ordinal))
             {
                 return null;
             }
 
-            string inner = placedId.Substring(Forage.Length);
+            string inner = placedId.Substring(ForagePrefix.Length);
             return inner.Length > 0 ? inner : null;
         }
 
         public static string Forage(string itemId)
         {
-            return Forage + itemId;
+            return ForagePrefix + itemId;
         }
     }
 }
