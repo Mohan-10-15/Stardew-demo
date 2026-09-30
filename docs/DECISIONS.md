@@ -444,3 +444,53 @@ encoding and range behaviour, then confirms the client transparently decoded the
 brotli and that `WebAssembly.validate` accepts the result: a real 59.9 MB module
 with 612 exports. A server that cannot pass that check will not load in a browser
 either, which is a far cheaper thing to discover than a blank page.
+
+## D-0021 - The WebGL player is verified in a real browser, measured not eyeballed
+
+**Date:** 2026-09-30
+
+The rulebook has been treating "compiles" and "serves" as sufficient for the
+WebGL target. They are not, and this entry records the harness that closes the
+gap: `scripts/shoot-webgl.mjs` drives Chromium through Playwright, waits for
+Unity's canvas, screenshots the frame, and measures it.
+
+Playwright and Chromium were already in the repo, so this cost no downloads.
+
+**The frame is measured, never inspected.** Two reasons, both learned the hard
+way here:
+
+- The canvas cannot be read with `readPixels`. Unity leaves
+  `preserveDrawingBuffer` off, so reading the GL backbuffer outside the draw
+  frame returns an empty buffer even when the frame is perfect. The first run of
+  this harness reported `distinctColours: 1` on a frame that was in fact fully
+  rendered. Playwright's screenshot goes through the compositor and is unaffected,
+  so `scripts/png-probe.mjs` decodes it instead: a small PNG reader plus mean
+  luminance, lit fraction, distinct colours, and per-region means.
+- A human looking at a PNG and saying "that looks like a farm" is not a test. The
+  harness asserts on numbers, and probes the HUD at the coordinates the layout
+  puts it, so a missing panel is a failed check rather than an opinion.
+
+**Headless and headed are different machines.** Headless Chromium has no GPU, so
+WebGL comes from SwiftShader via software Vulkan. Forcing those flags while headed
+pins the browser to software rendering and hides whatever the real GPU does, so
+the flags are applied only when headless. A real GPU run is the only way to tell
+a SwiftShader artifact from a genuine bug, and here that distinction mattered.
+
+### What the first real run found
+
+Both of these reproduce on real hardware GL, not just software:
+
+- **251 `GL_INVALID_OPERATION: glDrawElements: Mismatch between texture format and
+  sampler type`.** The 3D scene still renders, so this is a bad shader program
+  rather than a dead context. Prime suspect is the set of URP materials
+  `FarmSceneBuilder` creates, including the transparent tile highlight, whose
+  variant may be stripped from a WebGL build.
+- **The UI Toolkit HUD does not draw.** Its region averages the same colour as
+  the sky, while the 3D frame around it is fine. `HudController` reports no
+  missing elements, so the panel is being built and then not presented.
+- Unity also logs `Hidden/CoreSRP/CoreCopy`, `StencilDitherMaskSeed` and
+  `HDRDebugView` as unsupported on this GPU, which is normal for those and not
+  the cause.
+
+Both are open. Neither is a reason to distrust the native Windows player, which
+was verified separately by launching it and reading `Player.log`.
