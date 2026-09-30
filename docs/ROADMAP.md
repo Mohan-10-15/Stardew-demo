@@ -33,8 +33,8 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
 
 ### M0 — dispatched worker tasks
 
-- [ ] **T-0101** WORKER-1: import one KayKit character pack + one Quaternius farm
-      pack into `Assets/Art/`, log both in `docs/ASSET_LICENSES.md`
+- [x] **T-0101** WORKER-1: KayKit Adventurers + Quaternius Farm Buildings imported
+      and logged — 45 prefabs, EditMode **164/164**, PlayMode **5/5**
 - [ ] **T-0102** WORKER-1: build a walkable, lit farm scene from the imported
       prefabs with a Cinemachine angled third-person follow, via the automation
       pattern

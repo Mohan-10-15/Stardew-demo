@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
+    <Compile Include="Assets\Editor\ArtPackImporter.cs" />
     <Compile Include="Assets\Editor\WebGlBuilder.cs" />
   </ItemGroup>
   <ItemGroup>

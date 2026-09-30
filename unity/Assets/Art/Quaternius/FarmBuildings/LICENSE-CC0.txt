@@ -1,0 +1,33 @@
+Farm Buildings Pack (September 2018)
+===================================
+
+Author:      Quaternius (https://quaternius.com/)
+Source:      https://quaternius.itch.io/lowpoly-farm-buildings
+Pack page:   https://quaternius.com/packs/farmbuildings.html
+Downloaded:  2026-09-30
+
+License
+-------
+Creative Commons Zero v1.0 Universal (CC0 1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+"This pack includes a set of farm buildings. All in FBX, OBJ and Blend formats,
+free to use in personal and commercial projects."
+
+Contents imported into this folder
+---------------------------------
+The 13 FBX files only. The OBJ and Blend copies shipped in the same archive are
+deliberately not imported: Unity's built-in model importer reads FBX natively,
+the OBJ copies carry no material assignment, and the Blend files are Blender
+sources we do not open here.
+
+Barn, BigBarn, ChickenCoop, Fence, Fence2, OpenBarn, Silo, Silo_House,
+SmallBarn, TowerWindmill, WaterTower, Well, Windmill
+
+Appearance
+----------
+This pack ships no textures. Each FBX carries flat-shaded solid-colour
+materials (see the matching .mtl in the original archive, e.g. "DarkRed",
+"RoofBlack", "White"). EmberHollow.EditorTools.ArtPackImporter converts each of
+those to a shared URP/Lit material asset under Assets/Art/Materials/Quaternius/
+so the buildings render correctly under URP and can be GPU instanced.
