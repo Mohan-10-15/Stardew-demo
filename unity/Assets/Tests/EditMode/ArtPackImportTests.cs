@@ -247,8 +247,12 @@ namespace EmberHollow.Tests.EditMode
 
             string[] paths = materialGuids.Select(AssetDatabase.GUIDToAssetPath).ToArray();
             // Paths look like Assets/Art/Materials/<Pack>/Mat_x.mat, so the pack
-            // name is the fourth segment, not the third.
-            CollectionAssert.AreEquivalent(new[] { "KayKit", "Quaternius" }, paths.Select(p => p.Split('/')[3]).Distinct().ToArray());
+            // name is the fourth segment, not the third. A pack folder may hold
+            // more than the two imported packs (Farm holds the ground and sky
+            // materials), so this asserts containment rather than equivalence.
+            var packs = paths.Select(p => p.Split('/')[3]).Distinct().ToList();
+            CollectionAssert.Contains(packs, "KayKit");
+            CollectionAssert.Contains(packs, "Quaternius");
 
             foreach (string path in paths)
             {

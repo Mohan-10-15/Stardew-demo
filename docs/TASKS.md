@@ -54,9 +54,46 @@ Docs are the orchestrator's; put doc-worthy notes in the task report.
 |------|------|-------------|--------|
 | T-0001 | ORCHESTRATOR | M0 pipeline bootstrap: project, packages, asmdefs, Core port, runner, WebGL builder, docs | **DONE** — EditMode 154/154, PlayMode 5/5, WebGL 15.33 MB |
 | T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | **DONE** — KayKit Adventurers + Quaternius FarmBuildings, 45 prefabs, 85 shared URP materials, EditMode 164/164, PlayMode 5/5 |
-| T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | queued, after T-0101 |
+| T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | **DONE** — `Assets/Scenes/Farm.unity`, 45 objects, EditMode 171/171, PlayMode 11/11, WebGL 17.5 MB |
 | T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | queued |
 | T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | queued |
+
+### T-0102 completion notes
+
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\t0102-scene.log"
+```
+
+`Farm.unity` contains a fenced 26 m yard, a tilled plot, 8 Quaternius buildings,
+a Knight player with a CharacterController and a held axe, a directional sun with
+shadows plus a fill light, a procedural skybox, fog, and a Cinemachine
+`CinemachineThirdPersonFollow` rig with a `CinemachineDeoccluder`.
+
+`FarmSceneTests` (EditMode) opens the saved scene and asserts every renderer uses a
+shared, instanced URP material, the camera follows the Player with a positive
+vertical arm and a deoccluder, shadows are on, fog and skybox are set, and the
+farm is fenced. `FarmScenePlayModeTests` (PlayMode) drives the real scene over
+real frames: all eight directions resolve to unit vectors, held input actually
+translates the player, diagonals are normalised, the player turns to face travel
+and settles facing where they stopped, no-input drifts zero, and the camera sits
+behind and above at third-person distance.
+
+Four real bugs were caught by those tests rather than by eye:
+
+- `PlayerMovementController` stopped turning the instant input was released, so
+  the player froze mid-turn. It now remembers the last heading and settles into
+  it.
+- `DayNightController` assigned a `Gradient`-evaluated `Color` into
+  `Mathf.Lerp`, which does not compile.
+- The EditMode sun test picked the shadowless fill light instead of the
+  clock-driven sun.
+- The 8-direction test asserted `delta.x > 0` regardless of input sign, so moving
+  *left* read as a failure.
+
+Known gaps, deliberately deferred: the ground plane, tilled-plot tiles and
+skybox are generated geometry on shared URP materials rather than a Quaternius
+nature pack, and there is no tree/foliage pack yet. Those are art, not systems,
+and belong with the next art import.
 
 ### T-0101 completion notes
 

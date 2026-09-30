@@ -35,9 +35,9 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
 
 - [x] **T-0101** WORKER-1: KayKit Adventurers + Quaternius Farm Buildings imported
       and logged — 45 prefabs, EditMode **164/164**, PlayMode **5/5**
-- [ ] **T-0102** WORKER-1: build a walkable, lit farm scene from the imported
-      prefabs with a Cinemachine angled third-person follow, via the automation
-      pattern
+- [x] **T-0102** WORKER-1: walkable lit farm scene built by script with a
+      Cinemachine angled third-person follow — EditMode **171/171**,
+      PlayMode **11/11**, WebGL **17.5 MB** 0 errors
 - [ ] **T-0103** WORKER-2: `SimulationRunner` MonoBehaviour adapter wiring Core to
       the scene — thin, no gameplay logic — with EditMode tests
 - [ ] **T-0104** WORKER-3: UI Toolkit base style (parchment + wood border, real

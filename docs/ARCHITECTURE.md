@@ -45,15 +45,22 @@ full day of simulation with no scene.
 | Assembly             | Location                              | Engine refs | Owner        |
 |----------------------|---------------------------------------|-------------|--------------|
 | `EmberHollow.Core`      | `Assets/Scripts/Core`               | **none**    | ORCHESTRATOR / WORKER-2 |
+| `EmberHollow.Runtime`   | `Assets/Scripts/Engine`, `Features/*/View` | yes    | WORKER-1     |
 | `EmberHollow.Content`   | `Assets/Scripts/Content`            | yes         | ORCHESTRATOR |
-| `EmberHollow.Runtime`   | `Assets/Scripts/{Engine,Features}`  | yes         | WORKER-1     |
-| `EmberHollow.UI`        | `Assets/Scripts/UI`                 | yes         | WORKER-3     |
+| `EmberHollow.UI`        | `Assets/Scripts/UI`, `Features/*/UI` | yes         | WORKER-3     |
 | `EmberHollow.Editor`    | `Assets/Editor`                     | Editor only | ORCHESTRATOR |
 | `EmberHollow.Tests.EditMode` | `Assets/Tests/EditMode`        | yes         | all          |
 | `EmberHollow.Tests.PlayMode` | `Assets/Tests/PlayMode`        | yes         | all          |
 
 `EmberHollow.Core` referencing nothing is what stops a simulation feature from
 quietly acquiring a scene dependency and becoming untestable.
+
+**An asmdef cannot reference `Assembly-CSharp`.** Any folder that holds code a
+test needs must have its own asmdef, and the test asmdef must reference it by
+name, or the test cannot see the type at all (`CS0234`). See D-0011.
+
+Note also that Cinemachine 3.1.7 uses the `Unity.Cinemachine` namespace and has
+several renamed types — see D-0012 before writing camera code.
 
 ## 2. Feature folder convention
 
@@ -190,6 +197,15 @@ implementation.
 
 Every such method must **log the path it wrote**, so acceptance can be verified
 by checking the file exists on disk rather than by trusting the report.
+
+Two current examples:
+
+- `EmberHollow.EditorTools.ArtPackImporter.Build` — rebuilds every prefab from
+  the source FBX: normalised scale, feet pivot, generated AnimatorController,
+  shared URP materials.
+- `EmberHollow.EditorTools.FarmSceneBuilder.Build` — builds
+  `Assets/Scenes/Farm.unity` end to end from those prefabs and registers it as
+  the first enabled scene in Build Settings.
 
 ## 10. Save, load and migration
 

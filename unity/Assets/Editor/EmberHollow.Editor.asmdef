@@ -1,0 +1,22 @@
+{
+    "name": "EmberHollow.Editor",
+    "rootNamespace": "EmberHollow.EditorTools",
+    "references": [
+        "EmberHollow.Runtime",
+        "EmberHollow.Core",
+        "Unity.Cinemachine",
+        "Unity.Cinemachine.Editor",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

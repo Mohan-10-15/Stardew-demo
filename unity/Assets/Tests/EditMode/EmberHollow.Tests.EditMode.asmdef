@@ -3,6 +3,8 @@
     "rootNamespace": "EmberHollow.Tests.EditMode",
     "references": [
         "EmberHollow.Core",
+        "EmberHollow.Runtime",
+        "Unity.Cinemachine",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
