@@ -323,3 +323,48 @@ Two smaller things fell out of the same work and are worth not undoing:
 - `EventBus.On` replays buffered events to a late subscriber. That is deliberate,
   so a HUD built mid-session still learns the current day, and the day-rollover
   test asserts the full sequence including that replay.
+
+---
+
+## D-0015 - A native Windows build ships alongside WebGL, not instead of it
+
+**Date:** 2026-09-30
+
+WebGL is still the primary delivery target, but it has a hard limit worth stating
+plainly: a WebGL player **cannot be launched as a standalone application**. It is
+web technology, so it always needs a browser engine behind it. Anyone asking to
+"just run it" wants a window with no browser attached, and the answer is a native
+player.
+
+`windowsstandalonesupport` was already installed, so `WindowsBuilder` produces
+`unity/Builds/Windows/EmberHollow.exe` through `BuildPipeline.BuildPlayer`, scripted
+exactly like the WebGL builder.
+
+- `WindowsBuilder.Build` uses the **Mono** backend with `BuildOptions.Development`.
+  A local build lands in well under a minute, which matters more than a smaller
+  executable while the game is still being written.
+- `WindowsBuilder.BuildRelease` switches to **IL2CPP**, which is what a shipping
+  build needs.
+
+Verified by launching the exe: a windowed player on Direct3D 11 over the RTX 2050,
+303 MB resident, Input System initialised, PhysX up, first frame rendered, and no
+exceptions in `Player.log`.
+
+## D-0016 - Nullable reference types are now actually enabled, per file
+
+**Date:** 2026-09-30
+
+The rulebook has always specified C# with nullable reference types enabled, but
+there was no `csc.rsp` anywhere in the project, so it was not. `EmberHollow.Core`
+and the Engine assembly were full of `?` annotations compiled in a context where
+those annotations are illegal, which produced a stream of `CS8632` warnings in
+every player build.
+
+Each file that uses nullable annotations now opens with `#nullable enable`. Done
+per file rather than through a shared `csc.rsp` so the context is visible at the
+top of the file it governs instead of being implied by a sibling file.
+
+Enabling it took the Windows player build from **80 warnings to 0**, and surfaced
+exactly one genuine defect: `DailyTick.AdvanceStage` took a non-nullable `EventBus`
+while the rest of that class deliberately allows none, so the parameter is now
+`EventBus?`. All 189 EditMode and 17 PlayMode tests still pass.

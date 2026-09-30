@@ -33,7 +33,12 @@ try to import every file in it as an asset. Never pass the repo root as
 Verified working on 2026-09-30: EditMode 2/2 passed, PlayMode 1/1 passed, and a
 real WebGL `BuildPipeline.BuildPlayer` succeeded (15.33 MB, 0 errors, 866s).
 Run both test tiers with `scripts/run-tests.ps1`; build WebGL with
-`-executeMethod EmberHollow.EditorTools.WebGlBuilder.Build`.
+`-executeMethod EmberHollow.EditorTools.WebGlBuilder.Build`; build a native
+Windows player with `-executeMethod EmberHollow.EditorTools.WindowsBuilder.Build`
+(or `BuildRelease` for IL2CPP). Launch the native game with
+`scripts/run-windows.ps1`, or the WebGL build with `scripts/serve-webgl.ps1` (see
+docs/TASKS.md). A WebGL player cannot be run as a standalone app, so anything
+that wants a real window needs the native build.
 
 Unity Hub (installed, but its CLI install path is unreliable here):
 

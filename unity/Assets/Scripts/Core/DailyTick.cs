@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 
@@ -140,7 +141,7 @@ namespace EmberHollow.Core
             }
         }
 
-        private static void AdvanceStage(MapState map, PlacedObject obj, CropDef def, EventBus bus)
+        private static void AdvanceStage(MapState map, PlacedObject obj, CropDef def, EventBus? bus)
         {
             if (obj.Stage >= def.MatureStage)
             {
