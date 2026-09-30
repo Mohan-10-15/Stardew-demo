@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Assets\Tests\EditMode\RngTests.cs" />
     <Compile Include="Assets\Tests\EditMode\EventBusTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\ArtPackImportTests.cs" />
     <Compile Include="Assets\Tests\EditMode\GameClockTests.cs" />
     <Compile Include="Assets\Tests\EditMode\StateFactoryTests.cs" />
     <Compile Include="Assets\Tests\EditMode\FarmingSimTests.cs" />

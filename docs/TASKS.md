@@ -53,7 +53,35 @@ Docs are the orchestrator's; put doc-worthy notes in the task report.
 | Task | Lane | Description | Status |
 |------|------|-------------|--------|
 | T-0001 | ORCHESTRATOR | M0 pipeline bootstrap: project, packages, asmdefs, Core port, runner, WebGL builder, docs | **DONE** — EditMode 154/154, PlayMode 5/5, WebGL 15.33 MB |
-| T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | queued |
+| T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | **DONE** — KayKit Adventurers + Quaternius FarmBuildings, 45 prefabs, 85 shared URP materials, EditMode 164/164, PlayMode 5/5 |
 | T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | queued, after T-0101 |
 | T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | queued |
 | T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | queued |
+
+### T-0101 completion notes
+
+Invoked as:
+
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.ArtPackImporter.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\t0101-import.log"
+```
+
+`Assets/Editor/ArtPackImporter.cs` rebuilds every prefab from the source FBX and
+is idempotent, so re-running it is the way to fix a bad import. It normalises
+characters to 1.800 m with the pivot at the feet, generates an AnimatorController
+per character from that character's own clips, and routes every renderer through
+85 shared `Universal Render Pipeline/Lit` materials with GPU instancing on.
+
+`Assets/Tests/EditMode/ArtPackImportTests.cs` (164 total EditMode tests) fails
+loudly on the four ways a headless import silently breaks: missing or non-URP
+materials, per-instance materials, a pivot that is not at the feet, and
+inconsistent character scale.
+
+Two bugs worth remembering, both from the first attempt:
+
+- `AssetDatabase.GetAssetPath` on an `Object.Instantiate` clone returns empty in
+  Unity 6, so the animator controllers were built with zero clips. The source FBX
+  path is now threaded through explicitly.
+- Rebuilding an `AnimatorController` by assigning `controller.layers = new[] { … }`
+  orphans the original state machine, silently discarding every state added. The
+  importer now deletes and recreates the controller instead.

@@ -51,6 +51,10 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Art\Quaternius\FarmBuildings\LICENSE-CC0.txt" />
+    <None Include="Assets\Art\KayKit\Adventurers\LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="UnityEngine">
       <HintPath>C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
       <Private>False</Private>
