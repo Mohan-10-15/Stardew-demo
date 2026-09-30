@@ -1410,6 +1410,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="EmberHollow.Core.csproj" />
+    <ProjectReference Include="EmberHollow.Editor.csproj" />
+    <ProjectReference Include="EmberHollow.Runtime.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

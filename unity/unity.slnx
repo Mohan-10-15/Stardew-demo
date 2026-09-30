@@ -1,7 +1,9 @@
 ﻿<Solution>
   <Project Path="EmberHollow.Tests.EditMode.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="EmberHollow.Runtime.csproj" />
   <Project Path="EmberHollow.Core.csproj" />
   <Project Path="EmberHollow.Tests.PlayMode.csproj" />
+  <Project Path="EmberHollow.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
 </Solution>

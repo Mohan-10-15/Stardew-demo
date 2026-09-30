@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Tests\PlayMode\GameLoopPlayModeTests.cs" />
+    <Compile Include="Assets\Tests\PlayMode\FarmScenePlayModeTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\SimTicker.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -1063,6 +1064,10 @@
       <HintPath>C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Cinemachine">
+      <HintPath>Library\ScriptAssemblies\Unity.Cinemachine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
       <Private>False</Private>
@@ -1078,6 +1083,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="EmberHollow.Core.csproj" />
+    <ProjectReference Include="EmberHollow.Runtime.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

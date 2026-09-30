@@ -198,6 +198,50 @@ at all (`player:exhausted` fires first).
 
 ---
 
+## D-0011 — Engine code lives in `EmberHollow.Runtime`, not Assembly-CSharp
+
+**Date:** 2026-09-30
+
+The test assemblies are asmdefs, and **an asmdef cannot reference a predefined
+assembly**. While `Assets/Scripts/Engine` had no asmdef it compiled into
+`Assembly-CSharp`, so `FarmSceneTests` could not see `PlayerMovementController`
+at all — it failed with `CS0234: The type or namespace name 'Engine' does not
+exist`.
+
+`Assets/Scripts/Engine` therefore has its own `EmberHollow.Runtime.asmdef`
+(referencing `EmberHollow.Core`, `Unity.Cinemachine`, `Unity.InputSystem`,
+`Unity.RenderPipelines.Universal.Runtime`), and `Assets/Editor` has
+`EmberHollow.Editor.asmdef`. Both test asmdefs reference `EmberHollow.Runtime`
+explicitly.
+
+This is not cosmetic: it is what lets a test validate the scene and the
+controller that the scene is built from.
+
+## D-0012 — Cinemachine 3.1.7 API names, recorded so nobody burns 20 minutes again
+
+**Date:** 2026-09-30
+
+Cinemachine 3.1.7 differs from both the 2.x docs and the 3.0 pre-release notes in
+ways that compile-fail rather than warn. Verified by reading the package source
+in `Library/PackageCache/com.unity.cinemachine@f3f96bcb59af`.
+
+| Thing | Wrong | Correct in 3.1.7 |
+|-------|-------|-----------------|
+| Namespace | `Cinemachine` | `Unity.Cinemachine` |
+| Third-person body | `Cinemachine3rdPersonFollow` (deprecated) | `CinemachineThirdPersonFollow` |
+| Body/Aim components | `AddCinemachineComponent<T>()` (deprecated virtual camera only) | `gameObject.AddComponent<T>()` |
+| Camera collision | `CinemachineCollider` (deprecated) | `CinemachineDeoccluder` |
+| Follow target | `Camera.Follow` / `LookAt` | `CinemachineCamera.Target` (a `CameraTarget` struct) |
+
+Also gone in Unity 6: `Material.glossiness`. Use `GetFloat("_Glossiness")`.
+
+The scene builder is `Assets/Editor/FarmSceneBuilder.cs`. Re-running it rebuilds
+`Assets/Scenes/Farm.unity` from scratch and re-registers it as the first enabled
+scene in Build Settings, which is what makes `WebGlBuilder` ship the farm rather
+than the template's SampleScene.
+
+---
+
 ## D-0010 — Art is real CC0 pack content, not procedural primitives
 
 **Date:** 2026-09-30
