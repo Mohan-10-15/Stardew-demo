@@ -93,28 +93,96 @@ try {
 
             $ext = [System.IO.Path]::GetExtension($full).ToLowerInvariant()
             $context.Response.ContentType = if ($mime.ContainsKey($ext)) { $mime[$ext] } else { "application/octet-stream" }
+            $context.Response.Headers.Add("Accept-Ranges", "bytes")
+            $context.Response.Headers.Add("Cache-Control", "no-store")
 
             # The whole reason this script exists.
             if ($ext -eq ".br") {
                 $context.Response.Headers.Add("Content-Encoding", "br")
             }
 
-            $bytes = [System.IO.File]::ReadAllBytes($full)
-            $context.Response.ContentLength64 = $bytes.Length
+            # Unity's loader streams the .wasm and .data files with byte-range
+            # requests. Answering a range with a 200 and the whole body makes the
+            # browser abort the connection, which shows up here as
+            # "the specified network name is no longer available".
+            $total = (Get-Item -LiteralPath $full).Length
+            $start = 0L
+            $end = $total - 1
+            $partial = $false
+
+            $range = $context.Request.Headers["Range"]
+            if ($range -match 'bytes=(\d*)-(\d*)') {
+                $hasStart = $Matches[1] -ne ""
+                $hasEnd = $Matches[2] -ne ""
+                if ($hasStart) {
+                    $start = [long]$Matches[1]
+                }
+                if ($hasEnd) {
+                    $end = [long]$Matches[2]
+                }
+                if (-not $hasStart -and $hasEnd) {
+                    # Suffix range: the last N bytes.
+                    $start = [Math]::Max(0, $total - [long]$Matches[2])
+                    $end = $total - 1
+                }
+                if ($start -ge $total) {
+                    $context.Response.StatusCode = 416
+                    $context.Response.Headers.Add("Content-Range", "bytes */$total")
+                    $context.Response.Close()
+                    continue
+                }
+                if ($end -ge $total) { $end = $total - 1 }
+                if ($end -lt $start) { $end = $start }
+                $partial = $true
+            }
+
+            $length = $end - $start + 1
+            if ($partial) {
+                $context.Response.StatusCode = 206
+                $context.Response.Headers.Add("Content-Range", "bytes $start-$end/$total")
+            }
+            $context.Response.ContentLength64 = $length
 
             # A HEAD request advertises the length but must not send a body;
             # writing one throws and takes the whole response down with it.
             if ($context.Request.HttpMethod -ne "HEAD") {
-                $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
+                # Stream in chunks rather than buffering 10 MB, so the first bytes
+                # reach the browser immediately and it does not time us out while
+                # a single-threaded server is still reading from disk.
+                $stream = [System.IO.File]::OpenRead($full)
+                try {
+                    [void]$stream.Seek($start, [System.IO.SeekOrigin]::Begin)
+                    $buffer = New-Object byte[] 65536
+                    $remaining = $length
+                    while ($remaining -gt 0) {
+                        $want = [int][Math]::Min($buffer.Length, $remaining)
+                        $read = $stream.Read($buffer, 0, $want)
+                        if ($read -le 0) { break }
+                        $context.Response.OutputStream.Write($buffer, 0, $read)
+                        $remaining -= $read
+                    }
+                }
+                finally {
+                    $stream.Dispose()
+                }
             }
 
             $context.Response.Close()
-
-            Write-Host ("  {0,-6} {1,9} bytes  {2}" -f $context.Request.HttpMethod, $bytes.Length, $relative)
+            Write-Host ("  {0,-6} {1,3} {2,10} bytes  {3}" -f $context.Request.HttpMethod, $context.Response.StatusCode, $length, $relative)
         }
         catch {
-            Write-Warning "Request failed: $_"
-            try { $context.Response.StatusCode = 500; $context.Response.Close() } catch { }
+            $message = $_.Exception.Message
+            if ($message -match 'aborted|network name is no longer available|pipe has been ended|Broken pipe|forcibly closed') {
+                # A browser that cancels a request is routine, not a fault.
+                Write-Host ("  {0,-6} aborted by client  {1}" -f $context.Request.HttpMethod, $relative)
+            }
+            else {
+                Write-Warning "Request failed: $message"
+            }
+
+            # Abort rather than try to send a 500: a body may already be partly
+            # written, and a status change on a started response throws again.
+            try { $context.Response.Abort() } catch { }
         }
     }
 }
