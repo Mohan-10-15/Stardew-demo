@@ -180,17 +180,23 @@ namespace EmberHollow.Tests.PlayMode
             Assert.AreEqual(1, InventorySim.CountOf(state, "parsnip"), "the harvest must have reached the bag");
             Assert.AreEqual("tilled", state.Map("farm")!.PlacedAt(6, 6)!.Id);
 
-            // 5. Let the clock run to 2 AM and confirm the farmer collapses.
+            // 5. Let the clock run a full day. A playable day runs 6:00 AM to
+            // midnight, so a day of ten-minute ticks rolls the calendar over and
+            // opens the next morning at 6:00 AM. The 2:00 AM collapse is a clamp
+            // for a stalled frame, not a scheduled event, and is covered by the
+            // GameClock EditMode tests.
             state.Player.EnergyMax = 99999;
+            int startDay = state.World.DayCount;
             int guard = 0;
-            while (!state.World.PassedOut && guard < 200)
+            while (state.World.DayCount == startDay && guard < 200)
             {
                 yield return null;
                 guard++;
             }
 
-            Assert.IsTrue(state.World.PassedOut, "a full day must end in a collapse or a sleep");
-            Assert.IsTrue(guard < 200, "the loop must not need an unbounded number of frames");
+            Assert.AreEqual(startDay + 1, state.World.DayCount, "a full day must roll the calendar over");
+            Assert.AreEqual(6, state.World.Clock.Hour, "the new day must open at 6:00 AM");
+            Assert.Less(guard, 200, "the loop must not need an unbounded number of frames");
             Assert.Less(state.Player.Energy, 270, "tools must have cost energy");
 
             Object.Destroy(host);

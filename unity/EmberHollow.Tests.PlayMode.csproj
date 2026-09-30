@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Tests\PlayMode\GameLoopPlayModeTests.cs" />
+    <Compile Include="Assets\Tests\PlayMode\FarmSimulationPlayModeTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\FarmScenePlayModeTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\SimTicker.cs" />
   </ItemGroup>
@@ -1083,6 +1084,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="EmberHollow.Core.csproj" />
+    <ProjectReference Include="EmberHollow.Content.csproj" />
     <ProjectReference Include="EmberHollow.Runtime.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

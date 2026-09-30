@@ -63,7 +63,11 @@ namespace EmberHollow.Tests.EditMode
             Assert.IsTrue(t.DayRolled);
             Assert.IsFalse(t.SeasonRolled);
             Assert.IsFalse(t.PassedOut);
-            Assert.AreEqual(0, t.World.Clock.Hour);
+
+            // A new day opens at 6:00 AM, not midnight. Clock.Hour is a display
+            // hour, and writing the raw rollover overflow here would make the
+            // new morning read back as the small hours of the previous day.
+            Assert.AreEqual(6, t.World.Clock.Hour);
             Assert.AreEqual(0, t.World.Clock.Minute);
             Assert.AreEqual(2, t.World.Calendar.DayOfMonth);
             Assert.AreEqual(2, t.World.DayCount);
@@ -86,7 +90,10 @@ namespace EmberHollow.Tests.EditMode
 
             Assert.IsTrue(t.PassedOut);
             Assert.IsTrue(t.DayRolled);
-            Assert.AreEqual(2, t.World.Clock.Hour);
+
+            // Collapsing at 2 AM and waking on the new day puts the clock at
+            // 8:00 AM: two hours past the 6:00 AM start of the day.
+            Assert.AreEqual(8, t.World.Clock.Hour);
             Assert.AreEqual(0, t.World.Clock.Minute);
             Assert.AreEqual(2, t.World.Calendar.DayOfMonth);
         }
@@ -99,7 +106,7 @@ namespace EmberHollow.Tests.EditMode
             ClockTransition t = GameClock.Advance(NewWorld(), 30 * 60);
 
             Assert.IsTrue(t.PassedOut);
-            Assert.AreEqual(2, t.World.Clock.Hour);
+            Assert.AreEqual(8, t.World.Clock.Hour);
             Assert.AreEqual(0, t.World.Clock.Minute);
         }
 
@@ -314,22 +321,36 @@ namespace EmberHollow.Tests.EditMode
         [Test]
         public void AFullDayOfTenMinuteTicks_AdvancesExactlyOneDay()
         {
-            // The real tick cadence: from 6:00 AM, only 120 ticks reach the 2 AM
-            // collapse. Anything more would mean the tick loop is wrong.
+            // The real tick cadence. A playable day runs 6:00 AM to midnight,
+            // which is 18 hours, so 108 ten-minute ticks must roll exactly one
+            // day and open the next morning at 6:00 AM.
+            int expected = (18 * 60) / GameConstants.TickMinutes;
             WorldState world = NewWorld();
-            bool passedOut = false;
+            int day = world.DayCount;
             int ticks = 0;
 
-            while (!passedOut && ticks < 1000)
+            while (world.DayCount == day && ticks < 1000)
             {
-                ClockTransition t = GameClock.Advance(world, GameConstants.TickMinutes);
-                world = t.World;
-                passedOut = t.PassedOut;
+                world = GameClock.Advance(world, GameConstants.TickMinutes).World;
                 ticks++;
             }
 
-            Assert.AreEqual(120, ticks);
-            Assert.IsTrue(passedOut);
+            Assert.AreEqual(expected, ticks);
+            Assert.AreEqual(day + 1, world.DayCount);
+            Assert.AreEqual(6, world.Clock.Hour);
+            Assert.AreEqual(0, world.Clock.Minute);
+
+            // The day must not roll a second time straight away: that is the
+            // failure mode when a rollover writes an absolute hour, because the
+            // clock then reads back as already past midnight.
+            int extra = 0;
+            while (world.DayCount == day + 1 && extra < 1000)
+            {
+                world = GameClock.Advance(world, GameConstants.TickMinutes).World;
+                extra++;
+            }
+
+            Assert.AreEqual(expected, extra, "the new day must be a full day long too");
         }
 
         private static double WeatherWeight(WeightedEntry<Weather>[] entries, Weather weather)

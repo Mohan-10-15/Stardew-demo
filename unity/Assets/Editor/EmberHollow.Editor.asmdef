@@ -4,6 +4,7 @@
     "references": [
         "EmberHollow.Runtime",
         "EmberHollow.Core",
+        "EmberHollow.Content",
         "Unity.Cinemachine",
         "Unity.Cinemachine.Editor",
         "Unity.InputSystem"
