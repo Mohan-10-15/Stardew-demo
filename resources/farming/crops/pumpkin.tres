@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_gyqlm"]
+
+[resource]
+script = ExtResource("1_gyqlm")
+id = &"pumpkin"
+display_name = "Pumpkin"
+seasons = Array[int]([2])
+days_to_grow = 13
+seed_price = 100
+sell_price = 320
+ripe_color = Color(0.85, 0.45, 0.12, 1)
+sprout_color = Color(0.46, 0.64, 0.3, 1)

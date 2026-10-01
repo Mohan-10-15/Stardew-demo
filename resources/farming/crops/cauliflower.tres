@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_33vxi"]
+
+[resource]
+script = ExtResource("1_33vxi")
+id = &"cauliflower"
+display_name = "Cauliflower"
+seasons = Array[int]([0])
+days_to_grow = 12
+seed_price = 80
+sell_price = 175
+ripe_color = Color(0.94, 0.93, 0.86, 1)
+sprout_color = Color(0.5, 0.7, 0.36, 1)

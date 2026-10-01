@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_nqucb"]
+
+[resource]
+script = ExtResource("1_nqucb")
+id = &"stone"
+display_name = "Stone"
+category = 4
+sell_price = 3
+description = "Heavy, dull, and everywhere."
+icon_color = Color(0.55, 0.55, 0.58, 1)

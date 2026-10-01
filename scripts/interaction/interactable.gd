@@ -40,6 +40,10 @@ signal availability_changed()
 @export var one_shot: bool = false
 ## Furthest the actor may stand from [method get_focus_point].
 @export var max_distance: float = 3.0
+## How far above its origin [method get_aim_point] sits by default. Roughly chest
+## height, which is where a crosshair naturally rests when looking at a
+## waist-high prop.
+@export var default_aim_height: float = 0.9
 
 var _focused: bool = false
 var _used: bool = false
@@ -100,12 +104,29 @@ func get_prompt(_actor: Node) -> String:
 	return prompt_text
 
 
-## World point the probe measures distance from and aims at.
+## World point the probe measures distance from.
+##
+## Deliberately the *body's origin*, not the middle of the object's geometry. The
+## probe uses this for its reach check, and reach is about how far the actor is
+## from the thing they are interacting with; measuring to the origin is stable no
+## matter how big or how oddly shaped the mesh is.
 func get_focus_point() -> Vector3:
 	var parent := get_parent()
 	if parent is Node3D:
 		return (parent as Node3D).global_position
 	return Vector3.ZERO
+
+
+## World point a *test* or an aim-assist should point the camera at.
+##
+## Separate from [method get_focus_point] on purpose. Conflating the two is what
+## made the reach check and the aim target disagree: aiming a camera at the
+## origin of a mailbox sitting on the ground points it at the dirt underneath,
+## the ray hits the terrain, and the prop reads as unreachable when it is not.
+## Components override this when their aimable surface is not at their origin —
+## the farm's tiles aim at the middle of their aim volume.
+func get_aim_point() -> Vector3:
+	return get_focus_point() + Vector3(0.0, default_aim_height, 0.0)
 
 
 ## Force-enables/disables and notifies anything showing a prompt.

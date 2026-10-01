@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_gfnds"]
+
+[resource]
+script = ExtResource("1_gfnds")
+id = &"watering_can"
+display_name = "Watering Can"
+category = 2
+icon_color = Color(0.42, 0.58, 0.66, 1)
+uses_durability = true
+durability = 60
+tool_action = &"water"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_rh341"]
+
+[resource]
+script = ExtResource("1_rh341")
+id = &"cauliflower_seeds"
+display_name = "Cauliflower Seeds"
+category = 1
+buy_price = 80
+description = "Plant in spring."
+icon_color = Color(0.88, 0.86, 0.74, 1)
+seed_id = &"cauliflower"

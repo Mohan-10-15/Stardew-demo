@@ -49,6 +49,8 @@ func get_cases() -> Array[StringName]:
 		&"held_interaction_does_not_fire_early",
 		&"world_contains_demo_interactables",
 		&"world_demo_props_resolve_to_interactables",
+		&"every_demo_prop_is_reachable_on_foot",
+		&"something_is_interactable_from_the_spawn_point",
 	]
 
 
@@ -368,7 +370,7 @@ func _t_probe_clears() -> Dictionary:
 
 	# Turn around; the prop is then behind the player.
 	var player: PlayerController = built["player"]
-	player.rotation.y = PI
+	player.set_yaw(PI)
 	await _step(3)
 	probe.update_focus()
 	if probe.get_focus() != null:
@@ -550,6 +552,129 @@ func _t_world_props_resolve() -> Dictionary:
 	return succeeded(c, "all demo props resolve with their own prompts")
 
 
+## A new game must open with something the player can actually interact with.
+##
+## Distinct from `every_demo_prop_is_reachable_on_foot`, which walks up to each
+## prop. This asserts the *starting position* has a target within interaction
+## range, without moving the player. Nothing enforced this before, so the first
+## build opened facing an empty field: interaction worked, but the player had no
+## way to discover it and reasonably concluded it was broken.
+func _t_spawn_has_interactable() -> Dictionary:
+	var c := &"something_is_interactable_from_the_spawn_point"
+	var built := await _build()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var world: WorldRoot = built["world"]
+	var player: PlayerController = built["player"]
+
+	var spawn: Vector3 = world.get_spawn_point()
+	var best := INF
+	var best_name := ""
+	for it: Interactable in _collect_interactables(world):
+		var d: float = spawn.distance_to(it.get_focus_point())
+		if d < best:
+			best = d
+			best_name = String(it.get_parent().name)
+	if best == INF:
+		return fail(c, "world has no interactables at all")
+	# Under the 3.2m component reach, with slack: the player has to be able to
+	# look at it without walking off the spawn pad first.
+	if best > 3.2:
+		return fail(c, "nearest prop %s is %.1fm from spawn (0, 1.2, 14); reach is 3.2m"
+			% [best_name, best])
+
+	# And confirm the ray actually focuses it from where the player starts.
+	player.global_position = spawn
+	await _step(5)
+	var probe: InteractionProbe = built["probe"]
+	if probe == null:
+		return fail(c, "player scene has no InteractionProbe")
+	var prop := (built["world"] as Node).get_node_or_null(NodePath(best_name)) as Node3D
+	if prop == null:
+		return fail(c, "could not resolve prop node %s" % best_name)
+	if not await _aim_at(player, probe, prop):
+		return fail(c, "%s is in range but the crosshair did not focus it" % best_name)
+	return succeeded(c, "%s at %.1fm from spawn" % [best_name, best])
+
+
+## Walks the real player up to each real demo prop and confirms the actual
+## crosshair ray focuses it.
+##
+## Existence and component resolution are covered above, but neither proves the
+## player can *reach* anything. Every prop sat 26-44m from the spawn point,
+## which is well outside the 3.2m interaction range, so a new game opened with
+## no prompt in reach and no hint of where to go. This walks the props into
+## range instead, which also proves the ray is not being blocked by scenery.
+func _t_world_props_reachable() -> Dictionary:
+	var c := &"every_demo_prop_is_reachable_on_foot"
+	var built := await _build()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var world: Node3D = built["world"]
+	var player: PlayerController = built["player"]
+	var probe: InteractionProbe = built["probe"]
+	if probe == null:
+		return fail(c, "player scene has no InteractionProbe")
+
+	var props: Array[Node3D] = []
+	for it: Interactable in _collect_interactables(world):
+		var host := it.get_parent() as Node3D
+		if host != null and not props.has(host):
+			props.append(host)
+	if props.is_empty():
+		return fail(c, "world has no interactable props to walk to")
+
+	var unreachable: Array[String] = []
+	for it: Interactable in _collect_interactables(world):
+		var host := it.get_parent() as Node3D
+		if host == null:
+			continue
+		var ok := await _aim_at(player, probe, host, it)
+		if not ok:
+			unreachable.append(String(host.name))
+	if not unreachable.is_empty():
+		return fail(c, "could not focus: %s" % ", ".join(unreachable))
+	return succeeded(c, "%d props all focusable" % props.size())
+
+
+## Positions the player within interaction range of `host`, aims the real camera
+## at `target_component`'s own focus point, and asserts the probe focused
+## something.
+##
+## The aim is computed from the camera-to-target vector rather than guessed from a
+## heading. Guessing is what made an earlier diagnostic report "occluded by a
+## tree" when the ray was in fact pointing off past the side of the prop.
+##
+## Aimed at the component's declared aim point rather than a fixed height above
+## the host. A fixed height suits a chest on a fence post and points at empty air
+## for a farm tile lying flat on the ground; aiming at the tile's *origin* was
+## worse, since that is the soil surface and the ray hit the terrain instead.
+## Each component now says where its aimable surface is.
+func _aim_at(
+	player: PlayerController,
+	probe: InteractionProbe,
+	host: Node3D,
+	target_component: Interactable = null
+) -> bool:
+	var target: Vector3 = host.global_position + Vector3(0, 0.9, 0)
+	if target_component != null:
+		target = target_component.get_aim_point()
+	player.global_position = Vector3(target.x, 0.2, target.z + 2.0)
+	await _step(5)
+
+	var camera := probe.get_camera()
+	if camera == null:
+		return false
+	var dir := (target - camera.global_position).normalized()
+	player.set_yaw(atan2(-dir.x, -dir.z))
+	var horizontal := Vector2(dir.x, dir.z).length()
+	player.camera_rig.set_pitch(atan2(-dir.y, horizontal))
+	await _step(3)
+
+	probe.update_focus()
+	return probe.get_focus() != null
+
+
 func _collect_interactables(from: Node) -> Array[Interactable]:
 	var out: Array[Interactable] = []
 	if from is Interactable:
@@ -601,4 +726,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_world_has_interactables()
 		&"world_demo_props_resolve_to_interactables":
 			return await _t_world_props_resolve()
+		&"every_demo_prop_is_reachable_on_foot":
+			return await _t_world_props_reachable()
+		&"something_is_interactable_from_the_spawn_point":
+			return await _t_spawn_has_interactable()
 	return fail(case, "no case implementation for %s" % case)

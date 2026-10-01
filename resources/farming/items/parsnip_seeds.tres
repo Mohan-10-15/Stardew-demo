@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_8ga35"]
+
+[resource]
+script = ExtResource("1_8ga35")
+id = &"parsnip_seeds"
+display_name = "Parsnip Seeds"
+category = 1
+buy_price = 20
+description = "Plant in spring."
+icon_color = Color(0.72, 0.62, 0.38, 1)
+seed_id = &"parsnip"

@@ -25,18 +25,30 @@ signal day_started(day: int)
 signal day_ended(day: int)
 signal season_changed(season: int)
 signal year_changed(year: int)
+signal weather_changed(weather: int)
 
 # --- Farming --------------------------------------------------------------
 signal soil_tilled(tile_index: Vector2i)
+## A whole plot was wetted at once (rain). `tile_index.x` is -1 and `y` is the
+## count, because rain has no single tile to point at.
+signal soil_watered(tile_index: Vector2i, count: int)
 signal crop_planted(tile_index: Vector2i, crop_id: StringName)
 signal crop_harvested(tile_index: Vector2i, crop_id: StringName, amount: int)
 signal crop_grew(tile_index: Vector2i)
+## The mandatory counterpart to every farming success signal above. `verb` is
+## what was attempted (`till`, `plant`, `water`, `harvest`, `tool`) and `reason`
+## is a machine-readable string, so a HUD can say "that needs tilling first"
+## without any farming code knowing what a HUD is.
+signal farming_failed(tile_index: Vector2i, verb: StringName, reason: StringName)
 
 # --- Inventory / items ----------------------------------------------------
 signal item_added(item_id: StringName, amount: int)
 signal item_removed(item_id: StringName, amount: int)
 signal inventory_changed()
 signal hotbar_selection_changed(slot: int)
+## A tool ran out of uses. Distinct from `item_removed` so a HUD can warn the
+## player before they are left holding nothing.
+signal tool_broken(item_id: StringName)
 
 # --- Interaction ----------------------------------------------------------
 signal interactable_focused(target: Node)

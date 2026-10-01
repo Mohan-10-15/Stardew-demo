@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_0a18b"]
+
+[resource]
+script = ExtResource("1_0a18b")
+id = &"yam"
+display_name = "Yam"
+seasons = Array[int]([2])
+days_to_grow = 10
+seed_price = 60
+sell_price = 160
+ripe_color = Color(0.72, 0.32, 0.52, 1)
+sprout_color = Color(0.48, 0.68, 0.34, 1)

@@ -21,7 +21,8 @@ criterion is wrong, change it here and say why in `docs/DECISIONS.md`.
 - [x] Crosshair interaction focuses a prop and performs it
 - [x] Existing player/world/camera/interaction systems pass their tests
 
-Verified: `check.ps1` — import OK, **99/99 tests**, boot OK.
+Verified: `check.ps1` — import OK, **126/126 tests**, boot OK. (99 at the time of
+the M0 audit; the suite has grown with each milestone since.)
 
 The Group 4B pond fix also landed here: the ground had no basin, so the player
 walked on dry land over the water and the water was hidden under the grass.
@@ -44,20 +45,33 @@ independently.
 
 ## M2 — Time, calendar, and the farming loop
 
+The farming rows belong to M3 and are not signed off yet; they are listed here
+because the loop they complete runs through the clock.
+
 - [ ] Hoe a tile → it becomes tilled soil
 - [ ] Plant a seed on tilled soil → a crop exists on that tile
 - [ ] Water the crop → it is marked watered
 - [ ] Sleep → the day advances, the crop grows, weather is re-rolled
 - [ ] Harvest a mature crop → items enter the inventory
 - [ ] Sell the harvest → currency increases
-- [ ] A full day of 10-minute ticks advances exactly one day
-- [ ] Advancing at 2:00 AM passes the player out and rolls the day
-- [ ] The season rolls after day 28; the year rolls after winter
-- [ ] The clock is monotonic across midnight (no double-rollover)
+
+### Time and calendar (M2) — signed off
+
+- [x] The clock runs in real time and the valley's light tracks it
+- [x] A full day of 10-minute ticks advances exactly one day
+- [x] Advancing at 2:00 AM passes the player out and rolls the day
+- [x] The season rolls after day 28; the year rolls after winter
+- [x] The clock is monotonic within a day (no double-rollover)
+- [x] The date and time are readable in-game, not only through a debugger
 
 The rollover and monotonicity criteria are the ones the retired Unity build
 actually broke; they are enumerated in `docs/SALVAGED_DESIGN.md` section
 "Edge cases the old tests pinned down". They are not optional.
+
+Note that the day boundary is the 2:00 AM collapse and **not** midnight — see
+`DECISIONS.md` D13. The salvaged design said both, which cannot both be true.
+`SALVAGED_DESIGN.md` is annotated at the point of divergence rather than edited
+to match the code, so the original reasoning is still readable.
 
 ---
 

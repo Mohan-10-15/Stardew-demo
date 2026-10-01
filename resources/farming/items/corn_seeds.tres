@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_ysbo0"]
+
+[resource]
+script = ExtResource("1_ysbo0")
+id = &"corn_seeds"
+display_name = "Corn Seeds"
+category = 1
+buy_price = 150
+description = "Plant in summer or fall."
+icon_color = Color(0.88, 0.74, 0.26, 1)
+seed_id = &"corn"

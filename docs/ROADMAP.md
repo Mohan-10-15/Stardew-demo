@@ -50,8 +50,10 @@ M0 and part of M1; group 5 (time and ambience) is M2.
 ## The milestones
 
 ### M0 — Stabilize existing project
-**Status: COMPLETE.** Import clean, 99/99 tests, boot reaches `PLAYING`, and the
-pond basin defect found during the audit is fixed with regression coverage.
+**Status: COMPLETE.** Import clean, 99/99 tests at the time, boot reaches
+`PLAYING`, and the pond basin defect found during the audit is fixed with
+regression coverage. The suite is now 126 cases, having grown with each
+milestone.
 
 The point of M0 is that everything after it assumes a working baseline. Three
 groups of green tests had hidden a pond the player could walk over without anyone
@@ -73,6 +75,17 @@ model, including a rollover bug that shipped in the Unity build and a monotonici
 requirement that exists specifically to stop it recurring.
 
 Everything in M3 depends on this. Farming without a clock is a demo.
+
+**Status: complete.** Delivered as `WorldTime` + `Clock` (pure arithmetic),
+`TimeService` (the only thing that knows real seconds exist), `DayNightCycle`
+(sun and sky driven from `EventBus`, holding no reference to the service), and
+the corner clock readout. 27 test cases cover the recovered edge cases plus the
+ones found while building it. Three rules in `SALVAGED_DESIGN.md` were
+deliberately diverged from; the reasoning is in `DECISIONS.md` D13 and the
+salvaged doc is annotated where it was superseded.
+
+The day rolls at the 2:00 AM collapse rather than at midnight, so M3's sleep and
+crop-growth code has one unambiguous end-of-day moment to hook into.
 
 ### M3 — Farming
 Tilled soil, planting, watering, growth over days, harvesting.

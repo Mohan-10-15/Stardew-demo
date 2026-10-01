@@ -167,5 +167,6 @@ res://
 ## Development progress
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–4 are complete.** Group 5 (time and ambience) is next.
-See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
+next begins. **Groups 0–6 are complete** (foundation, player, cameras,
+interaction, world, pond fix, time and day/night). Group 7 (farming grid) is
+next. See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).

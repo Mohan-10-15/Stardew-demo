@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_mund6"]
+
+[resource]
+script = ExtResource("1_mund6")
+id = &"yam_seeds"
+display_name = "Yam Seeds"
+category = 1
+buy_price = 60
+description = "Plant in fall."
+icon_color = Color(0.68, 0.36, 0.5, 1)
+seed_id = &"yam"
