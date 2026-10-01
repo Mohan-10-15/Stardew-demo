@@ -4,14 +4,14 @@
 export.cfg
 export_presets.cfg
 
-# Portable Godot editor binaries (ship in the repo, git-ignored)
-val/val/tools/*.exe
-val/val/tools/*.zip
-
 # Build output
 build/
 bin/
 *.tmp
+
+# Portable Godot editor binaries (ship in the repo, git-ignored)
+tools/*.exe
+tools/*.zip
 
 # Godot Mono / C# (unused for GDScript, kept as a guard)
 .mono/
