@@ -24,6 +24,14 @@ if (-not (Test-Path $godot)) {
     exit 2
 }
 
+# `Start-Process -ArgumentList @(...)` joins the array with bare spaces and does
+# NOT quote elements that contain spaces, so Godot received
+# `--path C:\mohan\Game\Stardew dmeo\...`, truncated the path at the first
+# space and aborted with 'Invalid project path specified'. Any project path
+# containing a space made all three stages fail. Every path argument is
+# therefore pre-quoted here.
+$quotedRoot = '"' + $root + '"'
+
 $tmpOut = Join-Path $env:TEMP 'hh_check_out.txt'
 $tmpErr = Join-Path $env:TEMP 'hh_check_err.txt'
 
@@ -31,60 +39,99 @@ function Invoke-GodotStage {
     param(
         [string]$Name,
         [string[]]$GodotArgs,
-        [switch]$AllowFailure
+        [string[]]$AllowedErrorPattern = @()
     )
 
     Write-Host ""
     Write-Host "### $Name" -ForegroundColor Cyan
 
+    # Touching .Handle caches the process handle so ExitCode is readable later;
+    # without it a -PassThru process reports a null ExitCode even after exiting.
     $p = Start-Process -FilePath $godot -ArgumentList $GodotArgs `
         -NoNewWindow -PassThru `
         -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+    $null = $p.Handle
 
     if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
         $p.Kill()
         Write-Host "  TIMEOUT after ${TimeoutSeconds}s" -ForegroundColor Red
-        return @{ name = $Name; code = 124 }
+        return @{ name = $Name; code = 124; hasErrors = $true }
     }
+    # Parameterless WaitForExit flushes the async output readers, so the
+    # redirected files are complete and ExitCode is populated.
+    $p.WaitForExit()
 
     $out = Get-Content $tmpOut -Raw -ErrorAction SilentlyContinue
     $err = Get-Content $tmpErr -Raw -ErrorAction SilentlyContinue
     Write-Host $out
 
-    $errors = @()
-    if ($out -match '(?m)^(SCRIPT )?ERROR' ) { $errors += 'stdout' }
-    if ($err -match '(?m)^(SCRIPT )?ERROR') { $errors += 'stderr' }
-    if ($errors.Count -gt 0 -and -not $AllowFailure) {
-        Write-Host $err -ForegroundColor Red
+    # A compile error is written to stderr as "SCRIPT ERROR:" and does NOT
+    # necessarily change the exit code. Gating on the exit code alone let a
+    # broken scene report a clean boot, so stderr is scanned as well.
+    $combined = "$out`n$err"
+    $violations = @()
+    foreach ($stream in @(@{ n = 'stdout'; t = $out }, @{ n = 'stderr'; t = $err })) {
+        if ($stream.t -notmatch '(?m)^(SCRIPT )?ERROR') { continue }
+        $lines = @($stream.t -split "`r?`n" | Where-Object { $_ -match '^(SCRIPT )?ERROR' })
+        $unexpected = @($lines | Where-Object {
+            $line = $_
+            -not ($AllowedErrorPattern | Where-Object { $line -match $_ })
+        })
+        if ($unexpected.Count -gt 0) {
+            $violations += $unexpected
+        }
     }
 
-    return @{ name = $Name; code = $p.ExitCode; hasErrors = ($errors.Count -gt 0) }
+    if ($violations.Count -gt 0) {
+        Write-Host "--- stderr ---" -ForegroundColor Red
+        Write-Host $err -ForegroundColor Red
+        Write-Host "--- $($violations.Count) error line(s) not allowed for stage '$Name' ---" -ForegroundColor Red
+    }
+
+    $code = $p.ExitCode
+    if ($null -eq $code) { $code = -1 }
+    return @{ name = $Name; code = $code; hasErrors = ($violations.Count -gt 0) }
 }
 
 $results = @()
 
 if (-not $SkipImport) {
     $results += Invoke-GodotStage -Name 'import' -GodotArgs @(
-        '--headless', '--path', $root, '--import'
+        '--headless', '--path', $quotedRoot, '--import'
     )
 }
 
-# Only scan for parse/compile errors, ignore the "main scene missing" error.
+# A `--script` run has no main scene, so Godot logs that one error harmlessly
+# before the script runs. It is the only error these stages may emit.
+$scriptRunNoise = @('ERROR: .*main scene', 'ERROR: No main scene')
+
 $results += Invoke-GodotStage -Name 'tests' -GodotArgs @(
-    '--headless', '--path', $root, '--script', 'res://tests/run_tests.gd'
-) -AllowFailure
+    '--headless', '--path', $quotedRoot, '--script', 'res://tests/run_tests.gd'
+) -AllowedErrorPattern $scriptRunNoise
 
 $results += Invoke-GodotStage -Name 'boot' -GodotArgs @(
-    '--headless', '--path', $root, '--script', 'res://tools/boot_check.gd'
-) -AllowFailure
+    '--headless', '--path', $quotedRoot, '--script', 'res://tools/boot_check.gd'
+) -AllowedErrorPattern $scriptRunNoise
 
 Write-Host ""
 Write-Host "========== SUMMARY ==========" -ForegroundColor Cyan
 $bad = 0
 foreach ($r in $results) {
     $status = 'OK'
-    if ($r.code -ne 0) { $status = "FAIL($($r.code))"; $bad++ }
-    if ($r.code -eq 124) { $status = 'TIMEOUT' }
+    if ($r.code -eq 124) {
+        $status = 'TIMEOUT'
+        $bad++
+    }
+    elseif ($r.code -ne 0) {
+        $status = "FAIL(exit $($r.code))"
+        $bad++
+    }
+    elseif ($r.hasErrors) {
+        # Exit code was 0 but the engine logged a compile/script error. This is
+        # the case that previously reported a clean boot on a broken scene.
+        $status = 'FAIL(script errors)'
+        $bad++
+    }
     Write-Host ("{0,-10} {1}" -f $r.name, $status)
 }
 

@@ -14,6 +14,11 @@ extends SceneTree
 const MAIN_SCENE := "res://scenes/core/main.tscn"
 const TIMEOUT_SECONDS := 6.0
 
+## Compared as resource paths rather than as `class_name` types: see the
+## comment on the child scan in `_finish()`.
+const WORLD_SCRIPT := "res://scripts/world/world_root.gd"
+const PLAYER_SCRIPT := "res://scripts/player/player_controller.gd"
+
 var _timer: SceneTreeTimer = null
 var _saw_game_ready := false
 var _saw_world_loaded := false
@@ -93,18 +98,28 @@ func _finish() -> void:
 		return
 
 	# The subsystems main builds are the actual deliverable of a boot, so
-	# require them by type rather than by name (the HUD's node name comes from
+	# require them by script rather than by name (the HUD's node name comes from
 	# its own scene, not from main).
+	#
+	# The script *path* is compared instead of `child is WorldRoot`. Naming the
+	# class here makes this tool's compile pull in world_root.gd and
+	# player_controller.gd, which reference the `Log` autoload; in a `--script`
+	# run the tool compiles before autoloads register, so that produced
+	# "Identifier not found: Log" noise and a "Failed to load script
+	# res://tools/boot_check.gd" error on an otherwise healthy project. A path
+	# comparison asserts exactly as much and depends on nothing at compile time.
 	var found_world := false
 	var found_player := false
 	var found_hud := false
 	for child: Node in main.get_children():
-		if child is WorldRoot:
-			found_world = true
-		elif child is PlayerController:
-			found_player = true
-		elif child is CanvasLayer:
-			found_hud = true
+		match _script_path_of(child):
+			WORLD_SCRIPT:
+				found_world = true
+			PLAYER_SCRIPT:
+				found_player = true
+			_:
+				if child is CanvasLayer:
+					found_hud = true
 	if not found_world:
 		_fail("Main did not build a WorldRoot child")
 		return
@@ -129,6 +144,13 @@ func _finish() -> void:
 
 func _node(name: StringName) -> Node:
 	return root.get_node_or_null(NodePath(String(name)))
+
+
+func _script_path_of(node: Node) -> String:
+	var script: Variant = node.get_script()
+	if script is Script:
+		return (script as Script).resource_path
+	return ""
 
 
 func _init() -> void:
