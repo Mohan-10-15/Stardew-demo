@@ -5,12 +5,101 @@ Dual first-person / third-person cameras, switchable at runtime.
 
 Progress: **Groups 0, 1, 2, 3 and 4 complete.** Group 5 (time and ambience) is next.
 
-Current baseline: **92/92 tests**, import clean, boot clean.
-Current baseline: **92/92 tests**, import clean, boot clean.
+Current baseline: **99/99 tests**, import clean, boot clean.
 
 ---
 
 ## Last completed group
+
+```
+GROUP: 4B
+NAME: Procedural World - pond basin fix
+STATUS: COMPLETE
+```
+
+A defect was found in Group 4 during the Phase 1 audit: the ground was a single
+flat face, so the pond had no basin. The player walked on dry land at `y=0`
+directly over the water plane at `y=-0.8`, and the water itself was hidden
+underneath the opaque grass. Both symptoms came from the same cause — the visual
+ground and the ground collider were two independently authored flat pieces, so
+nothing anywhere represented a depression.
+
+### IMPLEMENTED
+- `WorldBuilder.terrain_height()` (`scripts/world/world_builder.gd`): a pure,
+  deterministic height function. Flat at `y=0` everywhere except inside a
+  smoothstep basin over the pond, sloping to `-2.2` at its centre.
+- The ground is now one 44x44 vertex grid displaced by that function. The
+  `ConcavePolygonShape3D` and the `ArrayMesh` are built from the **same**
+  vertex buffer in one pass, so what the player walks on is exactly what they
+  see. They cannot drift apart again.
+- Smooth area-weighted vertex normals, so the basin walls actually shade as a
+  slope instead of reading as flat horizontal ground.
+
+### TESTS PERFORMED
+`powershell -ExecutionPolicy Bypass -File tools/check.ps1` — **3/3 stages OK**
+
+| Stage | Result |
+| --- | --- |
+| `import` | OK |
+| `tests` | **99/99 passed** |
+| `boot` | OK — `game_ready` fired, `phase=PLAYING` |
+
+New suite `tests/suites/test_world_geometry.gd` (7 cases) covers the
+relationships that were broken: the ground answers raycasts across the valley,
+the valley floor is still flat away from the pond, the pond centre is genuinely
+below the valley floor, the water plane sits between the basin floor and the
+grass, and the pond floor collider backs up the terrain without poking through
+it.
+
+### BUGS FOUND AND FIXED DURING THIS GROUP
+- **`ConcavePolygonShape3D.data` is not a vertex array.** Assigning a flat
+  `PackedVector3Array` to `data` reinterprets it as consecutive face triples, so
+  a 3875-vertex grid silently became 1291 arbitrary triangles plus two leftover
+  vertices — and nothing collided. `set_faces()` is the correct call. Confirmed
+  by probe: `data =` misses a downward ray, `set_faces()` hits it at `y=0`.
+- **Trimesh collision winding is opposite the render winding.** Feeding the
+  render indices straight through produces a mesh that looks perfect and
+  collides with nothing; the player fell through the world. The collision face
+  list is now expanded in reverse order. Reverse the *whole* thing instead and
+  the mesh renders inside out, so it is done on the collider side only.
+- `add_surface_from_arrays` failed with `index_array_len==NO_INDEX_ARRAY`
+  because the index buffer was still empty at that point; the winding fix moved
+  the index generation and the visual mesh silently lost its indices. Caught by
+  reading the errors rather than trusting the test pass.
+- `player_does_not_sink_into_terrain`, `ground_supports_the_spawn_point`,
+  `world_has_ground_surface` and the interaction tests all failed while the
+  collider was broken. They were correct; the geometry was not.
+
+---
+
+## Previously completed groups
+
+```
+GROUP: 4
+NAME: Procedural World
+STATUS: COMPLETE
+```
+
+### IMPLEMENTED
+- **WorldRoot** (`scenes/world/world.tscn`): deterministic seeded generation from a single RNG, so the same seed always rebuilds the same valley
+- **WorldBuilder**: ground, farm plot, forest, pond + water plane + pond floor, dirt paths, five village houses, trees, rocks
+- Procedural sun (`DirectionalLight3D`) and sky gradient (`ProceduralSkyMaterial` + `WorldEnvironment`)
+- Collision for everything walkable: `StaticBody3D` + `CollisionShape3D`, no falling through the world
+- Named spawn points and world regions exposed as an API for later groups (farming, NPCs, time)
+- Collision shapes are explicitly named (`CollisionShape3D`); auto-generated names like `@CollisionShape3D@4` break `get_node_or_null` lookups
+- `StandardMaterial3D.metallic_specular` used instead of the Godot 3 `specular` property, which logged a remap warning per material
+
+### TESTS PERFORMED
+
+| Stage | Result |
+| --- | --- |
+| `import` (full project rescan, zero parse/compile errors) | OK |
+| `tests` (automated suite) | **69/69 passed** |
+| `boot` (real main scene, headless) | OK - `game_ready` fired, `phase=PLAYING`, config valid |
+
+---
+
+## Previously completed groups
 
 ```
 GROUP: 3
@@ -52,33 +141,6 @@ STATUS: COMPLETE
 - **`tools/boot_check.gd` false-positive, now fixed**: a dependency that fails to parse makes `main.tscn` instantiate as a bare `Node3D`, but the autoloads still exist and `GameState` still leaves `BOOTING`, so every check passed on a scene that did nothing. The boot check now asserts the script is attached and that `WorldRoot` / `PlayerController` / `CanvasLayer` children exist. Verified by planting a parse error in `WorldBuilder` and confirming exit code 1
 - **Forest colliders and visuals disagreed**: both were generated from independent `rng.randf()` loops, so colliders landed in a completely different part of the forest - the player walked through visible trees. Both now come from one `_forest_sites()` generator
 - `MultiMesh.get_instance_transform()` returns identity in a headless run (the buffer is GPU-side), so trunk positions are not readable in tests. `WorldBuilder` now records `forest_sites` as node metadata, which is what the alignment test asserts against
-
----
-
-## Previously completed groups
-
-```
-GROUP: 4
-NAME: Procedural World
-STATUS: COMPLETE
-```
-
-### IMPLEMENTED
-- **WorldRoot** (`scenes/world/world.tscn`): deterministic seeded generation from a single RNG, so the same seed always rebuilds the same valley
-- **WorldBuilder**: ground, farm plot, forest, pond + water plane + pond floor, dirt paths, five village houses, trees, rocks
-- Procedural sun (`DirectionalLight3D`) and sky gradient (`ProceduralSkyMaterial` + `WorldEnvironment`)
-- Collision for everything walkable: `StaticBody3D` + `CollisionShape3D`, no falling through the world
-- Named spawn points and world regions exposed as an API for later groups (farming, NPCs, time)
-- Collision shapes are explicitly named (`CollisionShape3D`); auto-generated names like `@CollisionShape3D@4` break `get_node_or_null` lookups
-- `StandardMaterial3D.metallic_specular` used instead of the Godot 3 `specular` property, which logged a remap warning per material
-
-### TESTS PERFORMED
-
-| Stage | Result |
-| --- | --- |
-| `import` (full project rescan, zero parse/compile errors) | OK |
-| `tests` (automated suite) | **69/69 passed** |
-| `boot` (real main scene, headless) | OK - `game_ready` fired, `phase=PLAYING`, config valid |
 
 ---
 
@@ -233,8 +295,22 @@ Bugs found and fixed during Group 0 validation:
 
 ### NEXT GROUP
 **Group 1 — Player Controller** (`CharacterBody3D`: walk, run, jump, gravity, collision, acceleration/deceleration, mouse look, keyboard + gamepad, configurable movement)
+---
+
+## Phase status
+
+Phases come from `prompt.md`; milestones from `docs/ROADMAP.md`; groups from the
+table below. See `docs/ROADMAP.md` for why groups and milestones are two
+different numbering schemes.
+
+| Phase | Name | Status |
+|---|---|---|
+| 1 | Audit | **COMPLETE** — pond defect reproduced, root-caused, fixed, regression-tested |
+| 2 | Foundation | **COMPLETE** — docs established, lanes, roadmap, acceptance criteria, schemas |
+| 3 | Complete game | IN PROGRESS — M2 (time and calendar) next |
 
 ---
+
 ## Group roadmap
 
 | # | Group | # | Group |

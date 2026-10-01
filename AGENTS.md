@@ -31,6 +31,11 @@ stage fails:
 Skip `import` while iterating with `-SkipImport`. Add `-TimeoutSeconds N` if a
 stage needs longer. The script kills orphaned Godot processes on exit.
 
+`pwsh` is PowerShell 7. This machine has only Windows PowerShell 5.1, where the
+command is `powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1`.
+The script itself is 5.1-compatible; only the launcher name differs. Both forms
+are correct — use whichever your shell has.
+
 Individual stages, when you need one directly:
 
 ```powershell
@@ -96,7 +101,7 @@ the full list.
 - **Art:** real modeled assets from free CC0 packs — KayKit (characters),
   Quaternius (buildings, nature). Imported under `assets/`. Stylized and
   detailed, not blocky primitives. Every pack logged in
-  `docs/ART_LICENSES.md` with source URL and license.
+  `docs/ASSET_LICENSES.md` with source URL and license.
 - **Original IP only:** genre-inspired, never copy another game's names, art or
   mechanics verbatim.
 
@@ -159,7 +164,9 @@ subdirectory to pass.
 ├── assets/      # models/ (CC0 FBX), audio/, animations/
 ├── tests/       # self-discovering headless suite
 ├── tools/       # generators, boot_check.gd, check.ps1, portable Godot binary
-├── docs/        # GDD, ART_LICENSES, SALVAGED_DESIGN, LEGACY_CONTENT
+├── docs/        # GDD, ARCHITECTURE, ROADMAP, TASKS, DECISIONS,
+│                # ASSET_LICENSES, ACCEPTANCE, CUTSCENE_GUIDE,
+│                # SALVAGED_DESIGN, LEGACY_CONTENT
 └── AGENTS.md    # this file
 ```
 
