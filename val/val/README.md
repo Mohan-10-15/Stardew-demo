@@ -5,8 +5,9 @@ A stylized 3D farming / life-simulation game built with **Godot 4.5** and **GDSc
 The game supports both **first-person** and **third-person** cameras, switchable
 in-game at any time.
 
-All art, audio and text in this project is original placeholder/procedural work.
-No assets are taken from any existing commercial game.
+Art is either original procedural work generated at runtime, or a real modelled
+CC0 pack (KayKit, Quaternius) recorded in [`docs/ART_LICENSES.md`](docs/ART_LICENSES.md).
+Nothing is taken from any existing commercial game.
 
 ---
 
@@ -15,31 +16,51 @@ No assets are taken from any existing commercial game.
 * Godot 4.x (developed against **4.5-stable**)
 * No addons, no C# — plain GDScript
 
-A portable editor copy lives in `tools/` (git-ignored). To use your own install,
-just point Godot at this folder.
+A portable copy lives in `tools/` (git-ignored). Nothing needs to be installed
+system-wide; use that binary, or point your own Godot 4.5 at this folder.
 
 ## Running
 
-```bash
-# Open in the editor
-godot --editor --path .
+From the repository root:
 
-# Run directly
-godot --path .
+```powershell
+# Open in the editor
+& "val/val/tools/Godot_v4.5-stable_win64.exe" --editor --path "val/val"
+
+# Play
+& "val/val/tools/Godot_v4.5-stable_win64.exe" --path "val/val"
 ```
 
-## Headless / CI
+## Validating
 
-```bash
+One command runs everything — import, tests, and a real headless boot:
+
+```powershell
+pwsh -File val/val/tools/check.ps1
+```
+
+It exits non-zero if any stage fails or if the engine logs a script error.
+`-SkipImport` is faster while iterating. See `AGENTS.md` in the repository root
+for the full contract.
+
+Individual stages, when you need one directly:
+
+```powershell
 # Import assets once
-godot --headless --path . --import
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --import
 
 # Run the automated test suite
-godot --headless --path . --script res://tests/run_tests.gd
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --script res://tests/run_tests.gd
+
+# Boot the real main scene headlessly and assert it is playable
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --script res://tools/boot_check.gd
 
 # Rebuild the InputMap from source (edits project.godot)
-godot --headless --path . --script res://tools/rebuild_input_map.gd
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --script res://tools/rebuild_input_map.gd
 ```
+
+Note the `_console_` suffix on the binary used for headless runs: it keeps
+stdout clean so the pipeline can scan it for errors.
 
 ## Controls
 
@@ -76,11 +97,18 @@ res://
 ├── scripts/           # .gd files, mirroring scenes/
 │   ├── core/          # autoloads, config, events, logging, debug
 │   ├── player/  world/  farming/  npc/  inventory/  items/  ui/  save/
-├── resources/         # .tres data definitions (items, crops, characters, config)
-├── assets/            # models/ textures/ audio/ animations/  (placeholder art)
-├── tests/             # headless test suite
-├── tools/             # build-time generators (InputMap, scenes)
+├── resources/         # .tres data definitions (config today; items/crops later)
+│   └── legacy_content/  # inherited tuned JSON, not yet loaded by the game
+├── assets/            # models/ (CC0 FBX)  audio/  animations/
+│   ├── models/kaykit/       # 5 characters, 27 accessories
+│   └── models/quaternius/   # 13 farm buildings and props
+├── tests/             # headless test suite (self-discovering)
+├── tools/             # generators, boot_check.gd, check.ps1, portable Godot
 └── docs/
+    ├── GDD.md              # design document
+    ├── ART_LICENSES.md     # every asset, source URL, licence
+    ├── SALVAGED_DESIGN.md  # calendar / inventory / farming rules from the old Unity sims
+    └── LEGACY_CONTENT.md   # the inherited JSON and when to convert it
 ```
 
 ## Architecture rules

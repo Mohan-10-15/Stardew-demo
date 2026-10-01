@@ -1,31 +1,48 @@
-# Ember Hollow
+# Hollowbrook Hollow
 
-A low-poly 3D farming and life-simulation game in the spirit of Stardew Valley —
-an original world, cast and story. Restore the Heartstone in Ember Square by
-completing the Valley Collections: crops, fish, minerals, recipes, critters and
-friendships.
+A stylized 3D farming and life-simulation game in the spirit of Stardew Valley —
+an original world, cast and story. Restore the Heartstone by completing the
+Valley Collections: crops, fish, minerals, recipes, critters and friendships.
+
+Built with **Godot 4.5** and plain **GDScript**. No addons, no C#, nothing
+installed system-wide.
 
 ## Play it
 
-```
-npm install
-npm run dev        # http://localhost:2026
-npm run build      # production build in dist/
+```powershell
+# Play
+& "val/val/tools/Godot_v4.5-stable_win64.exe" --path "val/val"
+
+# Open in the editor
+& "val/val/tools/Godot_v4.5-stable_win64.exe" --editor --path "val/val"
 ```
 
-## Quality gates
+The Godot binary ships inside the repo at `val/val/tools/` and is git-ignored.
 
+## Validate it
+
+```powershell
+pwsh -File val/val/tools/check.ps1
 ```
-npm run check      # typecheck + lint + unit/sim tests + content validation
-```
+
+Runs the full pipeline — a clean project import, the automated test suite, and a
+headless boot of the real main scene — and exits non-zero if anything fails or
+if the engine logs a script error.
+
+Current state: **92/92 tests passing**, import clean, boot clean.
+
+## Layout
+
+| Path | What |
+|---|---|
+| `AGENTS.md` | team rulebook: how to build and verify, architecture rules, lanes |
+| `val/val/` | the Godot project |
+| `val/val/docs/` | design document, licences, salvaged design notes |
 
 ## Docs
 
-- docs/GDD.md — game design
-- docs/ARCHITECTURE.md — systems
-- docs/ROADMAP.md — milestone checklist
-- docs/TASKS.md — task index
-- docs/DECISIONS.md — decisions log
-- AGENTS.md — team rules and lanes
-
-Build for web (itch.io ZIP) in M8. Optional Electron desktop build in M8.
+- [`AGENTS.md`](AGENTS.md) — team rules, lanes, quality gates
+- [`val/val/README.md`](val/val/README.md) — controls, layout, architecture
+- [`val/val/docs/GDD.md`](val/val/docs/GDD.md) — game design document
+- [`val/val/DEVELOPMENT_STATUS.md`](val/val/DEVELOPMENT_STATUS.md) — what is built, what was tested, what is next
+- [`val/val/docs/ART_LICENSES.md`](val/val/docs/ART_LICENSES.md) — every asset with source URL and licence

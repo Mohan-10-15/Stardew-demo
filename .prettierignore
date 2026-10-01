@@ -1,6 +1,0 @@
-node_modules/
-dist/
-coverage/
-dist-electron/
-.tmp/
-package-lock.json
