@@ -9,7 +9,20 @@ extends RefCounted
 ## Collision is created alongside visuals for anything the player can walk into.
 
 const GROUND_SIZE := 220.0
+## Ground is generated as a grid of this many cells per side.
+const GROUND_CELLS := 44
+## Size of the pond, measured as its radius in metres. The basin is generated
+## out to this distance; the visible water plane is slightly smaller.
+const POND_RADIUS := 17.0
+const POND_WATER_RADIUS := 16.0
+## Water surface height. Negative so the pond reads as a basin below the
+## surrounding valley rather than a sheet of water laid on top of the grass.
 const WATER_LEVEL := -0.8
+## Depth of the basin at its centre, below the water surface so the water has
+## somewhere to sit.
+const POND_FLOOR_DEPTH := -2.2
+## Ground is flat at this height everywhere except inside the pond basin.
+const GROUND_LEVEL := 0.0
 ## Interactable props pad their collider up to this height so a crosshair at
 ## eye level can actually hit them.
 const INTERACTION_COLLIDER_MIN_HEIGHT := 2.4
@@ -49,38 +62,159 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_build_interactables(root)
 
 
+## Height of the terrain at a world XZ position.
+##
+## Flat across the valley, except for a smooth basin over the pond so the water
+## sits *in* the ground. Pure and deterministic: the visual mesh and the
+## collision mesh are both generated from this function, so they cannot disagree
+## the way an independently-authored collider can.
+static func terrain_height(x: float, z: float) -> float:
+	var centre := Vector2(REGION_POND.x, REGION_POND.y)
+	var d := Vector2(x, z).distance_to(centre)
+	if d >= POND_RADIUS:
+		return GROUND_LEVEL
+	# Smoothstep from the rim down to the basin floor, so the shoreline is a
+	# slope rather than a cliff and the water plane meets land naturally.
+	var t := 1.0 - d / POND_RADIUS
+	var s := t * t * (3.0 - 2.0 * t)
+	return lerpf(GROUND_LEVEL, POND_FLOOR_DEPTH, s)
+
+
 static func _build_ground(root: Node3D) -> void:
 	var body := StaticBody3D.new()
 	body.name = "Ground"
 	body.collision_layer = 1
 	body.collision_mask = 0
 
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var indices := PackedInt32Array()
+	var faces := PackedVector3Array()
+	_build_grid(vertices, normals, uvs, indices, faces)
+
+	# Trimesh collision from the *same* vertices as the visual mesh, so what the
+	# player walks on is exactly what they see. A box collider cannot represent
+	# the pond basin, which is what previously let the player walk over the
+	# water surface.
+	#
+	# `set_faces()` takes three vertices per face. The `data` property looks like
+	# the obvious assignment and is wrong: it reinterprets a flat vertex array
+	# as consecutive face triples, so a 3875-vertex grid becomes 1291 arbitrary
+	# triangles plus two leftover vertices, and nothing collides. Verified by
+	# probe: `data =` misses a downward ray, `set_faces()` hits it at y=0.
 	var shape := CollisionShape3D.new()
 	shape.name = "CollisionShape3D"
-	var box := BoxShape3D.new()
-	box.size = Vector3(GROUND_SIZE, 2.0, GROUND_SIZE)
-	shape.shape = box
-	shape.position = Vector3(0, -1.0, 0)
+	var trimesh := ConcavePolygonShape3D.new()
+	trimesh.set_faces(faces)
+	shape.shape = trimesh
 	body.add_child(shape)
 
 	var mesh := MeshInstance3D.new()
 	mesh.name = "GroundMesh"
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(GROUND_SIZE, GROUND_SIZE)
-	plane.subdivide_width = 1
-	plane.subdivide_depth = 1
-	mesh.mesh = plane
+	var array_mesh := ArrayMesh.new()
+	mesh.mesh = array_mesh
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	mesh.material_override = material(COL_GRASS, 0.95)
 	body.add_child(mesh)
 
 	_finish(body, root)
 
 
+## Fills a flat XZ grid of GROUND_CELLS cells, sampling [method terrain_height]
+## for each vertex.
+##
+## Produces the vertex/normal/uv/index arrays for the visual mesh and a separate
+## three-vertices-per-face list for the collider, both from this one pass.
+static func _build_grid(
+	vertices: PackedVector3Array,
+	normals: PackedVector3Array,
+	uvs: PackedVector2Array,
+	indices: PackedInt32Array,
+	faces: PackedVector3Array
+) -> void:
+	var step := GROUND_SIZE / float(GROUND_CELLS)
+	var half := GROUND_SIZE * 0.5
+
+	for gz: int in range(GROUND_CELLS + 1):
+		for gx: int in range(GROUND_CELLS + 1):
+			var x := -half + gx * step
+			var z := -half + gz * step
+			vertices.append(Vector3(x, terrain_height(x, z), z))
+			normals.append(Vector3.UP)
+			uvs.append(Vector2(gx / float(GROUND_CELLS), gz / float(GROUND_CELLS)))
+
+	# Two triangles per cell, wound counter-clockwise when seen from above so
+	# the surface faces up.
+	var stride := GROUND_CELLS + 1
+	for gz: int in range(GROUND_CELLS):
+		for gx: int in range(GROUND_CELLS):
+			var a := gz * stride + gx
+			var b := a + 1
+			var c := a + stride
+			var d := c + 1
+			indices.append_array([a, c, b, b, c, d])
+
+	# Collision needs vertices rather than indices, so expand once here.
+	# ~3900 faces becomes ~11600 Vector3s, which is fine for a static body.
+	#
+	# The winding is reversed relative to the render index buffer on purpose.
+	# `ConcavePolygonShape3D` treats a clockwise face (viewed from above) as the
+	# front, while the renderer's front face is counter-clockwise. Feeding it
+	# the render winding produces a mesh that looks perfect and collides with
+	# nothing: rays pass straight through and the player falls. Reversing here
+	# keeps one source of truth for the geometry without flipping the visual
+	# mesh inside out.
+	for i: int in range(0, indices.size(), 3):
+		faces.append(vertices[indices[i + 2]])
+		faces.append(vertices[indices[i + 1]])
+		faces.append(vertices[indices[i]])
+
+	_compute_normals(vertices, normals, indices)
+
+
+## Recomputes smooth vertex normals by area-weighted face accumulation.
+##
+## The grid is authored with flat `Vector3.UP` normals, which would light the
+## basin walls as if they were horizontal - the pond slope would be invisible.
+static func _compute_normals(
+	vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array
+) -> void:
+	var accumulated := PackedVector3Array()
+	accumulated.resize(vertices.size())
+
+	var i: int = 0
+	while i < indices.size():
+		var ia := indices[i]
+		var ib := indices[i + 1]
+		var ic := indices[i + 2]
+		# Not normalised: cross-product magnitude is twice the triangle area, so
+		# summing unnormalised faces weights large triangles more heavily, which
+		# is what we want for smooth shading.
+		var face := (vertices[ib] - vertices[ia]).cross(vertices[ic] - vertices[ia])
+		accumulated[ia] += face
+		accumulated[ib] += face
+		accumulated[ic] += face
+		i += 3
+
+	for v: int in range(vertices.size()):
+		var n := accumulated[v]
+		normals[v] = n.normalized() if n.length_squared() > 0.000001 else Vector3.UP
+
+
+## The water surface, sized to sit inside the basin so its rim is hidden by the
+## shoreline rather than ending in mid-air over the grass.
 static func _build_water(root: Node3D) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = "Pond"
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(34, 26)
+	plane.size = Vector2(POND_WATER_RADIUS * 2.0, POND_WATER_RADIUS * 2.0)
 	mesh.mesh = plane
 	mesh.position = Vector3(REGION_POND.x, WATER_LEVEL, REGION_POND.y)
 	var m := material(COL_WATER, 0.08)
@@ -88,16 +222,17 @@ static func _build_water(root: Node3D) -> void:
 	mesh.material_override = m
 	_finish(mesh, root)
 
-	# A shallow invisible slab so the player cannot swim off into the void.
+	# A shallow invisible slab below the basin floor so nothing can fall through
+	# the world at the deepest point of the pond.
 	var body := StaticBody3D.new()
 	body.name = "PondFloor"
 	body.collision_layer = 1
 	var shape := CollisionShape3D.new()
 	shape.name = "CollisionShape3D"
 	var box := BoxShape3D.new()
-	box.size = Vector3(34, 0.5, 26)
+	box.size = Vector3(POND_WATER_RADIUS * 2.0, 0.5, POND_WATER_RADIUS * 2.0)
 	shape.shape = box
-	shape.position = Vector3(REGION_POND.x, WATER_LEVEL - 0.6, REGION_POND.y)
+	shape.position = Vector3(REGION_POND.x, POND_FLOOR_DEPTH - 0.9, REGION_POND.y)
 	body.add_child(shape)
 	_finish(body, root)
 

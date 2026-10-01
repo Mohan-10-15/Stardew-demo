@@ -11,7 +11,7 @@ Both a **first-person** and a **third-person** camera, switchable in-game at any
 time with `V`.
 
 Art is either original procedural work generated at runtime, or a real modelled
-CC0 pack (KayKit, Quaternius) recorded in [`docs/ART_LICENSES.md`](docs/ART_LICENSES.md).
+CC0 pack (KayKit, Quaternius) recorded in [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md).
 Nothing is taken from any existing commercial game.
 
 ---
@@ -114,7 +114,13 @@ res://
 ├── tools/             # generators, boot_check.gd, check.ps1, portable Godot
 └── docs/
     ├── GDD.md              # design document
-    ├── ART_LICENSES.md     # every asset, source URL, licence
+    ├── ARCHITECTURE.md     # how the project is put together
+    ├── ROADMAP.md          # milestone sequence
+    ├── TASKS.md            # current work item and queue
+    ├── DECISIONS.md        # decisions and reasoning
+    ├── ASSET_LICENSES.md   # every asset, source URL, licence
+    ├── ACCEPTANCE.md       # what each milestone must do
+    ├── CUTSCENE_GUIDE.md   # the cinematic system's contract
     ├── SALVAGED_DESIGN.md  # calendar / inventory / farming rules from the old Unity sims
     └── LEGACY_CONTENT.md   # the inherited JSON and when to convert it
 ```
@@ -148,7 +154,13 @@ res://
 - [`AGENTS.md`](AGENTS.md) — team rulebook: how to build and verify, lanes, quality gates
 - [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md) — what is built, what was tested, what is next
 - [`docs/GDD.md`](docs/GDD.md) — game design document
-- [`docs/ART_LICENSES.md`](docs/ART_LICENSES.md) — every asset with source URL and licence
+- [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md) — every asset with source URL and licence
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — layers, autoloads, the hub rule, and the invariants that keep it together
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — the milestone sequence and its dependencies
+- [`docs/TASKS.md`](docs/TASKS.md) — the current work item and the queue
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — decisions and the reasoning behind them
+- [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) — what each milestone must do before it counts as done
+- [`docs/CUTSCENE_GUIDE.md`](docs/CUTSCENE_GUIDE.md) — the cinematic system's contract
 - [`docs/SALVAGED_DESIGN.md`](docs/SALVAGED_DESIGN.md) — calendar / inventory / farming rules recovered from the retired Unity sims
 - [`docs/LEGACY_CONTENT.md`](docs/LEGACY_CONTENT.md) — the inherited JSON content and when to convert it
 
