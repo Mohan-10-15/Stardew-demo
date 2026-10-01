@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_root.gd" id="1_dphjl"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sl2e5"]
+sky_top_color = Color(0.3, 0.53, 0.78, 1)
+sky_horizon_color = Color(0.72, 0.82, 0.88, 1)
+ground_bottom_color = Color(0.24, 0.3, 0.22, 1)
+ground_horizon_color = Color(0.6, 0.68, 0.55, 1)
+
+[sub_resource type="Sky" id="Sky_1fp7r"]
+sky_material = SubResource("ProceduralSkyMaterial_sl2e5")
+
+[sub_resource type="Environment" id="Environment_6m72w"]
+background_mode = 2
+sky = SubResource("Sky_1fp7r")
+ambient_light_source = 3
+ambient_light_energy = 0.85
+tonemap_mode = 2
+
+[node name="World" type="Node3D"]
+script = ExtResource("1_dphjl")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.7880108, 0.48514786, -0.37903908, 0, 0.6156615, 0.7880107, 0.6156615, -0.62096095, 0.4851479, 0, 0, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.05
+shadow_enabled = true
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_6m72w")
