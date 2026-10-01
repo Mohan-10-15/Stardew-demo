@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MovementConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/config/movement_config.gd" id="1_movement"]
+
+[resource]
+script = ExtResource("1_movement")
+walk_speed = 4.0
+sprint_speed = 7.5
+crouch_speed = 2.0
+air_speed = 1.2
+ground_acceleration = 45.0
+ground_deceleration = 60.0
+air_acceleration = 12.0
+jump_velocity = 8.0
+jump_hold_factor = 0.55
+jump_hold_gravity_scale = 0.55
+fall_gravity_scale = 1.35
+terminal_velocity = 55.0
+mouse_sensitivity = 0.003
+gamepad_sensitivity = 2.6
+gamepad_look_smoothing = 0.15
+min_pitch_degrees = -89.0
+max_pitch_degrees = 89.0
+capsule_radius = 0.4
+capsule_height = 1.8
+eye_height = 1.62
+crouch_eye_height = 0.95
+snap_to_ground_speed = 1.0
+ground_snap_distance = 0.4

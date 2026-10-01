@@ -1,0 +1,558 @@
+class_name WorldBuilder
+extends RefCounted
+## Procedural construction of the starting valley.
+##
+## Deliberately small and hand-tuned rather than infinite: the brief asks for a
+## polished test area first. All geometry is built from Godot primitives so the
+## game has zero external art dependencies at this stage.
+##
+## Collision is created alongside visuals for anything the player can walk into.
+
+const GROUND_SIZE := 220.0
+const WATER_LEVEL := -0.8
+## Interactable props pad their collider up to this height so a crosshair at
+## eye level can actually hit them.
+const INTERACTION_COLLIDER_MIN_HEIGHT := 2.4
+
+const COL_GRASS := Color(0.36, 0.62, 0.31)
+const COL_DIRT := Color(0.45, 0.33, 0.22)
+const COL_PATH := Color(0.62, 0.55, 0.42)
+const COL_WATER := Color(0.24, 0.48, 0.66, 0.75)
+const COL_WOOD := Color(0.38, 0.26, 0.16)
+const COL_LEAF := Color(0.22, 0.47, 0.24)
+const COL_LEAF_AUTUMN := Color(0.72, 0.44, 0.18)
+const COL_ROCK := Color(0.52, 0.52, 0.55)
+const COL_WALL := Color(0.78, 0.72, 0.62)
+const COL_ROOF := Color(0.62, 0.31, 0.28)
+const COL_FENCE := Color(0.52, 0.38, 0.24)
+
+## Region centres, kept in one place so later groups (world expansion, minimap,
+## area transitions) can reference them by name.
+const REGION_FARM := Vector2(0, -20)
+const REGION_VILLAGE := Vector2(38, 8)
+const REGION_FOREST := Vector2(-42, 26)
+const REGION_POND := Vector2(-14, 44)
+
+
+## Builds the whole scene and returns the populated root node.
+static func build(root: Node3D, seed_value: int = 12345) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+
+	_build_ground(root)
+	_build_water(root)
+	_build_paths(root)
+	_build_farm(root)
+	_build_village(root, rng)
+	_build_forest(root, rng)
+	_build_rocks(root, rng)
+	_build_interactables(root)
+
+
+static func _build_ground(root: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Ground"
+	body.collision_layer = 1
+	body.collision_mask = 0
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(GROUND_SIZE, 2.0, GROUND_SIZE)
+	shape.shape = box
+	shape.position = Vector3(0, -1.0, 0)
+	body.add_child(shape)
+
+	var mesh := MeshInstance3D.new()
+	mesh.name = "GroundMesh"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(GROUND_SIZE, GROUND_SIZE)
+	plane.subdivide_width = 1
+	plane.subdivide_depth = 1
+	mesh.mesh = plane
+	mesh.material_override = material(COL_GRASS, 0.95)
+	body.add_child(mesh)
+
+	_finish(body, root)
+
+
+static func _build_water(root: Node3D) -> void:
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Pond"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(34, 26)
+	mesh.mesh = plane
+	mesh.position = Vector3(REGION_POND.x, WATER_LEVEL, REGION_POND.y)
+	var m := material(COL_WATER, 0.08)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mesh.material_override = m
+	_finish(mesh, root)
+
+	# A shallow invisible slab so the player cannot swim off into the void.
+	var body := StaticBody3D.new()
+	body.name = "PondFloor"
+	body.collision_layer = 1
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(34, 0.5, 26)
+	shape.shape = box
+	shape.position = Vector3(REGION_POND.x, WATER_LEVEL - 0.6, REGION_POND.y)
+	body.add_child(shape)
+	_finish(body, root)
+
+
+static func _build_paths(root: Node3D) -> void:
+	# Village -> farm, the spine of the starting area.
+	_add_path_segment(root, REGION_VILLAGE, REGION_FARM, 3.4)
+	_add_path_segment(root, REGION_FARM, REGION_FOREST, 2.8)
+	_add_path_segment(root, REGION_FARM, Vector2(REGION_FARM.x, REGION_POND.y - 12), 2.4)
+
+
+static func _add_path_segment(root: Node3D, from: Vector2, to: Vector2, width: float) -> void:
+	var mid := (from + to) * 0.5
+	var delta := to - from
+	var mesh := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(width, delta.length())
+	mesh.mesh = plane
+	mesh.material_override = material(COL_PATH, 0.9)
+	mesh.position = Vector3(mid.x, 0.02, mid.y)
+	# PlaneMesh lies in XZ; align its local Z with the segment direction.
+	var angle := atan2(delta.x, delta.y)
+	mesh.rotation.y = angle
+	_finish(mesh, root)
+
+
+static func _build_farm(root: Node3D) -> void:
+	var soil := MeshInstance3D.new()
+	soil.name = "FarmSoil"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(22, 16)
+	soil.mesh = plane
+	soil.position = Vector3(REGION_FARM.x, 0.03, REGION_FARM.y)
+	soil.material_override = material(COL_DIRT, 0.95)
+	_finish(soil, root)
+
+	# Perimeter fence posts with rails, giving the farm a readable silhouette.
+	var corners := [
+		Vector3(REGION_FARM.x - 11, 0, REGION_FARM.y - 8),
+		Vector3(REGION_FARM.x + 11, 0, REGION_FARM.y - 8),
+		Vector3(REGION_FARM.x + 11, 0, REGION_FARM.y + 8),
+		Vector3(REGION_FARM.x - 11, 0, REGION_FARM.y + 8),
+	]
+	for i: int in range(corners.size()):
+		_add_post(root, corners[i])
+		_add_rail(root, corners[i], corners[(i + 1) % corners.size()])
+
+
+static func _add_post(root: Node3D, at: Vector3) -> void:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.position = at
+
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.16, 1.0, 0.16)
+	mesh.mesh = box
+	mesh.position = Vector3(0, 0.5, 0)
+	mesh.material_override = material(COL_FENCE, 0.9)
+	body.add_child(mesh)
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var col := BoxShape3D.new()
+	col.size = box.size
+	shape.shape = col
+	shape.position = Vector3(0, 0.5, 0)
+	body.add_child(shape)
+
+	_finish(body, root)
+
+
+static func _add_rail(root: Node3D, from: Vector3, to: Vector3) -> void:
+	var mid := (from + to) * 0.5
+	var delta := to - from
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.position = Vector3(mid.x, 0.62, mid.z)
+	body.rotation.y = atan2(delta.x, delta.z)
+
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.08, 0.1, delta.length())
+	mesh.mesh = box
+	mesh.material_override = material(COL_FENCE, 0.9)
+	body.add_child(mesh)
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var col := BoxShape3D.new()
+	col.size = box.size
+	shape.shape = col
+	body.add_child(shape)
+
+	_finish(body, root)
+
+
+## Deterministic tree placement, shared by the visual multimeshes and the
+## colliders. Two independent `rng.randf()` loops produce *different* layouts,
+## so the player walks through invisible trees - one generator, one sequence.
+static func _forest_sites(rng: RandomNumberGenerator) -> Array[Vector2]:
+	var sites: Array[Vector2] = []
+	for _i: int in range(46):
+		var angle := rng.randf() * TAU
+		var radius := sqrt(rng.randf()) * 30.0
+		var pos := REGION_FOREST + Vector2(cos(angle), sin(angle)) * radius
+		# Keep the forest from overlapping the farm, pond or village.
+		if pos.distance_to(REGION_FARM) < 20.0:
+			continue
+		if pos.distance_to(REGION_POND) < 18.0:
+			continue
+		if pos.distance_to(REGION_VILLAGE) < 22.0:
+			continue
+		sites.append(pos)
+	return sites
+
+
+static func _build_village(root: Node3D, rng: RandomNumberGenerator) -> void:
+	var houses := [
+		REGION_VILLAGE + Vector2(-9, -6),
+		REGION_VILLAGE + Vector2(6, -8),
+		REGION_VILLAGE + Vector2(10, 5),
+		REGION_VILLAGE + Vector2(-4, 8),
+	]
+	for i: int in range(houses.size()):
+		_add_house(root, houses[i], 5.0 + rng.randf_range(-0.6, 0.6), 4.5 + rng.randf_range(-0.5, 0.5))
+
+	# The player's own house, a little larger and clearly the home base.
+	_add_house(root, REGION_VILLAGE + Vector2(-16, 2), 7.0, 6.0)
+
+
+static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float) -> void:
+	var body := StaticBody3D.new()
+	body.name = "House"
+	body.collision_layer = 1
+	body.position = Vector3(centre.x, 0, centre.y)
+	body.rotation.y = rng_rotate(centre)
+
+	var height := 3.0
+	var walls := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(width, height, depth)
+	walls.mesh = box
+	walls.position = Vector3(0, height * 0.5, 0)
+	walls.material_override = material(COL_WALL, 0.9)
+	body.add_child(walls)
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var col := BoxShape3D.new()
+	col.size = box.size
+	shape.shape = col
+	shape.position = walls.position
+	body.add_child(shape)
+
+	# Simple hipped roof from a scaled cone: readable silhouette, no custom mesh.
+	var roof := MeshInstance3D.new()
+	var prism := PrismMesh.new()
+	prism.size = Vector3(width * 1.18, 1.6, depth * 1.18)
+	roof.mesh = prism
+	roof.position = Vector3(0, height + 0.8, 0)
+	roof.material_override = material(COL_ROOF, 0.85)
+	body.add_child(roof)
+
+	# Door and windows, purely visual but they make the village feel inhabited.
+	var door := MeshInstance3D.new()
+	var door_box := BoxMesh.new()
+	door_box.size = Vector3(1.0, 1.9, 0.12)
+	door.mesh = door_box
+	door.position = Vector3(0, 0.95, -depth * 0.5 - 0.06)
+	door.material_override = material(Color(0.32, 0.22, 0.15), 0.9)
+	body.add_child(door)
+
+	for side: float in [-1.0, 1.0]:
+		var window := MeshInstance3D.new()
+		var win_box := BoxMesh.new()
+		win_box.size = Vector3(0.1, 0.9, 0.9)
+		window.mesh = win_box
+		window.position = Vector3(side * (width * 0.5 + 0.05), 1.7, 0)
+		window.material_override = material(Color(0.55, 0.72, 0.85), 0.4)
+		body.add_child(window)
+
+	_finish(body, root)
+
+
+static func rng_rotate(centre: Vector2) -> float:
+	# Deterministic per-position jitter so houses do not all face the same way.
+	return sin(centre.x * 0.37 + centre.y * 0.21) * 0.18
+
+
+static func _build_forest(root: Node3D, rng: RandomNumberGenerator) -> void:
+	var trunks: Array[Transform3D] = []
+	var canopies: Array[Transform3D] = []
+
+	var sites := _forest_sites(rng)
+	for pos: Vector2 in sites:
+		trunks.append(_tree_transform(Vector3(pos.x, 0, pos.y), 1.0))
+		canopies.append(_tree_transform(Vector3(pos.x, 0, pos.y), 1.0))
+
+	_add_multimesh(root, "ForestTrunks", _trunk_mesh(), COL_WOOD, trunks)
+	_add_multimesh(root, "ForestCanopies", _canopy_mesh(), COL_LEAF, canopies)
+	# Canopies only; trunks get one StaticBody3D each further below.
+	_add_tree_colliders(root, sites)
+	# The positions actually used, so a test can verify the colliders sit on
+	# the visible trees. MultiMesh instance transforms cannot be read back in a
+	# headless run (the buffer lives on the GPU), so this is the only way to
+	# assert visual/collision alignment without a renderer.
+	root.set_meta(&"forest_sites", sites)
+
+
+static func _tree_transform(at: Vector3, scale_v: float) -> Transform3D:
+	return Transform3D(Basis().scaled(Vector3.ONE * scale_v), at)
+
+
+static func _trunk_mesh() -> CylinderMesh:
+	var m := CylinderMesh.new()
+	m.top_radius = 0.22
+	m.bottom_radius = 0.32
+	m.height = 2.6
+	m.radial_segments = 6
+	return m
+
+
+static func _canopy_mesh() -> SphereMesh:
+	var m := SphereMesh.new()
+	m.radius = 1.5
+	m.height = 3.4
+	m.radial_segments = 8
+	m.rings = 4
+	return m
+
+
+## Colliders are placed from the *same* `sites` list the visual multimeshes use,
+## so every visible tree is walkable-into and no invisible blocker exists.
+static func _add_tree_colliders(root: Node3D, sites: Array[Vector2]) -> void:
+	for pos: Vector2 in sites:
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		body.position = Vector3(pos.x, 1.3, pos.y)
+		var shape := CollisionShape3D.new()
+		var capsule := CapsuleShape3D.new()
+		capsule.radius = 0.35
+		capsule.height = 2.6
+		shape.shape = capsule
+		body.add_child(shape)
+		_finish(body, root)
+
+
+static func _build_rocks(root: Node3D, rng: RandomNumberGenerator) -> void:
+	for i: int in range(22):
+		var pos := Vector2(
+			rng.randf_range(-95.0, 95.0),
+			rng.randf_range(-95.0, 95.0)
+		)
+		if pos.distance_to(REGION_FARM) < 16.0:
+			continue
+		if pos.distance_to(REGION_VILLAGE) < 18.0:
+			continue
+
+		var scale_v := rng.randf_range(0.4, 1.5)
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		body.position = Vector3(pos.x, 0.0, pos.y)
+		body.rotation.y = rng.randf() * TAU
+
+		var mesh := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.7 * scale_v
+		sphere.height = 1.2 * scale_v
+		sphere.radial_segments = 7
+		sphere.rings = 4
+		mesh.mesh = sphere
+		mesh.position = Vector3(0, 0.5 * scale_v, 0)
+		mesh.material_override = material(COL_ROCK, 0.9)
+		body.add_child(mesh)
+
+		var shape := CollisionShape3D.new()
+		var col := SphereShape3D.new()
+		col.radius = 0.7 * scale_v
+		shape.shape = col
+		shape.position = Vector3(0, 0.5 * scale_v, 0)
+		body.add_child(shape)
+
+		_finish(body, root)
+
+
+static func _add_multimesh(
+	root: Node3D, name: String, mesh: Mesh, color: Color, transforms: Array[Transform3D]
+) -> void:
+	if transforms.is_empty():
+		return
+	var mi := MultiMeshInstance3D.new()
+	mi.name = name
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = transforms.size()
+	for i: int in range(transforms.size()):
+		mm.set_instance_transform(i, transforms[i])
+	mi.multimesh = mm
+	mi.material_override = material(color, 0.9)
+	_finish(mi, root)
+
+
+## Demo interactables.
+##
+## These exist to prove the reusable [Interactable] component works on unrelated
+## props with no per-prop code: every row below is plain data consumed by the
+## same helper. Real systems (crops, chests, NPCs, workstations) will attach
+## their own subclasses instead.
+static func _build_interactables(root: Node3D) -> void:
+	var props: Array[Dictionary] = [
+		{
+			"name": "VillageWell",
+			"position": Vector3(30, 0, 4),
+			"shape": "cylinder",
+			"size": Vector3(1.1, 1.0, 1.1),
+			"color": COL_ROCK,
+			"verb": "Look into",
+			"description": "The shaft goes down a long way. It is very cold down there.",
+			"hold_seconds": 0.0,
+			"one_shot": false,
+		},
+		{
+			"name": "NoticeBoard",
+			"position": Vector3(2, 0, -12),
+			"shape": "box",
+			"size": Vector3(1.3, 1.5, 0.14),
+			"color": COL_WOOD,
+			"verb": "Read",
+			"description": "A hand-written note: 'Mind the pond after dark.'",
+			"hold_seconds": 0.0,
+			"one_shot": false,
+		},
+		{
+			"name": "SupplyCrate",
+			"position": Vector3(44, 0, 13),
+			"shape": "box",
+			"size": Vector3(1.0, 0.9, 1.0),
+			"color": COL_FENCE,
+			"verb": "Open",
+			"description": "Straw, twine and a bent spade. Someone left it half-stocked.",
+			# Held, not tapped: exercises the timed-interaction path.
+			"hold_seconds": 0.8,
+			"one_shot": true,
+		},
+	]
+	for spec: Dictionary in props:
+		_build_examine_prop(root, spec)
+
+
+static func _build_examine_prop(root: Node3D, spec: Dictionary) -> void:
+	var size: Vector3 = spec["size"]
+
+	var body := StaticBody3D.new()
+	body.name = spec["name"]
+	body.position = spec["position"]
+	body.collision_layer = 1
+
+	var built := _prop_mesh_and_shape(spec["shape"], size)
+	var mesh: Mesh = built[0]
+	var shape: Shape3D = built[1]
+
+	var visual := MeshInstance3D.new()
+	visual.name = "Mesh"
+	visual.mesh = mesh
+	visual.material_override = material(spec["color"], 0.85)
+	visual.position = Vector3(0, size.y * 0.5, 0)
+	body.add_child(visual)
+
+	var col := CollisionShape3D.new()
+	col.name = "CollisionShape3D"
+	# The collider is deliberately taller than the mesh. A crosshair sits at
+	# ~1.62m, so a genuinely short prop (a 0.9m crate) would be impossible to
+	# aim at. Padding the height makes small props targetable at the cost of a
+	# slightly larger blocking volume; a dedicated interaction-only collider on
+	# its own layer is the cleaner long-term fix.
+	var hit_height := maxf(size.y, INTERACTION_COLLIDER_MIN_HEIGHT)
+	if shape is BoxShape3D:
+		(shape as BoxShape3D).size = Vector3(size.x, hit_height, size.z)
+	elif shape is CylinderShape3D:
+		var cylinder := shape as CylinderShape3D
+		cylinder.height = hit_height
+	elif shape is SphereShape3D:
+		var sphere := shape as SphereShape3D
+		sphere.height = hit_height
+		sphere.radius = hit_height * 0.5
+	col.shape = shape
+	col.position = Vector3(0, hit_height * 0.5, 0)
+	body.add_child(col)
+
+	# The component is a plain child of the body, so the probe's ray resolves
+	# it by walking up from the collider it hit.
+	var component := Interactable.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/interaction/examine_interactable.gd"))
+	component.set("verb", spec["verb"])
+	component.set("description", spec["description"])
+	component.set("hold_seconds", spec["hold_seconds"])
+	component.set("one_shot", spec["one_shot"])
+	component.set("max_distance", 3.2)
+	body.add_child(component)
+
+	_finish(body, root)
+
+
+## Builds a matching visual mesh and collision shape from one size description,
+## so the two can never drift apart.
+static func _prop_mesh_and_shape(kind: String, size: Vector3) -> Array:
+	var mesh: Mesh
+	var shape: Shape3D
+	match kind:
+		"cylinder":
+			var cylinder := CylinderMesh.new()
+			cylinder.top_radius = size.x
+			cylinder.bottom_radius = size.x
+			cylinder.height = size.y
+			cylinder.radial_segments = 12
+			var cylinder_shape := CylinderShape3D.new()
+			cylinder_shape.radius = size.x
+			cylinder_shape.height = size.y
+			mesh = cylinder
+			shape = cylinder_shape
+		"sphere":
+			var sphere := SphereMesh.new()
+			sphere.radius = size.x
+			sphere.height = size.y
+			sphere.radial_segments = 10
+			sphere.rings = 6
+			var sphere_shape := SphereShape3D.new()
+			sphere_shape.radius = size.x
+			mesh = sphere
+			shape = sphere_shape
+		_:
+			var box := BoxMesh.new()
+			box.size = size
+			var box_shape := BoxShape3D.new()
+			box_shape.size = size
+			mesh = box
+			shape = box_shape
+	return [mesh, shape]
+
+
+static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = roughness
+	m.metallic = 0.0
+	# Godot 4 renamed SpatialMaterial.specular to StandardMaterial3D.metallic_specular.
+	m.metallic_specular = 0.2
+	return m
+
+
+## Parents a node and marks it for serialisation.
+## `owner` must already be an ancestor, so add_child has to happen first.
+static func _finish(node: Node, root: Node3D) -> void:
+	root.add_child(node)
+	node.owner = root
