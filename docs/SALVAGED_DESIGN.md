@@ -47,13 +47,19 @@ a headless bot and a real playthrough stay in lockstep.
 
 ### Operations
 
+> **Superseded in one place.** The original build rolled the calendar at
+> midnight. It now rolls at the 2:00 AM collapse instead — see D13 in
+> `DECISIONS.md` for why, and for the sleep-vs-collapse split. `ToAbsoluteMinutes`
+> and the rollover-bug note below are unchanged.
+
 - **`Advance(world, minutes)`** — moves forward, clamps at the collapse point,
-  and rolls the calendar when it crosses midnight. Returns a transition
+  and rolls the calendar there. Returns a transition
   describing what happened: `day_rolled`, `season_rolled`, `year_rolled`,
   `passed_out`, plus the new world.
 - **`NextDayMorning(world)`** — jumps straight to the next 6:00 AM, bypassing
   the collapse clamp. Sleep and end-of-day use this; the calendar rules are
-  identical to `Advance`.
+  identical to `Advance`. Always rolls the day. Waking from a collapse uses
+  `WakeAfterCollapse` instead, which does not roll.
 - **`StartNewDay(world)`** — resets to 6:00 AM on the *same* day, keeping
   weather.
 - **`AddMinutes(clock, minutes)`** — display-clock arithmetic that wraps at
@@ -93,7 +99,7 @@ Winter trades rain for snow; summer is driest.
 Worth re-asserting, because each one was a bug at some point:
 
 - 6:00 AM is absolute minute zero.
-- Advancing at midnight rolls the day; advancing just before it does not.
+- Advancing past midnight does **not** roll the day (D13) — 2 AM is the boundary.
 - At 2:00 AM the farmer collapses *and* the day rolls.
 - Advancing past 2:00 AM **clamps** at the collapse point.
 - Once `passed_out` is set it stays set.

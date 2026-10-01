@@ -545,6 +545,25 @@ static func _add_multimesh(
 ## their own subclasses instead.
 static func _build_interactables(root: Node3D) -> void:
 	var props: Array[Dictionary] = [
+		# Placed on the spawn point's doorstep on purpose. The other three props
+		# sit 26-44m away, which is fine as scenery but meant a new game opened
+		# with nothing inside the 3.2m interaction range: no prompt, no
+		# crosshair response, and nothing to indicate interaction worked at all.
+		# The mailbox is the tutorial prop that makes the system visible.
+		# Offset off the spawn's Z axis rather than dead ahead, so it never
+		# blocks the straight-down-the-Z sightline the interaction fixtures
+		# rely on.
+		{
+			"name": "FarmMailbox",
+			"position": Vector3(1.8, 0, 12.0),
+			"shape": "box",
+			"size": Vector3(0.55, 1.1, 0.7),
+			"color": COL_WOOD,
+			"verb": "Check the mail",
+			"description": "A bill from the seed merchant, and a hand-drawn map of the valley.",
+			"hold_seconds": 0.0,
+			"one_shot": false,
+		},
 		{
 			"name": "VillageWell",
 			"position": Vector3(30, 0, 4),

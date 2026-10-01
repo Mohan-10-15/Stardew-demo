@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_jmpkf"]
+
+[resource]
+script = ExtResource("1_jmpkf")
+id = &"tomato"
+display_name = "Tomato"
+seasons = Array[int]([1])
+days_to_grow = 11
+regrows = true
+regrow_days = 4
+seed_price = 50
+sell_price = 60
+ripe_color = Color(0.8, 0.24, 0.18, 1)
+sprout_color = Color(0.42, 0.64, 0.3, 1)

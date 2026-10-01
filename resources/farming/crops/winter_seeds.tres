@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_e2c72"]
+
+[resource]
+script = ExtResource("1_e2c72")
+id = &"winter_seeds"
+display_name = "Winter Seeds"
+seasons = Array[int]([3])
+days_to_grow = 7
+seed_price = 30
+sell_price = 105
+ripe_color = Color(0.6, 0.78, 0.62, 1)
+sprout_color = Color(0.62, 0.76, 0.66, 1)

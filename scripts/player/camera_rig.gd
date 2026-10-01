@@ -6,6 +6,8 @@ extends Node3D
 ##   * The rig is a child of the player and handles **pitch only**. Yaw belongs
 ##     to the body (see [PlayerController]). This is what keeps a third-person
 ##     camera trailing behind the character instead of orbiting a fixed axis.
+##     [PlayerController] writes `rotation.y` here to cancel the difference
+##     between aim yaw and body facing, so aiming is unaffected by strafing.
 ##   * Third-person uses an explicit ray query rather than SpringArm3D, so the
 ##     behaviour is deterministic and unit-testable without a live physics world.
 ##   * Switching modes never reparents or moves the player, so there is no
@@ -164,7 +166,11 @@ func _update_camera_transform(instant: bool) -> void:
 		_camera.rotation = Vector3.ZERO
 		return
 
-	var pivot := global_position + Vector3.UP * pivot_height
+	# Shoulder-height pivot, expressed in the rig's own space rather than
+	# world-up: the rig carries the pitch, so `global_position + UP * height`
+	# would put the ray origin somewhere the camera is not once the player looks
+	# up or down.
+	var pivot := global_transform * Vector3(0.0, pivot_height, 0.0)
 	var forward := -global_transform.basis.z
 	var unobstructed := _desired_distance(pivot, forward)
 
@@ -179,8 +185,12 @@ func _update_camera_transform(instant: bool) -> void:
 
 	_current_distance = clampf(_current_distance, min_third_person_distance, third_person_distance)
 
-	# Local +Z is behind the rig, which is where the camera belongs.
-	_camera.position = Vector3(0.0, 0.0, _current_distance)
+	# Local +Z is behind the rig, which is where the camera belongs. The rig
+	# node is at the player's feet, so `pivot_height` has to be carried here or
+	# the camera sits on the ground. `pivot_height` is the pivot the occlusion
+	# ray starts from, so using the same value keeps the camera and the ray
+	# agreeing about where "behind the shoulder" is.
+	_camera.position = Vector3(0.0, pivot_height, _current_distance)
 	_camera.rotation = Vector3.ZERO
 
 

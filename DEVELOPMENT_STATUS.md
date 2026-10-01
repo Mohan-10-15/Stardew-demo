@@ -3,13 +3,252 @@
 Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
 Dual first-person / third-person cameras, switchable at runtime.
 
-Progress: **Groups 0, 1, 2, 3 and 4 complete.** Group 5 (time and ambience) is next.
+Progress: **Groups 0–6 complete.** Group 7 (farming grid) is next.
 
-Current baseline: **99/99 tests**, import clean, boot clean.
+Current baseline: **132/132 tests**, import clean, boot clean.
 
 ---
 
 ## Last completed group
+
+```
+GROUP: 6
+NAME: Gameplay Defect Fixes (playtest regression batch)
+STATUS: COMPLETE
+```
+
+Started from a hands-on playtest of the real windowed build rather than from a
+ticket. Four player-visible symptoms, three genuine defects and two false
+positives that the diagnostic itself produced.
+
+### IMPLEMENTED
+- **Two-yaw movement model** (`scripts/player/player_controller.gd`). `_look_yaw`
+  is the aim direction and is written *only* by mouse and gamepad input;
+  `_facing_yaw` is which way the mesh points, chased toward the direction of
+  travel and eased back to the aim when idle. Movement input is read through
+  `_aim_basis()` (`Basis(Vector3.UP, _look_yaw)`), never `global_transform.basis`.
+  The camera rig counter-rotates by `look - facing` so aiming is untouched by
+  strafing. New `set_yaw()` / `get_facing_yaw()` for tests and tools.
+- **Third-person camera height** (`scripts/player/camera_rig.gd`): the camera is
+  now placed at `(0, pivot_height, distance)` instead of `(0, 0, distance)`, and
+  the occlusion ray pivot moved from world-up to the rig's own space
+  (`global_transform * Vector3(0, pivot_height, 0)`) so ray and camera agree
+  once the rig is pitched.
+- **`FarmMailbox`** (`scripts/world/world_builder.gd`): a fourth demo interactable
+  2.9 m from the spawn point. Off the spawn's Z axis so it cannot block the
+  straight-down-Z sightline the interaction fixtures rely on.
+- **`InteractionHUD` late binding** (`scripts/ui/interaction_hud.gd`): the probe
+  lookup retries from `_process` instead of disabling the prompt permanently,
+  and re-reads the current focus on attach so a target already under the
+  crosshair is not left unlabelled. Insurance, not a fix — see below.
+
+### TESTS PERFORMED
+`powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1` — **3/3 stages OK**
+
+| Stage | Result |
+| --- | --- |
+| `import` | OK — zero parse/compile errors |
+| `tests` | **132/132 passed** (6 new) |
+| `boot` | OK — `game_ready` fired, `phase=PLAYING` |
+
+Plus a real windowed run of the main scene: `V` toggled the camera mode
+repeatedly and `[Examine] Interactable:` fired for both `NoticeBoard` and
+`SupplyCrate`, with an empty stderr. Camera and interaction were confirmed by a
+human playing, not only headlessly.
+
+New cases, all of which fail against the pre-fix code:
+- `third_person_camera_is_at_shoulder_height` — camera local Y equals
+  `pivot_height`, and at least 1 m above the player's feet in world space
+- `strafing_does_not_spin_the_body` — W+D settles on a ~45° facing instead of running away
+- `strafing_keeps_moving_in_a_straight_line` — displacement stays within 25° of the requested diagonal
+- `aim_yaw_is_independent_of_facing_yaw` — aim does not follow the body; the rig's *global* yaw returns to the aim heading
+- `every_demo_prop_is_reachable_on_foot` — walks the real player to each real prop and asserts the real crosshair ray focuses it
+- `something_is_interactable_from_the_spawn_point` — asserts a target exists within component reach of the spawn point, then aims at it
+
+### BUGS FOUND AND FIXED DURING THIS GROUP
+- **Holding W+D made the player spin instead of walking.** Movement read its
+  input basis from `global_transform.basis` while writing `rotation.y` from the
+  resulting direction. Turning toward "right" rotated the basis that interpreted
+  "right", which rotated further: measured ~9° per frame, 56° in six frames, so
+  the player circled and never travelled a straight line. Fixed by the two-yaw
+  split above; the loop cannot close because nothing but the mouse writes the
+  basis the input is read through.
+- **The third-person camera rendered from the player's feet.** The rig node sits
+  at the player origin, which is at the feet, and the third-person branch set
+  `_camera.position = Vector3(0, 0, distance)`, never applying `pivot_height`.
+  Measured camera height above the player origin: `0.000`. `pivot_height` was
+  already declared and already used for the occlusion ray, so the bug was that
+  only the ray knew about it.
+- **Nothing was interactable anywhere near the start.** All three demo props sat
+  26–44 m from the spawn point against a 3.2 m interaction range, so a new game
+  opened on an empty field with no prompt and no hint that interaction existed.
+  The component and the ray were both correct; the *placement* was the defect.
+- **Test collateral:** `test_interaction` fixtures stand at `(0, 0.2, 12.5)` and
+  aim down −Z at a fixture prop at `(0, 0, 10)`. The first mailbox placement at
+  `(0, 0, 11)` sat directly on that sightline and broke five unrelated cases.
+  Moved off-axis. Worth remembering: the mailbox is world content, and the
+  fixtures assume an empty corridor.
+
+### FALSE POSITIVES — investigated and dismissed
+Recorded because two of these were reported as bugs before being disproved, and
+a confident wrong diagnosis costs more time than a wrong fix.
+- **"The third-person camera sees nothing / the body is invisible."** Body-mesh
+  visibility was already correct and tested (`body_meshes_visible_in_third_person`).
+  The real fault was only the camera *height*.
+- **"Tree colliders block the interaction ray."** The ray genuinely hit a
+  `@StaticBody3D@NN` — but the probe that produced that reading was aimed by a
+  guessed heading, and was pointing past the side of the prop at scenery. Aiming
+  correctly along the camera→prop vector focuses all four props with no
+  occlusion problem, now pinned by `every_demo_prop_is_reachable_on_foot`. No
+  collision-layer change was made; `3d_physics/layer_4="interactable"` remains
+  unused and available.
+- **"The interaction HUD could never find the probe."** The warning came from a
+  temporary `tools/probe*.gd` diagnostic run, where `--script` compiles before
+  autoloads register and the typed `InteractionProbe` check resolved false. The
+  real boot path orders player-before-HUD and logs nothing. The retry added to
+  `InteractionHUD` is defensive, not corrective.
+- **"There is no physics."** There are 80 `StaticBody3D` and a correct ground
+  collider; the player stands on it. There are no `RigidBody3D`/`Area3D`, which
+  is a content gap for later groups, not a defect.
+
+### KNOWN GAPS (not defects, not fixed here)
+- **No hotbar.** `hotbar_1`–`hotbar_9`, `hotbar_next` and `hotbar_prev` exist in
+  the input map with no consumer: no scene, no script, no node. Tools and items
+  arrive with the farming group.
+- **No dynamic physics objects.** No `RigidBody3D` or `Area3D` anywhere.
+
+---
+
+## Previously completed groups
+
+```
+GROUP: 5
+NAME: Time System
+STATUS: COMPLETE
+```
+
+### IMPLEMENTED
+- **`WorldTime`** (`scripts/time/world_time.gd`): the calendar as a `Resource`
+  value holding only primitives — year, season, day, hour, minute, weather,
+  forecast, `passed_out`. Copied on every advance and serialised to a save, so a
+  save can never capture a freed node reference.
+- **`Clock`** (`scripts/time/clock.gd`): all the arithmetic, as static pure
+  functions. No scene, no signals, no side effects, which is why 112 game-days
+  simulate in microseconds and the whole calendar is testable without a tree.
+  - Time is measured in **absolute minutes from the 6:00 AM day start**;
+    `to_absolute_minutes` offsets pre-dawn display times by `+1080`, so 0:00–5:59
+    AM is the *tail* of the current day rather than the head of the next one.
+  - `advance` clamps at the 2:00 AM collapse, rolls the calendar there, and
+    returns a transition dict (`day_rolled`, `season_rolled`, `year_rolled`,
+    `passed_out`, `minutes_advanced`) so callers never diff old against new.
+  - `to_game_minutes` is the monotonic HHMM scale authored NPC schedule windows
+    are written against: 6:00 AM = 600, midnight = 2400, 2:00 AM = 2600.
+  - `next_day_morning` (sleep, always rolls) and `wake_after_collapse` (carried
+    home, does not roll) are separate operations. See D13b.
+- **`TimeService`** (`scripts/time/time_service.gd`): the only thing that knows
+  real seconds exist. Converts elapsed time to ticks and publishes transitions on
+  `EventBus`. Freezes at 2:00 AM rather than rolling silently through empty days
+  while the player is unconscious.
+- **`DayNightCycle`** (`scripts/world/day_night_cycle.gd`): drives the sun and
+  sky from the clock. Subscribes to `EventBus.time_minute_changed` and holds **no
+  reference to `TimeService`** — the hub is the only channel, and the sun energy,
+  colour, elevation and sky gradient are all interpolated from six key points
+  across the day, held at their darkest through the 2:00–6:00 AM sleep window.
+- **`ClockHUD`** (`scenes/ui/clock_hud.tscn` + `scripts/ui/clock_hud.gd`): date,
+  time and weather in the corner, spawned by `main.gd` after the world so it can
+  find the service. Reads `get_display_text()` once per repaint rather than
+  reassembling a date from three partial signals, and repaints on the minute
+  signal rather than every frame.
+- Weather and forecast are carried on the time value from the start, so a save
+  taken today is still readable after M9 adds the weather system.
+
+### DESIGN DECISIONS THAT DEVIATED FROM THE SALVAGED NOTES
+Full reasoning in `docs/DECISIONS.md` D13. In short:
+- **The day rolls at the 2:00 AM collapse, not at midnight.** The salvaged doc
+  says both "advancing at midnight rolls the day" and "at 2:00 AM the farmer
+  collapses *and* the day rolls". Both cannot be the boundary. 2:00 AM is the
+  last instant a player can occupy, so it wins. `SALVAGED_DESIGN.md` is annotated
+  where it was superseded rather than edited to match the code.
+- **`to_game_minutes` is HHMM, not minutes.** The salvaged values (600 / 2400 /
+  2600) are not elapsed minutes; there is no scale where midnight is 2400
+  minutes and 2:00 AM is 2600 minutes.
+- **Monotonicity is scoped to one day walked chronologically.** A 24-hour sweep
+  asserts 5:59 AM → 6:00 AM is increasing, which it is not (2950 → 600) — that is
+  the start of the next day, not a step backwards. The first version of the test
+  swept 0:00 → 23:59 and failed at 6:00 for exactly that reason.
+- **A corrupt save degrades field by field** rather than being rejected whole.
+  `posmod` and `clamp` disagree on negatives: a `season` of `-1` read with a
+  modulo wrap lands on Winter, one short of every season-name array.
+
+### TESTS PERFORMED
+`powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1` — **3/3 stages OK**
+
+| Stage | Result |
+| --- | --- |
+| `import` | OK — zero parse/compile errors |
+| `tests` | **126/126 passed** (27 in `test_time.gd`) |
+| `boot` | OK — `game_ready` fired, `phase=PLAYING`, clock HUD spawned |
+
+`tests/suites/test_time.gd` (27 cases) covers every edge case the retired Unity
+build pinned down, plus the ones found while building it:
+- 6:00 AM is absolute minute zero; midnight is 1080; 2:00 AM is 1200
+- pre-dawn times split correctly: 0:00–2:00 AM is the playable tail, 2:01–5:59
+  is the player asleep and lands past the collapse point
+- crossing midnight does **not** roll the day; reaching 2:00 AM does
+- advancing past 2:00 AM clamps, rolls exactly one day, and lands on 6:00 AM
+- `passed_out` is sticky — a later tick cannot revive the player
+- 120 ten-minute ticks is exactly one day
+- the season rolls on day 29; the year rolls after winter
+- `next_day_morning` and `wake_after_collapse` are both copy-then-mutate
+- sleeping rolls the day, waking from a collapse does not
+- the service freezes at 2:00 AM and resumes on the same morning
+- weather and forecast survive a rollover
+- `day_of_week` stays in range across a whole 112-day year
+- `to_game_minutes` hits 600 / 2400 / 2600 and never goes backwards within a day
+- save round-trip is field-exact; empty, partial, out-of-range and negative
+  payloads all load safely
+- the lighting cycle tracks the clock through real `EventBus` emissions, is
+  darkest at 2:00 AM, and holds through the sleep window
+- the clock HUD renders the real date and time and repaints on a tick
+
+### BUGS FOUND AND FIXED DURING THIS GROUP
+- **`to_game_minutes` was not the documented scale.** It returned
+  `to_absolute_minutes + 360`, which gives midnight as 1440 and 2:00 AM as 1560.
+  Neither matches the 2400 / 2600 that authored schedule windows are written
+  against, so any schedule using them would have inverted at midnight.
+- **`passed_out` was only set when the advance was *clamped*.** Reaching exactly
+  the collapse point moved the full requested amount, so `moved < requested` was
+  false and the player never collapsed — they just sat at 2:00 AM forever.
+- **`advance` could rewind the day.** A clock already at or past the collapse got
+  a negative playable budget, so a tick moved time backwards. Now `maxi(..., 0)`.
+- **`passed_out` was cleared by the next advance.** It was assigned rather than
+  accumulated, so a tick after the collapse quietly revived the player. Now
+  `result.passed_out or target >= PASS_OUT_ABSOLUTE`.
+- **`sleep_until_morning` had a tautology.** `var rolled := time.day_of_month > 0`
+  is always true, and the day it emitted was the *new* one, not the day that
+  finished. Sleeping also rolled the calendar a second time after a collapse,
+  which cost the player a day for having passed out. Split into
+  `sleep_until_morning` and `wake_after_collapse`.
+- **The service spun through empty days at 2:00 AM.** Nothing stopped the clock
+  once the player was unconscious, so a 10-minute day became hundreds of days of
+  nothing while the game waited for the prompt. `advance_tick` is now a no-op
+  while `passed_out`.
+- **`set_time` announced a day that never ended.** It emitted `day_started` on
+  every load. It now compares dates first, so loading a mid-morning save is
+  silent.
+- **The clock HUD labels were empty.** `get_node_or_null("Panel/DateLabel")` did
+  not match the generated `Panel/Column/DateLabel`. The labels were null, so
+  `_refresh` silently did nothing. Caught by rendering through the real scene.
+- **Two lighting rigs were alive at once.** The first lighting test used
+  `queue_free()`, and the harness runs cases synchronously without pumping a
+  frame, so the freed node was still in the tree and the second case found two
+  suns. Now `free()`.
+- `Weather.size()` on an enum dictionary and `posmod` on corrupt enum values both
+  misbehave under negative input; both are clamped now.
+
+---
+
+## Previously completed groups
 
 ```
 GROUP: 4B
@@ -307,7 +546,19 @@ different numbering schemes.
 |---|---|---|
 | 1 | Audit | **COMPLETE** — pond defect reproduced, root-caused, fixed, regression-tested |
 | 2 | Foundation | **COMPLETE** — docs established, lanes, roadmap, acceptance criteria, schemas |
-| 3 | Complete game | IN PROGRESS — M2 (time and calendar) next |
+| 3 | Complete game | IN PROGRESS — M2 (time and calendar) **COMPLETE**; M3 (farming) next |
+
+---
+
+## Known gaps
+
+Carried forward so they are not rediscovered as bugs later:
+
+| Gap | Status |
+|---|---|
+| Hotbar / tool belt | Not built. Actions exist in the input map, no consumer. Arrives with the farming group. |
+| Dynamic physics | No `RigidBody3D` or `Area3D` in the world. Static collision is complete. |
+| `3d_physics/layer_4="interactable"` | Declared but unused. Available when props need to be aimable without being solid. |
 
 ---
 
@@ -320,8 +571,8 @@ different numbering schemes.
 | 2 | Camera System (1st + 3rd person) | 19 | Crafting |
 | 3 | Interaction System | 20 | Buildings |
 | 4 | World | 21 | Fishing |
-| 5 | Time System | 22 | Mining |
-| 6 | Day / Night Cycle | 23 | Weather |
+| 5 | ~~Time System~~ | 22 | Mining |
+| 6 | ~~Day / Night Cycle~~ | 23 | Weather |
 | 7 | Farming Grid | 24 | Seasons |
 | 8 | Crop Data | 25 | UI |
 | 9 | Plant / Water / Harvest | 26 | Save / Load |

@@ -12,16 +12,18 @@ func _initialize() -> void:
 	root.name = "World"
 	root.set_script(load("res://scripts/world/world_root.gd"))
 
-	# Directional sun. Time of day / weather (Groups 6 and 23) will drive this.
+	# Directional sun. Weather (M9) will drive the rest of its look; the
+	# day/night cycle writes energy, colour and elevation every tick.
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
-	sun.rotation_degrees = Vector3(-52, -38, 0)
-	sun.light_energy = 1.05
-	sun.light_color = Color(1.0, 0.96, 0.88)
+	sun.rotation_degrees = Vector3(4, -38, 0)
+	sun.light_energy = 0.55
+	sun.light_color = Color(1.0, 0.82, 0.66)
 	sun.shadow_enabled = true
 	root.add_child(sun)
 
-	# Sky and ambient. Group 6 replaces these with a day/night gradient.
+	# Sky and ambient. The day/night cycle lerps the sky colours and the ambient
+	# energy as the clock moves; weather (M9) will layer on top.
 	var sky := WorldEnvironment.new()
 	sky.name = "Environment"
 	var env := Environment.new()
@@ -39,7 +41,37 @@ func _initialize() -> void:
 	sky.environment = env
 	root.add_child(sky)
 
-	for child: Node in [sun, sky]:
+	# --- Day/night cycle ---------------------------------------------------
+	# A child node rather than a script on the world root, so it subscribes and
+	# unsubscribes with the world's own lifetime and can be removed in an editor
+	# preview without touching anything else.
+	var cycle := Node.new()
+	cycle.name = "DayNightCycle"
+	cycle.set_script(load("res://scripts/world/day_night_cycle.gd"))
+	root.add_child(cycle)
+
+	# --- Clock ------------------------------------------------------------
+	# Added *after* the cycle on purpose. Godot calls `_ready` children-first in
+	# tree order, so the cycle subscribes first and therefore sees the clock's
+	# initial `time_minute_changed` rather than having to re-apply on its own.
+	# The reverse order would leave the valley lit to the scene's saved sun
+	# values until the first tick, one frame of wrong light on every boot.
+	var clock := Node.new()
+	clock.name = "TimeService"
+	clock.set_script(load("res://scripts/time/time_service.gd"))
+	root.add_child(clock)
+
+	# --- Farm plot --------------------------------------------------------
+	# 7 x 5 tiles at 2m, centred on the farm soil plane the builder lays down.
+	# The builder draws the dirt; this is the tillable grid on top of it, so the
+	# plot reads as part of the farm rather than a separate object dropped on it.
+	var grid := Node3D.new()
+	grid.name = "FarmGrid"
+	grid.set_script(load("res://scripts/farming/farm_grid.gd"))
+	grid.position = _farm_centre()
+	root.add_child(grid)
+
+	for child: Node in [sun, sky, cycle, clock, grid]:
 		child.owner = root
 
 	var packed := PackedScene.new()
@@ -54,3 +86,25 @@ func _initialize() -> void:
 		return
 	print("[generate_world_scene] wrote %s" % OUTPUT_PATH)
 	quit(0)
+
+
+## Where the tillable plot goes: the middle of the farm region, on the ground.
+##
+## Read off [WorldBuilder] dynamically rather than written as
+## `WorldBuilder.REGION_FARM`. Naming the class here pulls `world_builder.gd`
+## into this tool's compile, which pulls in `interactable.gd`, which references
+## the `Log` autoload — and an autoload is not a global identifier in a
+## `--script` run. The result is a compile error about logging in a file that has
+## nothing to do with logging. See `AGENTS.md`, "Two Godot-specific traps".
+##
+## Dynamic access means a missing constant surfaces as a clear `null` here rather
+## than as a compile failure three files away, so the constants are asserted
+## rather than assumed.
+func _farm_centre() -> Vector3:
+	var builder: GDScript = load("res://scripts/world/world_builder.gd")
+	var region: Variant = builder.get("REGION_FARM") if builder != null else null
+	var ground: Variant = builder.get("GROUND_LEVEL") if builder != null else null
+	if not region is Vector2 or not ground is float:
+		printerr("[generate_world_scene] WorldBuilder constants missing; plot at origin")
+		return Vector3.ZERO
+	return Vector3((region as Vector2).x, ground, (region as Vector2).y)

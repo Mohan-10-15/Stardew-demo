@@ -16,17 +16,45 @@ func _ready() -> void:
 		_crosshair.visible = true
 	_set_prompt_visible(false)
 
-	# Autoloads are not available inside `--script` tools, so look the probe
-	# up dynamically instead of trusting a compile-time global.
 	_probe = _find_probe(get_tree().get_root())
 	if _probe == null:
-		Log.warn("InteractionHUD", "No InteractionProbe in the tree; prompt disabled")
+		# `main.gd` spawns the player before the HUD, and `add_child` runs
+		# `_ready` synchronously, so in the normal boot order the probe is
+		# already here. Any other order (a HUD opened before a player, a
+		# cutscene that spawns one later) should still end up bound rather
+		# than leaving the prompt permanently dead, so `_process` keeps
+		# retrying.
+		Log.info("InteractionHUD", "No InteractionProbe in the tree; retrying each frame")
 		return
 	_probe.focus_changed.connect(_on_focus_changed)
 	_probe.interacted.connect(_on_interacted)
 
 
 func _process(_delta: float) -> void:
+	if _probe == null:
+		_attach_probe()
+		if _probe == null:
+			return
+	_update_hold_bar()
+
+
+## Late-binds to the probe, retrying until one exists.
+##
+## Cheap insurance rather than a bug fix: one tree scan per frame until the
+## probe shows up, then this stops being called at all.
+func _attach_probe() -> void:
+	var found := _find_probe(get_tree().get_root())
+	if found == null:
+		return
+	_probe = found
+	_probe.focus_changed.connect(_on_focus_changed)
+	_probe.interacted.connect(_on_interacted)
+	# A target may already be under the crosshair by the time we bind, in which
+	# case `focus_changed` will not fire again and the prompt stays hidden.
+	_on_focus_changed(_probe.get_focus())
+
+
+func _update_hold_bar() -> void:
 	if _hold_bar == null:
 		return
 	var target := _probe.get_focus() if _probe != null else null

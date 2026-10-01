@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_ntloq"]
+
+[resource]
+script = ExtResource("1_ntloq")
+id = &"pumpkin_seeds"
+display_name = "Pumpkin Seeds"
+category = 1
+buy_price = 100
+description = "Plant in fall."
+icon_color = Color(0.8, 0.46, 0.16, 1)
+seed_id = &"pumpkin"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_gfjdg"]
+
+[resource]
+script = ExtResource("1_gfjdg")
+id = &"corn"
+display_name = "Corn"
+seasons = Array[int]([1, 2])
+days_to_grow = 14
+regrows = true
+regrow_days = 4
+seed_price = 150
+sell_price = 50
+ripe_color = Color(0.92, 0.78, 0.2, 1)
+sprout_color = Color(0.5, 0.7, 0.34, 1)

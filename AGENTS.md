@@ -142,9 +142,9 @@ A group is not done until all of these hold:
 ## 7. Group roadmap
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–4 are complete** (foundation, player controller, dual
-camera, interaction system, procedural world). Group 5 (time and ambience) is
-next. The full table is in `DEVELOPMENT_STATUS.md`.
+next begins. **Groups 0–6 are complete** (foundation, player controller, dual
+camera, interaction system, procedural world, pond fix, time and day/night). Group
+7 (farming grid) is next. The full table is in `DEVELOPMENT_STATUS.md`.
 
 Do not start a group until the previous group's `check.ps1` run is green.
 

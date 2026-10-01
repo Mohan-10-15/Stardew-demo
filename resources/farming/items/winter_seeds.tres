@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_20bd1"]
+
+[resource]
+script = ExtResource("1_20bd1")
+id = &"winter_seeds"
+display_name = "Winter Seeds Seeds"
+category = 1
+buy_price = 30
+description = "Plant in winter."
+icon_color = Color(0.66, 0.8, 0.68, 1)
+seed_id = &"winter_seeds"

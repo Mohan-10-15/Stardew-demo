@@ -9,57 +9,61 @@ with what was implemented, what was tested, and every bug found along the way.
 
 ## In flight
 
-**None.** M0 is complete; the queue below is next up.
+**None.** M2 is complete; the queue below is next up.
+
+---
+
+## Recently completed
+
+### TASK-001 — Time and calendar service (M2) — COMPLETE
+
+Delivered as `scripts/time/world_time.gd` (the calendar as a value),
+`scripts/time/clock.gd` (pure arithmetic), `scripts/time/time_service.gd` (the
+only thing that knows real seconds exist), `scripts/world/day_night_cycle.gd`
+(sun and sky, driven from `EventBus` and holding no reference to the service),
+and the corner clock readout. The originally-specified `clock_types.gd` was
+split into two files instead, so the data type and the arithmetic on it can be
+read separately.
+
+27 test cases. `docs/DECISIONS.md` D13 records the three places the recovered
+design in `SALVAGED_DESIGN.md` was deliberately diverged from — the day
+boundary, the unit of `to_game_minutes`, and the scope of its monotonicity
+requirement.
 
 ---
 
 ## Next
 
-### TASK-001 — Time and calendar service (M2)
+### TASK-002 — Farming grid and soil state (M3)
 
-**Goal:** a deterministic clock and calendar, with the day/night cycle driven
-from it.
+**Goal:** a tilled-soil grid the player can hoe, plant and water, with crop growth
+resolved against the clock.
 
-**Context:** M2 is the spine of the game. Energy, NPC schedules, shop hours, crop
-growth and lighting all hang off the clock, and M3 cannot start until it works.
-The model is recovered in `docs/SALVAGED_DESIGN.md` section "Calendar and clock";
-read it before writing anything. `EventBus` already declares `time_minute_changed`,
-`time_hour_changed`, `day_started`, `day_ended`, `season_changed` and
-`year_changed` for this purpose.
+**Context:** M3 is the first system that consumes the clock rather than producing
+it. The end-of-day moment is unambiguous: `TimeService` publishes `day_ended` and
+`day_started` exactly once per day, and the day boundary is the 2:00 AM collapse
+(D13), so growth is resolved in one place on `day_started` rather than being
+pollled from every tile.
 
-**Exact files:**
-- `scripts/time/time_service.gd` (new — pure logic, no scene dependency)
-- `scripts/time/clock_types.gd` (new — `WorldTime`/`Clock` value types)
-- `scripts/world/world_root.gd` (own — instantiate and drive the service)
-- `tests/suites/test_time.gd` (new)
-- `scenes/ui/hud_time.tscn` + generator (new — clock readout, if M2 scope
-  includes UI; otherwise defer to M15 and keep this task logic-only)
+`WorldTime` already carries `weather` and `forecast`, so watering rules and
+rain-based watering have somewhere to read from without changing the save format
+again.
 
-**Systems affected:** time, calendar, lighting (M2 day/night), and every
-downstream system that will later subscribe to the time signals.
+**Systems affected:** farming, interaction (hoe/seed/water actions), time
+(`day_started` / `day_ended`).
 
-**Acceptance criteria:** the M2 block in `docs/ACCEPTANCE.md`.
+**Acceptance criteria:** the M2+M3 rows in `docs/ACCEPTANCE.md` that describe
+planting, watering and growth.
 
-**Tests required:** every case in the "Edge cases the old tests pinned down"
-list in `docs/SALVAGED_DESIGN.md`. Those are not optional — each one is a bug
-that shipped once. In particular:
-- 6:00 AM is absolute minute zero
-- advancing at midnight rolls the day; advancing just before it does not
-- at 2:00 AM the player collapses *and* the day rolls
-- advancing past 2:00 AM clamps at the collapse point
-- `passed_out`, once set, stays set
-- the season rolls on day 29, the year after winter
-- `NextDayMorning` works from a late-night clock and does not mutate its input
-- a full day of 10-minute ticks advances exactly one day
-- `ToGameMinutes` is monotonic across midnight
+**Per `AGENTS.md`:** every farming action must publish a clearly distinct success
+event *and* a clearly distinct failure event. Planting a seed and failing to
+plant must not look or sound the same, and neither may look or sound like
+harvesting.
 
-**Files not to modify:** `scripts/core/event_bus.gd` (signals already exist — if
-one is genuinely missing, add it and record the decision), `scripts/world/world_builder.gd`
-(its geometry is unrelated to time), and any `tests/suites/` file other than the
-new one.
-
-**Verification:** `pwsh -File tools/check.ps1` exits 0 with zero `SCRIPT ERROR`
-lines, boot still reaches `PLAYING`, and the new suite passes.
+**Verification:** `powershell -NoProfile -ExecutionPolicy Bypass -File
+tools/check.ps1` exits 0, at least one test drives hoe → plant → water → sleep
+through real input and asserts the resulting tile and crop state, and the whole
+sequence survives save → reload.
 
 ---
 
@@ -70,10 +74,10 @@ specification when it is picked up, not now.
 
 | # | Milestone | Notes |
 |---|---|---|
-| TASK-002 | New-game menu and title screen | M1. Straightforward; needed before save/load is reachable |
-| TASK-003 | Save system, versioned | M1/M16. `SAVE_VERSION` from the start |
-| TASK-004 | Farming grid and soil state | M3. Depends on TASK-001 |
-| TASK-005 | Crop resources and growth | M3 |
+| TASK-003 | Farming grid and soil state | M3. Next up. Depends on TASK-001, now done |
+| TASK-004 | Crop resources and growth | M3 |
+| TASK-005 | New-game menu and title screen | M1. Straightforward; needed before save/load is reachable |
+| TASK-006 | Save system, versioned | M1/M16. `SAVE_VERSION` from the start |
 | TASK-006 | Inventory with quality tiers | M4. Slot splitting, lowest-quality-first removal |
 | TASK-007 | Tools and stamina | M4 |
 | TASK-008 | Economy, shop, currency | M4 |

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/farming/crop_data.gd" id="1_v8vn8"]
+
+[resource]
+script = ExtResource("1_v8vn8")
+id = &"melon"
+display_name = "Melon"
+seasons = Array[int]([1])
+days_to_grow = 12
+max_yield = 2
+seed_price = 80
+sell_price = 250
+ripe_color = Color(0.3, 0.55, 0.26, 1)
+sprout_color = Color(0.46, 0.68, 0.32, 1)

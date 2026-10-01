@@ -233,5 +233,87 @@ Three stages, each under a hard timeout, non-zero on any failure: `import`,
 error is a broken stage — which is precisely the failure mode that let
 `boot_check.gd` pass on a scene that did nothing.
 
-The script kills orphaned Godot processes on exit, so a broken run cannot leave
-the machine stuck.
+The script kills orphaned Godot processes on exit, so a broken run cannot leave the
+machine stuck.
+
+---
+
+## D13 — The day rolls at the 2:00 AM collapse, not at midnight
+
+**Status:** settled — overrides a rule in `docs/SALVAGED_DESIGN.md`
+
+`docs/SALVAGED_DESIGN.md` says "advancing at midnight rolls the day." That rule
+is not implemented as written, and the divergence is deliberate.
+
+The clock runs 6:00 AM → 2:00 AM. Midnight sits 18 hours into that window, in the
+middle of an ordinary evening session. Rolling the calendar there means a
+rollover with no gameplay event to justify it, and it puts the boundary two
+hours *before* the point where the player is actually forced to stop. The 2:00 AM
+collapse is the last instant a player can occupy, so it is the only honest place
+to end a day.
+
+The salvaged rule also contradicts the salvaged edge-case list, which says both
+"at 2:00 AM the farmer collapses *and* the day rolls" and "advancing at midnight
+rolls the day." Both cannot be the boundary. Since the collapse is the enforced
+end of play, it wins.
+
+**Consequence:** `to_absolute_minutes` is unchanged and still offsets pre-dawn
+times by `+ 1080`, so 0:00–5:59 AM remains the *tail* of the current day. Only
+the rollover trigger moved. `Clock.advance` rolls at `PASS_OUT_ABSOLUTE`, and
+`tests/suites/test_time.gd::advancing_past_midnight_does_not_roll_the_day` pins
+the corrected behaviour.
+
+### D13a — `to_game_minutes` is HHMM, not minutes
+
+`docs/SALVAGED_DESIGN.md` calls it "schedule-friendly minutes" with 6:00 AM = 600,
+midnight = 2400, 2:00 AM = 2600. Those are HHMM values, not elapsed minutes —
+there is no scale where midnight is 2400 and 2:00 AM is 2600 minutes.
+
+So it is implemented as `hour * 100 + minute` with hours below 6 shifted past 24.
+The name is kept because the salvaged notes and the not-yet-written NPC schedule
+data both use it, and the docstring says plainly that the unit is HHMM.
+
+Monotonicity is scoped to *one day walked chronologically*, 6:00 AM onward. A
+naive 24-hour sweep asserts 5:59 AM → 6:00 AM is increasing, which it is not
+(2950 → 600) — that transition is the start of the next day, not a step
+backwards. The first version of the test swept 0:00 → 23:59 and failed at 6:00
+for exactly that reason; the test was wrong, not the scale.
+
+### D13b — Sleeping rolls the day; collapsing does not
+
+`Clock.advance` already rolls the calendar at the collapse point. So waking from
+a collapse must **not** roll again, or the player loses a day for having passed
+out — the penalty would be doubled.
+
+- `Clock.next_day_morning` — sleep. Always rolls, whatever hour you go to bed at.
+  A 1:00 AM sleep lands on the following morning, because that day's 6:00 AM has
+  already gone by.
+- `Clock.wake_after_collapse` — carried home. Does not roll. Just clears
+  `passed_out` and lands on 6:00 AM of the current date.
+
+Before this split there was a single `next_day_morning` doing both jobs, and
+`TimeService.sleep_until_morning` computed `var rolled := time.day_of_month > 0`
+— always true, and the day it emitted was the *new* one, not the day that
+finished. Three bugs, one tautology. The tests
+`next_day_morning_works_from_a_late_night_clock` and
+`sleeping_rolls_the_day_but_collapsing_does_not` now pin the split.
+
+### D13c — The clock freezes at 2:00 AM
+
+`TimeService.advance_tick` is a no-op while `passed_out` is set. Without this the
+calendar spins through empty days while the game waits for the player to
+acknowledge passing out — a 10-minute day becomes hundreds of days of nothing.
+The end of the day is `sleep_until_morning` or `wake_after_collapse`, never
+another tick.
+
+### D13d — A corrupt save degrades field by field, it is not rejected whole
+
+`WorldTime.from_dict` clamps each field independently instead of discarding the
+payload when any field is missing or out of range. Rejecting the whole save
+loses a year of progress over one corrupt int, which is a far worse failure than
+losing one field.
+
+The practical reason this matters here: `posmod` and `clamp` disagree on
+negatives. A `season` of `-1` read with a modulo wrap lands on index 3 — Winter —
+and every `season_name` array lookup is then one short. Negative values clamp to
+0. `negative_values_are_clamped_not_wrapped` pins it.

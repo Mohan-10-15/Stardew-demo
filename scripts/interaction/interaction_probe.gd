@@ -166,9 +166,20 @@ func _exclude_rids() -> Array[RID]:
 	return out
 
 
+## Which physics layers the aim ray looks for.
+##
+## World *and* interaction, because the two are not alternatives. The farm's aim
+## volumes sit on the interaction layer precisely so they can be aimable without
+## being solid — a world-only ray would miss every tile and the plot would be
+## unfarmable.
+##
+## The volumes are kept short instead of being filtered out here. Filtering by
+## height in the probe sounds tidier and is not: it rejects genuinely tall props
+## standing on the same ground, and it behaves differently in each camera mode,
+## where the camera sits at a different height. Short volumes fix the problem at
+## the source. See [member FarmGrid.aim_height].
 func _world_mask() -> int:
-	# Layer 1 is "world" per the project's layer_names.
-	return 1 << 0
+	return PhysicsLayers.INTERACTION_MASK
 
 
 func _process_action(delta: float) -> void:

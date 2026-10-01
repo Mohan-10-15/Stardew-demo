@@ -22,6 +22,12 @@ func setup() -> void:
 
 
 func teardown() -> void:
+	# Held actions would leak into the next case and move the player during
+	# assertions that assume it is standing still.
+	Input.action_release(InputActions.MOVE_FORWARD)
+	Input.action_release(InputActions.MOVE_BACK)
+	Input.action_release(InputActions.MOVE_LEFT)
+	Input.action_release(InputActions.MOVE_RIGHT)
 	_reset_rig()
 
 
@@ -50,6 +56,10 @@ func get_cases() -> Array[StringName]:
 		&"world_has_ground_surface",
 		&"world_regions_are_distinct",
 		&"player_spawn_is_above_ground",
+		&"third_person_camera_is_at_shoulder_height",
+		&"strafing_does_not_spin_the_body",
+		&"strafing_keeps_moving_in_a_straight_line",
+		&"aim_yaw_is_independent_of_facing_yaw",
 	]
 
 
@@ -125,6 +135,14 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_fp_height()
 		&"third_person_camera_is_behind_the_player":
 			return await _t_tp_behind()
+		&"third_person_camera_is_at_shoulder_height":
+			return await _t_tp_height()
+		&"strafing_does_not_spin_the_body":
+			return await _t_strafe_no_spin()
+		&"strafing_keeps_moving_in_a_straight_line":
+			return await _t_strafe_straight_line()
+		&"aim_yaw_is_independent_of_facing_yaw":
+			return await _t_yaw_independent()
 		&"body_meshes_hidden_in_first_person":
 			return await _t_meshes_fp()
 		&"body_meshes_visible_in_third_person":
@@ -394,6 +412,139 @@ func _t_tp_behind() -> Dictionary:
 	if cam.position.z <= 0.1:
 		return fail(c, "camera at z=%f, expected positive (behind)" % cam.position.z)
 	return succeeded(c, "behind by %.2f" % cam.position.z)
+
+
+## Regression test for the third-person camera rendering from the floor.
+##
+## The rig node sits at the player's *origin*, which is at the feet, so a camera
+## positioned at local (0, 0, distance) looks out from ankle height and the
+## third-person view is a screenshot of grass. Asserting on local Y is what
+## makes that failure visible: it is the one number that was silently zero.
+func _t_tp_height() -> Dictionary:
+	var c := &"third_person_camera_is_at_shoulder_height"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+	player.camera_rig.toggle_mode()
+	await await_step(20)
+
+	var cam := player.camera_rig.get_camera()
+	var want := player.camera_rig.pivot_height
+	if absf(cam.position.y - want) > 0.001:
+		return fail(c, "camera local y=%f, expected pivot_height=%f" % [cam.position.y, want])
+	# Belt and braces: the camera must also be above the feet in world space.
+	var above_feet := cam.global_position.y - player.global_position.y
+	if above_feet < 1.0:
+		return fail(c, "camera only %f above the player origin; expected shoulder height" % above_feet)
+	return succeeded(c, "y=%.2f (%0.2f above feet)" % [cam.position.y, above_feet])
+
+
+## Regression test for the movement yaw feedback loop.
+##
+## The original controller read input through `global_transform.basis` while
+## writing `rotation.y` from the resulting direction. Holding W+D turned the
+## body toward the input, which turned the basis that interpreted "right",
+## which turned the body further: about 9 degrees per frame, so the player
+## circled and never travelled in a straight line.
+##
+## The body *should* still turn to face a strafe, so this cannot assert on
+## `rotation.y` alone. It asserts the yaw converges on the correct heading for
+## forward-right instead of running away.
+func _t_strafe_no_spin() -> Dictionary:
+	var c := &"strafing_does_not_spin_the_body"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+
+	_hold(InputActions.MOVE_FORWARD)
+	_hold(InputActions.MOVE_RIGHT)
+	await await_step(30)
+	_release(InputActions.MOVE_FORWARD)
+	_release(InputActions.MOVE_RIGHT)
+
+	# Forward-right in a yaw-0 body frame is 45 degrees off -Z. Allow generous
+	# slack for the damping curve still settling, but nothing like the runaway
+	# the old code produced.
+	var facing := rad_to_deg(player.get_facing_yaw())
+	if absf(absf(facing) - 45.0) > 20.0:
+		return fail(c, "facing settled at %.1f deg, expected ~-45 for W+D" % facing)
+	# The aim never moved, because no look input happened.
+	if absf(player.get_yaw()) > 0.001:
+		return fail(c, "aim yaw drifted to %.4f with no look input" % player.get_yaw())
+	return succeeded(c, "facing %.1f deg, aim 0.0" % facing)
+
+
+## The user-visible symptom: displacement must stay on the diagonal the keys
+## asked for, rather than curving around in a circle.
+func _t_strafe_straight_line() -> Dictionary:
+	var c := &"strafing_keeps_moving_in_a_straight_line"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+
+	var start := player.global_position
+	_hold(InputActions.MOVE_FORWARD)
+	_hold(InputActions.MOVE_RIGHT)
+	await await_step(40)
+	_release(InputActions.MOVE_FORWARD)
+	_release(InputActions.MOVE_RIGHT)
+
+	var travelled := player.global_position - start
+	travelled.y = 0.0
+	if travelled.length() < 0.5:
+		return fail(c, "player barely moved (%f); test did not exercise strafing" % travelled.length())
+
+	# Straight-line travel means displacement is parallel to the intent. With the
+	# old loop the path curved, so the heading at the end drifted from the
+	# heading at the start.
+	var expected := (Vector3(1, 0, 0) - Vector3(0, 0, 1)).normalized()
+	var drift := rad_to_deg(travelled.normalized().angle_to(expected))
+	if drift > 25.0:
+		return fail(c, "travelled %.1f deg off the requested diagonal" % drift)
+	return succeeded(c, "%.2fm, %.1f deg off" % [travelled.length(), drift])
+
+
+## Pins the two-yaw contract the strafe tests depend on.
+func _t_yaw_independent() -> Dictionary:
+	var c := &"aim_yaw_is_independent_of_facing_yaw"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+
+	_hold(InputActions.MOVE_LEFT)
+	await await_step(20)
+	_release(InputActions.MOVE_LEFT)
+
+	# Strafing left turns the body, and must not drag the aim with it.
+	if absf(player.get_yaw()) > 0.001:
+		return fail(c, "aim followed the body to %.4f rad" % player.get_yaw())
+	if absf(player.get_facing_yaw()) < 0.001:
+		return fail(c, "body never turned to face the strafe")
+	# The rig counter-rotates by (aim - facing), so its *global* yaw must land
+	# back on the aim heading no matter which way the body turned.
+	var rig_yaw := player.camera_rig.global_transform.basis.get_euler().y
+	var off := rad_to_deg(absf(PlayerMotion.damp_angle(rig_yaw, player.get_yaw(), 99.0, 1.0)))
+	if off > 0.5:
+		return fail(c, "camera rig global yaw %.2f deg, expected aim %.2f" % [
+			rad_to_deg(rig_yaw), rad_to_deg(player.get_yaw())])
+	return succeeded(c, "aim 0.0, facing %.1f deg, rig global %.2f deg" % [
+		rad_to_deg(player.get_facing_yaw()), rad_to_deg(rig_yaw)])
+
+
+func _hold(action: StringName) -> void:
+	Input.action_press(action)
+
+
+func _release(action: StringName) -> void:
+	Input.action_release(action)
 
 
 func _t_meshes_fp() -> Dictionary:

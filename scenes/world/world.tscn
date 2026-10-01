@@ -1,31 +1,45 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/world_root.gd" id="1_dphjl"]
+[ext_resource type="Script" path="res://scripts/world/world_root.gd" id="1_6m72w"]
+[ext_resource type="Script" path="res://scripts/world/day_night_cycle.gd" id="2_v5dby"]
+[ext_resource type="Script" path="res://scripts/time/time_service.gd" id="3_t5ptc"]
+[ext_resource type="Script" path="res://scripts/farming/farm_grid.gd" id="4_bq33v"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sl2e5"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_j2gmx"]
 sky_top_color = Color(0.3, 0.53, 0.78, 1)
 sky_horizon_color = Color(0.72, 0.82, 0.88, 1)
 ground_bottom_color = Color(0.24, 0.3, 0.22, 1)
 ground_horizon_color = Color(0.6, 0.68, 0.55, 1)
 
-[sub_resource type="Sky" id="Sky_1fp7r"]
-sky_material = SubResource("ProceduralSkyMaterial_sl2e5")
+[sub_resource type="Sky" id="Sky_1yooq"]
+sky_material = SubResource("ProceduralSkyMaterial_j2gmx")
 
-[sub_resource type="Environment" id="Environment_6m72w"]
+[sub_resource type="Environment" id="Environment_gb53w"]
 background_mode = 2
-sky = SubResource("Sky_1fp7r")
+sky = SubResource("Sky_1yooq")
 ambient_light_source = 3
 ambient_light_energy = 0.85
 tonemap_mode = 2
 
 [node name="World" type="Node3D"]
-script = ExtResource("1_dphjl")
+script = ExtResource("1_6m72w")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.7880108, 0.48514786, -0.37903908, 0, 0.6156615, 0.7880107, 0.6156615, -0.62096095, 0.4851479, 0, 0, 0)
-light_color = Color(1, 0.96, 0.88, 1)
-light_energy = 1.05
+transform = Transform3D(0.7880108, -0.042946372, -0.6141618, 0, 0.9975641, -0.06975647, 0.6156615, 0.05496885, 0.78609127, 0, 0, 0)
+light_color = Color(1, 0.82, 0.66, 1)
+light_energy = 0.55
 shadow_enabled = true
 
 [node name="Environment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_6m72w")
+environment = SubResource("Environment_gb53w")
+
+[node name="DayNightCycle" type="Node" parent="."]
+script = ExtResource("2_v5dby")
+
+[node name="TimeService" type="Node" parent="."]
+script = ExtResource("3_t5ptc")
+ticks_per_day = 120
+
+[node name="FarmGrid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -20)
+script = ExtResource("4_bq33v")
