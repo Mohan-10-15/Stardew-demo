@@ -1,185 +1,178 @@
-`C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe`
+`C:\mohan\Game\Stardew dmeo\val\val\tools\Godot_v4.5-stable_win64_console.exe`
 
-# Ember Hollow — Team Rulebook (Unity 6 LTS)
+# Hollowbrook Hollow — Team Rulebook (Godot 4.5)
 
-> **The line above is the ONLY verified Unity Editor on this machine.** Every
-> headless `-executeMethod`, test, and `BuildPipeline.BuildPlayer` invocation in
-> this project must use that exact path. It was confirmed on 2026-09-30 via
-> `Unity Hub.exe -- --headless editors -i`, which reported:
->
-> ```
-> 6000.3.25f1 installed at C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe
-> ```
->
-> Note the location is **not** `C:\Program Files\Unity\Hub\Editor`. This box has
-> no elevated shell, and Hub's MSIX-packaged installer fails there with
-> `The Windows elevation prompt was cancelled or timed out`. See
-> docs/DECISIONS.md entry D-0001.
+> **The path above is the only verified Godot binary on this machine.** It is a
+> portable copy that ships inside the repo at `val/val/tools/`, git-ignored, so
+> no editor is installed system-wide. Every headless import, test and boot
+> invocation must use that exact path. Verified 2026-10-01.
 
-## 0. Canonical editor invocation
+Godot is **not** installed system-wide. If `tools/Godot_v4.5-stable_win64_console.exe`
+is missing, re-download Godot 4.5-stable and drop it there. Do not add an
+installer to this machine and do not expect `godot` to be on `PATH`.
 
-```
-"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" ^
-  -batchmode -projectPath "C:\mohan\Game\Stardew dmeo\unity" ^
-  -executeMethod Namespace.ClassName.MethodName ^
-  -logFile "C:\mohan\Game\Stardew dmeo\unity\Logs\<name>.log"
+## 0. Canonical invocation
+
+The **only** supported way to validate anything is the one-command pipeline:
+
+```powershell
+pwsh -File val/val/tools/check.ps1
 ```
 
-The Unity project root is **`unity/`**, a subdirectory of this repo — NOT the repo
-root. The repo root still holds the legacy `node_modules/` tree, and Unity would
-try to import every file in it as an asset. Never pass the repo root as
-`-projectPath`.
+That runs three stages, each under a hard timeout, and exits non-zero if any
+stage fails:
 
-Verified working on 2026-09-30: EditMode 2/2 passed, PlayMode 1/1 passed, and a
-real WebGL `BuildPipeline.BuildPlayer` succeeded (15.33 MB, 0 errors, 866s).
-Run both test tiers with `scripts/run-tests.ps1`; build WebGL with
-`-executeMethod EmberHollow.EditorTools.WebGlBuilder.Build`; build a native
-Windows player with `-executeMethod EmberHollow.EditorTools.WindowsBuilder.Build`
-(or `BuildRelease` for IL2CPP). Launch the native game with
-`scripts/run-windows.ps1`, or the WebGL build with `scripts/serve-webgl.ps1` (see
-docs/TASKS.md). A WebGL player cannot be run as a standalone app, so anything
-that wants a real window needs the native build.
+| Stage | What it proves |
+|---|---|
+| `import` | the whole project rescans with zero parse/compile errors |
+| `tests` | the automated suite passes, with a real pass/fail count |
+| `boot` | the real main scene launches headlessly and reaches a playable state |
 
-Unity Hub (installed, but its CLI install path is unreliable here):
+Skip `import` while iterating with `-SkipImport`. Add `-TimeoutSeconds N` if a
+stage needs longer. The script kills orphaned Godot processes on exit.
 
+Individual stages, when you need one directly:
+
+```powershell
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --import
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --script res://tests/run_tests.gd
+& "val/val/tools/Godot_v4.5-stable_win64_console.exe" --headless --path "val/val" --script res://tools/boot_check.gd
 ```
-"C:\Program Files\WindowsApps\UnityTechnologies.UnityHub_3.22.0.65535_x64__2vrhnee42bhxm\app\Unity Hub.exe" -- --headless <cmd>
-```
 
-## 1. THE RULE THAT MAKES THIS WORK WITH A CLI-ONLY TEAM
+**Quote every path argument.** `Start-Process -ArgumentList @(...)` joins with
+bare spaces and does not quote, so an unquoted `--path` truncates at the first
+space in the project path. The folder is literally named `Stardew dmeo`, so this
+is not hypothetical — it is why `check.ps1` pre-quotes.
 
-Nobody can open the Unity Editor and click. Anything that would normally mean
-dragging a GameObject into a scene, wiring an Inspector reference, or
-right-clicking to create an asset MUST instead be a C# Editor script under an
-`Editor/` folder (`UnityEditor` namespace) with a static method, run headlessly
-via the invocation above, using `GameObject.CreatePrimitive`,
-`AssetDatabase.CreateAsset`, `PrefabUtility.SaveAsPrefabAsset`,
-`EditorSceneManager.SaveScene`, `AssetDatabase.ImportAsset`, etc. If a task
-can't be expressed this way, restructure it — never leave a note asking a human
-to finish something in the Editor.
+## 1. THE RULE THAT MAKES THIS WORK HEADLESS
+
+Scenes are generated by scripts in `val/val/tools/`, not hand-placed in the
+editor. If a task would normally mean dragging a node into a scene or wiring an
+Inspector reference, it must instead be a GDScript `@tool` or plain script that
+writes the `.tscn`, run headlessly. If a task can't be expressed that way,
+restructure it — never leave a note asking a human to finish something by hand.
+
+Existing generators: `generate_main_scene.gd`, `generate_player_scene.gd`,
+`generate_world_scene.gd`, `generate_hud_scene.gd`, `rebuild_input_map.gd`.
 
 ## 2. Lanes
 
-| Lane          | Owner       | Owns |
-|---------------|-------------|------|
-| World & Engine | WORKER-1    | scenes/prefabs (via the automation pattern), Cinemachine camera, lighting, day/night, weather VFX (Particle System), terrain/maps, animation, asset/material pipeline, URP settings, performance |
-| Simulation    | WORKER-2    | time/calendar, farming, inventory, tools, economy, skills, crafting/cooking, fishing, animals, mines, combat — plain C# classes, no MonoBehaviour/scene dependency |
-| People & Interface | WORKER-3 | NPCs, schedules, dialogue, quests, events/festivals, ALL UI via UI Toolkit (UXML/USS), audio, settings, tutorial |
-| core          | ORCHESTRATOR | project/package setup, GameState/EventBus core, ScriptableObject schemas, Editor-automation conventions, build/test scripts, docs, integration, git commits |
-
-Folder convention mirrors the lanes:
-`Assets/Scripts/Features/<name>/{Sim,View,UI}/` — Sim=WORKER-2, View=WORKER-1,
-UI=WORKER-3. Engine-level movement/camera sim stays with WORKER-1.
+| Lane | Owns |
+|---|---|
+| World & Engine | `scripts/world/`, terrain, props, lighting, day/night, weather VFX, art/asset pipeline, animation, performance |
+| Simulation | time/calendar, farming, inventory, tools, economy, skills, crafting, fishing, mining — pure logic, no scene dependency |
+| People & Interface | `scripts/npc/`, schedules, dialogue, quests, festivals, all UI under `scripts/ui/`, audio, settings, tutorial |
+| core | ORCHESTRATOR: project setup, `GameState`/`EventBus`, resource schemas, generator conventions, build/test scripts, docs, integration, git commits |
 
 ## 3. Shared-tree rules
 
 - Only the ORCHESTRATOR runs git commits; workers never commit, reset, stash or checkout.
 - Workers never edit outside their lane — they ask the orchestrator instead.
 - Docs are the orchestrator's; workers put doc-worthy notes in their report.
-- Workers are opencode subagents, dispatched by brief. Reports use the exact
-  format `DONE T-#### | files changed | how to verify | open issues`, and must
-  state the actual `-executeMethod` invocation for anything built via the
-  automation pattern.
+- Reports use the format `DONE | files changed | how to verify | open issues`.
 
 ## 4. Architecture rules
 
-- Simulation state lives in plain C# POCOs (`GameState` + per-feature state
-  classes) with zero `UnityEngine` dependency where possible, so EditMode tests
-  construct state, call logic and assert with no scene loaded. Heaviest tier —
-  use it.
-- MonoBehaviours are thin: read input (Input System), call into POCO logic,
-  reflect results into transforms/animation/particles/audio. No gameplay logic
-  in a MonoBehaviour.
-- EventBus pattern in Core/ is how features communicate. Every interact-style
-  action publishes a clearly distinct success event AND a clearly distinct
-  failure event (see `FarmingSim.cs`'s `InteractSucceeded`/`InteractFailed`).
-  Mandatory for fishing, mining, combat, gifting. Success and failure must never
-  look or sound the same.
-- Content is data: every definition is a ScriptableObject (`CropDefinition`,
-  `ItemDefinition`, `NpcDefinition`, `RecipeDefinition`, `MapDefinition`, ...)
-  created as `.asset` via `AssetDatabase.CreateAsset`, never hand-placed.
-  Cross-references validated by an EditMode test that loads all of them.
-- Art: real modeled/textured/animated assets from free CC0 packs — KayKit
-  (characters), Quaternius (buildings, animals, nature), Kenney.nl
-  (supplementary). Imported into `Assets/Art/<pack-name>/`. Stylized and
-  detailed, not primitives and not photoreal. Stay within these packs so the
-  game reads as one deliberate style. Every pack logged in
-  docs/ASSET_LICENSES.md with source URL and license.
-- 60 FPS in the WebGL build on RTX 2050-class hardware: static batching, GPU
-  instancing for repeated props, object pooling for particles, no per-frame
-  allocations in hot paths. KayKit characters share one texture atlas — keep to
-  similarly optimized assets.
-- Original IP only: genre-inspired, never copy Stardew Valley's or Minecraft's
-  actual names, art, or mechanics verbatim.
-- Save files: `JsonUtility` (or a small custom serializer), versioned + migrated,
-  corruption-safe.
+These are enforced by tests, not just convention. Read `val/val/README.md` for
+the full list.
+
+- **One global signal hub.** No system talks directly to every other system.
+  Everything cross-cutting goes through the `EventBus` autoload.
+- **Content is data.** No hard-coded item / crop / NPC / quest logic.
+  Definitions are `Resource` subclasses under `resources/`, looked up by ID.
+- **Behaviour attaches via components.** A node opts in by having a script that
+  implements a known method (`interact()`). The player never switches on node
+  type.
+- **Managers are stateless glue.** Systems register themselves and react to
+  `EventBus`, so they can be added and removed freely.
+- **Saves are versioned** (`SAVE_VERSION`) with a migration path.
+- **Distinct success and failure events.** Every interact-style action publishes
+  a clearly distinct success event *and* a clearly distinct failure event.
+  Mandatory for farming, fishing, mining, combat, gifting. Success and failure
+  must never look or sound the same.
+- **No string literals for input actions.** `InputActions` is the single
+  registry; bindings live in `tools/rebuild_input_map.gd` and are generated
+  into `project.godot`.
+- **Art:** real modeled assets from free CC0 packs — KayKit (characters),
+  Quaternius (buildings, nature). Imported under `val/val/assets/`. Stylized and
+  detailed, not blocky primitives. Every pack logged in
+  `val/val/docs/ART_LICENSES.md` with source URL and license.
+- **Original IP only:** genre-inspired, never copy another game's names, art or
+  mechanics verbatim.
+
+### Two Godot-specific traps
+
+1. **Autoloads are not global identifiers in a `--script` run.** The script
+   compiles before autoloads register, so `Log.info(...)` inside a script
+   loaded by `--script` is a compile error. Fetch from the tree root by name
+   instead: `root.get_node_or_null(^"Log")`. Do not "fix" this by naming a
+   `class_name` in the tool — that pulls the dependent script into the tool's
+   compile and reintroduces the error.
+2. **Autoloads are not available before the node enters the tree.** Writing
+   `global_position` on a parentless node logs an error every boot. `add_child`
+   first, then set the position.
 
 ## 5. Tech stack (fixed)
 
-Unity 6 LTS 6000.3.25f1, C# with nullable reference types enabled, URP,
-Cinemachine (angled third-person follow camera), Input System package (not
-legacy Input Manager), UI Toolkit (UXML + USS) for every menu/HUD/dialogue box,
-Unity Test Framework (NUnit) for EditMode + PlayMode tests. WebGL is the
-primary iteration target; Windows standalone is a later deliverable.
+Godot 4.5-stable, plain GDScript, **no addons, no C#**, no Mono. Tests are the
+self-discovering suite in `val/val/tests/`. Godot's own `Node`/`Resource` types
+are the only framework.
 
 ## 6. Quality gates
 
-- EditMode AND PlayMode tests green, with actual pass/fail counts from real
-  results — not a claim that tests exist.
-- Works from a fresh new game through normal play (no dev cheats), survives
-  save -> reload.
-- At least one PlayMode test drives the feature's core loop by simulating real
-  frames/input and asserting on resulting state.
-- A successful WebGL build via `BuildPipeline.BuildPlayer` at every milestone
-  boundary. "Compiles in the Editor" is not verified.
+A group is not done until all of these hold:
+
+- `pwsh -File val/val/tools/check.ps1` exits 0, with a **real** pass/fail count
+  from a real run. "Tests exist" is not verification.
+- **Zero `SCRIPT ERROR` lines in stderr.** The pipeline fails on them; a stage
+  that exits 0 while logging a compile error is a broken stage.
+- Reachable from a new game through normal play, with no dev cheats.
+- Survives save → reload.
+- At least one test drives the feature's core loop through real input or a real
+  scene and asserts on resulting state.
 - No TODO/FIXME/stub left behind (grep before accepting).
-- Docs updated: ROADMAP checkbox, ARCHITECTURE notes, DECISIONS entry for any
-  non-obvious choice.
+- `DEVELOPMENT_STATUS.md` updated with what was implemented, what was tested, and
+  every bug found along the way.
 
-## 7. Milestones
+## 7. Group roadmap
 
-- **M0** Foundations: project + packages (URP, Cinemachine, Input System),
-  URP config, Editor-automation convention, folder structure, docs (GDD,
-  ARCHITECTURE, ROADMAP, TASKS, DECISIONS, ASSET_LICENSES), Core scripts, an
-  EditMode+PlayMode test runner, a real WebGL build. Then: WORKER-1 builds one
-  walkable lit farm scene with a Cinemachine follow using an imported KayKit
-  character + Quaternius farm pack; WORKER-2 wires Core logic to a MonoBehaviour
-  adapter with EditMode tests; WORKER-3 builds the UI Toolkit base style
-  (parchment/wood, real pixel font) + HUD + Input System action map.
-- **M1** Core loop: calendar/energy, tools, till->plant->water->harvest, hotbar,
-  shipping bin, money, sleep/rollover, save/load, first crops. Continuous 8-dir
-  movement from day one. Distinct success vs failure feedback from day one.
-- **M2** Village and economy: village scene, shops, seasons + weather,
-  foraging, tree chopping, more crops, end-of-day summary.
-- **M3** People: schedules + NavMesh pathfinding, dialogue, gifts, friendship,
-  first events, quests + journal.
-- **M4** Life skills: fishing, animals, crafting/cooking/machines, skills +
-  professions.
-- **M5** Mines and combat.
-- **M6** Story and content completion: progression goal, festivals,
-  romance/marriage, collections; hit every quota.
-- **M7** Polish: audio pass, UI/UX pass, performance, accessibility, gamepad,
-  tutorial, title screen, credits.
-- **M8** Balance, QA, release: 2-year PlayMode bot run, economy report, WebGL +
-  Windows standalone builds via `BuildPipeline.BuildPlayer`, README.
+Work proceeds in 33 sequential groups; each must launch and test clean before the
+next begins. **Groups 0–4 are complete** (foundation, player controller, dual
+camera, interaction system, procedural world). Group 5 (time and ambience) is
+next. The full table is in `val/val/DEVELOPMENT_STATUS.md`.
 
-## 8. Legacy web build
+Do not start a group until the previous group's `check.ps1` run is green.
 
-The previous TypeScript + Vite + Three.js implementation (M0-M3) is still in
-this repo. Its rulebook is archived at docs/legacy-web/AGENTS-web.md. See
-docs/DECISIONS.md before deleting or moving any of it.
+## 8. Layout
 
-## 9. Current status
+The Godot project root is **`val/val/`**, a subdirectory of this repo. Pass
+`--path val/val`; never pass the repo root, or Godot will try to import
+`val/` itself as a project.
 
-Unity 6000.3.25f1 + WebGL module installed, verified, and **licensed** (Unity
-Personal, with the `com.unity.editor.headless` entitlement) on 2026-09-30.
+```
+val/val/
+├── scenes/      # .tscn by domain: core, player, world, farming, npc, buildings, ui, items
+├── scripts/     # .gd mirroring scenes/
+├── resources/   # .tres + Resource subclasses
+│   └── legacy_content/  # inherited JSON balance data, not yet loaded (see docs/LEGACY_CONTENT.md)
+├── assets/      # models/ (CC0 FBX), textures/ (placeholder), audio/, animations/
+├── tests/       # self-discovering headless suite
+├── tools/       # generators, boot_check.gd, check.ps1
+└── docs/        # GDD, ART_LICENSES, SALVAGED_DESIGN, LEGACY_CONTENT
+```
 
-M0 pipeline is proven: EditMode **189/189** and PlayMode **17/17** pass, and a
-real WebGL `BuildPipeline.BuildPlayer` succeeds with the farm scene
-(18.4 MB, 0 errors). The engine-free `EmberHollow.Core` assembly carries the
-ported clock, EventBus, RNG, inventory and farming sim with EditMode coverage.
-`Assets/Scenes/Farm.unity` is built entirely by
-`EmberHollow.EditorTools.FarmSceneBuilder.Build` from imported CC0 prefabs, and
-`SimulationRunner` is the single owner of `GameState`/`EventBus`/`Rng` in it.
-Play the build with `scripts/serve-webgl.ps1` (see docs/TASKS.md).
-See docs/ROADMAP.md for the first unchecked item.
+## 9. Retired: Unity and the legacy web build
+
+This repo previously held a Unity 6 project (`unity/`) and a TypeScript/Vite
+build (`src/`). Both are gone; Unity is uninstalled. The CC0 art packs survived
+into `val/val/assets/`, and the design work is preserved as prose in
+`val/val/docs/`:
+
+- `SALVAGED_DESIGN.md` — calendar, inventory and farming rules recovered from the
+  Unity C# sims, including the edge cases each one was written to catch.
+- `LEGACY_CONTENT.md` — the 500+ tuned JSON content definitions and when to
+  convert them to `Resource` subclasses.
+- `GDD.md` — the design document, retargeted to Godot.
+
+Do not reintroduce Unity, C#, `.csproj` files, or a node toolchain. If a
+technique is needed, port it to GDScript and add a test.
