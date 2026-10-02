@@ -48,6 +48,19 @@ static func has_item(id: StringName) -> bool:
 	return get_item(id) != null
 
 
+## The name to show a player for [param id].
+##
+## Falls back to the raw id rather than an empty string. An unknown item has to say
+## something: a blank label in a shop row or a bag slot looks like a rendering bug,
+## whereas a bare id tells whoever is looking that the content is missing. Same
+## reasoning as [method invalid_stock] on a shop.
+static func display_name_of(id: StringName) -> String:
+	var definition := get_item(id)
+	if definition == null:
+		return String(id)
+	return definition.display_name
+
+
 ## What the player gets for selling one of [param id].
 ##
 ## Falls back to [CropData] because a harvested crop enters the bag under its own

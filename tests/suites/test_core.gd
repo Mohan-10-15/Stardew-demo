@@ -69,6 +69,9 @@ func _check_signals() -> Dictionary:
 		# Group 13. `trade_failed` is the half of trading that has to be loud: a
 		# sale that quietly does nothing is indistinguishable from a bug.
 		"trade_failed", "stamina_changed", "stamina_exhausted",
+		# Group 25. Without this the panel has nothing to subscribe to, and the
+		# counter opens onto a blank screen.
+		"shop_opened",
 	]
 	for s: String in required:
 		if not EventBus.has_signal(s):

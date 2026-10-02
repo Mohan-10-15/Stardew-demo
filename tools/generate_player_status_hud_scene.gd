@@ -78,17 +78,26 @@ func _initialize() -> void:
 
 	row.add_child(_make_label("StaminaLabel", "100/100", 14))
 
-	for child: Node in [panel, column, row, bar, caption]:
-		child.owner = root
-	for child: Node in column.get_children():
-		child.owner = root
-
+	_own(root, root)
 	if _save(root) != OK:
 		printerr("[generate_player_status_hud_scene] failed")
 		quit(1)
 		return
 	print("[generate_player_status_hud_scene] wrote %s" % OUTPUT_PATH)
 	quit(0)
+
+
+## Assigns `owner` down the whole subtree.
+##
+## This generator originally hand-listed the nodes, and listed them twice over
+## instead of once recursively — which silently dropped `StaminaLabel` from the
+## saved scene. A node with no owner is omitted without complaint, so the scene
+## loaded, the HUD spawned, and the stamina readout had nothing to write to. See
+## `generate_hotbar_hud_scene.gd` for the same note.
+func _own(node: Node, top: Node) -> void:
+	node.owner = top
+	for child: Node in node.get_children():
+		_own(child, top)
 
 
 func _make_label(label_name: String, text: String, size: int) -> Label:

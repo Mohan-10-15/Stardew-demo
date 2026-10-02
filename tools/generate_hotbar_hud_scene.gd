@@ -46,7 +46,7 @@ func _initialize() -> void:
 	for i: int in range(SLOT_COUNT):
 		slots.add_child(_make_slot(i))
 
-	slots.owner = root
+	_own(root, root)
 	if _save(root) != OK:
 		printerr("[generate_hotbar_hud_scene] failed")
 		quit(1)
@@ -102,11 +102,19 @@ func _make_slot(index: int) -> Panel:
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(label)
-
-	number.owner = panel
-	label.owner = panel
-	column.owner = panel
 	return panel
+
+
+## Assigns `owner` down the whole subtree.
+##
+## Every other generator here hand-lists the nodes it owns, and every one of them
+## got it wrong at least once — a missed node is silently dropped from the saved
+## scene with no error, so the failure is a HUD that spawns and then has no label
+## to write to. Recursing cannot be forgotten.
+static func _own(node: Node, top: Node) -> void:
+	node.owner = top
+	for child: Node in node.get_children():
+		_own(child, top)
 
 
 func _slot_style(held: bool) -> StyleBoxFlat:

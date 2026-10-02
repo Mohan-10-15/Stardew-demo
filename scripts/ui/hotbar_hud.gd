@@ -50,7 +50,10 @@ func _collect_slots() -> void:
 		if slot == null:
 			continue
 		_slot_panels.append(slot)
-		_slot_labels.append(slot.get_node_or_null(^"SlotLabel") as Label)
+		# `Column/SlotLabel`, not `SlotLabel`: the label sits inside the column that
+		# the number is in, and a wrong path here returns null and silently blanks
+		# every slot rather than raising.
+		_slot_labels.append(slot.get_node_or_null(^"Column/SlotLabel") as Label)
 		_last_texts.append("")
 
 
@@ -62,10 +65,23 @@ func _on_selection_changed(_slot: int) -> void:
 	_refresh()
 
 
+## Re-locates the state service if the one we cached is gone.
+##
+## See the same note in `PlayerStatusHUD._live_state()`: a freed node stays
+## referenced from GDScript, so a `== null` check passes on a dead instance and
+## the following property read throws instead of bailing out.
+func _live_state() -> PlayerStateService:
+	if _state != null and is_instance_valid(_state):
+		return _state
+	_state = _find_state(get_tree().get_root())
+	return _state
+
+
 func _refresh() -> void:
-	if _state == null:
+	var state := _live_state()
+	if state == null:
 		return
-	var bar: Hotbar = _state.hotbar
+	var bar: Hotbar = state.hotbar
 	if bar == null:
 		return
 	var selected := bar.get_selected()
@@ -76,11 +92,15 @@ func _refresh() -> void:
 			if text != _last_texts[i]:
 				_last_texts[i] = text
 				label.text = text
-		# Highlight the held slot. Repainted separately from the text so that
-		# switching slots costs one colour change rather than nine label rebuilds.
-		if i != _last_selected or i == selected:
+	# Repaint the highlight only when the selection actually moved, and repaint
+	# *all* of them when it does. Skipping the outgoing slot leaves two slots
+	# highlighted at once: the previous condition tried to avoid the redraw by
+	# only touching slots that were not previously selected, and `0 != _last_selected`
+	# is false precisely for the slot that has just lost the highlight.
+	if selected != _last_selected:
+		for i: int in range(_slot_panels.size()):
 			_set_highlight(i, i == selected)
-	_last_selected = selected
+		_last_selected = selected
 
 
 func _set_highlight(index: int, held: bool) -> void:

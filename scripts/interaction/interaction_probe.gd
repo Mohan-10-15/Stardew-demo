@@ -36,6 +36,16 @@ var _hold_target: Interactable = null
 var _last_ray_length: float = 0.0
 
 
+func _ready() -> void:
+	# PAUSABLE, explicitly, for the same reason as `PlayerController._ready`:
+	# `Main` is ALWAYS and INHERIT would make this ALWAYS too, so the probe would
+	# keep raycasting and keep consuming `E` behind an open shop panel. The probe
+	# also consumes `interact` in `_unhandled_input` before the panel's own close
+	# handler can claim the press, so a non-pausable probe re-fires the counter
+	# that is being closed.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+
+
 func _physics_process(delta: float) -> void:
 	update_focus()
 	_process_action(delta)

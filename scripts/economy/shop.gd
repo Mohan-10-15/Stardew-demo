@@ -132,3 +132,8 @@ func _no_service(item_id: StringName, quantity: int) -> Dictionary:
 
 func _on_opened(actor: Node) -> void:
 	opened.emit(self, actor)
+	# Also on the bus, so a screen can listen in one place rather than hunting the
+	# tree for whichever counter happens to be nearby. Without this the counter's
+	# interaction was invisible: `opened` fired, and a signal nobody subscribes to
+	# is indistinguishable from a broken game to the player pressing E.
+	EventBus.shop_opened.emit(self)

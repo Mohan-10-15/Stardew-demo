@@ -91,3 +91,14 @@ theme_override_styles/background = SubResource("StyleBoxFlat_23d3c")
 theme_override_styles/fill = SubResource("StyleBoxFlat_6qrjj")
 value = 100.0
 show_percentage = false
+
+[node name="StaminaLabel" type="Label" parent="Panel/Column/StaminaRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "100/100"
+vertical_alignment = 1

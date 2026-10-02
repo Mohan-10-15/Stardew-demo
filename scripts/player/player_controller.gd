@@ -59,6 +59,19 @@ const FACING_RELAX_SPEED := 6.0
 
 
 func _ready() -> void:
+	# PAUSABLE, stated explicitly and not left at INHERIT.
+	#
+	# `Main` is PROCESS_MODE_ALWAYS so it can keep handling input while the game is
+	# paused. Godot resolves INHERIT by walking up to the nearest ancestor that
+	# sets a mode, so a player left on the default inherits ALWAYS — and the player
+	# walks straight out of an open shop. The shop panel pauses the tree expecting
+	# that to stop the body, and the tree pause changes nothing for anything under
+	# an ALWAYS root.
+	#
+	# The spawn point cannot set this instead: the player is built by a generator
+	# and instantiated, and a mode set in `_ready` is inherited by the probe, the
+	# camera rig and every child the player will ever grow.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	if movement_config == null:
 		movement_config = _load_default_config()
 	_gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 24.0)

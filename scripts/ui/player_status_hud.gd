@@ -47,7 +47,7 @@ func _ready() -> void:
 	_refresh()
 
 
-func _on_currency_changed(amount: int) -> void:
+func _on_currency_changed(_amount: int) -> void:
 	_refresh()
 
 
@@ -55,17 +55,36 @@ func _on_stamina_changed(_current: int, _maximum: int) -> void:
 	_refresh()
 
 
+## Re-locates the state service if the one we cached is gone.
+##
+## `_state` is a hard reference held across the life of the HUD, and the HUD
+## outlives the scene that spawned it whenever the world is rebuilt. Freed nodes
+## stay referenced from GDScript, so `if _state == null` does **not** catch a
+## freed instance — it passes, and the next line reads a property off a dead
+## object. That is how one suite freeing its rig turned into eight unrelated
+## failures in the suites that ran after it.
+##
+## `PlayerStateService.find()` walks the tree, so re-resolving is cheap and it is
+## the only way the HUD survives a scene change it did not initiate.
+func _live_state() -> PlayerStateService:
+	if _state != null and is_instance_valid(_state):
+		return _state
+	_state = _find_state(get_tree().get_root())
+	return _state
+
+
 func _refresh() -> void:
-	if _state == null:
+	var state := _live_state()
+	if state == null:
 		return
-	var wallet: Wallet = _state.wallet
+	var wallet: Wallet = state.wallet
 	if wallet != null and _gold_label != null:
 		var text := "%dg" % wallet.gold
 		if text != _last_gold:
 			_last_gold = text
 			_gold_label.text = text
 
-	var pool: Stamina = _state.stamina
+	var pool: Stamina = state.stamina
 	if pool == null:
 		return
 	if _stamina_bar != null and (_last_stamina_max != pool.maximum

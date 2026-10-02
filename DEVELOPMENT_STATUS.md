@@ -3,9 +3,9 @@
 Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
 Dual first-person / third-person cameras, switchable at runtime.
 
-Progress: **Groups 0–13 complete.** Group 12 (resource gathering) is next.
+Progress: **Groups 0–13 and 25 complete.** Group 12 (resource gathering) is next.
 
-Current baseline: **229/229 tests**, import clean, boot clean, zero script errors.
+Current baseline: **248/248 tests**, import clean, boot clean, zero script errors.
 
 ---
 
@@ -773,20 +773,37 @@ different numbering schemes.
 
 ---
 
+## Group 25 UI — bugs found
+
+Every one of these passed a test that existed before it, or produced no error at all.
+
+| Bug | Cause | Fix |
+|---|---|---|
+| The player walked out of an open shop, and `E` re-fired the counter behind the panel | `Main` is `PROCESS_MODE_ALWAYS`, and Godot resolves `PROCESS_MODE_INHERIT` by walking up to the nearest ancestor that sets a mode. The player and probe were left at the default, so they inherited ALWAYS and `SceneTree.paused` skipped nothing. The modal pause was a no-op | `PlayerController._ready` and `InteractionProbe._ready` set `PROCESS_MODE_PAUSABLE` explicitly |
+| The shop panel opened as an empty box | Three generators hand-listed the nodes to assign `owner`, and missed some. A node with no `owner` is dropped from a `PackedScene` **with no error** — the hotbar saved 2 nodes instead of 38 | Recursive `_own()` in all three generators; `test_ui` asserts the rows exist |
+| Hotbar slots all blank | Read `SlotLabel` instead of `Column/SlotLabel`; a wrong path returns null and blanks silently | Corrected path, with a comment saying why it fails silently |
+| Two hotbar slots highlighted at once | The repaint guard skipped precisely the slot that had just *lost* the highlight: `i != _last_selected` is false for it | Repaint every slot when the selection moves |
+| 146 engine errors per test run | `_row_panels` typed `Array[Panel]`, appended `PanelContainer`, which does not inherit from `Panel`. The field was written and never read | Deleted the field |
+| 8 unrelated suites failed once the modal suite was added | `TestSuite.run_all` calls `setup()`/`teardown()` **once per suite**, not per case, so four booted main scenes stacked — four players shoving each other at one spawn point | `_reset_rig()` at the start of each case, as `test_farming` already does |
+| HUDs kept writing to freed nodes | `_state` is a hard reference; a freed node stays referenced from GDScript, so `if _state == null` **passes** on a dead instance and the next line throws | `is_instance_valid()` + re-resolve via `_live_state()` in both HUDs and the shop panel |
+
+---
+
 ## Known gaps
 
 Carried forward so they are not rediscovered as bugs later:
 
 | Gap | Status |
 |---|---|
-| Hotbar / tool belt | Model and input bindings are complete and tested (`Hotbar`, `hotbar_1`–`hotbar_9`). **No HUD node draws the nine slots yet** — group 25. |
+| Hotbar / tool belt | **CLOSED.** `HotbarHUD` draws the nine slots, names the contents of each, and repaints the highlight when the selection moves. |
 | Dynamic physics | No `RigidBody3D` or `Area3D` in the world. Static collision is complete. |
 | `3d_physics/layer_4="interactable"` | **Now used** — every farm tile carries a 0.4 m non-solid aim volume on it. |
 | Crop art | `SoilTile.build_visuals` grows scale and colour by stage. Placeholder geometry, not sprites. |
 | Watering can refill | The can has durability but no fill state or refill action. |
-| Wallet display | Gold exists, is saved and trades, but **no HUD shows the amount** — group 25. |
-| Shop UI | The counter opens and trades through `Shop.buy` / `Shop.sell`. **No screen lists prices or takes clicks** — group 25. |
-| Stamina display | `Stamina` is spent, restored and saved. **No bar draws it** — group 25. |
+| Wallet display | **CLOSED.** The status HUD shows the amount and follows every transaction. |
+| Shop UI | **CLOSED.** `ShopUI` lists prices, takes clicks, and says why a refused trade was refused. |
+| Stamina display | **CLOSED.** The status HUD draws a bar and turns the readout red when stamina is empty. |
+| Mouse-look while a modal screen is up | The shop panel pauses the tree, so movement and the interaction probe stop. Mouse look does not, because `PlayerController._handle_look` reads mouse motion in `_unhandled_input`. Cosmetic — the panel is opaque — but noted. |
 
 ---
 
@@ -802,7 +819,7 @@ Carried forward so they are not rediscovered as bugs later:
 | 5 | ~~Time System~~ | 22 | Mining |
 | 6 | ~~Day / Night Cycle~~ | 23 | Weather |
 | 7 | ~~Farming Grid~~ | 24 | Seasons |
-| 8 | ~~Crop Data~~ | 25 | UI |
+| 8 | ~~Crop Data~~ | 25 | ~~UI~~ |
 | 9 | ~~Plant / Water / Harvest~~ | 26 | Save / Load |
 | 10 | ~~Inventory~~ | 27 | Audio |
 | 11 | ~~Tools~~ | 28 | Art / Animation Polish |
