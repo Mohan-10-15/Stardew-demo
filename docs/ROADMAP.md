@@ -13,10 +13,10 @@ reasoning.
 | Milestone | Name | Status |
 |---|---|---|
 | M0 | Stabilize existing project | **COMPLETE** |
-| M1 | Core player, world, interaction | NEXT |
-| M2 | Time and calendar | |
-| M3 | Farming | |
-| M4 | Inventory, tools, economy | |
+| M1 | Core player, world, interaction | **COMPLETE** |
+| M2 | Time and calendar | **COMPLETE** |
+| M3 | Farming | **COMPLETE** |
+| M4 | Inventory, tools, economy | **COMPLETE** |
 | M5 | NPCs, dialogue, relationships | |
 | M6 | Quests | |
 | M7 | Fishing, animals, crafting, cooking | |
@@ -87,16 +87,39 @@ salvaged doc is annotated where it was superseded.
 The day rolls at the 2:00 AM collapse rather than at midnight, so M3's sleep and
 crop-growth code has one unambiguous end-of-day moment to hook into.
 
-### M3 — Farming
+### M3 — Farming — COMPLETE
 Tilled soil, planting, watering, growth over days, harvesting.
 
 Per `AGENTS.md`, every interact-style action publishes a *clearly distinct*
 success event and a *clearly distinct* failure event. Farming is on that list.
 Planting a seed and failing to plant must not look or sound the same.
 
-### M4 — Inventory, tools, economy
+Delivered in groups 7–11. Playable end to end from a new game through the real
+`interact` key: hoe, seed packet, watering can, sleep, harvest.
+
+One ordering rule this milestone taught, worth carrying to every later action that
+mutates world state and then hands something to a container: **settle storage
+before you commit the change.** Harvesting first and re-planting on failure
+published a success event for a harvest that never happened, and silently reset a
+regrowing crop's clock. Check what can be accepted first; do not rely on undo.
+
+### M4 — Inventory, tools, economy — COMPLETE
 Stacking with quality tiers, slot splitting, tools with stamina costs, shops,
 buying and selling, currency.
+
+All three parts are done (groups 10–11 and 13):
+
+- **Inventory and tools** (groups 10–11): quality-aware merging, overflow
+  splitting, all-or-nothing adds, lowest-quality-first removal, refuse-to-shrink,
+  and per-stack tool durability.
+- **Stamina** (group 13): `Stamina` as a plain resource, costs on
+  `ItemDefinition.stamina_cost`, affordability checked *before* a swing touches the
+  soil, a no-op swing refunded, and a full restore on sleep.
+- **Economy** (group 13): `Wallet`, `ShopDefinition` content resources behind a
+  registry, `EconomyService` rules with a machine-readable refusal reason on every
+  rejection, and a walk-up counter in the world that the real interact key opens.
+
+Deliberately still out: the shop UI, a shipping bin, and daily price variation.
 
 `docs/SALVAGED_DESIGN.md` records the inventory edge cases the old build pinned
 down — merging never across quality, overflow splitting rather than failing,

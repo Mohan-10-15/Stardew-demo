@@ -15,6 +15,19 @@ extends Resource
 ## Matches `hotbar_1` .. `hotbar_9` in the InputMap, and the wheel's wrap-around.
 const SLOT_COUNT := 9
 
+## Emitted after the held slot changes.
+##
+## A local signal rather than a publish straight onto [EventBus], for the same
+## reason [Inventory] has `contents_changed`: this is a plain [Resource] with no
+## scene and no owner, so it cannot know who should hear about a selection — and
+## reaching for an autoload from here makes the file impossible to load from a
+## `--script` run, because autoloads are not global identifiers until they are in
+## the tree (see `AGENTS.md`, "Two Godot-specific traps").
+##
+## [PlayerStateService] relays this to `EventBus.hotbar_selection_changed` once
+## it has somewhere to publish from.
+signal selection_changed(slot: int)
+
 ## The bag this hotbar shows. Null is allowed so a hotbar can be exercised in a
 ## test without an inventory; every accessor degrades to "empty" rather than
 ## crashing.
@@ -39,7 +52,7 @@ func select(index: int) -> void:
 	if index == _selected:
 		return
 	_selected = posmod(index, SLOT_COUNT)
-	EventBus.hotbar_selection_changed.emit(_selected)
+	selection_changed.emit(_selected)
 
 
 ## Moves the selection by [param delta], wrapping both ways.

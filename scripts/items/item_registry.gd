@@ -48,6 +48,47 @@ static func has_item(id: StringName) -> bool:
 	return get_item(id) != null
 
 
+## What the player gets for selling one of [param id].
+##
+## Falls back to [CropData] because a harvested crop enters the bag under its own
+## id and is a perfectly sellable thing, but it is defined in the crop directory
+## and has no [ItemDefinition]. Asking this registry rather than making every
+## caller try both is what keeps the fallback from being forgotten at the fourth
+## call site.
+##
+## Zero means "not sellable", which is a real answer rather than a missing one: a
+## seed packet costs money and has nothing to sell for, and a rock does too.
+static func sell_price_of(id: StringName) -> int:
+	var item := get_item(id)
+	if item != null and item.sell_price > 0:
+		return item.sell_price
+	var crop := CropRegistry.get_crop(id)
+	if crop != null:
+		return crop.sell_price
+	return 0
+
+
+## What one of [param id] costs to buy.
+##
+## No crop fallback: crops are not bought, their seeds are, and those *are*
+## [ItemDefinition]s with a `seed_id` pointing here. A crop with no seed packet
+## has nothing to sell and correctly costs nothing.
+static func buy_price_of(id: StringName) -> int:
+	var item := get_item(id)
+	if item == null:
+		return 0
+	return item.buy_price
+
+
+## What one swing of [param id] costs in stamina. Zero for anything that is not a
+## tool, including ids this registry has never heard of.
+static func stamina_cost_of(id: StringName) -> int:
+	var item := get_item(id)
+	if item == null or not item.uses_durability:
+		return 0
+	return item.stamina_cost
+
+
 ## Ids claimed by more than one file, sorted. Empty in a healthy content set.
 static func duplicate_ids() -> Array[StringName]:
 	ensure_loaded()

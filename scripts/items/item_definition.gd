@@ -27,6 +27,12 @@ enum Category { CROP, SEED, TOOL, FORAGE, MATERIAL, FOOD }
 @export var uses_durability: bool = false
 ## Remaining uses on a fresh tool. Zero on a non-durability item.
 @export_range(0, 999, 1) var durability: int = 0
+## Stamina one swing of this tool costs.
+##
+## On the tool rather than in a table inside [Stamina], so adding a tool is a
+## content change and nothing else. Zero is meaningful and free: it is how a
+## starting tool stays usable, and how a non-tool stays at no cost.
+@export_range(0, 100, 1) var stamina_cost: int = 0
 ## What the tool does on soil: `till`, `water`, or empty for a hand item.
 ## Read by [Hotbar.get_selected_tool_action] rather than switched on in the
 ## player, which is what keeps a new tool a data change.

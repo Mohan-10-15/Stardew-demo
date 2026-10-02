@@ -77,13 +77,29 @@ to match the code, so the original reasoning is still readable.
 
 ## M3 — Inventory, tools, economy
 
-- [ ] The farm is reachable, and so is the village shop
-- [ ] Buy seeds with currency; currency decreases by the right amount
-- [ ] An inventory stack splits across slots when it overflows
-- [ ] A full bag accepts nothing and loses nothing (all-or-nothing)
-- [ ] Removing an item takes the lowest quality first
-- [ ] Removing empties the slot rather than leaving a zero-count ghost
-- [ ] Selling updates currency and publishes `item_sold`
+- [x] The farm is reachable, and so is the village shop
+- [x] Buy seeds with currency; currency decreases by the right amount
+- [x] An inventory stack splits across slots when it overflows
+- [x] A full bag accepts nothing and loses nothing (all-or-nothing)
+- [x] Removing an item takes the lowest quality first
+- [x] Removing empties the slot rather than leaving a zero-count ghost
+- [x] Selling updates currency and publishes `item_sold`
+
+### Stamina
+
+- [x] A tool swing costs the stamina on its `ItemDefinition`
+- [x] A swing the player cannot afford changes no tile at all
+- [x] A swing that changes nothing is refunded
+- [x] Sleeping restores stamina to full
+- [ ] A HUD bar draws the stamina pool (group 25)
+
+### Currency
+
+- [x] A new game starts with gold, and it survives save → reload
+- [x] A wallet never goes negative
+- [x] A refused trade moves neither gold nor items
+- [x] A shop will not buy back its own stock (no free-money loop)
+- [ ] A HUD shows the gold total (group 25)
 
 ---
 

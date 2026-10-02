@@ -29,21 +29,26 @@ const SEEDS: Array[Dictionary] = [
 	{"id": &"winter_seeds", "seed_id": &"winter_seeds", "buy_price": 30, "color": Color(0.66, 0.80, 0.68)},
 ]
 
-## id, display name, tool_action, durability, sell_price, icon colour
+## id, display name, tool_action, durability, stamina_cost, sell_price, icon colour
 const TOOLS: Array[Dictionary] = [
 	{
 		"id": &"hoe", "display_name": "Hoe", "tool_action": &"till",
-		"durability": 0, "sell_price": 0, "color": Color(0.62, 0.48, 0.30),
+		"durability": 0, "stamina_cost": 2, "sell_price": 0,
+		"color": Color(0.62, 0.48, 0.30),
 	},
 	{
 		"id": &"watering_can", "display_name": "Watering Can", "tool_action": &"water",
 		# Durability so a player who never refills anything eventually has to
 		# think about the can. Group 13 (economy) is where refilling arrives.
-		"durability": 60, "sell_price": 0, "color": Color(0.42, 0.58, 0.66),
+		"durability": 60, "stamina_cost": 1, "sell_price": 0,
+		"color": Color(0.42, 0.58, 0.66),
 	},
 	{
 		"id": &"scythe", "display_name": "Scythe", "tool_action": &"",
-		"durability": 0, "sell_price": 0, "color": Color(0.70, 0.72, 0.74),
+		# No action yet, so nothing charges for it. The cost is here anyway so the
+		# day the scythe clears a row it does not also need a balance pass.
+		"durability": 0, "stamina_cost": 1, "sell_price": 0,
+		"color": Color(0.70, 0.72, 0.74),
 	},
 ]
 
@@ -112,6 +117,7 @@ func _initialize() -> void:
 		tool.tool_action = spec["tool_action"]
 		tool.durability = spec["durability"]
 		tool.uses_durability = int(spec["durability"]) > 0
+		tool.stamina_cost = spec["stamina_cost"]
 		tool.sell_price = spec["sell_price"]
 		tool.icon_color = spec["color"]
 		if not _write(tool, written):

@@ -15,6 +15,11 @@ extends Resource
 
 enum Quality { NORMAL, SILVER, GOLD }
 
+## Stack cap for an item the registry cannot answer for. Matches the cap the
+## generated content uses for ordinary goods, so a missing definition degrades to
+## "stacks normally" rather than to "cannot hold anything".
+const DEFAULT_MAX_STACK := 99
+
 ## Emitted after any change to the bag's contents.
 ##
 ## A local signal rather than a publish straight onto [EventBus], for two reasons.
@@ -37,17 +42,28 @@ class ItemStack extends Resource:
 	var id: StringName = &""
 	var amount: int = 0
 	var quality: int = Quality.NORMAL
+	## Uses left on a tool, or 0 for anything that is not a tool.
+	##
+	## On the *stack*, not the definition. Durability is the reason a player
+	## carries two hoes instead of one, and that is impossible to express while
+	## the counter lives on the shared `ItemDefinition` resource — every hoe in
+	## the world would be one object, so they would all wear out together.
+	var durability: int = 0
 
-	func _init(p_id: StringName = &"", p_amount: int = 0, p_quality: int = Quality.NORMAL) -> void:
+	func _init(
+		p_id: StringName = &"", p_amount: int = 0,
+		p_quality: int = Quality.NORMAL, p_durability: int = 0
+	) -> void:
 		id = p_id
 		amount = p_amount
 		quality = p_quality
+		durability = p_durability
 
 	func is_empty() -> bool:
 		return id.is_empty() or amount <= 0
 
 	func copy() -> ItemStack:
-		return ItemStack.new(id, amount, quality)
+		return ItemStack.new(id, amount, quality, durability)
 
 	## "Parsnip x3" / "Parsnip x3 (Silver)"
 	func describe() -> String:
@@ -137,8 +153,12 @@ func add(id: StringName, amount: int = 1, quality: int = Quality.NORMAL) -> int:
 			break
 		if slot == null:
 			continue
-		if slot.id == id and slot.quality == quality:
-			var room := _max_stack() - slot.amount
+		# Never merge a stack that has recorded durability into one that has not.
+		# A worn hoe and a fresh hoe share an id and quality, so the ordinary
+		# `(id, quality)` test merges them and silently destroys the wear the
+		# player earned — and with it the tool-break warning they were owed.
+		if slot.id == id and slot.quality == quality and slot.durability == 0:
+			var room := _max_stack(slot.id) - slot.amount
 			if room > 0:
 				var moved := mini(room, remaining)
 				slot.amount += moved
@@ -150,11 +170,55 @@ func add(id: StringName, amount: int = 1, quality: int = Quality.NORMAL) -> int:
 			break
 		if _slots[i] != null:
 			continue
-		var stack := ItemStack.new(id, mini(remaining, _max_stack()), quality)
+		var stack := ItemStack.new(id, mini(remaining, _max_stack(id)), quality)
 		_slots[i] = stack
 		remaining -= stack.amount
 	_notify_changed()
 	return amount - remaining
+
+
+## Removes up to [param amount] from the slot holding *this exact stack*.
+##
+## [method remove] is right for consumables — it spends the lowest quality first,
+## which conserves value. It is exactly wrong for a worn tool. A player with two
+## Normal watering cans, one at 3 uses and one fresh, would have the *fresh* one
+## consumed, because both match id and quality, and would keep the broken one
+## forever. Durability is per-stack precisely so that two identical tools are
+## distinguishable, and this is the method that respects that.
+##
+## Prefers reference identity — the caller usually got its stack straight out of
+## this bag. Falls back to matching id, quality *and* durability for a stack that
+## was rebuilt by [method from_dict], where identity cannot survive the round trip.
+##
+## Only ever touches one slot. Returns how much was actually removed.
+func remove_stack(stack: ItemStack, amount: int = 1) -> int:
+	if stack == null or amount <= 0:
+		return 0
+	var index := -1
+	for i: int in range(_slots.size()):
+		if _slots[i] == stack:
+			index = i
+			break
+	if index < 0:
+		for i: int in range(_slots.size()):
+			var slot := get_slot(i)
+			if slot == null or slot.id != stack.id or slot.quality != stack.quality:
+				continue
+			if slot.durability != stack.durability:
+				continue
+			index = i
+			break
+	if index < 0:
+		return 0
+
+	var taken := mini(_slots[index].amount, amount)
+	_slots[index].amount -= taken
+	if _slots[index].amount <= 0:
+		_slots[index] = null
+	_prune_empty_stacks()
+	if taken > 0:
+		_notify_changed()
+	return taken
 
 
 ## Removes up to [param amount] of [param id], taking the **lowest quality first**.
@@ -229,8 +293,11 @@ func move_slots(from_index: int, to_index: int) -> bool:
 		_notify_changed()
 		return true
 
-	if destination.id == source.id and destination.quality == source.quality:
-		var room := _max_stack() - destination.amount
+	# Durability is part of the stack's identity for merging, same reason as in
+	# `add`: dragging a fresh hoe onto a worn one should not repair it.
+	if destination.id == source.id and destination.quality == source.quality \
+			and destination.durability == source.durability:
+		var room := _max_stack(destination.id) - destination.amount
 		if room <= 0:
 			# Both stacks are full, so there is nowhere for the merge to go.
 			# Swapping two identical full stacks is a no-op either way.
@@ -292,6 +359,37 @@ func resize(new_capacity: int) -> bool:
 	return true
 
 
+## Uses left on [param stack], or 0 when the stack is not a tool.
+##
+## Reads through to the definition's maximum when the stack has never recorded a
+## durability, so a hoe that arrived from a save written before tools wore out
+## starts full rather than immediately broken. Without that fallback a legacy save
+## would hand the player a broken hoe and the inventory would refuse every swing.
+func get_durability(stack: ItemStack) -> int:
+	if stack == null:
+		return 0
+	if stack.durability > 0:
+		return stack.durability
+	var definition := ItemRegistry.get_item(stack.id)
+	if definition == null or not definition.uses_durability:
+		return 0
+	return definition.durability
+
+
+## Records a tool's remaining uses against the stack itself.
+##
+## Publishes like every other mutator, which is what lets the HUD show durability
+## without the farm service remembering to tell it. Two notifications can arrive
+## for one action — setting the last use removes the stack, and both publish — and
+## that is harmless for a signal whose meaning is "the bag changed", unlike a
+## signal that carried the change itself.
+func set_durability(stack: ItemStack, value: int) -> void:
+	if stack == null:
+		return
+	stack.durability = maxi(value, 0)
+	_notify_changed()
+
+
 ## `[(id, quality) -> total]`, ignoring empty slots.
 ##
 ## The bag's answer to "what am I carrying", for a shipping bin or a quest check.
@@ -317,6 +415,11 @@ func to_dict() -> Dictionary:
 			"id": String(slot.id),
 			"amount": slot.amount,
 			"quality": slot.quality,
+			# Only written when it is set, so a save of a bag with no tools is
+			# byte-identical to one written before tools existed. Omitting the key
+			# rather than storing 0 also means an old save loads a full-strength hoe
+			# instead of a broken one.
+			"durability": slot.durability if slot.durability > 0 else null,
 		})
 	return {"capacity": capacity, "slots": stacks}
 
@@ -342,7 +445,13 @@ func from_dict(data: Dictionary) -> void:
 			if id.is_empty() or amount <= 0:
 				_slots.append(null)
 				continue
-			_slots.append(ItemStack.new(id, amount, _clamp_quality(row.get("quality", 0))))
+			# `null` and absent both mean "no recorded durability", which
+			# `get_durability` reads as full strength.
+			var uses := 0
+			var saved_uses: Variant = row.get("durability", null)
+			if saved_uses != null:
+				uses = maxi(int(saved_uses), 0)
+			_slots.append(ItemStack.new(id, amount, _clamp_quality(row.get("quality", 0)), uses))
 	_resize(maxi(saved_capacity, _slots.size()))
 	_prune_empty_stacks()
 	_notify_changed()
@@ -392,15 +501,25 @@ func _remaining_space(id: StringName, amount: int, quality: int) -> int:
 		if slot == null:
 			free += 1
 		elif slot.id == id and slot.quality == quality:
-			space += maxi(_max_stack() - slot.amount, 0)
+			space += maxi(_max_stack(slot.id) - slot.amount, 0)
 	if free <= 0:
 		return space
 	# Every free slot can take a full stack, plus whatever is left in partial ones.
-	return space + free * _max_stack()
+	return space + free * _max_stack(id)
 
 
-func _max_stack() -> int:
-	return 99
+## Stack cap for [param id], from its definition.
+##
+## Falls back to [constant DEFAULT_MAX_STACK] for an id the registry does not
+## know. `ItemDefinition.max_stack()` is the authority, and this hardcoded 99
+## before — which contradicted that method, so a tool could occupy one slot at
+## 99 while the shop that sold it insisted tools stack at one. Two hoes in a single
+## slot is how a player loses track of which one is worn.
+func _max_stack(id: StringName = &"") -> int:
+	var definition := ItemRegistry.get_item(id)
+	if definition == null:
+		return DEFAULT_MAX_STACK
+	return maxi(definition.max_stack(), 1)
 
 
 func _quality_order() -> Array[int]:

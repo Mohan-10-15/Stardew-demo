@@ -56,6 +56,7 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_build_water(root)
 	_build_paths(root)
 	_build_farm(root)
+	_build_shop(root)
 	_build_village(root, rng)
 	_build_forest(root, rng)
 	_build_rocks(root, rng)
@@ -279,6 +280,75 @@ static func _build_farm(root: Node3D) -> void:
 	for i: int in range(corners.size()):
 		_add_post(root, corners[i])
 		_add_rail(root, corners[i], corners[(i + 1) % corners.size()])
+
+
+## Where the general store stands.
+##
+## Just outside the farm fence, on the +X side, at the farm's own Z so the walk
+## from the middle of the plot is straight and short. Deliberately *not* on the
+## spawn-to-village sightline at `x = 0`: `test_interaction`'s fixtures stand at
+## `(0, 0.2, 12.5)` aiming down -Z, and the mailbox already had to move off that
+## axis for exactly this reason. Two props fighting over one test corridor is not a
+## thing to discover twice.
+const SHOP_POSITION := Vector3(14.5, 0, REGION_FARM.y)
+
+
+static func _build_shop(root: Node3D) -> void:
+	var shop := Shop.new()
+	shop.name = "GeneralStore"
+	# The definition is assigned *before* the node enters the tree, because
+	# `_ready` validates it and would otherwise warn about a counter that was only
+	# ever half-built. An ordinary property assignment on a parentless node is
+	# harmless; only `position` is not (see `AGENTS.md`, "Two Godot-specific
+	# traps").
+	var definition := ShopRegistry.get_shop(&"general_store")
+	if definition == null:
+		Log.error(
+			"WorldBuilder", "no 'general_store' definition; the counter will be inert"
+		)
+	else:
+		shop.shop = definition
+	root.add_child(shop)
+	shop.position = SHOP_POSITION
+
+	# The stall itself, as a child so the whole counter moves as one thing.
+	var stall := StaticBody3D.new()
+	stall.name = "Stall"
+	stall.collision_layer = 1
+	shop.add_child(stall)
+
+	var canopy := MeshInstance3D.new()
+	var roof := BoxMesh.new()
+	roof.size = Vector3(2.4, 0.12, 1.6)
+	canopy.mesh = roof
+	canopy.position = Vector3(0, 2.1, 0)
+	canopy.material_override = material(COL_ROOF, 0.85)
+	stall.add_child(canopy)
+
+	for side: float in [-1.0, 1.0]:
+		var leg := MeshInstance3D.new()
+		var pole := BoxMesh.new()
+		pole.size = Vector3(0.12, 2.1, 0.12)
+		leg.mesh = pole
+		leg.position = Vector3(side * 1.1, 1.05, 0)
+		leg.material_override = material(COL_WOOD, 0.9)
+		stall.add_child(leg)
+
+	var counter := MeshInstance3D.new()
+	var top := BoxMesh.new()
+	top.size = Vector3(2.2, 0.9, 0.8)
+	counter.mesh = top
+	counter.position = Vector3(0, 0.45, 0)
+	counter.material_override = material(COL_WALL, 0.9)
+	stall.add_child(counter)
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = top.size
+	shape.shape = box
+	shape.position = counter.position
+	stall.add_child(shape)
 
 
 static func _add_post(root: Node3D, at: Vector3) -> void:

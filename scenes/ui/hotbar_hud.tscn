@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hotbar_hud.gd" id="1_r2ruv"]
+
+[node name="HotbarHUD" type="CanvasLayer"]
+script = ExtResource("1_r2ruv")
+
+[node name="Slots" type="HBoxContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -492.0
+offset_top = -66.0
+offset_right = 492.0
+offset_bottom = -18.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1

@@ -27,7 +27,9 @@ var world: WorldRoot = null
 var player: PlayerController = null
 var hud: CanvasLayer = null
 var clock_hud: CanvasLayer = null
+var player_state: PlayerStateService = null
 var farm_service: FarmService = null
+var economy_service: EconomyService = null
 var _time_service: TimeService = null
 
 
@@ -51,10 +53,15 @@ func _boot() -> void:
 
 	if load_world:
 		_spawn_world()
+	# Before the farm and the economy, because both read the bag, the purse and the
+	# stamina through it. It needs no world and no player, so it goes first of the
+	# three.
+	_spawn_player_state()
 	# Between world and player: it needs the world's grid to attach, and the
 	# player to exist before it hands out a starting loadout.
 	if load_world:
 		_spawn_farm_service()
+		_spawn_economy_service()
 	if load_player:
 		_spawn_player()
 	if load_hud:
@@ -64,14 +71,28 @@ func _boot() -> void:
 	if load_clock_hud:
 		_spawn_clock_hud()
 
-	# The player is up and the service exists, so the opening tool is ready for
-	# the first click rather than a frame later.
-	if farm_service != null:
-		farm_service.grant_starter_loadout()
+	# The player is up and their state exists, so the opening tool is ready for the
+	# first click rather than a frame later.
+	if player_state != null:
+		player_state.grant_starter_loadout()
+		if player_state.wallet != null:
+			player_state.wallet.set_gold(player_state.starting_gold)
 
 	GameState.set_phase(GameState.Phase.PLAYING)
 	EventBus.game_ready.emit()
 	Log.info("Main", "Boot sequence complete")
+
+
+## The owner of the bag, hotbar, purse and stamina.
+##
+## Spawned unconditionally and before anything that needs it, because every later
+## system looks this node up by group. Making it conditional on `load_world` would
+## mean a headless boot with no world silently has no player either.
+func _spawn_player_state() -> void:
+	player_state = PlayerStateService.new()
+	player_state.name = "PlayerState"
+	add_child(player_state)
+	Log.info("Main", "Spawned player state")
 
 
 ## The HUD needs the player to exist first: it locates the interaction probe at
@@ -143,11 +164,25 @@ func _spawn_farm_service() -> void:
 		return
 	farm_service = FarmService.new()
 	farm_service.name = "FarmService"
+	farm_service.player_state = player_state
 	add_child(farm_service)
 	farm_service.attach_grid(grid)
 	# No loadout here: the player does not exist yet, and a tool handed out before
 	# there is anyone to swing it would be granted for a frame with no holder.
 	Log.info("Main", "Spawned farm service over %d tiles" % grid.tile_count())
+
+
+## The buy/sell rules.
+##
+## After the farm service so that the shop, the farm and the purse all resolve the
+## same [PlayerStateService] in the same frame; the order does not actually matter
+## because every lookup is by group, and this is written to say so rather than
+## leave a reader hunting for a dependency that is not there.
+func _spawn_economy_service() -> void:
+	economy_service = EconomyService.new()
+	economy_service.name = "EconomyService"
+	add_child(economy_service)
+	Log.info("Main", "Spawned economy service")
 
 
 func _find_farm_grid(start: Node) -> FarmGrid:

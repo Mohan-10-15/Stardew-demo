@@ -9,11 +9,32 @@ with what was implemented, what was tested, and every bug found along the way.
 
 ## In flight
 
-**None.** M2 is complete; the queue below is next up.
+**None.** Groups 12–13 are complete (M4 closed); the queue below is next up.
 
 ---
 
 ## Recently completed
+
+### TASK-003 — Player state, stamina and economy (group 13) — COMPLETE
+
+Lifted `Inventory`, `Hotbar` and the new `Stamina` and `Wallet` out of
+`FarmService` into `PlayerStateService`, so farming and trading share one owner
+instead of each having one. Added data-driven `ShopDefinition` content behind
+`ShopRegistry`, `EconomyService` rules that refuse atomically with a
+machine-readable reason, and a `Shop` counter placed by `WorldBuilder` that the
+real interact key opens.
+
+27 new cases in `tests/suites/test_economy.gd`; **229/229 green** with zero
+script errors.
+
+Six real defects found and fixed, all recorded in `DEVELOPMENT_STATUS.md`. The one
+worth remembering: stamina was charged *after* the tool was applied, so a tired
+player tilled for free — affordability is now a preflight.
+
+### TASK-002 — Farming grid, crops and tools (groups 7–11) — COMPLETE
+
+Till, plant, water, sleep, grow, harvest, with `FarmService` as the rules layer and
+success/failure published as separate `EventBus` events.
 
 ### TASK-001 — Time and calendar service (M2) — COMPLETE
 
