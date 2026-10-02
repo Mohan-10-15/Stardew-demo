@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_dw7hp"]
+
+[resource]
+script = ExtResource("1_dw7hp")
+id = &"pickaxe"
+display_name = "Pickaxe"
+category = 2
+buy_price = 350
+description = "Breaks stone. Barely."
+icon_color = Color(0.48, 0.5, 0.54, 1)
+uses_durability = true
+durability = 40
+stamina_cost = 2
+tool_action = &"mine"
+tool_tier = 1

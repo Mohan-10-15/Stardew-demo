@@ -71,6 +71,48 @@ signal trade_failed(kind: StringName, item_id: StringName, reason: StringName)
 ## lookup to reach data the caller already held.
 signal shop_opened(shop: Node)
 
+# --- Gathering ------------------------------------------------------------
+## A swing landed on a resource node but did not break it. Both counts, so a HUD can
+## show `2 of 4` without asking the node anything.
+signal resource_hit(node_id: StringName, hits_left: int, hits_max: int)
+## The node gave out and its drops are now on the ground. Carries the world position
+## because a sound or a particle burst wants to happen *there*, and the node is not
+## the only thing listening.
+signal resource_depleted(node_id: StringName, position: Vector3)
+## A depleted node came back on its own timer.
+signal resource_respawned(node_id: StringName)
+## Drops went into the bag. Distinct from [signal item_added] because it answers
+## "did that log reach my bag", which is a different question from "did anything
+## change", and a full bag means the log is still lying on the ground.
+signal resource_collected(item_id: StringName, amount: int)
+## The mandatory counterpart to every gathering success signal above. `verb` is what
+## was attempted (`chop`, `mine`, `forage`, `pickup`) and `reason` is a
+## machine-readable string. The full set, which is what makes it useful: there is no
+## way to enumerate them from a single place at runtime, so this comment is the
+## list, and `every_gathering_refusal_has_its_own_reason` in the gathering suite is
+## the test that fails when a new arm is added without updating it.
+##
+## - `no_target` — nothing aimable, or a node with no definition.
+## - `respawning` — aimed at a stump or an empty patch that is coming back.
+## - `no_player_state` — no [PlayerStateService] in the tree, so nothing can be paid.
+## - `no_tool` — a tool is required and nothing is held.
+## - `wrong_tool` — a tool is held and it is not the one this node needs.
+## - `needs_better_tool` — the right tool, below the node's tier.
+## - `out_of_reach` — standing too far away.
+## - `exhausted` — not enough stamina left for the swing.
+## - `nothing_to_do` — the node changed between the check and the press.
+## - `no_gathering_service` — no [GatheringService] registered under its group.
+## - `bag_full` — a drop that would not fit is left on the ground.
+##
+## No two of these may sound or read alike, and no two may share a reason: a reason
+## shared between "wrong tool" and "too weak a tool" is two different sentences
+## sharing one machine-readable value, which means any listener keyed on it has to
+## guess.
+##
+## Refusing loudly is the point. A player who swings a hoe at a pine must be told
+## why, in words, rather than watching a keypress do nothing at all.
+signal gathering_failed(node_id: StringName, verb: StringName, reason: StringName)
+
 # --- Stamina --------------------------------------------------------------
 ## The player's stamina moved. Both values, because a HUD needs the ceiling to
 ## draw the bar and cannot cache it — a potion or an upgrade will change it.

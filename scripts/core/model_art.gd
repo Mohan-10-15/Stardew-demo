@@ -1,7 +1,15 @@
-class_name CropArt
+class_name ModelArt
 extends RefCounted
-## Instantiates the CC0 plant models and measures them, so a soil tile can draw a
-## real crop instead of a coloured cylinder without guessing at scale.
+## Instantiates the CC0 nature models and measures them, so a soil tile can draw a
+## real crop and a rock can carry a collider sized to its own art, without either
+## guessing at scale.
+##
+## Used to be `CropArt`, and was named for the only caller it had. A gatherable
+## tree needs the same two things a crop does — a correctly scaled instance and a
+## measurement — and re-implementing that in the gathering lane is how two
+## definitions of "how big is this model" end up disagreeing. It lives in `core`
+## because both [SoilTile] and the gathering nodes speak it, and `core` is what
+## every other layer shares.
 ##
 ## ## Why this is not just `load(path).instantiate()` in [SoilTile]
 ##
@@ -30,17 +38,21 @@ static var _scenes: Dictionary = {}
 ## Cached measured top height in metres per model path.
 static var _heights: Dictionary = {}
 
+## Cached measured bounds in metres per model path.
+static var _aabbs: Dictionary = {}
+
 ## Cached root [member Node3D.scale] as the importer set it, per model path.
 ##
 ## A rescale has to *compose* with this rather than replace it, because the
 ## centimetre-to-metre conversion the importer performs lives here.
 static var _root_scales: Dictionary = {}
 
-## Running maximum height while walking one model. Member state rather than a
-## returned value because `float` cannot be accumulated out of a recursive walk
-## any other way, and [AABB] must not be passed by value for the same reason the
-## measurement tool documents.
-static var _top_y: float = -INF
+## Running bounds accumulator while walking one model.
+##
+## Member state rather than a returned value because [AABB] is a value type in
+## GDScript: passing one into a recursive walk and assigning to it discards the
+## result silently, which is documented at length in `tools/probe_model_sizes.gd`.
+static var _bounds: AABB = AABB()
 
 
 ## The imported scene for [param path], or `null` if it cannot be loaded.
@@ -52,7 +64,7 @@ static func scene(path: String) -> PackedScene:
 	var packed := load(path) as PackedScene
 	_scenes[path] = packed
 	if packed == null:
-		printerr("[CropArt] cannot load crop model %s" % path)
+		printerr("[ModelArt] cannot load model %s" % path)
 	return packed
 
 
@@ -64,42 +76,49 @@ static func can_load(path: String) -> bool:
 	return scene(path) != null
 
 
+## The model's bounds in metres, as imported: an [AABB] whose `position` is the
+## lowest corner and whose `size` is the drawn extent.
+##
+## One walk serves every measurement here, so asking for the bounds and the height
+## costs the same single pass. A path that will not load, or a model with no
+## geometry, reports an empty box at the origin rather than something arbitrary, and
+## callers treat a zero size as "leave the model at native size".
+##
+## The gatherable nodes size their colliders from this, which is what keeps a rock's
+## hitbox inside its own artwork instead of near the authored size somebody typed
+## into a `.tres` and never revisited.
+static func natural_aabb(path: String) -> AABB:
+	if _aabbs.has(path):
+		return _aabbs[path]
+	_bounds = AABB()
+	var packed := scene(path)
+	if packed != null:
+		var node := packed.instantiate()
+		if node != null:
+			# Seed the walk with the root's own transform. Starting from identity
+			# and only composing the *children* misses a scale set on the root, which
+			# is precisely where the FBX importer puts the centimetre-to-metre
+			# conversion.
+			var start := Transform3D.IDENTITY
+			if node is Node3D:
+				start = (node as Node3D).transform
+			_walk(node, start)
+			# A PackedScene node is not refcounted, so it has to be freed by hand.
+			node.free()
+	_aabbs[path] = _bounds
+	return _bounds
+
+
 ## How tall the model at [param path] stands, in metres, as imported.
 ##
-## The highest point of the geometry, composed through the node hierarchy, which
-## is what makes this agree with what the renderer draws rather than with the raw
-## mesh bounds. Returns 0.0 for a path that will not load, and callers treat that
-## as "leave the model at native size".
+## The top of [method natural_aabb]'s box, which is what makes this agree with what
+## the renderer draws rather than with the raw mesh bounds. Returns 0.0 for a path
+## that will not load.
 static func natural_height(path: String) -> float:
 	if _heights.has(path):
 		return _heights[path]
-	var packed := scene(path)
-	if packed == null:
-		_heights[path] = 0.0
-		return 0.0
-
-	var node := packed.instantiate()
-	if node == null:
-		_heights[path] = 0.0
-		return 0.0
-
-	_top_y = -INF
-	# Seed the walk with the root's own transform. Starting from identity and only
-	# composing the *children* misses a scale set on the root, which is precisely
-	# where the FBX importer puts the centimetre-to-metre conversion — and misses
-	# the scale [SoilTile] applies when it resizes a model for a tile. Either way
-	# the measurement comes back at the wrong size.
-	var start := Transform3D.IDENTITY
-	if node is Node3D:
-		start = (node as Node3D).transform
-	_walk(node, start)
-	# A PackedScene node is not refcounted, so it has to be freed by hand or the
-	# suite's ObjectDB leak assertion trips.
-	node.free()
-
-	# `-INF` means the model has no geometry at all. Clamped to 0.0 so a caller
-	# dividing by it gets a defined answer, and the caller checks for zero.
-	var measured := 0.0 if _top_y == -INF else maxf(_top_y, 0.0)
+	var box := natural_aabb(path)
+	var measured := maxf(box.position.y + box.size.y, 0.0)
 	_heights[path] = measured
 	return measured
 
@@ -139,7 +158,7 @@ static func instantiate(path: String, target_height: float = 0.0) -> Node3D:
 		return null
 	var node := packed.instantiate() as Node3D
 	if node == null:
-		printerr("[CropArt] %s is not a Node3D scene" % path)
+		printerr("[ModelArt] %s is not a Node3D scene" % path)
 		return null
 	if target_height > 0.0:
 		var natural := natural_height(path)
@@ -148,7 +167,7 @@ static func instantiate(path: String, target_height: float = 0.0) -> Node3D:
 	return node
 
 
-## Records the topmost geometry height reached so far under [param xform].
+## Folds the geometry under [param xform] into the running bounds.
 static func _walk(node: Node, xform: Transform3D) -> void:
 	for child: Node in node.get_children():
 		var local := xform
@@ -156,7 +175,10 @@ static func _walk(node: Node, xform: Transform3D) -> void:
 			local = xform * (child as Node3D).transform
 		if child is VisualInstance3D:
 			var box := local * (child as VisualInstance3D).get_aabb()
-			_top_y = maxf(_top_y, box.position.y + box.size.y)
+			if _bounds.size == Vector3.ZERO:
+				_bounds = box
+			else:
+				_bounds = _bounds.merge(box)
 		_walk(child, local)
 
 
@@ -165,4 +187,5 @@ static func _walk(node: Node, xform: Transform3D) -> void:
 static func clear_cache() -> void:
 	_scenes.clear()
 	_heights.clear()
+	_aabbs.clear()
 	_root_scales.clear()

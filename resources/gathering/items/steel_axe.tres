@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_y3tx4"]
+
+[resource]
+script = ExtResource("1_y3tx4")
+id = &"steel_axe"
+display_name = "Steel Axe"
+category = 2
+buy_price = 3600
+description = "Takes an ancient oak down before breakfast."
+icon_color = Color(0.78, 0.8, 0.84, 1)
+uses_durability = true
+durability = 180
+stamina_cost = 3
+tool_action = &"chop"
+tool_tier = 4

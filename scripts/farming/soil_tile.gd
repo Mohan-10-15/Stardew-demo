@@ -445,16 +445,16 @@ func refresh_visual() -> void:
 
 ## Scales the parented model to the crop's art height, ramped by growth.
 ##
-## One place owns model scale: [method CropArt.natural_height] already reports the
+## One place owns model scale: [method ModelArt.natural_height] already reports the
 ## height the model stands at *as imported*, including the FBX importer's
 ## centimetre conversion, so dividing the wanted height by it gives the exact
-## uniform factor — composed with [method CropArt.root_scale] rather than
+## uniform factor — composed with [method ModelArt.root_scale] rather than
 ## replacing it, which is what keeps the unit conversion intact.
 ##
 ## Called on every growth repaint, so it only touches `scale` and never rebuilds
 ## the scene.
 func _fit_model(data: CropData, stage: String, planted_fraction: float) -> void:
-	var natural := CropArt.natural_height(stage)
+	var natural := ModelArt.natural_height(stage)
 	if natural <= 0.0:
 		return
 	var wanted := _model_height(data) * _growth_scale(planted_fraction)
@@ -462,7 +462,7 @@ func _fit_model(data: CropData, stage: String, planted_fraction: float) -> void:
 		# Same ripe lift the placeholder has always had, so a harvestable field is
 		# as obvious with models as it was without them.
 		wanted *= 1.12
-	_crop_model.scale = CropArt.root_scale(stage) * (wanted / natural)
+	_crop_model.scale = ModelArt.root_scale(stage) * (wanted / natural)
 	# Quaternius pivots sit on the ground, so the model only needs lifting clear
 	# of the soil plate, which is 0.06 thick and centred at 0.03.
 	_crop_model.position = Vector3(0.0, _tile_size * 0.03, 0.0)
@@ -500,7 +500,7 @@ func _set_model_path(path: String) -> void:
 		_crop_model = null
 	if path.is_empty():
 		return
-	var instance := CropArt.instantiate(path)
+	var instance := ModelArt.instantiate(path)
 	if instance == null:
 		# Do not record the path, so the next repaint retries rather than treating
 		# this as "already has a model".

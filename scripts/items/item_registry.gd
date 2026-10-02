@@ -6,7 +6,24 @@ extends RefCounted
 ## directories with the same lookup contract, so a shop, a gift dialog and a save
 ## loader all ask the same question the same way.
 
+## Where the crops' and tools' items live. Kept first because it is where the seed
+## packets a farm needs to be playable already are.
 const ITEM_DIRECTORY := "res://resources/farming/items/"
+
+## Where gathering's items live.
+##
+## A second directory rather than moving the farming ones, because "the item
+## registry scans two folders" is a strange thing to know and "where a thing is
+## authored" is not. A tool or an ore is not farm content; the farm reads a handful
+## of these through [ItemRegistry] without knowing or caring which folder they came
+## from, which is the whole point of the registry existing.
+const GATHERING_ITEM_DIRECTORY := "res://resources/gathering/items/"
+
+## Every directory scanned, in load order. A second entry is only used when the
+## first did not claim an id, so an id collision resolves in favour of the older
+## content rather than whichever the filesystem happened to list first.
+const ITEM_DIRECTORIES: Array[String] = [ITEM_DIRECTORY, GATHERING_ITEM_DIRECTORY]
+
 const ITEM_EXTENSION := ".tres"
 
 static var _by_id: Dictionary = {}
@@ -129,7 +146,8 @@ static func ensure_loaded() -> void:
 	if _loaded:
 		return
 	_loaded = true
-	_load_directory(ITEM_DIRECTORY)
+	for directory: String in ITEM_DIRECTORIES:
+		_load_directory(directory)
 	Log.info("ItemRegistry", "Loaded %d items" % _by_id.size())
 
 

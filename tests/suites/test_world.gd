@@ -26,8 +26,9 @@ func teardown() -> void:
 func get_cases() -> Array[StringName]:
 	return [
 		&"world_builds_expected_regions",
-		&"forest_visual_and_collider_counts_match",
-		&"forest_colliders_sit_on_visible_trunks",
+		&"gatherable_visual_and_collider_counts_match",
+		&"gatherable_colliders_sit_on_their_own_model",
+		&"no_decorative_trees_are_left_in_the_valley",
 		&"ground_supports_the_spawn_point",
 	]
 
@@ -48,36 +49,61 @@ func _step(frames: int) -> void:
 		await tree.physics_frame
 
 
-## Visible trunk count.
-##
-## `MultiMesh.get_instance_transform()` returns identity for every instance in a
-## headless run because the transform buffer is only populated on the GPU, so
-## positions cannot be read back here. Only `instance_count` is reliable, which
-## is why the alignment check compares against the generator's own metadata.
-func _trunk_count() -> int:
-	var mi := _world.get_node_or_null(^"ForestTrunks") as MultiMeshInstance3D
-	if mi == null or mi.multimesh == null:
-		return 0
-	return mi.multimesh.instance_count
+## The valley's gatherables.
+func _field() -> ResourceField:
+	return _find_field(_world)
 
 
-## Every StaticBody3D in the tree group, i.e. the tree colliders.
-func _tree_colliders() -> Array[Node3D]:
-	var out: Array[Node3D] = []
-	_collect(_world, out)
+static func _find_field(from: Node) -> ResourceField:
+	if from == null:
+		return null
+	if from is ResourceField:
+		return from as ResourceField
+	for child: Node in from.get_children():
+		var found := _find_field(child)
+		if found != null:
+			return found
+	return null
+
+
+## The children of [param node] sitting on [param layer].
+static func _bodies_on(node: Node, layer: int) -> Array[StaticBody3D]:
+	var out: Array[StaticBody3D] = []
+	for child: Node in node.get_children():
+		if child is StaticBody3D and (child as StaticBody3D).collision_layer == layer:
+			out.append(child as StaticBody3D)
 	return out
 
 
-func _collect(node: Node, out: Array[Node3D]) -> void:
+static func _shape_of(body: StaticBody3D) -> Shape3D:
+	for child: Node in body.get_children():
+		if child is CollisionShape3D:
+			return (child as CollisionShape3D).shape
+	return null
+
+
+## How many visible meshes [param node] draws while it is standing.
+##
+## Walked rather than counted on direct children, because an imported FBX is a
+## [Node3D] root wrapping a [MeshInstance3D] — `ModelArt` keeps that root intact
+## because the unit conversion lives on its scale, so a "direct children only" count
+## reads zero on a perfectly good model. The first version of this case did exactly
+## that and reported a broken valley for 145 correct nodes before failing on the
+## first one it could not match.
+##
+## Inherited visibility is tracked rather than read off each instance, because
+## `Node3D.visible` is local: a mesh under a hidden stump still says `visible == true`.
+## That is what keeps a depleted tree counting as zero models instead of two.
+static func _visual_count(node: Node, inherited_visible: bool = true) -> int:
+	var count := 0
+	var shown := inherited_visible
+	if node is Node3D:
+		shown = inherited_visible and (node as Node3D).visible
+	if node is MeshInstance3D and shown:
+		count += 1
 	for child: Node in node.get_children():
-		# Matched by shape type rather than node name so the check cannot be
-		# satisfied, or broken, by a rename.
-		if child is StaticBody3D:
-			for grandchild: Node in child.get_children():
-				if grandchild is CollisionShape3D and (grandchild as CollisionShape3D).shape is CapsuleShape3D:
-					out.append(child)
-					break
-		_collect(child, out)
+		count += _visual_count(child, shown)
+	return count
 
 
 func _t_regions() -> Dictionary:
@@ -91,74 +117,135 @@ func _t_regions() -> Dictionary:
 	return succeeded(c, "all regions present")
 
 
+## One model, one solid collider, one aim volume, one component — per node.
+##
+## The old version of this case compared multimesh instance counts with capsule
+## counts, because that was what the valley used to be made of. It could not survive
+## the move to [ResourceField], and the naive port — "does the node have a collider?"
+## — would have passed on a node with two, or on a forest with none. So the invariant
+## is stated per node and checked on all four axes.
 func _t_counts_match() -> Dictionary:
-	var c := &"forest_visual_and_collider_counts_match"
+	var c := &"gatherable_visual_and_collider_counts_match"
 	var world := await _build()
 	if world == null:
 		return fail(c, "could not instantiate world scene")
-	var trunks := _trunk_count()
-	var colliders := _tree_colliders()
-	if trunks == 0:
-		return fail(c, "no trunk instances were generated")
-	if trunks != colliders.size():
-		return fail(c, "%d visible trunks but %d colliders - they disagree" % [
-			trunks, colliders.size(),
-		])
-	return succeeded(c, "%d trunks and %d colliders match" % [trunks, colliders.size()])
+	var field := _field()
+	if field == null:
+		return fail(c, "world contains no ResourceField")
+	if field.count() == 0:
+		return fail(c, "ResourceField is empty; the valley has nothing to gather")
+
+	var trees := 0
+	for node: ResourceNode in field.nodes:
+		if node.data != null and node.data.category == ResourceNodeData.Category.TREE:
+			trees += 1
+		if _visual_count(node) != 1:
+			return fail(c, "%s draws %d models, expected exactly 1" % [
+				node.name, _visual_count(node),
+			])
+		var solid := _bodies_on(node, PhysicsLayers.WORLD)
+		if solid.size() != 1:
+			return fail(c, "%s has %d solid bodies, expected 1" % [node.name, solid.size()])
+		var aim := _bodies_on(node, PhysicsLayers.INTERACTABLE)
+		if aim.size() != 1:
+			return fail(c, "%s has %d aim volumes, expected 1" % [node.name, aim.size()])
+		var components := 0
+		for child: Node in aim[0].get_children():
+			if child is Interactable:
+				components += 1
+		if components != 1:
+			return fail(c, "%s has %d interaction components, expected 1" % [
+				node.name, components,
+			])
+		if _shape_of(aim[0]) == null or _shape_of(solid[0]) == null:
+			return fail(c, "%s has a body with no collision shape" % node.name)
+
+	if trees == 0:
+		return fail(c, "no trees were placed; the valley has no wood")
+	return succeeded(c, "%d nodes (%d trees), each with 1 model, 1 solid, 1 aim" % [
+		field.count(), trees,
+	])
 
 
+## Every collider stands on the artwork it belongs to.
+##
+## What the multimesh version had to *infer* — nearest-site matching, in case the two
+## came from different random sequences — is structural now: a node's collider is its
+## own child, so they cannot be placed independently. What is left to check is the
+## part that can still go wrong silently, and did, when colliders were authored by
+## hand: a collider that floats above the ground, one wider than the model it is
+## meant to be, and one the aim volume does not cover.
 func _t_colliders_aligned() -> Dictionary:
-	var c := &"forest_colliders_sit_on_visible_trunks"
+	var c := &"gatherable_colliders_sit_on_their_own_model"
 	var world := await _build()
 	if world == null:
 		return fail(c, "could not instantiate world scene")
-	var sites: Array[Vector2] = _world.get_meta(&"forest_sites", [])
-	if sites.is_empty():
-		return fail(c, "world did not record its forest sites")
-	var colliders := _tree_colliders()
-	if sites.size() != colliders.size():
-		return fail(c, "count mismatch (%d sites vs %d colliders)" % [
-			sites.size(), colliders.size(),
-		])
+	var field := _field()
+	if field == null:
+		return fail(c, "world contains no ResourceField")
 
-	# Every collider must sit on the tree the multimesh draws at that site.
-	# The old code generated the two from separate rng passes, which put
-	# colliders in a different part of the forest entirely.
-	var used: Array[int] = []
-	used.resize(sites.size())
-	used.fill(0)
-	var worst := 0.0
-	var worst_detail := ""
-	for collider: Node3D in colliders:
-		var here := collider.position
-		var best_index := -1
-		var best := INF
-		for i: int in range(sites.size()):
-			var site: Vector2 = sites[i]
-			var d := Vector2(here.x, here.z).distance_to(site)
-			if d < best:
-				best = d
-				best_index = i
-		if best > worst:
-			worst = best
-			worst_detail = "collider at %s vs site %d at %s, %.2fm apart" % [
-				here, best_index, sites[best_index], best,
-			]
-		if best_index >= 0:
-			used[best_index] += 1
+	for node: ResourceNode in field.nodes:
+		if node.data == null:
+			return fail(c, "%s has no definition" % node.name)
+		if node.footprint() <= 0.0:
+			return fail(c, "%s has no measurable model" % node.name)
+		var solid := _bodies_on(node, PhysicsLayers.WORLD)[0]
+		var aim := _bodies_on(node, PhysicsLayers.INTERACTABLE)[0]
+		var solid_shape := _shape_of(solid) as CylinderShape3D
+		var aim_shape := _shape_of(aim) as CylinderShape3D
+		if solid_shape == null or aim_shape == null:
+			return fail(c, "%s is not collider-shaped" % node.name)
 
-	if worst > 0.75:
-		return fail(c, "worst alignment off by %.2fm; %s" % [worst, worst_detail])
+		# On the ground, not sunk into it and not floating.
+		if absf(solid.position.y) > 0.001:
+			return fail(c, "%s solid sits at y=%.3f, expected the ground at 0" % [
+				node.name, solid.position.y,
+			])
+		if solid_shape.height > node.height() + 0.001:
+			return fail(c, "%s collider is %.2fm tall for a %.2fm model" % [
+				node.name, solid_shape.height, node.height(),
+			])
+		# Inside the model, never wider than it.
+		if solid_shape.radius > node.footprint() * 0.5 + 0.001:
+			return fail(c, "%s collider is %.2fm wide for a %.2fm model" % [
+				node.name, solid_shape.radius * 2.0, node.footprint(),
+			])
+		# Aimable. A solid the ray cannot reach is a tree the player can walk into
+		# and not swing at.
+		if aim_shape.radius < solid_shape.radius:
+			return fail(c, "%s aim volume is narrower than its own collider" % node.name)
+		if aim_shape.height + 0.001 < solid_shape.height:
+			return fail(c, "%s aim volume is shorter than its own collider" % node.name)
 
-	# Nearest-site matching must be a bijection, otherwise two colliders could
-	# sit on one tree while another tree has none.
-	var duplicated := 0
-	for i: int in range(used.size()):
-		if used[i] > 1:
-			duplicated += 1
-	if duplicated > 0:
-		return fail(c, "%d sites have more than one collider" % duplicated)
-	return succeeded(c, "all %d colliders sit on their own visible trunk" % sites.size())
+		# And standing on the terrain, which for everything outside the pond is y=0.
+		if node.position.y > 0.001:
+			return fail(c, "%s was placed at y=%.3f" % [node.name, node.position.y])
+	return succeeded(c, "all %d colliders sit on their own model" % field.count())
+
+
+## Nothing in the valley is scenery pretending to be a tree.
+##
+## The specific regression [Group 12] fixed: a grove of cylinder-and-sphere trees the
+## player could see and not touch. Cheap to assert, and it is the failure a player
+## would report as "some trees don't work".
+func _t_no_decorative_trees() -> Dictionary:
+	var c := &"no_decorative_trees_are_left_in_the_valley"
+	var world := await _build()
+	if world == null:
+		return fail(c, "could not instantiate world scene")
+	for legacy: String in ["ForestTrunks", "ForestCanopies"]:
+		if world.get_node_or_null(NodePath(legacy)) != null:
+			return fail(c, "%s still exists; it draws trees that cannot be gathered" % legacy)
+	var field := _field()
+	if field == null:
+		return fail(c, "world contains no ResourceField")
+	var trees := 0
+	for node: ResourceNode in field.nodes:
+		if node.data != null and node.data.category == ResourceNodeData.Category.TREE:
+			trees += 1
+	if trees == 0:
+		return fail(c, "the valley has no trees at all")
+	return succeeded(c, "%d gatherable trees, no decorative ones" % trees)
 
 
 func _t_ground_supports_spawn() -> Dictionary:
@@ -193,10 +280,12 @@ func _run_async(case: StringName) -> Dictionary:
 	match case:
 		&"world_builds_expected_regions":
 			return await _t_regions()
-		&"forest_visual_and_collider_counts_match":
+		&"gatherable_visual_and_collider_counts_match":
 			return await _t_counts_match()
-		&"forest_colliders_sit_on_visible_trunks":
+		&"gatherable_colliders_sit_on_their_own_model":
 			return await _t_colliders_aligned()
+		&"no_decorative_trees_are_left_in_the_valley":
+			return await _t_no_decorative_trees()
 		&"ground_supports_the_spawn_point":
 			return await _t_ground_supports_spawn()
 	return fail(case, "no case implementation for %s" % case)

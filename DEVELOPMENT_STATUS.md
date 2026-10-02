@@ -26,7 +26,7 @@ geometry, and the cylinder survives only as a fallback for crops with no art.
   `assets/models/quaternius/NaturePack/` — 29 of 150 models, curated rather than
   wholesale because the other 121 are dead/snow/autumn variants of things already
   in the set. Licence shipped alongside and logged in `docs/ASSET_LICENSES.md`.
-- **`CropArt`** (`scripts/farming/crop_art.gd`): loads and measures models once,
+- **`ModelArt`** (`scripts/core/model_art.gd`): loads and measures models once,
   then hands out fresh instances. Two traps it exists to avoid, both of which fail
   *silently and wrongly* rather than erroring:
   1. Godot's FBX importer converts Quaternius' centimetres to metres in the

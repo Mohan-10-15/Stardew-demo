@@ -41,6 +41,7 @@ var hotbar_hud: CanvasLayer = null
 var shop_ui: CanvasLayer = null
 var player_state: PlayerStateService = null
 var farm_service: FarmService = null
+var gathering_service: GatheringService = null
 var economy_service: EconomyService = null
 var _time_service: TimeService = null
 
@@ -73,6 +74,7 @@ func _boot() -> void:
 	# player to exist before it hands out a starting loadout.
 	if load_world:
 		_spawn_farm_service()
+		_spawn_gathering_service()
 		_spawn_economy_service()
 	if load_player:
 		_spawn_player()
@@ -231,6 +233,37 @@ func _spawn_farm_service() -> void:
 	# No loadout here: the player does not exist yet, and a tool handed out before
 	# there is anyone to swing it would be granted for a frame with no holder.
 	Log.info("Main", "Spawned farm service over %d tiles" % grid.tile_count())
+
+
+## The chop/mine/forage rules.
+##
+## Script-only, like the farm service, and for the same reason: it has no visual
+## representation. It does *not* attach to anything, though — the resource nodes were
+## built by [WorldBuilder] with their own interaction components, and the service is
+## found by group from the tree rather than handed a field. That is what lets a test
+## drop a service next to a hand-built node and have the two work.
+##
+## Spawned after the farm service because both read the same [PlayerStateService], and
+## before the player, so the first swing of a new game already has somewhere to go.
+func _spawn_gathering_service() -> void:
+	gathering_service = GatheringService.new()
+	gathering_service.name = "GatheringService"
+	add_child(gathering_service)
+	var field := _find_resource_field(world)
+	var count := field.count() if field != null else 0
+	Log.info("Main", "Spawned gathering service over %d nodes" % count)
+
+
+func _find_resource_field(start: Node) -> ResourceField:
+	if start == null:
+		return null
+	if start is ResourceField:
+		return start as ResourceField
+	for child: Node in start.get_children():
+		var found := _find_resource_field(child)
+		if found != null:
+			return found
+	return null
 
 
 ## The buy/sell rules.

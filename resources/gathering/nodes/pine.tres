@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ResourceNodeData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/gathering/resource_node_data.gd" id="1_e61os"]
+[ext_resource type="Script" path="res://scripts/gathering/gather_yield.gd" id="2_bxn0o"]
+
+[sub_resource type="Resource" id="Resource_dh0f3"]
+script = ExtResource("2_bxn0o")
+item_id = &"wood"
+min_amount = 4
+max_amount = 6
+
+[resource]
+script = ExtResource("1_e61os")
+id = &"pine"
+display_name = "Pine"
+category = 0
+tool_action = &"chop"
+model = "res://assets/models/quaternius/NaturePack/PineTree_1.fbx"
+depleted_model = "res://assets/models/quaternius/NaturePack/TreeStump.fbx"
+hit_points = 4
+resist_tier = 1
+weak_tool_multiplier = 2
+hit_hold_seconds = 0.35
+respawn_days = 14
+collider_radius_scale = 0.22
+aim_radius_scale = 0.5
+spawn_region = Vector2(-52, 14)
+spawn_radius = 20.0
+spawn_count = 10
+spawn_spacing = 4.5
+yields = Array[ExtResource("2_bxn0o")]([SubResource("Resource_dh0f3")])

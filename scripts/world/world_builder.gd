@@ -32,8 +32,6 @@ const COL_DIRT := Color(0.45, 0.33, 0.22)
 const COL_PATH := Color(0.62, 0.55, 0.42)
 const COL_WATER := Color(0.24, 0.48, 0.66, 0.75)
 const COL_WOOD := Color(0.38, 0.26, 0.16)
-const COL_LEAF := Color(0.22, 0.47, 0.24)
-const COL_LEAF_AUTUMN := Color(0.72, 0.44, 0.18)
 const COL_ROCK := Color(0.52, 0.52, 0.55)
 const COL_WALL := Color(0.78, 0.72, 0.62)
 const COL_ROOF := Color(0.62, 0.31, 0.28)
@@ -58,8 +56,7 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_build_farm(root)
 	_build_shop(root)
 	_build_village(root, rng)
-	_build_forest(root, rng)
-	_build_rocks(root, rng)
+	_build_resources(root, rng)
 	_build_interactables(root)
 
 
@@ -240,9 +237,22 @@ static func _build_water(root: Node3D) -> void:
 
 static func _build_paths(root: Node3D) -> void:
 	# Village -> farm, the spine of the starting area.
-	_add_path_segment(root, REGION_VILLAGE, REGION_FARM, 3.4)
-	_add_path_segment(root, REGION_FARM, REGION_FOREST, 2.8)
-	_add_path_segment(root, REGION_FARM, Vector2(REGION_FARM.x, REGION_POND.y - 12), 2.4)
+	for segment: Array in PATH_SEGMENTS:
+		_add_path_segment(root, segment[0], segment[1], segment[2])
+
+
+## Every walkable path in the valley, as `[from, to, width]`.
+##
+## The single source for both the path meshes and the resource scatter's keep-out.
+## They used to be separate knowledge — the meshes were built from literals in
+## [method _build_paths] and the keep-out rule simply did not exist — and a tree
+## could stand in the middle of the road because nothing that drew the road was
+## asked where the road was.
+const PATH_SEGMENTS: Array[Array] = [
+	[REGION_VILLAGE, REGION_FARM, 3.4],
+	[REGION_FARM, REGION_FOREST, 2.8],
+	[REGION_FARM, Vector2(REGION_FARM.x, REGION_POND.y - 12), 2.4],
+]
 
 
 static func _add_path_segment(root: Node3D, from: Vector2, to: Vector2, width: float) -> void:
@@ -400,25 +410,21 @@ static func _add_rail(root: Node3D, from: Vector3, to: Vector3) -> void:
 	_finish(body, root)
 
 
-## Deterministic tree placement, shared by the visual multimeshes and the
-## colliders. Two independent `rng.randf()` loops produce *different* layouts,
-## so the player walks through invisible trees - one generator, one sequence.
-static func _forest_sites(rng: RandomNumberGenerator) -> Array[Vector2]:
-	var sites: Array[Vector2] = []
-	for _i: int in range(46):
-		var angle := rng.randf() * TAU
-		var radius := sqrt(rng.randf()) * 30.0
-		var pos := REGION_FOREST + Vector2(cos(angle), sin(angle)) * radius
-		# Keep the forest from overlapping the farm, pond or village.
-		if pos.distance_to(REGION_FARM) < 20.0:
-			continue
-		if pos.distance_to(REGION_POND) < 18.0:
-			continue
-		if pos.distance_to(REGION_VILLAGE) < 22.0:
-			continue
-		sites.append(pos)
-	return sites
-
+## Where the player starts.
+##
+## The single source of truth for the spawn, and [member WorldRoot.spawn_point]
+## defaults its own value from this constant rather than carrying a second copy.
+##
+## It was originally written here as `(0, 0, 0)` — a plausible-looking guess at the
+## middle of the valley — while the player was actually starting at `(0, 1.2, 14)`.
+## Nothing failed. The keep-out simply protected an empty patch of grass fourteen
+## metres from the player and left the real spawn inside the resource scatter, which
+## is a tree growing out of the player's head on some seeds and not others. Duplicating
+## a constant is how that happens; `no_resource_is_spawned_where_the_player_stands`
+## is the test that keeps it from happening again.
+const SPAWN_POINT := Vector3(0, 0, 14)
+## How much cleared ground the spawn wants, in metres.
+const SPAWN_CLEARANCE := 6.0
 
 static func _build_village(root: Node3D, rng: RandomNumberGenerator) -> void:
 	var houses := [
@@ -493,118 +499,128 @@ static func rng_rotate(centre: Vector2) -> float:
 	return sin(centre.x * 0.37 + centre.y * 0.21) * 0.18
 
 
-static func _build_forest(root: Node3D, rng: RandomNumberGenerator) -> void:
-	var trunks: Array[Transform3D] = []
-	var canopies: Array[Transform3D] = []
+## Scatter every authored gatherable node into one [ResourceField].
+##
+## Replaces two earlier builders: `_build_forest` drew 46 cylinder-and-sphere trees
+## that looked like the wood but could not be touched, and `_build_rocks` scattered
+## 22 grey spheres that were scenery. Both were the same bug — the valley told the
+## player where to look and had nothing to say when they got there — and both are
+## gone rather than hidden, because a decorative tree next to a choppable one is the
+## same bug wearing a different hat.
+##
+## Placement is here and not in [ResourceField] deliberately. The field owns nodes
+## once they exist; *where* the valley's oak grove is, is a fact about the valley.
+## Which keeps the scatter rules — keep off the paths, out of the pond, clear of the
+## farm fence — in one function instead of one per node type.
+static func _build_resources(root: Node3D, rng: RandomNumberGenerator) -> void:
+	var field := ResourceField.new()
+	field.name = "ResourceField"
+	# `_finish` sets the owner, which is what lets a headless test walk the tree and
+	# find the field by name rather than by guessing a path.
+	_finish(field, root)
 
-	var sites := _forest_sites(rng)
-	for pos: Vector2 in sites:
-		trunks.append(_tree_transform(Vector3(pos.x, 0, pos.y), 1.0))
-		canopies.append(_tree_transform(Vector3(pos.x, 0, pos.y), 1.0))
-
-	_add_multimesh(root, "ForestTrunks", _trunk_mesh(), COL_WOOD, trunks)
-	_add_multimesh(root, "ForestCanopies", _canopy_mesh(), COL_LEAF, canopies)
-	# Canopies only; trunks get one StaticBody3D each further below.
-	_add_tree_colliders(root, sites)
-	# The positions actually used, so a test can verify the colliders sit on
-	# the visible trees. MultiMesh instance transforms cannot be read back in a
-	# headless run (the buffer lives on the GPU), so this is the only way to
-	# assert visual/collision alignment without a renderer.
-	root.set_meta(&"forest_sites", sites)
-
-
-static func _tree_transform(at: Vector3, scale_v: float) -> Transform3D:
-	return Transform3D(Basis().scaled(Vector3.ONE * scale_v), at)
-
-
-static func _trunk_mesh() -> CylinderMesh:
-	var m := CylinderMesh.new()
-	m.top_radius = 0.22
-	m.bottom_radius = 0.32
-	m.height = 2.6
-	m.radial_segments = 6
-	return m
+	# Sorted by id, so the same seed produces the same nodes in the same order on
+	# every machine. That order is the save order (see `ResourceField.to_dict`), and
+	# a world whose node 3 is a different tree depending on the filesystem's mood is a
+	# world whose saves are a lottery.
+	for data: ResourceNodeData in ResourceNodeRegistry.spawnable_nodes():
+		_scatter(data, field, rng)
 
 
-static func _canopy_mesh() -> SphereMesh:
-	var m := SphereMesh.new()
-	m.radius = 1.5
-	m.height = 3.4
-	m.radial_segments = 8
-	m.rings = 4
-	return m
-
-
-## Colliders are placed from the *same* `sites` list the visual multimeshes use,
-## so every visible tree is walkable-into and no invisible blocker exists.
-static func _add_tree_colliders(root: Node3D, sites: Array[Vector2]) -> void:
-	for pos: Vector2 in sites:
-		var body := StaticBody3D.new()
-		body.collision_layer = 1
-		body.position = Vector3(pos.x, 1.3, pos.y)
-		var shape := CollisionShape3D.new()
-		var capsule := CapsuleShape3D.new()
-		capsule.radius = 0.35
-		capsule.height = 2.6
-		shape.shape = capsule
-		body.add_child(shape)
-		_finish(body, root)
-
-
-static func _build_rocks(root: Node3D, rng: RandomNumberGenerator) -> void:
-	for i: int in range(22):
-		var pos := Vector2(
-			rng.randf_range(-95.0, 95.0),
-			rng.randf_range(-95.0, 95.0)
-		)
-		if pos.distance_to(REGION_FARM) < 16.0:
+## Places [param count] of [param data] around its own region.
+##
+## One seeded generator for the whole field, consumed in a fixed order, so
+## placement is deterministic — and the rejection loop is bounded rather than
+## infinite, because a keep-out that covers the whole region would otherwise hang the
+## boot. A node that cannot find room is skipped and logged, not forced into a spot
+## on the path.
+static func _scatter(data: ResourceNodeData, field: ResourceField, rng: RandomNumberGenerator) -> void:
+	var placed := 0
+	var attempts := data.spawn_count * 12
+	for _i: int in range(attempts):
+		if placed >= data.spawn_count:
+			break
+		var angle := rng.randf() * TAU
+		# Sqrt, not a uniform radius: a uniform draw clusters everything in the middle
+		# of the region and leaves its edge bare, which reads as a ring of trees rather
+		# than a wood.
+		var radius := sqrt(rng.randf()) * data.spawn_radius
+		var candidate := data.spawn_region + Vector2(cos(angle), sin(angle)) * radius
+		if _is_reserved(candidate):
 			continue
-		if pos.distance_to(REGION_VILLAGE) < 18.0:
+		if _too_close(field, candidate, data.spawn_spacing):
 			continue
-
-		var scale_v := rng.randf_range(0.4, 1.5)
-		var body := StaticBody3D.new()
-		body.collision_layer = 1
-		body.position = Vector3(pos.x, 0.0, pos.y)
-		body.rotation.y = rng.randf() * TAU
-
-		var mesh := MeshInstance3D.new()
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.7 * scale_v
-		sphere.height = 1.2 * scale_v
-		sphere.radial_segments = 7
-		sphere.rings = 4
-		mesh.mesh = sphere
-		mesh.position = Vector3(0, 0.5 * scale_v, 0)
-		mesh.material_override = material(COL_ROCK, 0.9)
-		body.add_child(mesh)
-
-		var shape := CollisionShape3D.new()
-		var col := SphereShape3D.new()
-		col.radius = 0.7 * scale_v
-		shape.shape = col
-		shape.position = Vector3(0, 0.5 * scale_v, 0)
-		body.add_child(shape)
-
-		_finish(body, root)
+		var node := field.add_node(data, Vector3(candidate.x, 0.0, candidate.y))
+		if node == null:
+			continue
+		# A touch of rotation so a grove is not a grid of identically facing models.
+		# Derived from the node's own site index rather than a second `rng` sequence,
+		# so adding a node type cannot shift the rotation of every tree after it.
+		node.rotation.y = rng.randf() * TAU
+		placed += 1
+	if placed < data.spawn_count:
+		Log.info("WorldBuilder", "%s: placed %d of %d" % [
+			data.id, placed, data.spawn_count,
+		])
 
 
-static func _add_multimesh(
-	root: Node3D, name: String, mesh: Mesh, color: Color, transforms: Array[Transform3D]
-) -> void:
-	if transforms.is_empty():
-		return
-	var mi := MultiMeshInstance3D.new()
-	mi.name = name
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = mesh
-	mm.instance_count = transforms.size()
-	for i: int in range(transforms.size()):
-		mm.set_instance_transform(i, transforms[i])
-	mi.multimesh = mm
-	mi.material_override = material(color, 0.9)
-	_finish(mi, root)
+## Whether [param pos] is somewhere a gatherable must not stand.
+##
+## One list of rules rather than a rule per builder, so "the path stays walkable" is
+## a single fact with a single implementation. The path check is the important one:
+## a 1.2 m oak trunk across the farm-to-village path would wall the starting area in
+## half, and it would look like a bug rather than like scenery.
+static func _is_reserved(pos: Vector2) -> bool:
+	# Inside the pond basin, and the water plus a shoreline margin.
+	if pos.distance_to(REGION_POND) < POND_RADIUS + 2.0:
+		return true
+	# The farm plot and its fence line.
+	if pos.distance_to(REGION_FARM) < 15.0:
+		return true
+	# The village, including the player's house on its west side.
+	if pos.distance_to(REGION_VILLAGE) < 17.0:
+		return true
+	# The general store's frontage.
+	if Vector2(pos.x - SHOP_POSITION.x, pos.y - SHOP_POSITION.z).length() < 5.0:
+		return true
+	# The walkable width of every path, with a small margin for a canopy overhanging
+	# it.
+	for segment: Array in PATH_SEGMENTS:
+		if _distance_to_segment(pos, segment[0], segment[1]) < segment[2] + 1.2:
+			return true
+	# The spawn point, so a new game never opens with a tree in the player's face.
+	if pos.distance_to(Vector2(SPAWN_POINT.x, SPAWN_POINT.z)) < SPAWN_CLEARANCE:
+		return true
+	return false
+
+
+## Shortest distance from [param pos] to the segment [param from]-[param to].
+##
+## Standard point-to-segment projection, clamped at the ends so a point beyond an
+## endpoint measures to that endpoint rather than to the infinite line through it —
+## which would let a tree stand on a path because it happened to be collinear with
+## one.
+static func _distance_to_segment(pos: Vector2, from: Vector2, to: Vector2) -> float:
+	var delta := to - from
+	var length_squared := delta.length_squared()
+	if length_squared <= 0.0001:
+		return pos.distance_to(from)
+	var t := clampf((pos - from).dot(delta) / length_squared, 0.0, 1.0)
+	return pos.distance_to(from + delta * t)
+
+
+## Whether anything already placed is within [param spacing] of [param pos].
+##
+## Checked against every node rather than only same-kind ones, because two oaks
+## overlapping is the same visual bug as an oak overlapping a boulder.
+static func _too_close(field: ResourceField, pos: Vector2, spacing: float) -> bool:
+	if spacing <= 0.0:
+		return false
+	for node: ResourceNode in field.nodes:
+		var other := Vector2(node.position.x, node.position.z)
+		if pos.distance_to(other) < spacing:
+			return true
+	return false
 
 
 ## Demo interactables.

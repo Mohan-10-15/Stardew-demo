@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ResourceNodeData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/gathering/resource_node_data.gd" id="1_iggcd"]
+[ext_resource type="Script" path="res://scripts/gathering/gather_yield.gd" id="2_wflot"]
+
+[sub_resource type="Resource" id="Resource_mchv6"]
+script = ExtResource("2_wflot")
+item_id = &"iron_ore"
+
+[sub_resource type="Resource" id="Resource_8tqm2"]
+script = ExtResource("2_wflot")
+item_id = &"stone"
+max_amount = 2
+
+[resource]
+script = ExtResource("1_iggcd")
+id = &"iron_vein"
+display_name = "Iron Vein"
+category = 1
+tool_action = &"mine"
+model = "res://assets/models/quaternius/NaturePack/Rock_2.fbx"
+model_tint = Color(0.45, 0.44, 0.48, 1)
+hit_points = 6
+resist_tier = 3
+blocks_weak_tools = true
+hit_hold_seconds = 0.35
+respawn_days = 21
+collider_radius_scale = 0.75
+aim_radius_scale = 0.9
+spawn_radius = 70.0
+spawn_count = 4
+spawn_spacing = 9.0
+yields = Array[ExtResource("2_wflot")]([SubResource("Resource_mchv6"), SubResource("Resource_8tqm2")])

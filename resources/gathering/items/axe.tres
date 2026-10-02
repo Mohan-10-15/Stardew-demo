@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_hvin7"]
+
+[resource]
+script = ExtResource("1_hvin7")
+id = &"axe"
+display_name = "Axe"
+category = 2
+buy_price = 350
+description = "Fells a softwood tree in four swings. Splits eventually."
+icon_color = Color(0.55, 0.38, 0.22, 1)
+uses_durability = true
+durability = 40
+stamina_cost = 2
+tool_action = &"chop"
+tool_tier = 1

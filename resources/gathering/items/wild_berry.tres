@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_fwp6c"]
+
+[resource]
+script = ExtResource("1_fwp6c")
+id = &"wild_berry"
+display_name = "Wild Berry"
+category = 3
+sell_price = 20
+description = "Free, instant, and grows back in days."
+icon_color = Color(0.62, 0.22, 0.32, 1)

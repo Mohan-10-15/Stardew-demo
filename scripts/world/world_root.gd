@@ -7,7 +7,13 @@ extends Node3D
 ## spawning into geometry that does not exist yet.
 
 @export var world_seed: int = 12345
-@export var spawn_point: Vector3 = Vector3(0, 1.2, 14)
+## Defaulted from the builder's constant rather than written out here, because this
+## used to be a second copy of the same number and the two disagreed — see
+## [constant WorldBuilder.SPAWN_POINT]. Anything that needs the spawn to be somewhere
+## else can still override it; nothing should have to remember to.
+@export var spawn_point: Vector3 = Vector3(
+	WorldBuilder.SPAWN_POINT.x, 1.2, WorldBuilder.SPAWN_POINT.z
+)
 @export var generate: bool = true
 
 var _built := false
