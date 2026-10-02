@@ -66,6 +66,9 @@ func _check_signals() -> Dictionary:
 		"hotbar_selection_changed",
 		"interactable_focused", "interactable_unfocused", "interaction_performed",
 		"currency_changed", "item_purchased", "item_sold",
+		# Group 13. `trade_failed` is the half of trading that has to be loud: a
+		# sale that quietly does nothing is indistinguishable from a bug.
+		"trade_failed", "stamina_changed", "stamina_exhausted",
 	]
 	for s: String in required:
 		if not EventBus.has_signal(s):

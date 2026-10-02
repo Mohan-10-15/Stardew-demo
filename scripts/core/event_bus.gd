@@ -59,6 +59,22 @@ signal interaction_performed(target: Node)
 signal currency_changed(new_amount: int)
 signal item_purchased(item_id: StringName, quantity: int, total_price: int)
 signal item_sold(item_id: StringName, quantity: int, total_price: int)
+## The mandatory counterpart to `item_purchased` and `item_sold`, as `AGENTS.md`
+## requires for every trade. `kind` is `buy` or `sell`; `reason` is the player's
+## explanation (`poor`, `bag_full`, `not_stocked`, `no_item`, `not_sellable`,
+## `unknown_item`). A trade that failed must not look or sound like one that
+## succeeded, and the audio for handing over money and for being handed money are
+## not the same sound.
+signal trade_failed(kind: StringName, item_id: StringName, reason: StringName)
+
+# --- Stamina --------------------------------------------------------------
+## The player's stamina moved. Both values, because a HUD needs the ceiling to
+## draw the bar and cannot cache it — a potion or an upgrade will change it.
+signal stamina_changed(current: int, maximum: int)
+## The player ran out of stamina mid-task. Separate from `farming_failed` even
+## though a tool swing raises both: this one is about the player, and a shop or a
+## mine raising it later should not sound like a hoe.
+signal stamina_exhausted()
 
 
 ## Clears every listener of a signal. Used by tests to guarantee isolation.

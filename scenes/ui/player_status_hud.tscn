@@ -1,0 +1,93 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/player_status_hud.gd" id="1_mdlxs"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4erph"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.09, 0.1, 0.13, 0.55)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_23d3c"]
+bg_color = Color(0.22, 0.24, 0.28, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qrjj"]
+bg_color = Color(0.55, 0.78, 0.42, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="PlayerStatusHUD" type="CanvasLayer"]
+script = ExtResource("1_mdlxs")
+
+[node name="Panel" type="PanelContainer" parent="."]
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 206.0
+offset_bottom = 92.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_4erph")
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="HeadingLabel" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "Pocket"
+vertical_alignment = 1
+
+[node name="GoldLabel" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+vertical_alignment = 1
+
+[node name="StaminaRow" type="HBoxContainer" parent="Panel/Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="StaminaCaption" type="Label" parent="Panel/Column/StaminaRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "Stamina"
+vertical_alignment = 1
+
+[node name="StaminaBar" type="ProgressBar" parent="Panel/Column/StaminaRow"]
+custom_minimum_size = Vector2(96, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_23d3c")
+theme_override_styles/fill = SubResource("StyleBoxFlat_6qrjj")
+value = 100.0
+show_percentage = false

@@ -667,8 +667,14 @@ func _aim_at(
 		return false
 	var dir := (target - camera.global_position).normalized()
 	player.set_yaw(atan2(-dir.x, -dir.z))
+	# `atan2(dir.y, horizontal)`, not the negated form. A camera looks along -Z,
+	# so rotating about +X carries that vector *upward*: positive pitch looks at
+	# the sky. Negating `dir.y` aimed at the ceiling, which is why props standing
+	# below eye height reported "could not focus" with no ray hit at all — not
+	# even the terrain, which is the tell that the aim was wrong rather than the
+	# target being unreachable.
 	var horizontal := Vector2(dir.x, dir.z).length()
-	player.camera_rig.set_pitch(atan2(-dir.y, horizontal))
+	player.camera_rig.set_pitch(atan2(dir.y, horizontal))
 	await _step(3)
 
 	probe.update_focus()

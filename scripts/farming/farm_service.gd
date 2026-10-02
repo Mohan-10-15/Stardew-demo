@@ -3,13 +3,27 @@ extends Node
 ## The player-facing farming system: what the tools do, what the seeds cost, what
 ## comes back from a harvest.
 ##
-## The one node that knows about soil, inventory and the hotbar at the same time.
+## The one node that knows about soil, the bag and the hotbar at the same time.
 ## Everything below it is pure: [SoilTile] knows the rules for a tile, [Inventory]
 ## knows the rules for a bag, [CropData] knows what a crop is. This node's whole
 ## job is to ask each of them the right question and publish the outcome.
 ##
-## It lives at the tree root as `FarmService` because
-## [SoilTileInteractable] finds it by name. That lookup is deliberate rather than
+## ## It does not own the bag
+##
+## It used to. [PlayerStateService] owns it now, because the shop also needs it
+## and a shop that reached into the farm service would make the economy depend on
+## farming. So the bag and hotbar below are *derived* — read through the owner,
+## never held — and they are declared as getters rather than as fields so that
+## every existing `service.inventory` still reads the real bag and nothing has to
+## be threaded through by hand.
+##
+## That is a deliberate trade. A writable `inventory` field here would let a test
+## or a scene point the farm at a bag the player does not have, and the resulting
+## bug would be a hoe that spends seeds from nowhere.
+##
+## ## Why it lives at the tree root
+##
+## [SoilTileInteractable] finds it by group. That lookup is deliberate rather than
 ## a reference passed in at spawn: the interactable is created by the world
 ## generator, deep inside a scene tree, and threading a service reference into it
 ## would make the world depend on the player's inventory — exactly the inversion
@@ -25,50 +39,78 @@ signal tool_broken(item_id: StringName)
 ## injected by a test.
 @export var grid: FarmGrid
 
-## The player's bag.
-@export var inventory: Inventory
-## The player's nine slots.
-@export var hotbar: Hotbar
+## The owner of the player's bag, hotbar, purse and stamina.
+##
+## Optional: left null the service finds it by group on first use, which is how
+## the shipped boot order works and how the tests use it. Set it directly when a
+## test wants two isolated fakes in one tree.
+@export var player_state: PlayerStateService = null
 
-## Kept as an id list rather than typed [Hotbar] references in the generator's
-## docs: `class_name` cycles are the documented trap in `AGENTS.md`, and this is
-## the only place that legitimately needs to name three other classes at once.
+## The player's bag, read through [member player_state].
+##
+## Getter-only on purpose. See the class docs.
+var inventory: Inventory:
+	get: return _state().inventory if _state() != null else null
+
+## The player's nine slots, read through [member player_state].
+var hotbar: Hotbar:
+	get: return _state().hotbar if _state() != null else null
+
+## The player's stamina, read through [member player_state].
+var stamina: Stamina:
+	get: return _state().stamina if _state() != null else null
 
 ## How far the current tool reaches, in metres. Deliberately not the interact
 ## range: swinging a hoe should need you to be standing on the tile, which is what
 ## makes a 35-tile plot a chore rather than a formality.
 @export var tool_reach: float = 1.9
-## Radius of a tool's effect around the aimed tile. Greater than one tile so a
-## hoe clears a 3x3, which is the one concession to not being tediously fiddly.
+## Radius of a tool's effect around the aimed tile, in metres.
+##
+## Tiles are 2 m apart, so 1.1 m reaches past nothing: the hoe affects the aimed
+## tile only. It used to claim a 3x3 sweep here, which no value in this file can
+## produce — neighbouring centres are a full 2 m out — and the comment had been
+## wrong longer than the value had.
+##
+## Kept as a radius rather than hardcoded to one tile so a genuinely wide tool
+## (a scythe clearing a row) can be added without touching `use_tool`.
 @export var tool_radius: float = 1.1
 
 var _rng := RandomNumberGenerator.new()
 
 
+## Group this node registers under, so [SoilTileInteractable] can find it.
+##
+## Duplicated there as a literal because a shared constant would require naming
+## one class from the other, which is the `class_name` cycle both files work to
+## avoid.
+const SERVICE_GROUP := &"farm_service"
+
+
 func _ready() -> void:
 	_rng.randomize()
-	if inventory == null:
-		inventory = Inventory.new(24)
-	if hotbar == null:
-		hotbar = Hotbar.new(inventory)
-	elif hotbar.inventory == null:
-		hotbar.inventory = inventory
-	if grid != null:
-		grid.grid_origin = grid.global_position
+	add_to_group(SERVICE_GROUP)
 
 	# One subscription, one direction. The service learns that a day began from
 	# the clock; it never asks the clock anything.
 	EventBus.day_started.connect(_on_day_started)
 	EventBus.weather_changed.connect(_on_weather_changed)
-	# The bag has no idea who owns it, so it publishes locally and this relays.
-	# See the `contents_changed` signal's docs in `inventory.gd`.
-	if inventory != null:
-		inventory.contents_changed.connect(_on_inventory_changed)
 
-	Log.info("FarmService", "Ready (%d tiles, %d bag slots)" % [
-		grid.tile_count() if grid != null else 0,
-		inventory.slot_count() if inventory != null else 0,
-	])
+	Log.info("FarmService", "Ready (%d tiles)" % (
+		grid.tile_count() if grid != null else 0
+	))
+
+
+## The player's state, injected or found.
+##
+## Falls back to a group search rather than requiring wiring, because this node is
+## created by `main.gd` before the state service in some orders and by tests
+## without one at all. The search runs at most once and is cached, so the getter
+## above stays cheap in the per-tile paths.
+func _state() -> PlayerStateService:
+	if player_state != null and is_instance_valid(player_state):
+		return player_state
+	player_state = PlayerStateService.find()
+	return player_state
 
 
 ## Registers the newly built grid. Called by `main.gd` after the world exists,
@@ -76,22 +118,6 @@ func _ready() -> void:
 ## attach to before then.
 func attach_grid(value: FarmGrid) -> void:
 	grid = value
-
-
-## Gives the player a new game loadout: a hoe, a watering can and a few parsnip
-## seeds, so the first minute of play can actually be played.
-func grant_starter_loadout() -> void:
-	if inventory == null:
-		return
-	inventory.add(&"hoe", 1)
-	inventory.add(&"watering_can", 1)
-	inventory.add(&"parsnip_seeds", 15)
-	# Selecting the hoe by default means the player's first click on the field
-	# does something, rather than the prompt saying "plant a seed" over a bag
-	# that has no seeds in it.
-	if hotbar != null:
-		hotbar.select(0)
-	Log.info("FarmService", "Granted starter loadout")
 
 
 ## The tool action the held slot provides, or empty when nothing is held.
@@ -104,13 +130,19 @@ func current_tool_action() -> StringName:
 	return hotbar.get_selected_tool_action()
 
 
-## Swings the held tool at [param target], if the player is close enough.
+## Swings the held tool at [param target], if the player can reach it and has the
+## stamina for it.
 ##
 ## Returns how many tiles were actually changed. A zero return is the tool
-## whiffing — out of reach, or aimed at nothing — and the caller decides whether
-## that deserves a sound. Success and failure are published separately by the
-## tile, so the HUD's "tilled 3 tiles" and the audio's "thunk" come from
-## different places and cannot drift.
+## whiffing — out of reach, too tired, or aimed at nothing — and the caller
+## decides whether that deserves a sound. Success and failure are published
+## separately by the tile, so the HUD's "tilled 3 tiles" and the audio's "thunk"
+## come from different places and cannot drift.
+##
+## Stamina is charged only when the swing actually did something. Charging a
+## whiffed swing is how a player runs dry without having hoed a single tile, and
+## it is the kind of bug that reads as "the stamina bar is broken" rather than as
+## a rules question.
 func use_tool(target: SoilTile) -> int:
 	if target == null:
 		tool_used.emit(&"", Vector2i(-1, -1))
@@ -118,10 +150,21 @@ func use_tool(target: SoilTile) -> int:
 		return 0
 
 	var action := current_tool_action()
-	var actor_node := _find_player()
-	if actor_node == null or not _in_reach(actor_node as Node3D, target):
+	var actor := _find_player()
+	if actor == null or not _in_reach(actor, target):
 		tool_used.emit(action, target.tile_index)
 		EventBus.farming_failed.emit(target.tile_index, action, "out_of_reach")
+		return 0
+
+	# Affordability is checked *before* any tile is touched. It used to be charged
+	# afterwards, which meant a swing that could not be paid for had already
+	# tilled, watered or cleared the soil and only then announced the refusal —
+	# free work, every time, exactly when the player was least able to notice.
+	# The refusal publishes its own events, and the whiffing swing is still
+	# reported through [signal tool_used].
+	var charged := _charge_stamina()
+	if charged < 0:
+		tool_used.emit(action, target.tile_index)
 		return 0
 
 	var affected := _affected_tiles(target)
@@ -131,8 +174,73 @@ func use_tool(target: SoilTile) -> int:
 			changed += 1
 
 	tool_used.emit(action, target.tile_index)
+	# Stamina is already paid, but the refund question remains: a swing that reached
+	# the tile and changed nothing — a hoe on already-tilled soil, a can on dry
+	# ground — was not performed, and charging it is how a player runs dry without
+	# having hoed a single tile.
+	if changed == 0:
+		_refund_stamina(charged)
+		return 0
 	_spend_durability(action)
 	return changed
+
+
+## Pays for one swing of the held tool, and complains if the player cannot.
+##
+## Returns the stamina charged, `0` when the swing was free, and `-1` when it was
+## refused — and having published both [signal EventBus.farming_failed] and
+## [signal EventBus.stamina_exhausted]. Two events on purpose: the first is the
+## refusal the farming UI reports against the tile, the second is the player-level
+## fact that a shop or a mine will need to raise later without sounding like a hoe.
+##
+## The three-way return rather than a bool because "refused" and "cost nothing" are
+## different answers and a bool collapses them: a caller treating `false` as refused
+## would report a free swing as a failure, and one treating it as free would let an
+## exhausted player keep hoeing.
+func _charge_stamina() -> int:
+	var pool := stamina
+	if pool == null:
+		# No stamina in this tree — a bare farm service in a unit test, or a game
+		# booted without player state. Farming still works; there is just nothing
+		# to spend.
+		return 0
+	var cost := _held_stamina_cost()
+	if cost <= 0:
+		return 0
+	if pool.can_spend(cost):
+		pool.spend(cost)
+		return cost
+	EventBus.stamina_exhausted.emit()
+	EventBus.farming_failed.emit(
+		Vector2i(-1, -1), current_tool_action(), "exhausted"
+	)
+	return -1
+
+
+## Gives back [param amount] taken by [method _charge_stamina].
+##
+## Only called when the swing reached the tile and changed nothing, so that the
+## player is never charged for work that did not happen.
+func _refund_stamina(amount: int) -> void:
+	var pool := stamina
+	if pool == null or amount <= 0:
+		return
+	pool.restore(amount)
+
+
+## What one swing of the held item costs.
+##
+## Read from the held stack rather than from the tile being worked, because the
+## cost belongs to the tool. Zero when nothing is held, or when what is held is not
+## a tool — planting costs no stamina here, which is a deliberate simplification
+## rather than an oversight: the only stamina-gated verb right now is `use_tool`.
+func _held_stamina_cost() -> int:
+	if hotbar == null:
+		return 0
+	var stack := hotbar.get_selected_stack()
+	if stack == null:
+		return 0
+	return ItemRegistry.stamina_cost_of(stack.id)
 
 
 ## Uses the held seed packet on [param target].
@@ -178,14 +286,35 @@ func plant(target: SoilTile, actor: Node) -> bool:
 
 ## Harvests [param target] into the bag.
 ##
-## The yield only reaches the inventory if it fits. If the bag is full the crop
-## stays in the ground and the refusal is published — losing a harvest because the
-## bag was full, with a message saying "nothing happened", is worse than not
-## having harvested.
+## The yield only reaches the inventory if it fits, so the bag is asked *before*
+## the crop is pulled. That ordering is the whole point of this function.
+##
+## It used to harvest first and re-plant on failure. Two things came out of that
+## undone. A regrowing crop's clock had already been rewound, and `plant` restarts
+## it at zero, so a full bag cost the player a day of a tomato they still owned.
+## Worse, `SoilTile.harvest` had already published `crop_harvested` and its own
+## `harvested` signal — so the HUD and the audio announced a successful harvest,
+## and the very next event was a refusal. [code]AGENTS.md[/code] requires success
+## and failure to be clearly distinct; two contradictory events for one keypress
+## is worse than either alone.
 func harvest(target: SoilTile, actor: Node) -> bool:
 	if target == null:
 		EventBus.farming_failed.emit(Vector2i(-1, -1), &"harvest", "no_target")
 		return false
+
+	var preview := target.preview_harvest()
+	if not bool(preview["ok"]):
+		EventBus.farming_failed.emit(
+			target.tile_index, &"harvest", StringName(str(preview["reason"]))
+		)
+		return false
+
+	var crop_id := StringName(str(preview["crop_id"]))
+	var amount := int(preview["amount"])
+	if inventory != null and not inventory.can_fit(crop_id, amount):
+		EventBus.farming_failed.emit(target.tile_index, &"harvest", "bag_full")
+		return false
+
 	var result := target.harvest()
 	if not bool(result["ok"]):
 		EventBus.farming_failed.emit(
@@ -193,14 +322,19 @@ func harvest(target: SoilTile, actor: Node) -> bool:
 		)
 		return false
 
-	var crop_id := StringName(str(result["crop_id"]))
-	var amount := int(result["amount"])
 	if inventory != null:
 		var added := inventory.add(crop_id, amount)
 		if added <= 0:
-			# Too late — the crop is already off the plant. Put it back so the
-			# player can clear a slot and come back for it.
-			target.plant(crop_id)
+			# Unreachable while `can_fit` is honest, and guarded rather than
+			# asserted because this is the one branch where a mistake destroys a
+			# player's crop. The crop is already lifted and its success event is
+			# already out, so there is no clean undo — this branch exists to keep
+			# the items out of a lost state, and says so loudly.
+			Log.warn(
+				"FarmService",
+				"can_fit said yes but add refused %d %s; crop is now unreturnable"
+				% [amount, crop_id]
+			)
 			EventBus.farming_failed.emit(target.tile_index, &"harvest", "bag_full")
 			return false
 		EventBus.item_added.emit(crop_id, added)
@@ -262,37 +396,41 @@ func _spend_durability(action: StringName) -> void:
 	var definition := ItemRegistry.get_item(stack.id)
 	if definition == null or not definition.uses_durability:
 		return
-	# Durability is a property of the *stack*, not of the item definition, so two
-	# hoes bought on different days can wear out at different times. Reduced
-	# rather than modelled per-stack until the economy group needs the detail.
-	if definition.durability <= 1:
-		inventory.remove(stack.id, 1)
+	# Durability belongs to the *stack*, not the item definition: two hoes bought
+	# on different days wear out at different times, and a shop that sells a
+	# single "hoe" resource cannot express that. So the counter lives on the
+	# stack, and `Inventory` is what stores it.
+	#
+	# Spending it unconditionally would be the simpler version and would be
+	# wrong: an unconditional call is exactly the "durability is a property of the
+	# item" assumption, and it deletes a fresh hoe on its first swing.
+	var remaining := inventory.get_durability(stack)
+	if remaining <= 1:
+		# `remove_stack`, not `remove`. `remove` spends the lowest quality first,
+		# and two Normal watering cans are the same quality — so it would consume a
+		# fresh can and leave the worn one in the bag forever, which is the exact
+		# situation per-stack durability exists to make representable.
+		inventory.set_durability(stack, 0)
+		inventory.remove_stack(stack, 1)
 		tool_broken.emit(stack.id)
 		Log.info("FarmService", "%s wore out" % definition.display_name)
 	else:
+		inventory.set_durability(stack, remaining - 1)
+		# The stack's amount did not change, so nothing else would have published
+		# this. A HUD showing remaining uses has to be told.
 		EventBus.inventory_changed.emit()
 
 
 ## Midnight on the farm.
 ##
-## Crops grow only if they were watered during the day. The flag is *not* cleared
-## first: a crop that was watered and grows today must keep its watered state for
-## tomorrow's check, or nothing would ever grow twice. [method SoilTile.on_new_day]
-## does the clearing, and it happens after this.
-## The bag changed, so the world hears about it.
+## The service walks the grid and asks every tile to advance; it does not decide
+## what a tile does. Whether a crop actually grows is
+## [method SoilTile.on_new_day]'s business, and it is decided there rather than
+## here so the rule lives in exactly one place.
 ##
-## One relay for the whole bag rather than a publish per mutating call site. The
-## alternative — `EventBus.inventory_changed` sprinkled through `add`, `remove`,
-## `move_slots`, `resize`, `set_contents` and `from_dict` — means adding a sixth
-## mutator later silently forgets to notify, and the bug only shows up as a
-## stale HUD.
-##
-## Note this file *can* use `EventBus`, unlike `inventory.gd`: it is only ever
-## loaded as a scene node, never from a `--script` run.
-func _on_inventory_changed() -> void:
-	EventBus.inventory_changed.emit()
-
-
+## The bag relay that used to live here has moved to [PlayerStateService], which
+## owns the bag now. What is left is one subscription, one direction: the service
+## learns that a day began from the clock and never asks the clock anything.
 func _on_day_started(day: int) -> void:
 	if grid == null:
 		return
@@ -349,11 +487,32 @@ func _grid_tiles_in_radius(centre: Vector3, radius: float) -> Array[SoilTile]:
 	return grid.tiles_in_radius(centre, radius)
 
 
-func _find_player() -> Node:
+## The player, found by type rather than by path.
+##
+## Was `root/Main/Player`, which happens to be right in the shipped boot layout
+## and wrong everywhere else — including any test that builds the world and
+## player itself, where the whole reach check silently failed and every tool
+## reported "out of reach". Searching by type is what [method _find_time_service]
+## already does here, for the same reason: node *names* are a scene's business,
+## not a system's.
+func _find_player() -> Node3D:
 	var loop := Engine.get_main_loop()
 	if not loop is SceneTree:
 		return null
-	return (loop as SceneTree).root.get_node_or_null(^"Main/Player")
+	var scene_root := (loop as SceneTree).root
+	if scene_root == null:
+		return null
+	return _search_for_player(scene_root)
+
+
+static func _search_for_player(node: Node) -> Node3D:
+	if node is PlayerController:
+		return node as Node3D
+	for child: Node in node.get_children():
+		var found := _search_for_player(child)
+		if found != null:
+			return found
+	return null
 
 
 static func _find_time_service() -> TimeService:

@@ -3,13 +3,236 @@
 Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
 Dual first-person / third-person cameras, switchable at runtime.
 
-Progress: **Groups 0–6 complete.** Group 7 (farming grid) is next.
+Progress: **Groups 0–13 complete.** Group 12 (resource gathering) is next.
 
-Current baseline: **132/132 tests**, import clean, boot clean.
+Current baseline: **229/229 tests**, import clean, boot clean, zero script errors.
 
 ---
 
 ## Last completed group
+
+```
+GROUP: 7
+NAME: Farming Grid, Crops and Tools
+STATUS: COMPLETE
+```
+
+The loop is playable end to end from a new game with no dev cheats: break ground
+with a hoe, plant a seed packet, water it, sleep, watch it grow, harvest it. Every
+step is driven through the real `interact` key against the real generated world.
+
+### IMPLEMENTED
+
+- **Content as data.** 9 `CropDefinition` resources and 16 `ItemDefinition`
+  resources under `resources/farming/`, each looked up by id through `CropRegistry`
+  and `ItemRegistry`. No crop or item logic is hardcoded anywhere.
+- **`PhysicsLayers.INTERACTABLE`** (`scripts/core/physics_layers.gd`): a named
+  collision-layer constant, so the aim volumes declare what they are instead of
+  carrying a bare `1 << 4`.
+- **`SoilTile`** (`scripts/farming/soil_tile.gd`): till, water, plant, grow a day,
+  harvest, with deterministic per-tile yields. Yields come from an RNG seeded by
+  tile index, so the same farm simulated twice produces the same harvest — which
+  is what makes the save round-trip and the growth tests meaningful.
+- **`FarmGrid`** (`scripts/farming/farm_grid.gd`): a 7×5 plot of 2 m tiles
+  generated at `(0, 0, -20)`, each with a 0.4 m non-solid aim volume carrying a
+  `SoilTileInteractable`. Serializes tilled/watered/crop/growth per tile.
+- **`FarmService`** (`scripts/farming/farm_service.gd`): resolves the held tool or
+  seed and gates every action on reach, season and tile state. The bag and hotbar
+  moved out to `PlayerStateService` in Group 13; it reads them through that
+  service. Success and failure are published as separate events on `EventBus`, as
+  `AGENTS.md` requires.
+- **`Inventory` and `Hotbar`** (`scripts/inventory/`): stacks merge on
+  `(id, quality)` and never across qualities, empty slots are null rather than
+  zero-count, shrinking refuses to drop items, and tool durability lives on the
+  *stack* rather than the item definition.
+- **Hotbar bound to the input map.** `hotbar_1`–`hotbar_9`, `hotbar_next` and
+  `hotbar_prev` had no consumer as of Group 6; they now drive `Hotbar`.
+
+### ARCHITECTURE NOTES WORTH KEEPING
+
+- **Reach and aim are different questions.** `get_focus_point()` stays the body
+  origin and is what the reach test measures against; `get_aim_point()` is the
+  camera target. `SoilTileInteractable` overrides the latter to aim at the centre
+  of its real 0.4 m aim volume, because a 0.4 m target on the ground plane is
+  very hard to put a crosshair on when the crosshair aims at the tile's origin.
+- **`SoilTileInteractable` must not name `FarmService`.**
+  `FarmGrid → SoilTileInteractable → FarmService → FarmGrid` is a `class_name`
+  cycle, and GDScript resolves it by compiling against a partial class — the
+  errors then point at innocent bystanders (a `get_stack` "not found" three files
+  away) instead of at the cycle. The service is held as a bare `Node` and called
+  dynamically.
+- **The service is found by group, not by duck-typing.** It used to match any node
+  with `plant` and `harvest` methods, which `SoilTile` also has — and since the
+  grid is generated into the world scene, the first node the search walked into
+  was always a soil tile. See bugs below.
+- **The prompt is derived, so it needs a single invalidation signal.**
+  `SoilTile.state_changed` is emitted from every mutation, including the two paths
+  that emit no field signal at all (harvest, overnight growth).
+
+### TESTS PERFORMED
+
+`powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1` — **3/3 stages OK**
+
+| Stage | Result |
+| --- | --- |
+| `import` | OK — zero parse/compile errors |
+| `tests` | **202/202 passed** (70 new) |
+| `boot` | OK — `game_ready` fired, `phase=PLAYING` |
+
+Plus `--verbose` runs to chase the ObjectDB leak to a specific script, since
+"instances leaked at exit" alone identifies nothing.
+
+The farming cases that drive the real loop through the real key:
+- `every_farm_tile_is_aimable_on_foot` — walks the real player to all 35 tiles and
+  asserts the real crosshair ray focuses each one
+- `tilling_through_the_real_interact_key_works`
+- `planting_through_the_interact_key_reaches_the_farm_service`
+- `planting_and_harvesting_through_the_real_interact_key_works` — full loop, and
+  re-focuses between the two presses because harvest is the one verb that changes
+  *after* the keypress
+
+### BUGS FOUND AND FIXED DURING THIS GROUP
+
+- **Planting and harvesting through the interact key were both broken in the
+  shipped game.** `SoilTileInteractable` located the `FarmService` by searching
+  for a node with `plant` and `harvest` methods. `SoilTile` has both, and the grid
+  is built into the world scene, so the search returned a *soil tile*: every
+  delegated plant and harvest called `SoilTile.plant(tile, actor)` with the wrong
+  arguments. Every test passed, because all of them called the service directly.
+  Fixed by identifying the service through a `farm_service` group, and fixed
+  *properly* by adding a case that presses the key.
+- **A full bag silently ruined a regrowing crop.** `FarmService.harvest` harvested
+  first and re-planted on failure. `plant` restarts growth at zero, so a tomato
+  whose clock had been rewound to `days_to_grow - regrow_days` came back at day 0
+  and had to wait a full season. Worse, `SoilTile.harvest` had already published
+  `crop_harvested` and its own `harvested` signal, so the HUD and audio announced a
+  success and the next event was a refusal — two contradictory events for one
+  keypress. Fixed by adding `SoilTile.preview_harvest()` and asking the bag with
+  `Inventory.can_fit` *before* lifting the crop. `preview_harvest` rolls from the
+  same seeded RNG over the same state, so the amount it reports is the amount
+  `harvest` produces; a case asserts they agree for a one-shot, a regrower and a
+  high-yield crop.
+- **Breaking one watering could consume the other.** `FarmService._spend_durability`
+  called `Inventory.remove(id)`, which spends lowest-quality-first. Two Normal
+  watering cans are indistinguishable by id and quality, so breaking can #2 removed
+  can #1 and left the broken one in the bag forever. Per-stack durability exists so
+  two identical tools *can* differ, and removing by id threw that away. Added
+  `Inventory.remove_stack`, which targets one slot by reference identity, falling
+  back to `(id, quality, durability)` for stacks rebuilt by `from_dict`.
+- **The interaction prompt went stale after harvest and after a night.**
+  `SoilTileInteractable` listened to `tilled_changed`, `watered_changed` and
+  `planted` — all of which take one argument, into a zero-argument handler. That
+  logged a runtime error on every plant and every till, and the two paths that emit
+  *no* field signal (harvest, overnight growth) never refreshed the prompt at all,
+  so a ripe crop could not be harvested until something else happened to the tile.
+  Replaced with a single zero-argument `state_changed` emitted from every mutation.
+- **A `SoilTile` leaked out of `from_dict`.** It returns a bare `Node3D`, and a
+  node is not refcounted, so every grid load leaked one tile plus its RNG. This is
+  what the "1 resources still in use at exit" line was; `--verbose` named the
+  script. Fixed in `FarmGrid.from_dict` and in the test that does the same.
+- **Unwatered crops grew overnight.** `on_new_day` tested the watered flag *after*
+  clearing it, so it was always false and nothing grew at all. Now the flag is read
+  before it is cleared.
+- **The hoe's 3×3 claim was impossible.** The comment said a hoe cleared a 3×3
+  while `tool_radius` was 1.1 m against 2 m tiles, so it reached nothing but the
+  aimed tile. The radius stays as a radius — a scythe will want it — but the comment
+  now says what it actually does.
+
+### FALSE POSITIVES — investigated and dismissed
+- **"The ObjectDB leak is the test harness."** It was a real leak, but not in the
+  harness: `FarmGrid.from_dict` was never freeing the tile it built. The
+  per-case `_rig` pattern that keeps 35-tile worlds from piling up was already in
+  place and was not the cause.
+
+### KNOWN GAPS (not defects, deliberately out of scope here)
+- **The hotbar exists as model and input, not as UI.** `Hotbar` and the number-key
+  bindings are complete and tested, but no HUD node draws the nine slots.
+- **Crop sprites are placeholder geometry.** `build_visuals` grows scale and
+  colour by growth stage; it is not art.
+- **No watering can refill, no tool-upgrade tiers.** Later groups.
+
+---
+
+## Last completed group
+
+```
+GROUP: 13
+NAME: Player State Extraction, Stamina and Economy
+STATUS: COMPLETE
+```
+
+A new game now has gold in the wallet, a counter the player can walk to and open,
+and a stamina pool that runs out. The bag, hotbar, wallet and stamina were lifted
+out of `FarmService` into a `PlayerStateService` so the shop and farming can share
+one owner instead of each inventing one.
+
+### IMPLEMENTED
+
+- **`PlayerStateService`** (`scripts/player/player_state_service.gd`): the single
+  owner of `Inventory`, `Hotbar`, `Wallet` and `Stamina`. Registers as
+  `player_state`, consumes `hotbar_1`–`hotbar_9` / `hotbar_next` / `hotbar_prev`,
+  restores stamina on `day_started`, and grants the starter loadout.
+- **`Stamina`** (`scripts/player/stamina.gd`) and **`Wallet`**
+  (`scripts/economy/wallet.gd`): plain `Resource` value holders that never touch
+  `EventBus`, so they stay loadable from a `--script` run. Costs live on
+  `ItemDefinition.stamina_cost` — on the tool, not in a second cost table.
+- **`FarmService`** now derives its bag, hotbar and stamina through
+  `PlayerStateService` (getter-only properties) instead of owning them.
+- **`ShopDefinition` + `ShopRegistry`** (`scripts/economy/`): data-driven shop
+  content under `resources/economy/shops/`, generated by
+  `tools/generate_shop_data.gd`.
+- **`EconomyService`** (`scripts/economy/economy_service.gd`): the buy and sell
+  rules. All-or-nothing, and every refusal returns a machine-readable `reason`
+  (`poor`, `bag_full`, `not_stocked`, `unpriced`, `not_sellable`, `no_item`,
+  `no_player_state`, `bad_quantity`) alongside `EventBus.trade_failed`.
+- **`Shop` + `ShopInteractable`**: the world counter. Placed by `WorldBuilder` at
+  `(14.5, 0, -20)`, just outside the farm fence, with a solid counter, a canopy,
+  a `ShopInteractable` whose prompt reads "Trade at General Store", and an aim
+  point on the counter's front face.
+- **Prices are resolved by the service, not the shop.** `ShopDefinition` is pure
+  content; `EconomyService.price_of` / `pays_for` do the lookups. A counter that
+  carried its own price table would be a second place to update every crop value.
+
+### TESTED — 229 total, 27 in `tests/suites/test_economy.gd`
+
+Stamina all-or-nothing and the refund of a no-op swing; wallet never goes
+negative; both round-trip through save; buy debits gold *and* credits the bag;
+sell credits gold *and* removes the item; every refusal is atomic (gold and bag
+unchanged after a failed trade); a shop will not buy back its own stock; a real
+player walks to the real counter, the crosshair focuses it, the real `interact`
+key opens it, and buying and selling both work through the `Shop` facade.
+
+### DEFECTS FOUND AND FIXED
+- **The stamina gate was applied after the tool, not before.** `use_tool` tilled,
+  watered or cleared the soil and only then discovered the cost was unaffordable —
+  free work every time, worst when the player was too tired to notice, and the
+  refusal result was discarded. Affordability is now a preflight, and the
+  three-way charge return (`-1` refused, `0` free, `>0` paid) exists because a
+  bool cannot tell "refused" from "cost nothing".
+- **`ShopDefinition` calling `ItemRegistry` broke every `--script` run** that
+  loaded it, because `ItemRegistry` logs through the `Log` autoload and autoloads
+  are not identifiers outside the tree (`AGENTS.md`, "Two Godot-specific traps").
+  Moving the price lookups into `EconomyService` fixed the generator and improved
+  the separation at the same time.
+- **The shop could not be focused reliably.** The inherited aim point sat at
+  exactly the top surface of the counter's collider, so the crosshair ray skated
+  over the edge. `ShopInteractable` now aims at the middle of the front face.
+- **The counter kept the default prompt**, reading "Interact General Store".
+- **The counter's definition was assigned after `add_child`**, so `_ready`
+  validated an unfinished node and warned on every boot.
+- **A leaked `EconomyService` per content check** made the gate fail on
+  "resources still in use at exit". The four resolvers use no instance state and
+  are now `static`.
+
+### KNOWN GAPS (deliberately not defects)
+- **There is no shop UI.** The counter opens and trades through its API; the
+  screen that shows prices and takes clicks is the UI group.
+- **No shipping bin.** Selling is shop-only.
+- **No daily price variation, no restocking, no shop keepers or schedules.**
+
+---
+
+## Previously completed groups
 
 ```
 GROUP: 6
@@ -546,7 +769,7 @@ different numbering schemes.
 |---|---|---|
 | 1 | Audit | **COMPLETE** — pond defect reproduced, root-caused, fixed, regression-tested |
 | 2 | Foundation | **COMPLETE** — docs established, lanes, roadmap, acceptance criteria, schemas |
-| 3 | Complete game | IN PROGRESS — M2 (time and calendar) **COMPLETE**; M3 (farming) next |
+| 3 | Complete game | IN PROGRESS — M2 (time and calendar) **COMPLETE**; M3 (farming) **COMPLETE**; M4 next |
 
 ---
 
@@ -556,9 +779,14 @@ Carried forward so they are not rediscovered as bugs later:
 
 | Gap | Status |
 |---|---|
-| Hotbar / tool belt | Not built. Actions exist in the input map, no consumer. Arrives with the farming group. |
+| Hotbar / tool belt | Model and input bindings are complete and tested (`Hotbar`, `hotbar_1`–`hotbar_9`). **No HUD node draws the nine slots yet** — group 25. |
 | Dynamic physics | No `RigidBody3D` or `Area3D` in the world. Static collision is complete. |
-| `3d_physics/layer_4="interactable"` | Declared but unused. Available when props need to be aimable without being solid. |
+| `3d_physics/layer_4="interactable"` | **Now used** — every farm tile carries a 0.4 m non-solid aim volume on it. |
+| Crop art | `SoilTile.build_visuals` grows scale and colour by stage. Placeholder geometry, not sprites. |
+| Watering can refill | The can has durability but no fill state or refill action. |
+| Wallet display | Gold exists, is saved and trades, but **no HUD shows the amount** — group 25. |
+| Shop UI | The counter opens and trades through `Shop.buy` / `Shop.sell`. **No screen lists prices or takes clicks** — group 25. |
+| Stamina display | `Stamina` is spent, restored and saved. **No bar draws it** — group 25. |
 
 ---
 
@@ -573,13 +801,13 @@ Carried forward so they are not rediscovered as bugs later:
 | 4 | World | 21 | Fishing |
 | 5 | ~~Time System~~ | 22 | Mining |
 | 6 | ~~Day / Night Cycle~~ | 23 | Weather |
-| 7 | Farming Grid | 24 | Seasons |
-| 8 | Crop Data | 25 | UI |
-| 9 | Plant / Water / Harvest | 26 | Save / Load |
-| 10 | Inventory | 27 | Audio |
-| 11 | Tools | 28 | Art / Animation Polish |
+| 7 | ~~Farming Grid~~ | 24 | Seasons |
+| 8 | ~~Crop Data~~ | 25 | UI |
+| 9 | ~~Plant / Water / Harvest~~ | 26 | Save / Load |
+| 10 | ~~Inventory~~ | 27 | Audio |
+| 11 | ~~Tools~~ | 28 | Art / Animation Polish |
 | 12 | Resource Gathering | 29 | Performance |
-| 13 | Economy | 30 | Testing |
+| 13 | ~~Economy~~ | 30 | Testing |
 | 14 | NPC System | 31 | Final Integration |
 | 15 | NPC Schedules | 32 | Final Quality Pass |
 | 16 | Dialogue | | |

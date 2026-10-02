@@ -18,6 +18,14 @@ signal tilled_changed(is_tilled: bool)
 signal watered_changed(is_watered: bool)
 signal planted(crop_id: StringName)
 signal harvested(crop_id: StringName, yield_amount: int)
+## Published after *anything* that could change what this tile can be asked to do.
+##
+## One signal rather than a listener per field, because "what can I do here?" is a
+## single question with a single answer and the previous arrangement got that
+## answer wrong twice over: a listener per field missed a harvest and missed
+## overnight growth, so a ripe crop still prompted "Water the soil" the next
+## morning and a picked tomato still offered itself for picking again.
+signal state_changed
 
 ## Grid coordinates within the owning [FarmGrid]. Stable across sessions, so it
 ## is what a save file stores and what the farming signals on [EventBus] carry.
@@ -99,6 +107,7 @@ func till() -> bool:
 	tilled_changed.emit(true)
 	refresh_visual()
 	EventBus.soil_tilled.emit(tile_index)
+	state_changed.emit()
 	return true
 
 
@@ -113,6 +122,7 @@ func water() -> bool:
 	is_watered = true
 	watered_changed.emit(true)
 	refresh_visual()
+	state_changed.emit()
 	return true
 
 
@@ -137,6 +147,7 @@ func plant(id: StringName) -> bool:
 	refresh_visual()
 	planted.emit(id)
 	EventBus.crop_planted.emit(tile_index, id)
+	state_changed.emit()
 	return true
 
 
@@ -161,6 +172,23 @@ func growth_fraction() -> float:
 	return clampf(float(growth_days) / float(data.days_to_grow), 0.0, 1.0)
 
 
+## What [method harvest] would take, if it were allowed to.
+##
+## Lets a caller check the yield against its storage *before* committing. That
+## order matters: the amount is rolled from a seeded RNG and the regrower's clock
+## is rewound inside `harvest`, and neither is undone by re-planting afterwards.
+##
+## Rolls from the same generator over the same state, so the amount it reports is
+## the amount `harvest` will produce — not an estimate that could disagree.
+func preview_harvest() -> Dictionary:
+	var data := CropRegistry.get_crop(crop_id)
+	if data == null:
+		return {"ok": false, "reason": "empty", "crop_id": crop_id, "amount": 0}
+	if not is_ripe():
+		return {"ok": false, "reason": "not_ripe", "crop_id": crop_id, "amount": 0}
+	return {"ok": true, "reason": "", "crop_id": data.id, "amount": data.roll_yield(_rng)}
+
+
 ## Removes a crop and reports what came up.
 ##
 ## Returns a dictionary rather than a bool because the caller has to distinguish
@@ -168,6 +196,10 @@ func growth_fraction() -> float:
 ## `ok` key is the answer to "did anything happen"; `reason` is for the player.
 ## An empty result is the caller's cue to publish `farming_failed`, never to stay
 ## silent — see [method FarmService.harvest] for the split.
+##
+## The caller is expected to have settled storage first — see
+## [method preview_harvest]. This method publishes a *success* (`harvested` and
+## `crop_harvested`), so anything that fails after it runs cannot be unsaid.
 func harvest() -> Dictionary:
 	if crop_id.is_empty():
 		return {"ok": false, "reason": "empty", "crop_id": &"", "amount": 0}
@@ -179,6 +211,8 @@ func harvest() -> Dictionary:
 		# unharvestable, and the reason says so rather than blaming the player.
 		var lost := crop_id
 		_set_crop(&"")
+		refresh_visual()
+		state_changed.emit()
 		return {"ok": false, "reason": "unknown_crop", "crop_id": lost, "amount": 0}
 
 	if not is_ripe():
@@ -204,6 +238,10 @@ func harvest() -> Dictionary:
 
 	harvested.emit(data.id, amount)
 	EventBus.crop_harvested.emit(tile_index, data.id, amount)
+	# The two harvest paths above take the tile in different directions — cleared
+	# for a one-shot crop, clock rewound for a regrower — and the prompt has to
+	# change in both cases. Emitted last so a listener sees the settled state.
+	state_changed.emit()
 	return {"ok": true, "reason": "", "crop_id": data.id, "amount": amount}
 
 
@@ -219,6 +257,10 @@ func grow_one_day() -> bool:
 	growth_days += 1
 	var ripened := growth_days >= data.days_to_grow
 	refresh_visual()
+	# Unconditional, not only on the ripening frame. A crop that ripens and is
+	# *not* harvested tonight has to start offering "Harvest" the next morning,
+	# and nothing else announces that.
+	state_changed.emit()
 	if ripened:
 		EventBus.crop_grew.emit(tile_index)
 	return ripened
@@ -245,6 +287,10 @@ func on_new_day() -> void:
 	if was_watered:
 		grow_one_day()
 	refresh_visual()
+	# The dry night also emits: nothing else fired when a watered tile went dry,
+	# and a plant holding moisture is not the same state as one that never had
+	# any.
+	state_changed.emit()
 
 
 ## Wipes the tile back to grass. Used by a new game and by any future
@@ -257,6 +303,7 @@ func reset() -> void:
 	tilled_changed.emit(false)
 	watered_changed.emit(false)
 	refresh_visual()
+	state_changed.emit()
 
 
 ## Edge length of this tile in metres.

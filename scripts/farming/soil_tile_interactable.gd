@@ -24,6 +24,14 @@ class_name SoilTileInteractable
 ## settable directly so a test can pair a tile and a component without a parent.
 @export var tile_path: NodePath
 
+## Group [FarmService] registers under, and this component searches for.
+##
+## Duplicated as a literal rather than shared, because the shared constant would
+## have to live on one of the two classes and naming the other to reach it is the
+## `class_name` cycle this whole lookup exists to avoid. Keep the two in step;
+## `soil_tile_interactable_finds_the_real_farm_service` fails loudly if they drift.
+const SERVICE_GROUP := &"farm_service"
+
 var _tile: SoilTile = null
 
 
@@ -72,22 +80,25 @@ func _set_tile(value: SoilTile) -> void:
 	if _tile == value:
 		return
 	if _tile != null and is_instance_valid(_tile):
-		_tile.tilled_changed.disconnect(_refresh)
-		_tile.watered_changed.disconnect(_refresh)
-		_tile.planted.disconnect(_refresh)
+		_tile.state_changed.disconnect(_refresh)
 	_tile = value
 	if _tile != null:
-		_tile.tilled_changed.connect(_refresh)
-		_tile.watered_changed.connect(_refresh)
-		_tile.planted.connect(_refresh)
+		# `state_changed` alone, not the three per-field signals. Connecting the
+		# fields meant this callback took no arguments while the signals carried
+		# one, so every tilling and planting logged a failed signal call and the
+		# prompt silently kept whatever it said before.
+		_tile.state_changed.connect(_refresh)
 
 
 ## Re-derives availability and the prompt from the tile.
 ##
-## Called on every tile state change rather than every frame: there is nothing
+## Driven by [signal SoilTile.state_changed] rather than polled: there is nothing
 ## here to poll, and polling hundreds of tiles every frame for a prompt string is
 ## the kind of cost that is invisible until the farm plot gets big.
-func _refresh() -> void:
+##
+## Takes an optional argument because it is also called directly, and a
+## zero-argument signature would have to be special-cased at every call site.
+func _refresh(_changed: Variant = null) -> void:
 	one_shot = false
 	enabled = _tile != null
 	if _tile != null:
@@ -247,7 +258,7 @@ func _delegate_harvest(actor: Node, verb: Verb) -> bool:
 	return false
 
 
-## The [FarmService], found by name from the tree root.
+## The [FarmService], found by group from the tree root.
 ##
 ## Typed as a bare [Node] and called dynamically, deliberately. Naming
 ## `FarmService` here would close a `class_name` loop:
@@ -259,6 +270,14 @@ func _delegate_harvest(actor: Node, verb: Verb) -> bool:
 ## files away) rather than at the real cycle. So this edge stays untyped: the
 ## farm service owns the inventory rules, and this component only needs to know
 ## that *something* on the root can plant and harvest.
+##
+## Identified by group, and this is not incidental. It used to duck-type on
+## `has_method("plant") and has_method("harvest")`, which matches
+## [SoilTile] too — and since the grid is built into the world scene, the very
+## first node the search walked into was a soil tile. Every delegated plant and
+## harvest then called `SoilTile.plant(tile, actor)` with the wrong arguments, in
+## the shipped game, through the interact key. A group is the one thing a soil
+## tile and a farm service cannot both be.
 ##
 ## Found by name rather than by reference because the grid is generated deep
 ## inside the world scene, and threading a service reference into it would make
@@ -274,7 +293,7 @@ static func _find_service() -> Node:
 
 
 static func _search_for_service(node: Node) -> Node:
-	if node.get_script() != null and node.has_method("plant") and node.has_method("harvest"):
+	if node.is_in_group(SERVICE_GROUP):
 		return node
 	for child: Node in node.get_children():
 		var found := _search_for_service(child)

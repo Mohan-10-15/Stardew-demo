@@ -219,6 +219,10 @@ func from_dict(data: Dictionary) -> void:
 		var existing := get_tile(saved.tile_index)
 		if existing == null:
 			skipped += 1
+			# `from_dict` builds a bare [Node3D], and a node is not refcounted, so
+			# letting this one go out of scope leaks it *and* its RNG. Every other
+			# exit from this loop has to free it too.
+			saved.free()
 			continue
 		existing.is_tilled = saved.is_tilled
 		existing.is_watered = saved.is_watered
@@ -226,6 +230,7 @@ func from_dict(data: Dictionary) -> void:
 		existing.growth_days = saved.growth_days
 		existing.refresh_visual()
 		restored += 1
+		saved.free()
 	if skipped > 0:
 		Log.warn("FarmGrid", "skipped %d saved tiles with no slot here" % skipped)
 	Log.info("FarmGrid", "Restored %d/%d tiles" % [restored, _tiles.size()])

@@ -45,6 +45,11 @@ func get_cases() -> Array[StringName]:
 		&"a_regrowing_crop_needs_exactly_its_regrow_window",
 		&"an_unknown_crop_on_a_tile_is_cleared_not_left_stuck",
 		&"a_tile_save_round_trips",
+		&"the_prompt_follows_the_tile_through_a_whole_cycle",
+		&"preview_harvest_agrees_with_harvest",
+		&"a_full_bag_refuses_a_harvest_without_ruining_the_crop",
+		&"wearing_out_one_of_two_cans_removes_that_one",
+		&"a_player_state_service_owns_its_bag",
 		&"a_grid_save_round_trips",
 		# --- inventory -------------------------------------------------------
 		&"a_new_bag_is_empty",
@@ -55,6 +60,9 @@ func get_cases() -> Array[StringName]:
 		&"removal_nulls_the_slot_it_empties",
 		&"different_qualities_never_merge",
 		&"moving_between_slots_swaps_or_merges",
+		&"a_tool_wears_out_instead_of_vanishing_at_once",
+		&"a_worn_tool_does_not_merge_into_a_fresh_one",
+		&"tool_durability_survives_a_save",
 		&"shrinking_refuses_when_items_would_be_lost",
 		# --- hotbar ----------------------------------------------------------
 		&"the_hotbar_wraps_in_both_directions",
@@ -65,6 +73,7 @@ func get_cases() -> Array[StringName]:
 		&"the_generated_world_contains_a_farm_grid",
 		&"every_farm_tile_is_aimable_on_foot",
 		&"tilling_through_the_real_interact_key_works",
+		&"planting_through_the_interact_key_reaches_the_farm_service",
 		&"planting_and_harvesting_through_the_real_interact_key_works",
 	]
 
@@ -116,16 +125,19 @@ func _run_async(case: StringName) -> Dictionary:
 			# assertion, and would pass for the wrong reason if the grid were ever
 			# hung off its first tile again.
 			var grid := _make_grid(5, 5)
-			var found := grid.tiles_in_radius(grid.global_position, 3.0)
+			var centre: Vector3 = grid.tile_to_world(Vector2i(2, 2))
+			var found := grid.tiles_in_radius(centre, 3.0)
 			if found.size() < 2:
 				return fail(case, "expected several tiles, got %d" % found.size())
-			var centre: Vector3 = found[0].global_position
-			var last := INF
+			# Ascending, so each distance must be at least the one before it.
+			# Comparing against `found[0]` alone would pass on any ordering that
+			# happened to start nearest, which is the bug this catches.
+			var last := -1.0
 			var order: Array[String] = []
 			for tile: SoilTile in found:
 				var d := tile.global_position.distance_to(centre)
 				order.append("%.2f" % d)
-				if d > last + 0.001:
+				if d < last - 0.001:
 					return fail(case, "distances went backwards: %s" % ", ".join(order))
 				last = d
 			return succeeded(case, "nearest-first over %d tiles" % found.size())
@@ -262,6 +274,156 @@ func _run_async(case: StringName) -> Dictionary:
 					result["ok"], result["reason"], tile.crop_id,
 				]
 			)
+		&"the_prompt_follows_the_tile_through_a_whole_cycle":
+			# The prompt is the only thing telling the player what pressing the key
+			# will do, and it is derived rather than stored, so the only way it can
+			# be wrong is by not being re-derived. Walks the whole cycle, checking
+			# after every step — including harvest and overnight growth, which emit
+			# none of the per-field signals the component used to listen to.
+			var tile := _make_tile(4, 4)
+			var component := SoilTileInteractable.new()
+			_rig.add_child(component)
+			component.set_tile(tile)
+
+			var seen: Array[String] = []
+			# Recorded *before* each mutation, so the first entry is the verb the
+			# player is shown for bare ground. Reading it afterwards and expecting
+			# "till" was an off-by-one that hid the whole sequence behind one wrong
+			# first entry.
+			seen.append(_verb_after(component))
+			tile.till()
+			seen.append(_verb_after(component))
+			tile.plant(&"parsnip")
+			seen.append(_verb_after(component))
+			tile.water()
+			seen.append(_verb_after(component))
+			tile.on_new_day()
+			seen.append(_verb_after(component))
+			# Ripen it the way a night of watering would, through the tile's own
+			# clock rather than by poking the field and announcing it by hand.
+			tile.growth_days = CropRegistry.get_crop(&"parsnip").days_to_grow - 1
+			tile.water()
+			tile.on_new_day()
+			seen.append(_verb_after(component))
+			tile.harvest()
+			seen.append(_verb_after(component))
+
+			return check_equals(
+				case, seen,
+				[
+					"till", "plant", "water", "water", "water", "harvest", "plant",
+				] as Array[String]
+			)
+		&"preview_harvest_agrees_with_harvest":
+			var c := case
+			# The whole bag-full fix rests on the preview reporting the *same* number
+			# the harvest will produce. A disagreement would mean asking the bag about
+			# one yield and handing it another.
+			for crop_id: StringName in [&"parsnip", &"tomato", &"pumpkin"]:
+				var tile := _ripe_tile(crop_id)
+				var preview := tile.preview_harvest()
+				if not bool(preview["ok"]):
+					return fail(c, "%s would not preview: %s"
+						% [crop_id, str(preview["reason"])])
+				var before: int = tile.growth_days
+				tile.preview_harvest()
+				if tile.growth_days != before:
+					return fail(c, "previewing %s moved its clock" % crop_id)
+				var result := tile.harvest()
+				if int(result["amount"]) != int(preview["amount"]):
+					return fail(c, "%s previewed %d but yielded %d"
+						% [crop_id, int(preview["amount"]), int(result["amount"])])
+			return succeeded(c)
+		&"a_full_bag_refuses_a_harvest_without_ruining_the_crop":
+			var c := case
+			# A regrowing tomato, a one-slot bag, and that slot already full. The
+			# refusal has to leave the player exactly as they were: crop still in the
+			# ground, clock still at full ripeness, and no success event published.
+			#
+			# The old code harvested first and re-planted on failure. `plant` restarts
+			# growth at zero, so the tomato silently lost a day, *and* `crop_harvested`
+			# had already gone out before the refusal arrived.
+			var service := await _make_service()
+			var bag: Inventory = service.get("inventory")
+			bag.resize(1)
+			bag.add(&"hoe", 1)
+			if bag.free_slot_count() != 0:
+				return fail(c, "bag still has %d free slots" % bag.free_slot_count())
+
+			var tile := _ripe_tile(&"tomato")
+			var ripe_at: int = tile.growth_days
+			var announced := [0]
+			var on_harvested := func(_i: Vector2i, _id: StringName, n: int) -> void:
+				announced[0] = int(announced[0]) + n
+			EventBus.crop_harvested.connect(on_harvested)
+
+			var ok: bool = service.call("harvest", tile, null)
+			EventBus.crop_harvested.disconnect(on_harvested)
+
+			if ok:
+				return fail(c, "harvest succeeded into a full bag")
+			if int(announced[0]) != 0:
+				return fail(c, "published %d crops for a harvest that never happened"
+					% int(announced[0]))
+			if tile.crop_id != &"tomato":
+				return fail(c, "tile now holds '%s'" % tile.crop_id)
+			if not tile.is_ripe():
+				return fail(c, "tomato knocked back to %d days" % tile.growth_days)
+			if tile.growth_days != ripe_at:
+				return fail(c, "growth_days moved %d -> %d" % [ripe_at, tile.growth_days])
+			return succeeded(c)
+		&"wearing_out_one_of_two_cans_removes_that_one":
+			var c := case
+			# The bug this pins: `remove` spends lowest-quality-first, and two Normal
+			# watering cans are indistinguishable by id and quality. Break can #2 and
+			# the player loses can #1 instead, keeping the broken one. Per-stack
+			# durability exists so two identical tools *can* differ; removing by id
+			# throws that away.
+			var bag := Inventory.new(8)
+			bag.add(&"watering_can", 1)
+			bag.add(&"watering_can", 1)
+			if bag.count(&"watering_can") != 2:
+				return fail(c, "two cans did not both fit")
+			var fresh := bag.get_slot(0)
+			var worn := bag.get_slot(1)
+			if fresh == null or worn == null or fresh == worn:
+				return fail(c, "cans did not land in separate slots")
+			var full_uses := bag.get_durability(fresh)
+			bag.set_durability(fresh, full_uses)
+			bag.set_durability(worn, 1)
+
+			if bag.remove_stack(worn, 1) != 1:
+				return fail(c, "remove_stack took nothing")
+			var left := bag.get_slot(0)
+			if left == null:
+				return fail(c, "the fresh can was consumed")
+			if bag.get_durability(left) != full_uses:
+				return fail(c, "fresh can went from %d to %d uses"
+					% [full_uses, bag.get_durability(left)])
+			return succeeded(c)
+		&"a_player_state_service_owns_its_bag":
+			var c := case
+			# Rewritten when the bag moved to `PlayerStateService`. It used to assert
+			# a standalone `FarmService` owns an inventory and hotbar, which is no
+			# longer true and should not be: the shop needs the same bag, and two
+			# owners is how the player ends up selling produce they cannot see.
+			#
+			# What is still worth asserting is the *sharing*: the farm service and the
+			# player state service must resolve to one bag and one hotbar, not two.
+			var service := await _make_service()
+			var bag: Inventory = service.get("inventory")
+			var bar: Hotbar = service.get("hotbar")
+			if bag == null or bar == null:
+				return fail(c, "farm service resolved no inventory/hotbar")
+			var state_script: GDScript = load("res://scripts/player/player_state_service.gd")
+			var state: Node = state_script.find()
+			if state == null:
+				return fail(c, "no PlayerStateService in the tree")
+			if state.get("inventory") != bag:
+				return fail(c, "farm service and player state disagree about the bag")
+			if state.get("hotbar") != bar:
+				return fail(c, "farm service and player state disagree about the hotbar")
+			return succeeded(c)
 		&"a_tile_save_round_trips":
 			var tile := _make_tile(2, 3)
 			tile.till()
@@ -269,9 +431,12 @@ func _run_async(case: StringName) -> Dictionary:
 			tile.water()
 			tile.growth_days = 2
 			var clone := SoilTile.from_dict(tile.to_dict())
-			return check_equals(
-				case, clone.to_dict(), tile.to_dict()
-			)
+			# Copied before the compare, then freed. `from_dict` hands back a bare
+			# node, and a node is not refcounted — this suite asserts on ObjectDB
+			# leaks at exit, so an un-freed tile here fails the whole run.
+			var round_tripped := clone.to_dict()
+			clone.free()
+			return check_equals(case, round_tripped, tile.to_dict())
 		&"a_grid_save_round_trips":
 			var grid := _make_grid(3, 2)
 			for i: int in range(3):
@@ -339,6 +504,52 @@ func _run_async(case: StringName) -> Dictionary:
 			return check_true(
 				case, swapped and back and merged and bag.count(&"stone") == 1 and bag.count(&"wood") == 2,
 				"swapped=%s back=%s merged=%s" % [swapped, back, merged]
+			)
+		&"a_tool_wears_out_instead_of_vanishing_at_once":
+			# The watering can, not the hoe: content gives the can 60 uses and the
+			# hoe none, because the hoe is the one tool a player cannot do without
+			# and losing it would end the run. Asserting on the hoe here tested a
+			# premise the content never made.
+			var bag := Inventory.new(4)
+			bag.add(&"watering_can", 1)
+			var uses := bag.get_durability(bag.get_slot(0))
+			bag.set_durability(bag.get_slot(0), uses - 1)
+			var mid := bag.get_durability(bag.get_slot(0))
+			# An item with no durability reads as zero, and zero means "never
+			# wears" rather than "already broken".
+			bag.add(&"hoe", 1)
+			var hoe_uses := bag.get_durability(bag.get_slot(1))
+			return check_true(
+				case,
+				uses > 1 and mid == uses - 1 and hoe_uses == 0 and bag.count(&"watering_can") == 1,
+				"can %d -> %d, hoe=%d" % [uses, mid, hoe_uses]
+			)
+		&"a_worn_tool_does_not_merge_into_a_fresh_one":
+			# Same id, same quality, different durability. Merging them would
+			# silently repair the worn one and the player would never see their
+			# tool break. Tools stack at one per slot, so this only shows up as a
+			# failure if the cap is wrong *or* the merge ignores durability — hence
+			# checking both in one case.
+			var bag := Inventory.new(4)
+			bag.add(&"watering_can", 1)
+			bag.add(&"watering_can", 1)
+			var slots := 0
+			for i: int in range(bag.slot_count()):
+				if not bag.is_slot_empty(i):
+					slots += 1
+			bag.set_durability(bag.get_slot(0), 3)
+			var separate: int = bag.count(&"watering_can")
+			return check_true(
+				case, separate == 2 and slots == 2,
+				"two cans in %d slot(s), count=%d" % [slots, separate]
+			)
+		&"tool_durability_survives_a_save":
+			var bag := Inventory.new(4)
+			bag.add(&"watering_can", 1)
+			bag.set_durability(bag.get_slot(0), 7)
+			var clone := bag.copy()
+			return check_equals(
+				case, clone.get_durability(clone.get_slot(0)), 7
 			)
 		&"shrinking_refuses_when_items_would_be_lost":
 			# The refusal is about the *discarded* slots specifically. An item
@@ -409,6 +620,46 @@ func _run_async(case: StringName) -> Dictionary:
 			)
 		&"every_farm_tile_is_aimable_on_foot":
 			return await _t_every_tile_aimable()
+		&"planting_through_the_interact_key_reaches_the_farm_service":
+			var c := &"planting_through_the_interact_key_reaches_the_farm_service"
+			# Pressing the key, not calling the service directly. The component
+			# delegates plant and harvest by *searching* for the service, and that
+			# search once matched any node with `plant` and `harvest` methods —
+			# which a soil tile also has. The direct-call tests all passed while
+			# the shipped interact key was calling `SoilTile.plant()` with two
+			# arguments, because nothing exercised the lookup itself.
+			var built := await _build_world()
+			if built.is_empty():
+				return fail(c, "could not build scene")
+			var grid: FarmGrid = built["grid"]
+			var player: PlayerController = built["player"]
+			var probe: InteractionProbe = built["probe"]
+			var service: Node = built["service"]
+
+			var tile: SoilTile = grid.get_tile(grid.world_to_tile(grid.global_position))
+			tile.till()
+			tile.water()
+			var bar: Hotbar = service.get("hotbar")
+			bar.select(2)
+			if bar.get_selected_seed() != &"parsnip":
+				return fail(c, "slot 2 held %s" % bar.describe_selected())
+
+			var detail := await _focus(player, probe, tile)
+			if not bool(detail["focused"]):
+				return fail(c, "could not focus the tile: %s" % str(detail["why"]))
+
+			Input.action_press(&"interact")
+			await _step(3)
+			Input.action_release(&"interact")
+			await _step(2)
+
+			if tile.crop_id == &"parsnip":
+				return succeeded(c)
+			# Not built with `%` formatting: the service node is outside the scene
+			# tree at this point, and asking an out-of-tree node for its string form
+			# logs "Cannot get path of node as it is not in a scene tree" on a run
+			# that otherwise passed. The gate counts that as a script error.
+			return fail(c, "tile held '%s' after pressing interact" % tile.crop_id)
 		&"tilling_through_the_real_interact_key_works":
 			return await _t_till_through_input()
 		&"planting_and_harvesting_through_the_real_interact_key_works":
@@ -445,6 +696,11 @@ func _ripe_tile(crop_id: StringName) -> SoilTile:
 	tile.plant(crop_id)
 	tile.growth_days = CropRegistry.get_crop(crop_id).days_to_grow
 	return tile
+
+
+## The verb the component would offer right now.
+func _verb_after(component: SoilTileInteractable) -> String:
+	return String(component.get_current_verb())
 
 
 func _ensure_rig() -> void:
@@ -490,16 +746,46 @@ func _build_world() -> Dictionary:
 	# Loaded by path and instantiated as a bare `Node` rather than named
 	# directly: naming `FarmService` here would drag the whole farming stack into
 	# this file's compile, which is the documented `class_name` cycle trap.
+	var state := await _add_player_state()
+	_rig.add_child(state)
+	if state.has_method("grant_starter_loadout"):
+		state.call("grant_starter_loadout")
 	var service_script: GDScript = load("res://scripts/farming/farm_service.gd")
 	var service: Node = service_script.new()
 	service.name = "FarmService"
 	_rig.add_child(service)
 	if service.has_method("attach_grid"):
 		service.call("attach_grid", grid)
-	if service.has_method("grant_starter_loadout"):
-		service.call("grant_starter_loadout")
 	await _step(2)
 	return {"world": world, "player": player, "grid": grid, "probe": probe, "service": service}
+
+
+## A bare [FarmService] with no world attached, for cases that only need a bag.
+##
+## Loaded by path for the same reason `_build_world` does it: naming the class
+## would pull the whole farming stack into this file's compile.
+func _make_service() -> Node:
+	_ensure_rig()
+	var service_script: GDScript = load("res://scripts/farming/farm_service.gd")
+	var service: Node = service_script.new()
+	service.name = "FarmService"
+	_rig.add_child(service)
+	_rig.add_child(await _add_player_state())
+	await _step(2)
+	return service
+
+
+## Adds the [PlayerStateService] that now owns the bag, hotbar and stamina.
+##
+## Added before [FarmService] and loaded by path, mirroring the `FarmService`
+## rule above. Ordering matters only for readability — `FarmService` resolves it
+## by group on first use, not by construction order — but a service added after
+## the farm service reads like a lifecycle bug even though it is not one.
+func _add_player_state() -> Node:
+	var state_script: GDScript = load("res://scripts/player/player_state_service.gd")
+	var state: Node = state_script.new()
+	state.name = "PlayerState"
+	return state
 
 
 ## Frees the rig, which takes every world, player and service with it.
@@ -549,13 +835,19 @@ func _t_till_through_input() -> Dictionary:
 		return fail(c, "prompt said %s" % probe.get_focus().get_current_verb())
 
 	var before: int = grid.tilled_count()
-	if service.has_method("use_tool"):
-		service.call("use_tool", probe.get_focus().get_tile())
-	else:
+	# The real key, not `use_tool` directly. The point of this case is the whole
+	# chain — probe focus, component verb, selected tool, service lookup — and
+	# calling the service short-circuits exactly the links that have broken.
+	if not service.has_method("use_tool"):
 		return fail(c, "FarmService has no use_tool")
+	Input.action_press(&"interact")
+	await _step(3)
+	Input.action_release(&"interact")
+	await _step(2)
 	var after: int = grid.tilled_count()
-	# A hoe sweeps a 3x3, so more than one tile may change. What matters is that
-	# the count went up and the aimed tile specifically is now tilled.
+	# What matters is that the aimed tile specifically is now tilled. Whether a
+	# hoe also disturbed its neighbours is `tool_reach`'s business, not this
+	# case's.
 	return check_true(
 		c,
 		after > before and tile.is_tilled,
@@ -574,8 +866,9 @@ func _t_full_loop_through_input() -> Dictionary:
 	var service: Node = built["service"]
 
 	var tile: SoilTile = grid.get_tile(grid.world_to_tile(grid.global_position))
-	# Get the tile into tilled, watered, empty state through the tile itself;
-	# the *actions under test* below go through the service.
+	# Arranged by hand, not by playing: there is no "till and water this tile"
+	# key, so the starting state has to be set up. Everything *after* this point
+	# goes through the interact key.
 	tile.till()
 	tile.water()
 	var bag: Inventory = service.get("inventory")
@@ -591,32 +884,48 @@ func _t_full_loop_through_input() -> Dictionary:
 	var detail := await _focus(player, probe, tile)
 	if not bool(detail["focused"]):
 		return fail(c, "could not focus planted tile: %s" % str(detail["why"]))
-	var planted: bool = service.call("plant", tile, player)
+
+	# Real key for both actions. Harvest in particular is worth driving through
+	# the probe: it is the one verb that changes *after* the keypress, so it
+	# depends on the prompt refresh firing correctly to be reachable at all.
+	Input.action_press(&"interact")
+	await _step(3)
+	Input.action_release(&"interact")
+	await _step(2)
+
+	var planted: bool = tile.crop_id == &"parsnip"
 	if not planted:
-		return fail(c, "service refused to plant a tilled, watered, empty tile")
+		return fail(c, "interact key did not plant (crop is '%s')" % tile.crop_id)
 	if bag != null:
 		var after_plant: int = bag.count(&"parsnip_seeds")
 		if after_plant != seeds_before - 1:
 			return fail(c, "seed spent %d -> %d" % [seeds_before, after_plant])
 
-	# Ripen it by advancing the crop clock, then harvest through the service.
+	# Ripen it by advancing the crop clock, then harvest with the key again.
 	tile.growth_days = CropRegistry.get_crop(&"parsnip").days_to_grow
 	if not tile.is_ripe():
 		return fail(c, "crop not ripe at %d days" % tile.growth_days)
 	var carried_before := 0
 	if bag != null:
 		carried_before = bag.count(&"parsnip")
-	var harvested: bool = service.call("harvest", tile, player)
-	if not harvested:
-		return fail(c, "service refused to harvest a ripe crop")
+
+	var ready := await _focus(player, probe, tile)
+	if not bool(ready["focused"]):
+		return fail(c, "ripe tile not re-focusable: %s" % str(ready["why"]))
+	if probe.get_focus().get_current_verb() != &"harvest":
+		return fail(c, "prompt said %s, expected harvest" % probe.get_focus().get_current_verb())
+
+	Input.action_press(&"interact")
+	await _step(3)
+	Input.action_release(&"interact")
+	await _step(2)
+
 	var carried_after := 0
 	if bag != null:
 		carried_after = bag.count(&"parsnip")
-	return check_true(
-		c,
-		carried_after > carried_before,
-		"bag went %d -> %d parsnip" % [carried_before, carried_after]
-	)
+	if carried_after <= carried_before:
+		return fail(c, "bag went %d -> %d parsnip" % [carried_before, carried_after])
+	return succeeded(c)
 
 
 ## Walks the player next to `target`, aims the real camera at it, and presses the
@@ -634,7 +943,12 @@ func _focus(player: PlayerController, probe: InteractionProbe, target: SoilTile)
 		return {"focused": false, "why": "no camera"}
 	var dir := (aim - camera.global_position).normalized()
 	player.set_yaw(atan2(-dir.x, -dir.z))
-	player.camera_rig.set_pitch(atan2(-dir.y, Vector2(dir.x, dir.z).length()))
+	# `atan2(dir.y, horizontal)`, with no negation. Rotating a node by +pitch
+	# tilts the camera's forward vector *upward* — a camera looks down -Z, and
+	# rotating about +X carries -Z toward +Y. So a positive pitch is looking at
+	# the sky, and negating `dir.y` here aimed every tile at empty air. The ray
+	# hit nothing at all, not even the ground, which is the tell.
+	player.camera_rig.set_pitch(atan2(dir.y, Vector2(dir.x, dir.z).length()))
 	await _step(3)
 	probe.update_focus()
 	var focused := probe.get_focus()

@@ -8,3 +8,4 @@ id = &"scythe"
 display_name = "Scythe"
 category = 2
 icon_color = Color(0.7, 0.72, 0.74, 1)
+stamina_cost = 1

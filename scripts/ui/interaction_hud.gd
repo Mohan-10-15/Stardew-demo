@@ -85,6 +85,14 @@ func _find_probe(start: Node) -> InteractionProbe:
 
 
 func _on_focus_changed(target: Interactable) -> void:
+	# Tell the crosshair, not just the label. It draws a bare dot when nothing is
+	# focused and grows arms when something is, and that was the only difference
+	# between "aiming at a note" and "aiming at thin air" — except nothing ever
+	# called `set_focused`, so the player got a 3px dot in every direction and no
+	# way to tell whether the crosshair had resolved a target.
+	if _crosshair != null and _crosshair.has_method(&"set_focused"):
+		_crosshair.call(&"set_focused", target != null)
+
 	if _prompt == null or _probe == null:
 		return
 	if target == null:
