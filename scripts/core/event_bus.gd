@@ -66,6 +66,10 @@ signal item_sold(item_id: StringName, quantity: int, total_price: int)
 ## succeeded, and the audio for handing over money and for being handed money are
 ## not the same sound.
 signal trade_failed(kind: StringName, item_id: StringName, reason: StringName)
+## A shop counter was opened. Carries the shop node rather than an id, because the
+## listener is the panel itself and re-looking the definition up by id would be a
+## lookup to reach data the caller already held.
+signal shop_opened(shop: Node)
 
 # --- Stamina --------------------------------------------------------------
 ## The player's stamina moved. Both values, because a HUD needs the ceiling to

@@ -13,20 +13,32 @@ const WorldScene := "res://scenes/world/world.tscn"
 const PlayerScene := "res://scenes/player/player.tscn"
 const HudScene := "res://scenes/ui/interaction_hud.tscn"
 const ClockHudScene := "res://scenes/ui/clock_hud.tscn"
+const StatusHudScene := "res://scenes/ui/player_status_hud.tscn"
+const HotbarHudScene := "res://scenes/ui/hotbar_hud.tscn"
+const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
 @export var hud_scene_path: String = HudScene
 @export var clock_hud_scene_path: String = ClockHudScene
+@export var status_hud_scene_path: String = StatusHudScene
+@export var hotbar_hud_scene_path: String = HotbarHudScene
+@export var shop_ui_scene_path: String = ShopUiScene
 @export var load_world: bool = true
 @export var load_player: bool = true
 @export var load_hud: bool = true
 @export var load_clock_hud: bool = true
+@export var load_status_hud: bool = true
+@export var load_hotbar_hud: bool = true
+@export var load_shop_ui: bool = true
 
 var world: WorldRoot = null
 var player: PlayerController = null
 var hud: CanvasLayer = null
 var clock_hud: CanvasLayer = null
+var status_hud: CanvasLayer = null
+var hotbar_hud: CanvasLayer = null
+var shop_ui: CanvasLayer = null
 var player_state: PlayerStateService = null
 var farm_service: FarmService = null
 var economy_service: EconomyService = null
@@ -70,6 +82,17 @@ func _boot() -> void:
 	# walking the tree. Spawning this first would leave the readout disabled.
 	if load_clock_hud:
 		_spawn_clock_hud()
+	# Both of these need `PlayerStateService`, so after the player — and they read
+	# it by walking the tree, so they must come after `_spawn_player`.
+	if load_status_hud:
+		_spawn_status_hud()
+	if load_hotbar_hud:
+		_spawn_hotbar_hud()
+	# Listens on `EventBus.shop_opened`, so it is order-independent: a counter the
+	# player opened before this existed would be missed, and it walks the tree for
+	# a shop to open if so.
+	if load_shop_ui:
+		_spawn_shop_ui()
 
 	# The player is up and their state exists, so the opening tool is ready for the
 	# first click rather than a frame later.
@@ -130,6 +153,44 @@ func _spawn_clock_hud() -> void:
 	clock_hud.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(clock_hud)
 	Log.info("Main", "Spawned clock HUD")
+
+
+## Spawns a HUD scene as a `CanvasLayer`, or logs and carries on.
+##
+## One helper for all five rather than five near-copies. They differed only in the
+## label they logged, and a copy that forgets the "is it a CanvasLayer" check is
+## exactly the kind of divergence that produces a silent no-HUD bug — which is
+## what happened before any of these existed.
+func _spawn_overlay(path: String, label: String, out_slot: String) -> void:
+	if not ResourceLoader.exists(path):
+		Log.error("Main", "%s scene missing at %s" % [label, path])
+		return
+	var packed := load(path) as PackedScene
+	if packed == null:
+		Log.error("Main", "Failed to load %s scene" % label)
+		return
+	var layer := packed.instantiate() as CanvasLayer
+	if layer == null:
+		Log.error("Main", "%s scene root is not a CanvasLayer" % label)
+		return
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	# Set through the dictionary rather than by name so a caller cannot typo an
+	# assignment into a field that is never read.
+	set(out_slot, layer)
+	Log.info("Main", "Spawned %s" % label)
+
+
+func _spawn_status_hud() -> void:
+	_spawn_overlay(status_hud_scene_path, "status HUD", "status_hud")
+
+
+func _spawn_hotbar_hud() -> void:
+	_spawn_overlay(hotbar_hud_scene_path, "hotbar HUD", "hotbar_hud")
+
+
+func _spawn_shop_ui() -> void:
+	_spawn_overlay(shop_ui_scene_path, "shop UI", "shop_ui")
 
 
 func _spawn_world() -> void:

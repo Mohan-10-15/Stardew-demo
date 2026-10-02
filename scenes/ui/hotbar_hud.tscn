@@ -1,6 +1,150 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/hotbar_hud.gd" id="1_r2ruv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7286u"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wnoqk"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i0qng"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r4qpp"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qylbd"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bldoh"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3ys5c"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_danrh"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kqpft"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.1, 0.11, 0.14, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.3, 0.26, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [node name="HotbarHUD" type="CanvasLayer"]
 script = ExtResource("1_r2ruv")
@@ -18,3 +162,327 @@ offset_bottom = -18.0
 mouse_filter = 2
 theme_override_constants/separation = 6
 alignment = 1
+
+[node name="Slot1" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7286u")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot1"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot1/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "1"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot1/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot2" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wnoqk")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot2"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot2/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "2"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot2/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot3" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_i0qng")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot3"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot3/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "3"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot3/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot4" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_r4qpp")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot4"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot4/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "4"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot4/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot5" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_qylbd")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot5"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot5/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "5"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot5/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot6" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bldoh")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot6"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot6/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "6"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot6/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot7" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_3ys5c")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot7"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot7/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "7"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot7/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot8" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_danrh")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot8"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot8/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "8"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot8/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Slot9" type="Panel" parent="Slots"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kqpft")
+
+[node name="Column" type="VBoxContainer" parent="Slots/Slot9"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="NumberLabel" type="Label" parent="Slots/Slot9/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.68, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "9"
+
+[node name="SlotLabel" type="Label" parent="Slots/Slot9/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

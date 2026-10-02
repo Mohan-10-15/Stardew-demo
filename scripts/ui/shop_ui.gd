@@ -24,16 +24,19 @@ extends CanvasLayer
 ## Rows are rebuilt on open, so this is the whole list.
 const ROW_HEIGHT := 30.0
 
-@onready var _title: Label = get_node_or_null(^"Root/Center/Panel/Column/Title")
-@onready var _gold: Label = get_node_or_null(^"Root/Center/Panel/Column/Gold")
-@onready var _rows: VBoxContainer = get_node_or_null(^"Root/Center/Panel/Column/Rows")
-@onready var _message: Label = get_node_or_null(^"Root/Center/Panel/Column/Message")
-@onready var _close: Button = get_node_or_null(^"Root/Center/Panel/Column/Close")
+@onready var _title: Label = get_node_or_null(^"Center/Panel/Column/Title")
+@onready var _gold: Label = get_node_or_null(^"Center/Panel/Column/Gold")
+@onready var _rows: VBoxContainer = get_node_or_null(^"Center/Panel/Column/Rows")
+@onready var _message: Label = get_node_or_null(^"Center/Panel/Column/Message")
+@onready var _close: Button = get_node_or_null(^"Center/Panel/Column/Close")
 
 var _shop: Shop = null
-## One row per stocked item, kept so the buttons can be re-enabled or disabled
-## without rebuilding the list and losing the player's scroll position.
-var _row_panels: Array[Panel] = []
+## Whether *this* panel is the thing currently pausing the game.
+##
+## Not cosmetic: `GameState.set_paused(false)` forces the phase back to PLAYING, so
+## a panel that unpaused unconditionally would silently cancel a real pause menu.
+## Only the holder releases.
+var _holds_pause := false
 
 
 func _ready() -> void:
@@ -42,22 +45,46 @@ func _ready() -> void:
 	# finish a trade in.
 	layer = 20
 	visible = false
+	# The tree is paused while this is open, and this panel is the thing that has
+	# to keep answering input through that pause.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if _close != null:
 		_close.pressed.connect(close)
 	EventBus.shop_opened.connect(_on_shop_opened)
 
 
+func _exit_tree() -> void:
+	# Freed while open — a scene reload mid-trade, or a test dropping its rig —
+	# would otherwise leave the tree paused forever and every later system frozen.
+	_release_pause()
+
+
 ## Shows [param shop]'s stock.
 func open(shop: Shop) -> void:
 	_shop = shop
 	visible = true
+	# The counter is modal, and pausing the tree is how that is enforced here.
+	# It is the one gate that stops *everything* at once: the player keeps walking
+	# with the panel up, and the interaction probe — which consumes `interact` in
+	# `_unhandled_input` before this panel's own close handler can claim it — will
+	# re-fire the counter behind the panel. Pausing stops both, and the clock with
+	# them, which is also correct: the day should not advance while you shop.
+	GameState.set_paused(true)
+	_holds_pause = true
 	_rebuild()
 
 
 func close() -> void:
 	visible = false
 	_shop = null
+	_release_pause()
+
+
+func _release_pause() -> void:
+	if not _holds_pause:
+		return
+	_holds_pause = false
+	GameState.set_paused(false)
 
 
 func _on_shop_opened(shop: Shop) -> void:
@@ -65,7 +92,11 @@ func _on_shop_opened(shop: Shop) -> void:
 
 
 func _rebuild() -> void:
-	if _shop == null or _shop.shop == null:
+	# `is_instance_valid`, not `== null`: the counter lives in the world, and a
+	# panel left open across a scene change holds a freed node that a null check
+	# happily accepts. See `_refresh_gold`.
+	if _shop == null or not is_instance_valid(_shop) or _shop.shop == null:
+		_shop = null
 		return
 	var service := _shop.economy()
 	if service == null:
@@ -77,7 +108,6 @@ func _rebuild() -> void:
 
 	for child: Node in _rows.get_children():
 		child.queue_free()
-	_row_panels.clear()
 	_message.text = ""
 
 	# Buyable rows only. A stocked item with no price is a content mistake; showing
@@ -108,9 +138,6 @@ func _add_buy_row(item_id: StringName, service: EconomyService) -> void:
 	buy.pressed.connect(_on_buy_pressed.bind(item_id))
 	row.add_child(buy)
 
-	# Recorded for the refresh pass; the handler looks the button up by walking to
-	# the row's parent, which keeps the closure free of per-row state.
-	_row_panels.append(panel)
 	_rows.add_child(panel)
 
 
@@ -144,19 +171,20 @@ func _add_sell_row(item_id: StringName, service: EconomyService) -> void:
 	sell.pressed.connect(_on_sell_pressed.bind(item_id))
 	row.add_child(sell)
 
-	_row_panels.append(panel)
 	_rows.add_child(panel)
 
 
 func _on_buy_pressed(item_id: StringName) -> void:
-	if _shop == null:
+	if _shop == null or not is_instance_valid(_shop):
+		_shop = null
 		return
 	var result: Dictionary = _shop.buy(item_id, 1)
 	_report(result, "Bought")
 
 
 func _on_sell_pressed(item_id: StringName) -> void:
-	if _shop == null:
+	if _shop == null or not is_instance_valid(_shop):
+		_shop = null
 		return
 	var result: Dictionary = _shop.sell(item_id, 1)
 	_report(result, "Sold")
@@ -208,6 +236,12 @@ func _explain(reason: String) -> String:
 func _refresh_gold() -> void:
 	if _gold == null or _shop == null:
 		return
+	# `is_instance_valid` before `== null`: a shop freed with the scene that
+	# spawned it leaves `_shop` a dead reference that passes a null check and then
+	# throws on the next access.
+	if not is_instance_valid(_shop):
+		_shop = null
+		return
 	var state := PlayerStateService.find()
 	if state == null or state.wallet == null:
 		return
@@ -236,9 +270,17 @@ func _make_button(caption: String, width: float) -> Button:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_cancel"):
-		# The same key that opened the shop closes it. `get_viewport().set_input_as_handled()`
-		# because this is unhandled input: without it the press also reaches the
-		# interaction probe and re-triggers the counter behind the panel.
+	# `Escape` is checked first and on its own. `ui_cancel` and `interact` are
+	# separate actions, but a player pressing Escape while a gamepad focus sits on
+	# a Buy button produces the confirm press too, and handling both from one branch
+	# would close the shop and then immediately re-buy whatever was focused.
+	if event.is_action_pressed(&"ui_cancel"):
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"interact"):
+		# The same key that opened the shop closes it. This is unhandled input, so
+		# the viewport must be told the press is spent or it also reaches the
+		# interaction probe behind the panel.
 		close()
 		get_viewport().set_input_as_handled()
