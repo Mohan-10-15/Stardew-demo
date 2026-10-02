@@ -37,6 +37,15 @@ enum Category { CROP, SEED, TOOL, FORAGE, MATERIAL, FOOD }
 ## Read by [Hotbar.get_selected_tool_action] rather than switched on in the
 ## player, which is what keeps a new tool a data change.
 @export var tool_action: StringName = &""
+## Which upgrade tier this tool is, 1 to 4.
+##
+## Read by [Hotbar.get_selected_tool_tier] and compared against a resource node's
+## [member ResourceNodeData.resist_tier], which is how "a copper axe is slower on a
+## pine than an iron one" is a data fact rather than a chain of `if id == ...`.
+##
+## Zero on a non-tool, and treated as no tier at all: a bare hand picking berries is
+## not a tier-0 tool that gets outclassed the moment better gloves appear.
+@export_range(0, 4, 1) var tool_tier: int = 0
 ## For a seed packet, the crop id this packet plants. A field rather than a
 ## naming convention, because "parsnip_seeds grows parsnip" is a guess that
 ## breaks the first crop whose id does not follow it.

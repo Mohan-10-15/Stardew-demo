@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ResourceNodeData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/gathering/resource_node_data.gd" id="1_54do8"]
+[ext_resource type="Script" path="res://scripts/gathering/gather_yield.gd" id="2_r1hi8"]
+
+[sub_resource type="Resource" id="Resource_i43hg"]
+script = ExtResource("2_r1hi8")
+item_id = &"stone"
+max_amount = 2
+
+[resource]
+script = ExtResource("1_54do8")
+id = &"rock"
+display_name = "Rock"
+category = 1
+tool_action = &"mine"
+model = "res://assets/models/quaternius/NaturePack/Rock_1.fbx"
+hit_points = 2
+hit_hold_seconds = 0.2
+respawn_days = 8
+collider_radius_scale = 0.7
+aim_radius_scale = 0.9
+spawn_radius = 70.0
+spawn_count = 24
+spawn_spacing = 5.0
+yields = Array[ExtResource("2_r1hi8")]([SubResource("Resource_i43hg")])

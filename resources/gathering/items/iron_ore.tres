@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_g0c1f"]
+
+[resource]
+script = ExtResource("1_g0c1f")
+id = &"iron_ore"
+display_name = "Iron Ore"
+category = 4
+sell_price = 30
+description = "Worth the walk back from the far rocks."
+icon_color = Color(0.52, 0.53, 0.58, 1)

@@ -20,6 +20,22 @@ func _initialize() -> void:
 	root.name = "Player"
 	root.set_script(load("res://scripts/player/player_controller.gd"))
 	root.set("capture_mouse_on_ready", true)
+	# Layered rather than left on the default of `1`.
+	#
+	# Both masks were `1` — that is, [constant PhysicsLayers.WORLD] — for want of
+	# anybody naming them, and nothing noticed until a dropped log had to be picked up
+	# by walking over it. [ResourceDrop]'s pickup [Area3D] watches [constant
+	# PhysicsLayers.PLAYER], because a pickup volume that also watched the world would
+	# report every piece of ground the log was resting on. The player was never on
+	# that layer, so nothing was ever reported and the wood simply stayed where it
+	# fell. Movement is unchanged: [constant PhysicsLayers.PLAYER_MASK] *is* [constant
+	# PhysicsLayers.WORLD].
+	#
+	# The probe is the other thing this fixes. Its ray includes [constant
+	# PhysicsLayers.WORLD], so it used to start inside the player's own capsule and
+	# exclude it by hand.
+	root.collision_layer = PhysicsLayers.PLAYER
+	root.collision_mask = PhysicsLayers.PLAYER_MASK
 
 	# --- Collision -------------------------------------------------------
 	var collision := CollisionShape3D.new()

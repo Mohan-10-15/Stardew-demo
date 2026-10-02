@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_as286"]
+
+[resource]
+script = ExtResource("1_as286")
+id = &"steel_pickaxe"
+display_name = "Steel Pickaxe"
+category = 2
+buy_price = 3600
+description = "The only thing that earns its keep on an iron vein."
+icon_color = Color(0.78, 0.8, 0.84, 1)
+uses_durability = true
+durability = 180
+stamina_cost = 3
+tool_action = &"mine"
+tool_tier = 4

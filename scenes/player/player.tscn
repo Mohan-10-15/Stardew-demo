@@ -47,6 +47,7 @@ roughness = 0.85
 size = Vector3(0.08, 0.08, 0.14)
 
 [node name="Player" type="CharacterBody3D"]
+collision_layer = 2
 script = ExtResource("1_gmlin")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

@@ -651,9 +651,8 @@ func _run_async(case: StringName) -> Dictionary:
 			tile.till()
 			tile.water()
 			var bar: Hotbar = service.get("hotbar")
-			bar.select(2)
-			if bar.get_selected_seed() != &"parsnip":
-				return fail(c, "slot 2 held %s" % bar.describe_selected())
+			if not _select_seed_slot(bar):
+				return fail(c, "no parsnip seeds on the hotbar")
 
 			var detail := await _focus(player, probe, tile)
 			if not bool(detail["focused"]):
@@ -682,7 +681,7 @@ func _run_async(case: StringName) -> Dictionary:
 					broken.append("%s has no art" % crop.id)
 					continue
 				for model_path: String in [crop.sprout_model, crop.mature_model]:
-					if not CropArt.can_load(model_path):
+					if not ModelArt.can_load(model_path):
 						broken.append("%s -> %s" % [crop.id, model_path])
 			return check_equals(case, broken, [] as Array[String])
 		&"every_crop_at_every_stage_draws_real_geometry":
@@ -1201,6 +1200,25 @@ func _reset_rig() -> void:
 	_rig = null
 
 
+## Selects the hotbar slot holding a parsnip seed packet, and reports whether one
+## was found.
+##
+## By search rather than by a hard-coded index, because the index is not a fact about
+## farming: the starting loadout grew an axe and a pickaxe in [Group 12] and both
+## real-input tests went red on the same line, for the same reason — they had
+## hard-coded where the seeds live. A test that breaks because an unrelated item was
+## added is a test asserting the loadout's order rather than that planting works.
+func _select_seed_slot(bar: Hotbar) -> bool:
+	if bar == null or bar.inventory == null:
+		return false
+	for i: int in range(bar.inventory.slot_count()):
+		var stack := bar.inventory.get_slot(i)
+		if stack != null and stack.id == &"parsnip_seeds":
+			bar.select(i)
+			return bar.get_selected_seed() == &"parsnip"
+	return false
+
+
 func _t_every_tile_aimable() -> Dictionary:
 	var c := &"every_farm_tile_is_aimable_on_foot"
 	var built := await _build_world()
@@ -1283,9 +1301,8 @@ func _t_full_loop_through_input() -> Dictionary:
 	if bag != null:
 		seeds_before = bag.count(&"parsnip_seeds")
 	# Select the seed packet.
-	bar.select(2)
-	if bar.get_selected_seed() != &"parsnip":
-		return fail(c, "slot 2 held %s" % bar.describe_selected())
+	if not _select_seed_slot(bar):
+		return fail(c, "no parsnip seeds on the hotbar")
 
 	var detail := await _focus(player, probe, tile)
 	if not bool(detail["focused"]):

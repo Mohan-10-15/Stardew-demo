@@ -387,38 +387,17 @@ func _plant_refusal(target: SoilTile) -> StringName:
 	return &"no_seed"
 
 
+## Wears down the held tool, and keeps this class's own [signal tool_broken] for
+## listeners that were already watching it.
+##
+## The rules are not here any more — [method PlayerStateService.spend_tool_durability]
+## owns them, because gathering wears tools down too and a second copy of this
+## function is a second copy of the `remove_stack`-not-`remove` subtlety.
 func _spend_durability(action: StringName) -> void:
-	if inventory == null or hotbar == null or action.is_empty():
-		return
-	var stack := hotbar.get_selected_stack()
-	if stack == null:
-		return
-	var definition := ItemRegistry.get_item(stack.id)
-	if definition == null or not definition.uses_durability:
-		return
-	# Durability belongs to the *stack*, not the item definition: two hoes bought
-	# on different days wear out at different times, and a shop that sells a
-	# single "hoe" resource cannot express that. So the counter lives on the
-	# stack, and `Inventory` is what stores it.
-	#
-	# Spending it unconditionally would be the simpler version and would be
-	# wrong: an unconditional call is exactly the "durability is a property of the
-	# item" assumption, and it deletes a fresh hoe on its first swing.
-	var remaining := inventory.get_durability(stack)
-	if remaining <= 1:
-		# `remove_stack`, not `remove`. `remove` spends the lowest quality first,
-		# and two Normal watering cans are the same quality — so it would consume a
-		# fresh can and leave the worn one in the bag forever, which is the exact
-		# situation per-stack durability exists to make representable.
-		inventory.set_durability(stack, 0)
-		inventory.remove_stack(stack, 1)
-		tool_broken.emit(stack.id)
-		Log.info("FarmService", "%s wore out" % definition.display_name)
-	else:
-		inventory.set_durability(stack, remaining - 1)
-		# The stack's amount did not change, so nothing else would have published
-		# this. A HUD showing remaining uses has to be told.
-		EventBus.inventory_changed.emit()
+	var result := _state().spend_tool_durability(action) if _state() != null else {}
+	if result.get("broke", false):
+		tool_broken.emit(StringName(result.get("id", &"")))
+		Log.info("FarmService", "tool wore out while tilling")
 
 
 ## Midnight on the farm.

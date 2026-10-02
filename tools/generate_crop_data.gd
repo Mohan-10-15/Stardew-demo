@@ -224,7 +224,7 @@ func _initialize() -> void:
 		# model path that does not resolve is a content typo, and the tile would
 		# otherwise fall back to the procedural stalk with nothing said about it.
 		for model_path: String in [crop.sprout_model, crop.mature_model]:
-			if not model_path.is_empty() and not CropArt.can_load(model_path):
+			if not model_path.is_empty() and not ModelArt.can_load(model_path):
 				printerr("[generate_crop_data] %s cannot load %s" % [crop.id, model_path])
 				quit(1)
 				return

@@ -123,17 +123,31 @@ static func _search(node: Node) -> PlayerStateService:
 	return null
 
 
-## Hands the player a hoe, a watering can and some parsnip seeds.
+## Hands the player a hoe, a watering can, an axe, a pickaxe and some parsnip seeds.
 ##
 ## Lives here rather than on [FarmService] because these are the *player's*
 ## things, and the loadout is decided by who the player is, not by which
 ## subsystem happens to run first. The farm only cares that a seed packet exists.
+##
+## The axe and pickaxe are not a gift, they are a minimum viable toolset: [Group 12]
+## made the valley's trees and rocks gatherable, and a world full of resources the
+## player cannot touch is a world that has told them what to do and then refused to
+## let them do it. Both are tier 1, so the copper and steel tools still have
+## something to be upgrades *over*.
 func grant_starter_loadout() -> void:
 	if inventory == null:
 		return
 	inventory.add(&"hoe", 1)
 	inventory.add(&"watering_can", 1)
+	# Seeds third, deliberately, and the two gathering tools after them. The
+	# hotbar index of a starter item is effectively a save-file coordinate — it is
+	# what a player's muscle memory is built on — so growing the loadout appends to
+	# the end rather than inserting in the middle. Two farming tests hard-coded
+	# "slot 2 is the parsnip seeds" and went red the moment an axe was inserted
+	# ahead of them, which is the honest way to find out this mattered.
 	inventory.add(&"parsnip_seeds", 15)
+	inventory.add(&"axe", 1)
+	inventory.add(&"pickaxe", 1)
 	# Selecting the hoe by default means the player's first click on the field does
 	# something, rather than the prompt offering to plant a seed they have not got.
 	if hotbar != null:
@@ -165,6 +179,67 @@ func from_dict(data: Dictionary) -> void:
 		stamina.from_dict(data["stamina"])
 	if hotbar != null and data.has("hotbar_slot"):
 		hotbar.select(int(data["hotbar_slot"]))
+
+
+## Wears down the tool in the held slot by one swing, and says what happened.
+##
+## The single implementation of tool wear, shared by [FarmService] and
+## [GatheringService]. It lived on [FarmService] until gathering needed the same
+## three rules, and copying them would have meant two places that each forget the
+## `remove_stack` comment explaining why `remove` is wrong.
+##
+## Durability belongs to the *stack*, not the item definition: two hoes bought on
+## different days wear out at different times, and a shop that sells a single "hoe"
+## resource cannot express that. So the counter lives on the stack and [Inventory]
+## is what stores it.
+##
+## Spending it unconditionally would be the simpler version and would be wrong: an
+## unconditional call is exactly the "durability is a property of the item"
+## assumption, and it deletes a fresh hoe on its first swing.
+##
+## [param action] is only used for the empty case — "nothing appropriate is in
+## hand, so no tool was worn" — which is what lets a caller pass the verb it is
+## trying to perform and get a truthful answer.
+##
+## Returns `{spent, broke, remaining, id}`:
+## - `spent` — whether a swing was actually charged. False when nothing was held, or
+##   what was held does not wear out (a hoe, a seed packet).
+## - `broke` — whether that swing consumed the last of the tool's remaining uses.
+## - `remaining` — uses left after the swing, or -1 when nothing was charged.
+## - `id` — the item that wore, or empty. Carried so a caller with its own
+##   `tool_broken` signal can relay without re-reading the hotbar and hoping the
+##   player has not switched slots in between.
+##
+## Publishes [signal EventBus.tool_broken] on a break and
+## [signal EventBus.inventory_changed] on every successful charge. The stack's amount
+## does not change when it merely wears down, so nothing else would have said so, and
+## a HUD showing remaining uses would keep showing the old number.
+func spend_tool_durability(action: StringName = &"") -> Dictionary:
+	var none := {"spent": false, "broke": false, "remaining": -1, "id": StringName()}
+	if inventory == null or hotbar == null or action.is_empty():
+		return none
+	var stack := hotbar.get_selected_stack()
+	if stack == null:
+		return none
+	var definition := ItemRegistry.get_item(stack.id)
+	if definition == null or not definition.uses_durability:
+		return none
+	var remaining := inventory.get_durability(stack)
+	if remaining <= 1:
+		# `remove_stack`, not `remove`. `remove` spends the lowest quality first,
+		# and two Normal watering cans are the same quality — so it would consume a
+		# fresh can and leave the worn one in the bag forever, which is the exact
+		# situation per-stack durability exists to make representable.
+		inventory.set_durability(stack, 0)
+		inventory.remove_stack(stack, 1)
+		EventBus.tool_broken.emit(stack.id)
+		Log.info("PlayerState", "%s wore out" % definition.display_name)
+		return {"spent": true, "broke": true, "remaining": 0, "id": stack.id}
+	inventory.set_durability(stack, remaining - 1)
+	# The stack's amount did not change, so nothing else would have published
+	# this. A HUD showing remaining uses has to be told.
+	EventBus.inventory_changed.emit()
+	return {"spent": true, "broke": false, "remaining": remaining - 1, "id": stack.id}
 
 
 ## Selects a hotbar slot by index, clamped, and ignores a no-op.

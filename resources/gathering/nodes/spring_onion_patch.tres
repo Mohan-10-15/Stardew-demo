@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ResourceNodeData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/gathering/resource_node_data.gd" id="1_4no3n"]
+[ext_resource type="Script" path="res://scripts/gathering/gather_yield.gd" id="2_cvob1"]
+
+[sub_resource type="Resource" id="Resource_nsl5q"]
+script = ExtResource("2_cvob1")
+item_id = &"spring_onion"
+max_amount = 2
+
+[resource]
+script = ExtResource("1_4no3n")
+id = &"spring_onion_patch"
+display_name = "Spring Onion"
+model = "res://assets/models/quaternius/NaturePack/Plant_1.fbx"
+respawn_days = 3
+collider_radius_scale = 0.3
+aim_radius_scale = 0.7
+spawn_radius = 70.0
+spawn_count = 14
+spawn_spacing = 3.5
+yields = Array[ExtResource("2_cvob1")]([SubResource("Resource_nsl5q")])

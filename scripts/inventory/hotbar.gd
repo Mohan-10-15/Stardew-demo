@@ -114,6 +114,22 @@ func get_selected_tool_action() -> StringName:
 	return definition.tool_action
 
 
+## The upgrade tier of the held tool, or 0 when nothing usable is held.
+##
+## The counterpart to [method get_selected_tool_action] for the other half of a tool
+## match: what the player can *do* with the held item, and how *good* it is at it.
+## Zero rather than 1 for an empty slot so "nothing in hand" cannot accidentally
+## satisfy a tier-1 requirement — a hand is not a basic axe.
+func get_selected_tool_tier() -> int:
+	var stack := get_selected_stack()
+	if stack == null or stack.is_empty():
+		return 0
+	var definition := ItemRegistry.get_item(stack.id)
+	if definition == null or not definition.is_tool():
+		return 0
+	return definition.tool_tier
+
+
 ## The seed id the held slot provides, for planting. Empty when the slot is not
 ## a seed packet.
 func get_selected_seed() -> StringName:
