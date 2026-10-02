@@ -26,3 +26,8 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+# Screenshots written by tools/capture_*.gd for visual review. Not game assets.
+# The `.import` sidecar has to be ignored too, or Godot's importer metadata for a
+# file that is not in the repository is the one thing that gets committed.
+art_review_*.png
+art_review_*.png.import

@@ -51,6 +51,17 @@ func get_cases() -> Array[StringName]:
 		&"wearing_out_one_of_two_cans_removes_that_one",
 		&"a_player_state_service_owns_its_bag",
 		&"a_grid_save_round_trips",
+		# --- crop art --------------------------------------------------------
+		&"every_crop_names_a_model_that_actually_loads",
+		&"every_crop_at_every_stage_draws_real_geometry",
+		&"a_crop_draws_its_seedling_then_its_mature_model",
+		&"a_planted_tile_parents_a_real_crop_model",
+		&"the_crop_model_stands_at_the_crops_art_height",
+		&"crop_art_height_follows_the_size_of_the_plot",
+		&"growing_past_the_halfway_point_swaps_the_model",
+		&"harvesting_takes_the_crop_model_away",
+		&"a_crop_with_no_art_falls_back_to_the_procedural_plant",
+		&"a_crop_model_that_is_not_a_scene_falls_back_rather_than_drawing_nothing",
 		# --- inventory -------------------------------------------------------
 		&"a_new_bag_is_empty",
 		&"adding_merges_into_a_matching_stack",
@@ -664,7 +675,402 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_till_through_input()
 		&"planting_and_harvesting_through_the_real_interact_key_works":
 			return await _t_full_loop_through_input()
+		&"every_crop_names_a_model_that_actually_loads":
+			var broken: Array[String] = []
+			for crop: CropData in CropRegistry.all_crops():
+				if not crop.has_model_art():
+					broken.append("%s has no art" % crop.id)
+					continue
+				for model_path: String in [crop.sprout_model, crop.mature_model]:
+					if not CropArt.can_load(model_path):
+						broken.append("%s -> %s" % [crop.id, model_path])
+			return check_equals(case, broken, [] as Array[String])
+		&"every_crop_at_every_stage_draws_real_geometry":
+			return await _t_every_crop_every_stage(case)
+		&"a_crop_draws_its_seedling_then_its_mature_model":
+			var art := CropRegistry.get_crop(&"corn")
+			if art == null:
+				return fail(case, "no corn")
+			if art.has_model_art() and art.sprout_model == art.mature_model:
+				return fail(case, "both stages use %s" % art.sprout_model)
+			# The crossover is at the halfway mark; both sides of it are asserted
+			# because a `stage_model` that ignored its argument would otherwise pass
+			# an all-sprout check.
+			var early := art.stage_model(0.0)
+			var late := art.stage_model(0.99)
+			if not early.is_empty() and early == late:
+				return fail(case, "0%% and 99%% both drew %s" % early)
+			return check_equals(case, art.stage_model(0.5), art.mature_model)
+		&"a_planted_tile_parents_a_real_crop_model":
+			return await _t_planted_tile_has_model(case)
+		&"the_crop_model_stands_at_the_crops_art_height":
+			return await _t_model_height_matches_art(case)
+		&"crop_art_height_follows_the_size_of_the_plot":
+			return await _t_model_height_follows_tile(case)
+		&"growing_past_the_halfway_point_swaps_the_model":
+			return await _t_stage_swap(case)
+		&"harvesting_takes_the_crop_model_away":
+			return await _t_harvest_clears_model(case)
+		&"a_crop_with_no_art_falls_back_to_the_procedural_plant":
+			return await _t_no_art_falls_back(case)
+		&"a_crop_model_that_is_not_a_scene_falls_back_rather_than_drawing_nothing":
+			return await _t_unloadable_model_falls_back(case)
 	return fail(case, "unhandled case")
+
+
+# --- Crop art ------------------------------------------------------------------
+
+## Plants `crop_id` on a real tile at [param days] growth and returns it, or an
+## empty dictionary explaining why not.
+func _planted_tile(crop_id: StringName, days: int, size: float = 2.0) -> Dictionary:
+	var tile := SoilTile.new()
+	tile.tile_index = Vector2i(3, 2)
+	_ensure_rig()
+	_rig.add_child(tile)
+	tile.build_visuals(size)
+	if not tile.till():
+		return {"ok": false, "why": "till refused"}
+	if not tile.plant(crop_id):
+		return {"ok": false, "why": "plant refused %s" % crop_id}
+	tile.growth_days = days
+	tile.refresh_visual()
+	await _step(2)
+	return {"ok": true, "tile": tile}
+
+
+## The model node a tile is currently drawing, if any.
+func _model_of(tile: SoilTile) -> Node3D:
+	return tile.get_node_or_null(^"CropModel") as Node3D
+
+
+## Drawn height in metres of a model instance, measured the way the renderer sees
+## it.
+##
+## Composed through the node hierarchy rather than read off `Mesh.get_aabb()`,
+## which reports pre-scale bounds and would make every model look a hundred times
+## too small — the exact trap that makes a naive swap silently wrong.
+func _drawn_height(node: Node3D) -> float:
+	return _drawn_aabb(node).size.y
+
+
+## World-space bounds of a model instance, composed through the node hierarchy.
+##
+## Seeded with the node's own transform, because the scale that sizes a crop for
+## its tile lives on that node and not on its children.
+##
+## Reported as a span rather than a height-from-origin, because a model sitting on
+## a 0.06 m soil plate has its top 0.06 m above the origin and measuring from zero
+## would report every crop as taller than its art height.
+func _drawn_aabb(node: Node3D) -> AABB:
+	return _merge_aabb(node, node.transform)
+
+
+func _merge_aabb(node: Node, xform: Transform3D) -> AABB:
+	var out := AABB()
+	var have := false
+	for child: Node in node.get_children():
+		var local := xform
+		if child is Node3D:
+			local = xform * (child as Node3D).transform
+		var boxes: Array[AABB] = []
+		if child is VisualInstance3D:
+			boxes.append(local * (child as VisualInstance3D).get_aabb())
+		var nested := _merge_aabb(child, local)
+		if nested.size.length() > 0.0:
+			boxes.append(nested)
+		for box: AABB in boxes:
+			if have:
+				out = out.merge(box)
+			else:
+				out = box
+				have = true
+	return out
+
+
+## The exhaustive visual sweep, for every crop at five points in its season.
+##
+## This is the case that stands in for looking at the game. A screenshot proves
+## one frame on one machine; this proves that *every* crop draws authored geometry
+## at *every* stage, that the size matches the art height the content asked for,
+## and that the plant genuinely grows — because a swap that kept the seedling
+## silhouette all season would pass a "does it draw anything" test and fail this.
+func _t_every_crop_every_stage(c: StringName) -> Dictionary:
+	var crops := CropRegistry.all_crops()
+	if crops.is_empty():
+		return fail(c, "no crops")
+	var fractions := [0.0, 0.25, 0.5, 0.75, 1.0]
+	var problems: Array[String] = []
+	var checked := 0
+
+	for crop: CropData in crops:
+		var first_height := 0.0
+		var last_height := 0.0
+		var saw_seedling := false
+		var saw_mature := false
+		for fraction: float in fractions:
+			var built := await _planted_tile(crop.id, int(round(float(crop.days_to_grow) * fraction)))
+			if not bool(built["ok"]):
+				problems.append("%s @%.2f: %s" % [crop.id, fraction, str(built["why"])])
+				continue
+			var tile: SoilTile = built["tile"]
+			var model := _model_of(tile)
+			if model == null:
+				problems.append("%s @%.2f: no model parented" % [crop.id, fraction])
+				continue
+			if not model.visible:
+				problems.append("%s @%.2f: model hidden" % [crop.id, fraction])
+				continue
+			var box := _drawn_aabb(model)
+			if box.size.length() <= 0.0:
+				problems.append("%s @%.2f: model has no geometry" % [crop.id, fraction])
+				continue
+			# Triangles are what distinguish authored art from an empty node that
+			# happens to report a non-zero AABB.
+			if _face_count(model) <= 0:
+				problems.append("%s @%.2f: model has no faces" % [crop.id, fraction])
+				continue
+
+			var expected := crop.model_height * lerpf(0.35, 1.0, fraction)
+			if fraction >= 1.0:
+				expected *= 1.12
+			if absf(box.size.y - expected) > 0.06:
+				problems.append("%s @%.2f: %.2fm drawn, %.2fm asked" % [
+					crop.id, fraction, box.size.y, expected,
+				])
+			if fraction <= 0.0:
+				first_height = box.size.y
+				saw_seedling = tile.current_model_path() == crop.sprout_model
+			if fraction >= 1.0:
+				last_height = box.size.y
+				saw_mature = tile.current_model_path() == crop.mature_model
+			checked += 1
+
+		if not saw_seedling:
+			problems.append("%s: day 0 did not draw the seedling" % crop.id)
+		if not saw_mature:
+			problems.append("%s: ripe did not draw the mature model" % crop.id)
+		if last_height <= first_height:
+			problems.append("%s: ripe %.2fm is not taller than planted %.2fm" % [
+				crop.id, last_height, first_height,
+			])
+
+	if not problems.is_empty():
+		return fail(c, "%d problems: %s" % [problems.size(), "; ".join(problems.slice(0, 8))])
+	return succeeded(c, "%d crop-stage pairs checked" % checked)
+
+
+## Total triangles under a node, for the "is there real art in here" assertion.
+func _face_count(node: Node) -> int:
+	var total := 0
+	for child: Node in node.get_children():
+		if child is VisualInstance3D and (child as VisualInstance3D).mesh != null:
+			total += (child as VisualInstance3D).mesh.get_faces().size() / 3
+		total += _face_count(child)
+	return total
+
+
+func _t_planted_tile_has_model(c: StringName) -> Dictionary:
+	var built := await _planted_tile(&"corn", 0)
+	if not bool(built["ok"]):
+		return fail(c, str(built["why"]))
+	var tile: SoilTile = built["tile"]
+	var model := _model_of(tile)
+	if model == null:
+		return fail(c, "no CropModel parented")
+	if not model.visible:
+		return fail(c, "CropModel is hidden")
+	# A model with no geometry in it would satisfy every other assertion here.
+	if _drawn_height(model) <= 0.0:
+		return fail(c, "CropModel has no geometry")
+	return succeeded(c, "%s drawn %.2fm" % [model.name, _drawn_height(model)])
+
+
+## The number that matters: a 1.4 m art height must *draw* at 1.4 m on a 2 m tile,
+## not at some figure inherited from the FBX importer's unit conversion.
+func _t_model_height_matches_art(c: StringName) -> Dictionary:
+	var built := await _planted_tile(&"corn", 99)
+	if not bool(built["ok"]):
+		return fail(c, str(built["why"]))
+	var tile: SoilTile = built["tile"]
+	var crop := CropRegistry.get_crop(&"corn")
+	var model := _model_of(tile)
+	if model == null:
+		return fail(c, "no CropModel parented")
+	var drawn := _drawn_height(model)
+	# Ripe adds a 1.12 lift on top of the art height, matching the placeholder.
+	var expected := crop.model_height * 1.12
+	return check_in_range(c, drawn, expected - 0.05, expected + 0.05)
+
+
+func _t_model_height_follows_tile(c: StringName) -> Dictionary:
+	var small := await _planted_tile(&"corn", 99, 2.0)
+	var large := await _planted_tile(&"corn", 99, 4.0)
+	if not bool(small["ok"]) or not bool(large["ok"]):
+		return fail(c, "could not plant both")
+	var a := _drawn_height(_model_of(small["tile"]))
+	var b := _drawn_height(_model_of(large["tile"]))
+	if a <= 0.0 or b <= 0.0:
+		return fail(c, "2m tile drew %.2fm, 4m tile drew %.2fm" % [a, b])
+	# A 4 m plot should carry plants twice as tall, within a hair for rounding.
+	return check_in_range(c, b / a, 2.0, 2.1)
+
+
+func _t_stage_swap(c: StringName) -> Dictionary:
+	var built := await _planted_tile(&"corn", 0)
+	if not bool(built["ok"]):
+		return fail(c, str(built["why"]))
+	var tile: SoilTile = built["tile"]
+	var crop := CropRegistry.get_crop(&"corn")
+	if _model_of(tile) == null:
+		return fail(c, "no seedling model parented")
+
+	var seen: Array[String] = []
+	# Walk the whole season a day at a time, which is how the game actually gets
+	# there. Counting rebuilds as well as the swap: a repaint that reinstantiated
+	# the scene on every day is the performance bug this same loop would hide.
+	var rebuilds := 0
+	for day: int in range(0, crop.days_to_grow + 1):
+		tile.growth_days = day
+		tile.refresh_visual()
+		await _step(1)
+		if _model_of(tile) == null:
+			return fail(c, "model vanished on day %d" % day)
+		var path := tile.current_model_path()
+		if seen.is_empty() or seen[-1] != path:
+			seen.append(path)
+			rebuilds += 1
+	if seen.size() != 2:
+		return fail(c, "expected 2 distinct models across the season, saw %s" % str(seen))
+	if seen[0] != crop.sprout_model or seen[1] != crop.mature_model:
+		return fail(c, "stages were %s then %s" % [seen[0], seen[1]])
+	# One rebuild per stage, not one per day.
+	if rebuilds != 2:
+		return fail(c, "%d rebuilds across %d days for 2 stages" % [
+			rebuilds, crop.days_to_grow + 1,
+		])
+	return succeeded(c, "2 stages, 1 swap at day %d" % (crop.days_to_grow / 2))
+
+
+func _t_harvest_clears_model(c: StringName) -> Dictionary:
+	var built := await _planted_tile(&"corn", 99)
+	if not bool(built["ok"]):
+		return fail(c, str(built["why"]))
+	var tile: SoilTile = built["tile"]
+	if _model_of(tile) == null:
+		return fail(c, "no model before harvest")
+	var ripe_height := _drawn_height(_model_of(tile))
+
+	var result := tile.harvest()
+	if not bool(result["ok"]):
+		return fail(c, "harvest refused: %s" % str(result["reason"]))
+	await _step(2)
+	if _model_of(tile) == null:
+		return fail(c, "no model after harvest")
+
+	# Corn regrows, so the tile is *not* empty — it is a young plant again. Its
+	# clock rewinds to `days_to_grow - regrow_days`, which for corn is 10 of 14
+	# days: still past the halfway mark, so the mature silhouette is *correct*
+	# here. What must change is the size, because that is what tells the player the
+	# plant needs more days. Asserting "the model went back to the seedling" would
+	# be asserting a bug.
+	var crop := CropRegistry.get_crop(&"corn")
+	if tile.growth_days != crop.days_to_grow - crop.regrow_days:
+		return fail(c, "clock at %d days after harvest" % tile.growth_days)
+	var young_height := _drawn_height(_model_of(tile))
+	if young_height >= ripe_height:
+		return fail(c, "regrown plant %.2fm is not shorter than ripe %.2fm" % [
+			young_height, ripe_height,
+		])
+	# And the size has to agree with the rewound clock, not merely be smaller.
+	var fraction := tile.growth_fraction()
+	var expected := crop.model_height * lerpf(0.35, 1.0, fraction)
+	return check_in_range(c, young_height, expected - 0.05, expected + 0.05)
+
+
+func _t_no_art_falls_back(c: StringName) -> Dictionary:
+	# Mutate a real crop rather than inventing one and registering it: the registry
+	# has no public insert, and adding one purely for tests would put a production
+	# API on the board for no gameplay reason. Restored before returning, because
+	# `CropRegistry` is static and a dirty crop would follow into every later case.
+	var crop := CropRegistry.get_crop(&"parsnip")
+	if crop == null:
+		return fail(c, "no parsnip")
+	var saved_sprout := crop.sprout_model
+	var saved_mature := crop.mature_model
+	crop.sprout_model = ""
+	crop.mature_model = ""
+
+	var tile := SoilTile.new()
+	tile.tile_index = Vector2i(5, 5)
+	_ensure_rig()
+	_rig.add_child(tile)
+	tile.build_visuals(2.0)
+	tile.till()
+	var planted := tile.plant(&"parsnip")
+	await _step(2)
+
+	var stalk := tile.get_node_or_null(^"CropMesh") as MeshInstance3D
+	var grew_model := _model_of(tile) != null
+	var stalk_visible := stalk != null and stalk.visible
+	var stalk_scale := stalk.scale.y if stalk != null else 0.0
+
+	crop.sprout_model = saved_sprout
+	crop.mature_model = saved_mature
+
+	if not planted:
+		return fail(c, "plant refused an artless crop")
+	if grew_model:
+		return fail(c, "artless crop grew a model anyway")
+	# The fallback still has to show progress, so it must be visible and scaled.
+	if not stalk_visible:
+		return fail(c, "procedural stalk not visible")
+	return succeeded(c, "stalk at %.2f" % stalk_scale)
+
+
+func _t_unloadable_model_falls_back(c: StringName) -> Dictionary:
+	# Same mutate-and-restore as above.
+	#
+	# The path points at a file that *exists* but is not a scene, rather than at a
+	# missing one. A genuinely absent path is covered by `generate_crop_data.gd`,
+	# which validates every art path and fails the build — and deliberately
+	# `load()`ing a missing file here would log a resource error, which
+	# `tools/check.ps1` treats as a failure. What this case has to prove is the
+	# runtime half: content that does not resolve to a model must not produce an
+	# empty tile.
+	var crop := CropRegistry.get_crop(&"parsnip")
+	if crop == null:
+		return fail(c, "no parsnip")
+	var saved_sprout := crop.sprout_model
+	var saved_mature := crop.mature_model
+	var not_a_model := "res://resources/farming/crops/parsnip.tres"
+	crop.sprout_model = not_a_model
+	crop.mature_model = not_a_model
+
+	var tile := SoilTile.new()
+	tile.tile_index = Vector2i(6, 6)
+	_ensure_rig()
+	_rig.add_child(tile)
+	tile.build_visuals(2.0)
+	tile.till()
+	var planted := tile.plant(&"parsnip")
+	await _step(2)
+
+	var grew_model := _model_of(tile) != null
+	var stalk := tile.get_node_or_null(^"CropMesh") as MeshInstance3D
+	var stalk_visible := stalk != null and stalk.visible
+
+	crop.sprout_model = saved_sprout
+	crop.mature_model = saved_mature
+
+	if not planted:
+		return fail(c, "plant refused")
+	if grew_model:
+		return fail(c, "parented a model for a path that is not a scene")
+	# The point of the case: a bad path in a `.tres` must not produce an empty
+	# tile. It has to fall back to the procedural plant the game already had.
+	if not stalk_visible:
+		return fail(c, "nothing drawn at all for an unusable model path")
+	return succeeded(c)
 
 
 # --- Fixtures -----------------------------------------------------------------

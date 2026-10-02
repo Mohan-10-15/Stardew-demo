@@ -3,9 +3,94 @@
 Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
 Dual first-person / third-person cameras, switchable at runtime.
 
-Progress: **Groups 0–13 and 25 complete.** Group 12 (resource gathering) is next.
+Progress: **Groups 0–11, 13 and 25 complete.** Group 12 (resource gathering) is next.
 
-Current baseline: **248/248 tests**, import clean, boot clean, zero script errors.
+Current baseline: **258/258 tests**, import clean, boot clean, zero script errors.
+
+---
+
+## Crop art — CC0 growth-stage models
+
+```
+WORKSTREAM: crop art (art gap, not a numbered group)
+STATUS: IMPLEMENTED AND VERIFIED
+```
+
+Crops were drawn as a tinted cylinder scaled by growth — a silhouette that showed
+*that* something was growing but never *what*. They now draw real authored
+geometry, and the cylinder survives only as a fallback for crops with no art.
+
+### IMPLEMENTED
+
+- **Quaternius Ultimate Nature Pack** (Jun 2019, CC0) imported to
+  `assets/models/quaternius/NaturePack/` — 29 of 150 models, curated rather than
+  wholesale because the other 121 are dead/snow/autumn variants of things already
+  in the set. Licence shipped alongside and logged in `docs/ASSET_LICENSES.md`.
+- **`CropArt`** (`scripts/farming/crop_art.gd`): loads and measures models once,
+  then hands out fresh instances. Two traps it exists to avoid, both of which fail
+  *silently and wrongly* rather than erroring:
+  1. Godot's FBX importer converts Quaternius' centimetres to metres in the
+     **node transform**. `Mesh.get_aabb()` reports pre-scale bounds, so pulling the
+     bare mesh out of an imported scene yields a model 100x too big. The whole
+     imported scene is instaced and only a uniform scale is applied on top.
+  2. A `Node3D` cannot be shared between tiles, so the cached thing is the
+     `PackedScene` and each tile gets its own instance.
+- **`CropData`** gained three fields — `sprout_model`, `mature_model`,
+  `model_height` — so crop art is content, not code. Half-configured art (one
+  stage but not the other) fails `is_valid()`, because a crop that jumps from a
+  cylinder to full geometry halfway through the season reads as a glitch.
+- **`SoilTile`** parents a `CropModel` node and swaps it at the halfway mark. It
+  rebuilds only when the stage changes, so the nightly growth pass over a 35-tile
+  plot instantiates 2 models per crop, not one per day. Crops with no art, or with
+  art that will not resolve to a scene, fall through to the procedural stalk
+  exactly as before.
+
+### MODEL SCALE — the gap `ASSET_LICENSES.md` had flagged open
+
+Resolved by measurement rather than assumption, with `tools/probe_model_sizes.gd`
+(writes `resources/nature/model_sizes.json`):
+
+- **Godot's FBX importer already converts the packs' native centimetres to
+  metres.** No runtime scale factor is needed. A `BirchTree_1` is 3.57 m and a
+  `Corn_1` is 1.98 m as imported.
+- **Pivots sit on the ground** — `min_y` is within 0.2 m of zero on all 29 models —
+  so models place at their node position with no vertical correction.
+- **Still open for KayKit**, whose characters need the scale/pivot pass that the
+  Unity-only `ArtPackImporter.Build` used to do.
+
+Three measurement traps are recorded in the tool's header, each of which produced a
+plausible wrong answer first: reading bounds during `_initialize()` reports
+pre-conversion figures (a 357 m birch tree); composition must start from the root's
+own transform, or the importer's axis-rotation is missed; and `AABB` is a value
+type in GDScript, so passing one into a recursive walk and assigning to it
+discards the result silently.
+
+### WHAT WAS TESTED
+
+**258/258, import clean, boot clean, zero script errors.** Ten new cases:
+
+- every crop's art paths resolve to a loadable scene (and the generator fails the
+  build if one ever does not);
+- **every crop at five points in its season draws real geometry** — 45 crop-stage
+  pairs, each asserted for visibility, non-zero bounds, actual triangle count, and
+  a drawn height matching the crop's declared art height to within 6 cm;
+- planted is visibly smaller than ripe, and day 0 / ripe draw the seedling and
+  mature models respectively, so a swap that kept one silhouette all season fails;
+- a full 15-day season produces exactly 2 model builds, not 15;
+- a regrowing crop's harvested plant is smaller and matches its rewound clock;
+- art height scales with plot size (a 4 m plot grows plants twice as tall);
+- crops with no art, and art that is not a scene, fall back to the procedural
+  plant instead of leaving an empty tile.
+
+### OPEN ISSUE — not visually reviewed
+
+`tools/capture_crop_stages.gd` renders all 27 crop/stage combinations to
+`art_review_crop_stages.png` (gitignored) and the run is clean at 1800x1400, but
+**nobody has looked at the image**. The automated sweep proves geometry, size and
+stage are right; it cannot prove the models are *charming*, that the stand-ins read
+as their vegetables, or that a field of them looks good. The crop models are
+stand-ins — the nature pack has corn and wheat and nothing that is actually a
+parsnip, a melon or a cauliflower — so this is the one thing worth a human eye.
 
 ---
 
@@ -798,7 +883,7 @@ Carried forward so they are not rediscovered as bugs later:
 | Hotbar / tool belt | **CLOSED.** `HotbarHUD` draws the nine slots, names the contents of each, and repaints the highlight when the selection moves. |
 | Dynamic physics | No `RigidBody3D` or `Area3D` in the world. Static collision is complete. |
 | `3d_physics/layer_4="interactable"` | **Now used** — every farm tile carries a 0.4 m non-solid aim volume on it. |
-| Crop art | `SoilTile.build_visuals` grows scale and colour by stage. Placeholder geometry, not sprites. |
+| Crop art | **CLOSED (geometry), open (visual review).** `SoilTile` draws real CC0 growth-stage models from the Quaternius Ultimate Nature Pack, data-driven per crop and swapped at the halfway mark. The procedural stalk remains the fallback for crops with no art. The one thing left is a human looking at `art_review_crop_stages.png` — the models are stand-ins, so "does a field of these look good" is not answerable by a test. |
 | Watering can refill | The can has durability but no fill state or refill action. |
 | Wallet display | **CLOSED.** The status HUD shows the amount and follows every transaction. |
 | Shop UI | **CLOSED.** `ShopUI` lists prices, takes clicks, and says why a refused trade was refused. |

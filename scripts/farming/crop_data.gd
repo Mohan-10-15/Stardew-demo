@@ -40,6 +40,50 @@ extends Resource
 ## Relative scale of the sprout mesh at planting, ramping to full size at ripeness.
 @export_range(0.05, 1.0, 0.01) var sprout_scale: float = 0.2
 
+## Scene path of the model drawn while the plant is a seedling.
+##
+## Art, not balance — the numbers above are the crop's *rules*, and a designer
+## should be able to change its silhouette without touching when it ripens or what
+## it yields. Empty means "no model for this stage", and [SoilTile] draws the
+## procedural cylinder instead, so content added without art still works.
+@export_file("*.fbx") var sprout_model: String = ""
+## Scene path of the model drawn once the plant is past the halfway mark.
+##
+## The Quaternius nature pack ships no seedling models and no per-day growth
+## stages, so the two-stage swap is the honest amount of stage information these
+## assets actually carry. Silhouette change rather than a coloured cylinder
+## growing is what makes progress legible from a standing height.
+@export_file("*.fbx") var mature_model: String = ""
+## Height in metres the mature model is drawn at, on a 2 m tile.
+##
+## Models are authored at wildly different natural sizes — `Corn_1` is 1.98 m and
+## `Plant_4` is 0.81 m — so the tile scales each one to this height instead of
+## dropping them in at native size. The tile's own extent still scales it, so this
+## holds relative to the plot rather than to absolute metres.
+@export_range(0.1, 3.0, 0.05) var model_height: float = 1.1
+
+
+## Whether this crop has a real model for both stages.
+##
+## Half-configured art is a content bug: a crop with a mature model but no sprout
+## model would jump from a coloured cylinder straight to full geometry halfway
+## through the season, which reads as a glitch rather than as growth. Checked by
+## [method is_valid] so it is reported once at load.
+func has_model_art() -> bool:
+	return not sprout_model.is_empty() and not mature_model.is_empty()
+
+
+## The model to draw at [param planted_fraction] growth, or `""` if this crop has
+## no art.
+##
+## Split at the halfway mark rather than per-day: the pack has exactly two usable
+## plant silhouettes per crop, and a daily crossover would just alternate between
+## them.
+func stage_model(planted_fraction: float) -> String:
+	if not has_model_art():
+		return ""
+	return sprout_model if planted_fraction < 0.5 else mature_model
+
 
 ## Yield for one harvest.
 ##
@@ -77,6 +121,9 @@ func is_valid() -> bool:
 	if min_yield < 1 or max_yield < 1:
 		return false
 	if regrows and regrow_days < 1:
+		return false
+	# Art is optional, but half of it is a mistake worth naming.
+	if sprout_model.is_empty() != mature_model.is_empty():
 		return false
 	return true
 
