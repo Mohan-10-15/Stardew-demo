@@ -12,3 +12,6 @@ seed_price = 30
 sell_price = 105
 ripe_color = Color(0.6, 0.78, 0.62, 1)
 sprout_color = Color(0.62, 0.76, 0.66, 1)
+sprout_model = "res://assets/models/quaternius/NaturePack/Grass_Short.fbx"
+mature_model = "res://assets/models/quaternius/NaturePack/BushBerries_1.fbx"
+model_height = 0.75

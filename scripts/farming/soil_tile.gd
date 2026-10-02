@@ -46,7 +46,16 @@ var growth_days: int = 0
 var _rng := RandomNumberGenerator.new()
 
 var _soil_mesh: MeshInstance3D
+## Procedural stand-in plant, used only for crops that ship no CC0 model.
 var _crop_mesh: MeshInstance3D
+## The real CC0 plant model, instantiated when the crop has art. Kept separate
+## from [_crop_mesh] rather than sharing one node because the two are shaped
+## differently: the model is a whole imported scene whose root carries the
+## importer's own scale, and the placeholder is a single mesh scaled directly.
+var _crop_model: Node3D
+## Path of the model currently parented under this tile, so a repaint that lands on
+## the same growth stage does not free and rebuild 200 meshes for nothing.
+var _model_path: String = ""
 var _tile_size: float = 2.0
 
 
@@ -77,10 +86,13 @@ func build_visuals(size: float) -> void:
 	add_child(soil)
 	_soil_mesh = soil
 
-	var plant := CylinderMesh.new()
+	# The procedural plant is now a *fallback*, drawn only for crops that ship no
+	# CC0 model. It is kept because content added without art should still be
+	# visible and still show progress, and it costs one cylinder per tile.
+	#
 	# A stalk rather than a billboard: it reads at any angle in first and third
-	# person, needs no material setup for transparency, and takes the crop's
-	# colour so a field of ripe corn is visibly different from sprouting beans.
+	# person and needs no material setup for transparency.
+	var plant := CylinderMesh.new()
 	plant.top_radius = _tile_size * 0.16
 	plant.bottom_radius = _tile_size * 0.20
 	plant.height = _tile_size * 0.55
@@ -385,19 +397,41 @@ func refresh_visual() -> void:
 		var mat := _make_material(_soil_color())
 		mat.roughness = 0.7 if is_watered else 1.0
 		_soil_mesh.material_override = mat
-	if _crop_mesh == null:
-		return
 	if crop_id.is_empty():
-		_crop_mesh.visible = false
+		_set_model_path("")
+		if _crop_mesh != null:
+			_crop_mesh.visible = false
 		return
 	var data := CropRegistry.get_crop(crop_id)
 	if data == null:
 		# Unknown crop: draw nothing rather than a wrong-coloured plant. The
 		# warning belongs at load time, in the registry, not every repaint.
-		_crop_mesh.visible = false
+		_set_model_path("")
+		if _crop_mesh != null:
+			_crop_mesh.visible = false
+		return
+
+	var planted_fraction := growth_fraction()
+	var stage := data.stage_model(planted_fraction)
+	if not stage.is_empty():
+		_set_model_path(stage)
+		if _crop_model != null:
+			_fit_model(data, stage, planted_fraction)
+			_crop_model.visible = true
+			if _crop_mesh != null:
+				_crop_mesh.visible = false
+			return
+		# The model path is real content but would not load — a moved or corrupted
+		# FBX. Fall through to the procedural stalk so the crop is still visible
+		# rather than the tile looking empty.
+
+	# No art for this crop, or its art failed to load: the procedural stalk, tinted
+	# by growth. Its scaling is deliberately unchanged from before the model swap
+	# so any crop added without art looks exactly as it did.
+	_set_model_path("")
+	if _crop_mesh == null:
 		return
 	_crop_mesh.visible = true
-	var planted_fraction := growth_fraction()
 	# Blends sprout to ripe colour so growth is legible from a standing height.
 	var tint := data.sprout_color.lerp(data.ripe_color, planted_fraction)
 	_crop_mesh.material_override = _make_material(tint)
@@ -407,6 +441,84 @@ func refresh_visual() -> void:
 	if is_ripe():
 		scale_v *= 1.12
 	_crop_mesh.scale = Vector3.ONE * scale_v
+
+
+## Scales the parented model to the crop's art height, ramped by growth.
+##
+## One place owns model scale: [method CropArt.natural_height] already reports the
+## height the model stands at *as imported*, including the FBX importer's
+## centimetre conversion, so dividing the wanted height by it gives the exact
+## uniform factor — composed with [method CropArt.root_scale] rather than
+## replacing it, which is what keeps the unit conversion intact.
+##
+## Called on every growth repaint, so it only touches `scale` and never rebuilds
+## the scene.
+func _fit_model(data: CropData, stage: String, planted_fraction: float) -> void:
+	var natural := CropArt.natural_height(stage)
+	if natural <= 0.0:
+		return
+	var wanted := _model_height(data) * _growth_scale(planted_fraction)
+	if is_ripe():
+		# Same ripe lift the placeholder has always had, so a harvestable field is
+		# as obvious with models as it was without them.
+		wanted *= 1.12
+	_crop_model.scale = CropArt.root_scale(stage) * (wanted / natural)
+	# Quaternius pivots sit on the ground, so the model only needs lifting clear
+	# of the soil plate, which is 0.06 thick and centred at 0.03.
+	_crop_model.position = Vector3(0.0, _tile_size * 0.03, 0.0)
+
+
+## Height in metres the crop's model should stand at, relative to the plot.
+##
+## Scales with the tile so a larger plot grows proportionally taller crops instead
+## of models sized for the 2 m default.
+func _model_height(data: CropData) -> float:
+	return data.model_height * (_tile_size / 2.0)
+
+
+## How large a modelled plant should read at [param planted_fraction] growth.
+##
+## Starts well under half size so a freshly planted tile looks like a seedling,
+## and reaches 1.0 exactly at ripeness. Not [member CropData.sprout_scale] — that
+## is a multiplier on the procedural cylinder, and reusing it here would make the
+## model's size depend on an unrelated field.
+func _growth_scale(planted_fraction: float) -> float:
+	return lerpf(0.35, 1.0, planted_fraction)
+
+
+## Parents the model at [param path] under this tile, or clears the current one.
+##
+## Only rebuilds when the stage actually changes, so the nightly growth pass over
+## a field does not reinstantiate every model in the plot.
+func _set_model_path(path: String) -> void:
+	if path == _model_path and (path.is_empty() or _crop_model != null):
+		return
+	_model_path = path
+	if _crop_model != null:
+		remove_child(_crop_model)
+		_crop_model.queue_free()
+		_crop_model = null
+	if path.is_empty():
+		return
+	var instance := CropArt.instantiate(path)
+	if instance == null:
+		# Do not record the path, so the next repaint retries rather than treating
+		# this as "already has a model".
+		_model_path = ""
+		return
+	instance.name = "CropModel"
+	add_child(instance)
+	_crop_model = instance
+
+
+## Scene path of the CC0 model this tile is currently drawing, or `""` when it is
+## falling back to the procedural plant.
+##
+## Public because the node name cannot answer it: every model instance is called
+## `CropModel` so the scene tree stays readable, so the *stage* a tile is drawing
+## is only knowable from the content it came from.
+func current_model_path() -> String:
+	return _model_path
 
 
 func _set_crop(value: StringName) -> void:

@@ -12,3 +12,6 @@ seed_price = 60
 sell_price = 160
 ripe_color = Color(0.72, 0.32, 0.52, 1)
 sprout_color = Color(0.48, 0.68, 0.34, 1)
+sprout_model = "res://assets/models/quaternius/NaturePack/Grass_Short.fbx"
+mature_model = "res://assets/models/quaternius/NaturePack/Wheat.fbx"
+model_height = 1.0

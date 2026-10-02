@@ -148,6 +148,42 @@ const CROPS: Array[Dictionary] = [
 	},
 ]
 
+const MODEL_DIR := "res://assets/models/quaternius/NaturePack/"
+
+## CC0 model per crop, kept in its own table rather than in [constant CROPS].
+##
+## Art is not balance: a crop's rules and its silhouette should be tunable
+## independently, and mixing them in one table is what makes a later "the corn
+## looks wrong" change ripple into a diff full of numbers nobody is editing.
+##
+## The Quaternius Ultimate Nature Pack is a *nature* pack, not a farm pack: it
+## ships corn and wheat, and nothing that is actually a parsnip, a melon or a
+## cauliflower. These are therefore stand-ins chosen for plausible silhouette and
+## height, not models of the real vegetable. `Plant_1` is low and sprawling (good
+## for melon), `Plant_4` is wide and low (pumpkin), `Plant_2` is tall and thin
+## (tomato). No pack outside the licensed KayKit/Quaternius set may fill the gaps
+## without a `DECISIONS.md` entry, so substitutes beat a new source.
+##
+## `height` is metres at full size on a 2 m tile.
+##
+## Every crop uses the same seedling model: the pack has no seedling meshes, and
+## `Grass_Short` at 0.32 m reads correctly as "just planted" against every mature
+## model here. The growth cue is the silhouette swap, not the seedling art.
+const CROP_ART: Dictionary = {
+	&"parsnip": {"mature": "Plant_3", "height": 0.75},
+	&"potato": {"mature": "Plant_5", "height": 0.85},
+	&"cauliflower": {"mature": "Flowers", "height": 0.80},
+	&"melon": {"mature": "Plant_1", "height": 0.55},
+	&"tomato": {"mature": "Plant_2", "height": 1.15},
+	&"corn": {"mature": "Corn_1", "height": 1.40},
+	&"pumpkin": {"mature": "Plant_4", "height": 0.60},
+	&"yam": {"mature": "Wheat", "height": 1.00},
+	&"winter_seeds": {"mature": "BushBerries_1", "height": 0.75},
+}
+
+## The one seedling every crop shares, for the reason given above.
+const SPROUT_MODEL := MODEL_DIR + "Grass_Short.fbx"
+
 
 func _initialize() -> void:
 	if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(OUTPUT_DIR)):
@@ -173,10 +209,25 @@ func _initialize() -> void:
 		crop.ripe_color = spec["ripe_color"]
 		crop.sprout_color = spec["sprout_color"]
 
+		var art: Dictionary = CROP_ART.get(crop.id, {})
+		if not art.is_empty():
+			crop.sprout_model = SPROUT_MODEL
+			crop.mature_model = MODEL_DIR + String(art["mature"]) + ".fbx"
+			crop.model_height = art["height"]
+
 		if not crop.is_valid():
 			printerr("[generate_crop_data] %s is invalid" % crop.id)
 			quit(1)
 			return
+
+		# Fail loudly at generation time rather than as a silently empty field: a
+		# model path that does not resolve is a content typo, and the tile would
+		# otherwise fall back to the procedural stalk with nothing said about it.
+		for model_path: String in [crop.sprout_model, crop.mature_model]:
+			if not model_path.is_empty() and not CropArt.can_load(model_path):
+				printerr("[generate_crop_data] %s cannot load %s" % [crop.id, model_path])
+				quit(1)
+				return
 
 		var path := "%s%s.tres" % [OUTPUT_DIR, crop.id]
 		if ResourceSaver.save(crop, path) != OK:
