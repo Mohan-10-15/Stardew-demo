@@ -113,6 +113,67 @@ signal resource_collected(item_id: StringName, amount: int)
 ## why, in words, rather than watching a keypress do nothing at all.
 signal gathering_failed(node_id: StringName, verb: StringName, reason: StringName)
 
+# --- NPCs -----------------------------------------------------------------
+## The player said hello and was answered. Distinct from [signal npc_gifted]: talking
+## to someone costs nothing and is never the same event as handing them a parsnip,
+## which costs the player the parsnip.
+signal npc_talked(npc_id: StringName)
+
+## The mandatory counterpart to [signal npc_talked]. `reason` is machine-readable;
+## the full set is this comment and `every_npc_refusal_has_its_own_reason` in the NPC
+## suite.
+##
+## - `no_npc` — aimed at something with no villager behind it.
+## - `no_npc_service` — no [NpcManager] registered under its group, so there is
+##   nothing to be talked to.
+## - `no_player_state` — the player has no bag, so a greeting has nothing to read
+##   the player's standing out of.
+## - `nothing_to_say` — the villager is real but has no definition behind them, so
+##   there is nobody to say hello to. A *success-shaped* interaction returning this is
+##   still a refusal, and it is why this signal exists rather than a silent no-op.
+##
+## No two of these may share a value, for the same reason as [signal gathering_failed]:
+## a shared reason is two different sentences a listener cannot tell apart.
+signal npc_talk_failed(npc_id: StringName, reason: StringName)
+
+## The player handed over a gift and the villager took it. `reaction` is one of
+## [constant NpcData.REACTION_LOVED], `REACTION_LIKED`, `REACTION_NEUTRAL` or
+## `REACTION_DISLIKED`. Separate from [signal npc_gift_failed] by a wide margin: this
+## one *loses friendship* when `reaction` is `disliked`, and a success that costs the
+## player friendship must not be drawn or sounded like a success.
+signal npc_gifted(npc_id: StringName, item_id: StringName, reaction: StringName)
+
+## The mandatory counterpart to [signal npc_gifted]. `reason` is machine-readable;
+## the full set is this comment and `every_npc_refusal_has_its_own_reason` in the NPC
+## suite.
+##
+## - `no_npc` — aimed at something with no villager behind it.
+## - `no_npc_service` — no [NpcManager] registered under its group.
+## - `no_player_state` — no [PlayerStateService] in the tree, so nothing can be given.
+## - `no_item_held` — the selected hotbar slot is empty.
+## - `no_item` — something is held but its id resolves to no [ItemDefinition], so it
+##   cannot be named in a message.
+## - `not_giftable` — the held item is a tool. Nobody wants to be handed a rake.
+## - `already_gifted_today` — a loved gift already went to this villager today. The
+##   only per-day refusal that is about the *reaction* rather than the budget.
+## - `gift_limit_reached` — the weekly gift budget is spent, on any reaction.
+## - `nothing_to_do` — the villager's state changed between the prompt and the press.
+##
+## `no_item` and `not_giftable` are deliberately separate even though both mean "you
+## cannot give this": one is content that failed to load and the other is a rule the
+## game is enforcing on purpose, and a bug that produced the first would otherwise be
+## heard as the second.
+signal npc_gift_failed(npc_id: StringName, item_id: StringName, reason: StringName)
+
+## The player's standing with one villager reached a new tier name.
+##
+## Not "moved": [signal npc_gifted] already fires for every gift, including the ones
+## that do not carry a heart, and a heart bar listens to that. This one exists because a
+## tier change is worth a different sound and a different line from an ordinary gift,
+## and a listener watching only the gift signal cannot tell the two apart — it is told
+## `hearts` and the new `tier_name` so it never has to ask the villager.
+signal npc_friendship_changed(npc_id: StringName, hearts: int, tier_name: String)
+
 # --- Stamina --------------------------------------------------------------
 ## The player's stamina moved. Both values, because a HUD needs the ceiling to
 ## draw the bar and cannot cache it — a potion or an upgrade will change it.

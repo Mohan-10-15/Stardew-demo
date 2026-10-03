@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_fvkbv"]
+
+[resource]
+script = ExtResource("1_fvkbv")
+id = &"odette"
+display_name = "Odette"
+description = "Reads the weather off the water and is right more often than is comfortable."
+model = "res://assets/models/kaykit/Characters/Mage.fbx"
+model_tint = Color(0.44, 0.36, 0.72, 1)
+target_height = 1.74
+home = Vector2(49.5, 14.5)
+wander_radius = 8.0
+walk_speed = 1.6
+birthday_season = 3
+birthday_day = 5
+loved_gifts = Array[StringName]([&"cauliflower", &"melon"])
+liked_gifts = Array[StringName]([&"yam", &"tomato"])
+disliked_gifts = Array[StringName]([&"wood"])

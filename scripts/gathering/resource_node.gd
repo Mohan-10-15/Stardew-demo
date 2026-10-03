@@ -92,36 +92,9 @@ func _build_model() -> void:
 	_model.name = "Model"
 	if _box.size != Vector3.ZERO:
 		_model.position = -_box.position
-	if not is_equal_approx(data.model_tint.r, 1.0) or not is_equal_approx(data.model_tint.g, 1.0) \
-			or not is_equal_approx(data.model_tint.b, 1.0):
-		_tint_model(_model, data.model_tint)
+	if not ModelArt.is_white(data.model_tint):
+		ModelArt.apply_tint(_model, data.model_tint)
 	add_child(_model)
-
-
-## Multiplies every material's albedo by [param tint].
-##
-## The nature pack has two rock shapes and no ore in them, so an iron vein is the
-## same grey boulder in a different colour. [member GeometryInstance3D.material_override]
-## rather than walking to the shared resource: the same rock model is instanced
-## dozens of times, and overwriting one instance's shared material would tint every
-## other rock in the valley too.
-func _tint_model(root: Node, tint: Color) -> void:
-	for child: Node in root.get_children():
-		if child is GeometryInstance3D:
-			var geometry := child as GeometryInstance3D
-			var source := geometry.material_override
-			# `mesh.surface_get_material`, not something on the instance: the instance
-			# holds no surfaces, it draws the ones its Mesh has. And the duplicate is
-			# per-instance for the reason in the doc comment — the same rock model is
-			# used by every vein in the valley.
-			if source == null and geometry.mesh != null and geometry.mesh.get_surface_count() > 0:
-				source = geometry.mesh.surface_get_material(0)
-			if source is StandardMaterial3D:
-				var copy := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
-				copy.albedo_color = (source as StandardMaterial3D).albedo_color * tint
-				copy.resource_local_to_scene = true
-				geometry.material_override = copy
-		_tint_model(child, tint)
 
 
 ## A cylinder over the lower part of the artwork, on the solid world layer.

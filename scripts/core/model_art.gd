@@ -182,6 +182,50 @@ static func _walk(node: Node, xform: Transform3D) -> void:
 		_walk(child, local)
 
 
+## Whether [param tint] would make a model look different.
+##
+## A content author leaving a tint blank means "no tint", and white is the default of
+## every tint field in the project. Calling [method apply_tint] with it would still be
+## *correct* — multiplying by one changes nothing — but it duplicates every material on
+## the model to achieve that, so callers ask first. Both channels are compared because
+## alpha is ignored: a fully transparent tint is a bug, not a request to hide the model.
+static func is_white(tint: Color) -> bool:
+	return is_equal_approx(tint.r, 1.0) and is_equal_approx(tint.g, 1.0) \
+		and is_equal_approx(tint.b, 1.0)
+
+
+## Multiplies every material's albedo under [param root] by [param tint].
+##
+## How one model becomes several: an iron vein is the same grey boulder in another
+## colour, and a villager is one of five CC0 bodies recoloured.
+##
+## [member GeometryInstance3D.material_override] rather than editing the shared
+## resource, because the same model is instanced many times over — one rock per
+## boulder, one Knight per knight — and overwriting the shared material would tint
+## every other instance in the valley at once. The per-surface duplicate is what
+## makes tinting one instance cheap and local.
+##
+## A white tint is treated as "no tint" by the caller rather than here, because
+## duplicating every material to multiply it by one is pure cost.
+static func apply_tint(root: Node, tint: Color) -> void:
+	if root == null:
+		return
+	for child: Node in root.get_children():
+		if child is GeometryInstance3D:
+			var geometry := child as GeometryInstance3D
+			# `mesh.surface_get_material`, not something on the instance: the instance
+			# holds no surfaces, it draws the ones its Mesh has.
+			var source := geometry.material_override
+			if source == null and geometry.mesh != null and geometry.mesh.get_surface_count() > 0:
+				source = geometry.mesh.surface_get_material(0)
+			if source is StandardMaterial3D:
+				var copy := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
+				copy.albedo_color = (source as StandardMaterial3D).albedo_color * tint
+				copy.resource_local_to_scene = true
+				geometry.material_override = copy
+		apply_tint(child, tint)
+
+
 ## Drops the caches. Only for tests that assert on cache behaviour or that need a
 ## model re-measured after changing an import setting.
 static func clear_cache() -> void:

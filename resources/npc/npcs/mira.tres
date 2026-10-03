@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_olek2"]
+
+[resource]
+script = ExtResource("1_olek2")
+id = &"mira"
+display_name = "Mira"
+description = "Keeps the kitchen garden behind the shop. Will trade advice for a parsnip."
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+model_tint = Color(0.82, 0.36, 0.32, 1)
+target_height = 1.78
+home = Vector2(30.5, 3.5)
+wander_radius = 7.0
+walk_speed = 1.7
+birthday_season = 1
+birthday_day = 12
+loved_gifts = Array[StringName]([&"wild_berry", &"parsnip"])
+liked_gifts = Array[StringName]([&"spring_onion", &"potato"])
+disliked_gifts = Array[StringName]([&"stone"])

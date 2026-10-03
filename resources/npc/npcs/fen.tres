@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_dps5s"]
+
+[resource]
+script = ExtResource("1_dps5s")
+id = &"fen"
+display_name = "Fen"
+description = "Comes and goes. Knows where the good berries are and will not say."
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+model_tint = Color(0.35, 0.62, 0.45, 1)
+target_height = 1.7
+home = Vector2(35.5, 17.5)
+wander_radius = 11.0
+walk_speed = 2.1
+birthday_season = 1
+birthday_day = 24
+loved_gifts = Array[StringName]([&"wild_horseradish", &"wild_berry"])
+liked_gifts = Array[StringName]([&"corn", &"pumpkin"])
+disliked_gifts = Array[StringName]([&"iron_ore"])

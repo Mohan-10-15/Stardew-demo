@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_ax6b0"]
+
+[resource]
+script = ExtResource("1_ax6b0")
+id = &"sable"
+display_name = "Sable"
+description = "Mends things. Was asked to mend the fence, and did, eventually."
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+model_tint = Color(0.3, 0.32, 0.4, 1)
+home = Vector2(40, 5)
+wander_radius = 9.0
+walk_speed = 1.65
+birthday_season = 3
+birthday_day = 19
+loved_gifts = Array[StringName]([&"parsnip", &"potato"])
+liked_gifts = Array[StringName]([&"copper_ore", &"wood"])
+disliked_gifts = Array[StringName]([&"melon"])

@@ -31,6 +31,7 @@ const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 @export var load_status_hud: bool = true
 @export var load_hotbar_hud: bool = true
 @export var load_shop_ui: bool = true
+@export var load_npcs: bool = true
 
 var world: WorldRoot = null
 var player: PlayerController = null
@@ -43,6 +44,7 @@ var player_state: PlayerStateService = null
 var farm_service: FarmService = null
 var gathering_service: GatheringService = null
 var economy_service: EconomyService = null
+var npc_manager: NpcManager = null
 var _time_service: TimeService = null
 
 
@@ -76,6 +78,7 @@ func _boot() -> void:
 		_spawn_farm_service()
 		_spawn_gathering_service()
 		_spawn_economy_service()
+		_spawn_npc_manager()
 	if load_player:
 		_spawn_player()
 	if load_hud:
@@ -289,6 +292,13 @@ func _find_farm_grid(start: Node) -> FarmGrid:
 		if found != null:
 			return found
 	return null
+
+
+func _spawn_npc_manager() -> void:
+	npc_manager = NpcManager.new()
+	npc_manager.name = "NpcManager"
+	add_child(npc_manager)
+	Log.info("Main", "Spawned %d villagers" % npc_manager.count())
 
 
 func _spawn_player() -> void:

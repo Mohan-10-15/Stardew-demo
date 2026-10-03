@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_mg3jb"]
+
+[resource]
+script = ExtResource("1_mg3jb")
+id = &"halda"
+display_name = "Halda"
+description = "Grows one thing, remarkably well, and guards the rest of the valley from it."
+model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
+model_tint = Color(0.72, 0.6, 0.3, 1)
+target_height = 1.76
+home = Vector2(38, 10)
+wander_radius = 6.5
+walk_speed = 1.75
+birthday_season = 2
+birthday_day = 9
+loved_gifts = Array[StringName]([&"pumpkin", &"corn"])
+liked_gifts = Array[StringName]([&"cauliflower", &"wood"])
+disliked_gifts = Array[StringName]([&"wild_berry"])
