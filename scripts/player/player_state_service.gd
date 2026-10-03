@@ -242,6 +242,38 @@ func spend_tool_durability(action: StringName = &"") -> Dictionary:
 	return {"spent": true, "broke": false, "remaining": remaining - 1, "id": stack.id}
 
 
+## Everything a system needs to know about the item in the selected hotbar slot.
+##
+## One method rather than three because "what is the player holding" is asked by more
+## than one system and each of them wanted a slightly different shape:
+##
+##     {"id": StringName, "item": ItemDefinition, "amount": int, "display_name": String}
+##
+## `id` is empty when the slot is empty or holds nothing that resolves to an
+## [ItemDefinition]; `item` is null in exactly that case, so a caller that only wants
+## to check "is there anything to take" tests [member item]'s null-ness and one that
+## wants to name the thing tests `display_name`.
+##
+## The NPC system is the reason this exists: "is the player holding something worth
+## giving away, and what is it called" is a question no earlier caller needed answered
+## in one place, and re-deriving it per system is how two prompts end up disagreeing
+## about what the player is holding.
+func held_item_id(_actor: Node = null) -> Dictionary:
+	var none := {"id": StringName(), "item": null, "amount": 0, "display_name": ""}
+	if hotbar == null:
+		return none
+	var stack := hotbar.get_selected_stack()
+	if stack == null or stack.is_empty():
+		return none
+	var definition := ItemRegistry.get_item(stack.id)
+	return {
+		"id": stack.id,
+		"item": definition,
+		"amount": stack.amount,
+		"display_name": definition.display_name if definition != null else String(stack.id),
+	}
+
+
 ## Selects a hotbar slot by index, clamped, and ignores a no-op.
 ##
 ## The clamp and the equality check are here because both callers — the number

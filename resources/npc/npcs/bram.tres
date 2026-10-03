@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_t4nto"]
+
+[resource]
+script = ExtResource("1_t4nto")
+id = &"bram"
+display_name = "Bram"
+description = "Big, quiet, and always building something that will not fall down."
+model = "res://assets/models/kaykit/Characters/Barbarian.fbx"
+model_tint = Color(0.55, 0.38, 0.24, 1)
+target_height = 1.92
+home = Vector2(45.5, 1.5)
+wander_radius = 5.0
+walk_speed = 1.5
+birthday_season = 2
+birthday_day = 28
+loved_gifts = Array[StringName]([&"iron_ore", &"copper_ore"])
+liked_gifts = Array[StringName]([&"wood", &"stone"])
+disliked_gifts = Array[StringName]([&"spring_onion"])
