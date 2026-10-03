@@ -6,4 +6,4 @@
 script = ExtResource("1_hiw8a")
 id = &"general_store"
 display_name = "General Store"
-stock = Array[StringName]([&"parsnip_seeds", &"winter_seeds", &"potato_seeds", &"tomato_seeds", &"yam_seeds", &"cauliflower_seeds", &"melon_seeds", &"pumpkin_seeds", &"corn_seeds"])
+stock = Array[StringName]([&"parsnip_seeds", &"winter_seeds", &"potato_seeds", &"tomato_seeds", &"yam_seeds", &"cauliflower_seeds", &"melon_seeds", &"pumpkin_seeds", &"corn_seeds", &"axe", &"pickaxe", &"copper_axe", &"copper_pickaxe", &"iron_axe", &"iron_pickaxe", &"steel_axe", &"steel_pickaxe"])

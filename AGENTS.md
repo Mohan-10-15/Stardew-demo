@@ -142,11 +142,17 @@ A group is not done until all of these hold:
 ## 7. Group roadmap
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–6 are complete** (foundation, player controller, dual
-camera, interaction system, procedural world, pond fix, time and day/night). Group
-7 (farming grid) is next. The full table is in `DEVELOPMENT_STATUS.md`.
+next begins. **Groups 0–13 and 25 are complete.** Group 14 (NPC system) is next.
+The full table, and the per-group record of what was implemented, what was tested
+and what was found, is in `DEVELOPMENT_STATUS.md`.
 
 Do not start a group until the previous group's `check.ps1` run is green.
+
+Also: after each group, actually **play** it (`godot --path .`) and record what you
+saw. Three defects in Group 12 passed every test that existed before it and were
+caught only in a real window — a tool that could not be bought, and an interaction
+prompt that vanished at point-blank range. A test asserts what you thought to check,
+not what a player trips over.
 
 ## 8. Layout
 
