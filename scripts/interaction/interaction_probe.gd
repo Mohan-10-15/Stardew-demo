@@ -140,6 +140,16 @@ func _find_target() -> Interactable:
 	)
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
+	# The camera is allowed to be *inside* what it is aiming at, and the ray has to say
+	# so. A resource node's aim volume is a cylinder wider and taller than the node
+	# itself, deliberately, so a tree can be aimed at from across the clearing. Walk up
+	# to the trunk and the spring arm collapses — it has to, the bark is in the way —
+	# until the camera sits inside that cylinder. A query with the default
+	# `hit_from_inside = false` reports nothing at all in that case, so the prompt
+	# vanished and the interact key went dead at exactly the range a player naturally
+	# closes to. Found by walking up to a tree in the real window; invisible to a test
+	# that only ever stands two metres back.
+	query.hit_from_inside = true
 	query.exclude = _exclude_rids()
 
 	var hit := space.intersect_ray(query)

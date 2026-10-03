@@ -107,6 +107,8 @@ func get_cases() -> Array[StringName]:
 		&"no_resource_is_spawned_where_the_player_stands",
 		&"every_gatherable_thing_can_be_reached_on_foot",
 		&"a_tree_falls_to_the_real_interact_key",
+		&"the_prompt_survives_walking_up_to_the_bark",
+		&"ore_is_reachable_by_working_for_it",
 		&"walking_over_the_felled_wood_takes_it",
 	]
 
@@ -127,6 +129,12 @@ func teardown() -> void:
 
 
 func _run_async(case: StringName) -> Dictionary:
+	# Per *case*, not per suite. [method TestSuite.setup] runs once for the whole file,
+	# so a list of refusals accumulated there carried the previous case's reasons into
+	# this one — and a case that said "the press was refused: exhausted (verb=chop)"
+	# when nothing about chopping was involved sends whoever reads the failure looking
+	# in exactly the wrong place.
+	_failures = []
 	match case:
 		&"resource_nodes_are_on_disk_and_uniquely_named":
 			return _t_content_present()
@@ -190,6 +198,10 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_all_reachable()
 		&"a_tree_falls_to_the_real_interact_key":
 			return await _t_chop_through_input()
+		&"the_prompt_survives_walking_up_to_the_bark":
+			return await _t_point_blank_prompt()
+		&"ore_is_reachable_by_working_for_it":
+			return await _t_ore_chain()
 		&"walking_over_the_felled_wood_takes_it":
 			return await _t_pickup_through_movement()
 	return fail(case, "no case implementation for %s" % case)
@@ -333,11 +345,20 @@ func _t_content_tools_exist() -> Dictionary:
 	# open this" rather than "can the starter tool open this" — a tier-3 gate with no
 	# tier-3 pickaxe anywhere is unreachable content, which no runtime test can see.
 	var best_tier: Dictionary = {}
+	# …and the same question again for *obtainability*, which is the half that was
+	# missing and the half that actually shipped the bug. "A copper pickaxe exists"
+	# and "a copper pickaxe can be bought" are different claims, and every tool in the
+	# game was authored and priced into a folder the shop generator never read: the
+	# tests were green, the ore was real, and no player could ever mine a single vein.
+	var best_buyable_tier: Dictionary = {}
+	var for_sale := _stocked_item_ids()
 	for item: ItemDefinition in items:
 		if item.tool_action.is_empty() or not item.is_tool():
 			continue
 		var key := String(item.tool_action)
 		best_tier[key] = maxi(int(best_tier.get(key, 0)), item.tool_tier)
+		if for_sale.has(item.id):
+			best_buyable_tier[key] = maxi(int(best_buyable_tier.get(key, 0)), item.tool_tier)
 	for data: Array[ResourceNodeData] in [ResourceNodeRegistry.all_nodes()]:
 		for node_data: ResourceNodeData in data:
 			if node_data.tool_action.is_empty():
@@ -360,7 +381,46 @@ func _t_content_tools_exist() -> Dictionary:
 				return fail(c, "%s refuses anything below tier %d but the best %s is %d" % [
 					node_data.id, node_data.resist_tier, action, reachable,
 				])
-	return succeeded(c, "every gated node has a tool in the game that opens it")
+			# A tool that exists but cannot be had is not a tool. The starter loadout
+			# counts as obtainable, so the claim is "a player can reach this", not
+			# "there is a `.tres` for it somewhere".
+			var buyable := maxi(int(best_buyable_tier.get(action, 0)), _starter_tier(action))
+			if buyable < node_data.resist_tier:
+				return fail(c, "%s refuses anything below tier %d and the best %s a player can *buy* is tier %d — it is unopenable" % [
+					node_data.id, node_data.resist_tier, action, buyable,
+				])
+	return succeeded(c, "every gated node can be opened by a tool a player can actually get")
+
+
+## Every item id any shop stocks.
+##
+## Read through [ShopRegistry] rather than off the price: a tool with a `buy_price`
+## and no shelf is precisely the failure above, so price is not evidence of
+## availability.
+func _stocked_item_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for shop: ShopDefinition in ShopRegistry.all_shops():
+		for id: StringName in shop.stock:
+			if not out.has(id):
+				out.append(id)
+	return out
+
+
+## The tier of the starter tool for [param action], or 0.
+##
+## Duplicated from the loadout list in [method PlayerStateService.grant_starter_loadout]
+## rather than read from it, because that method is not reachable by name from a
+## `--script` compile and because the question here is about *content*, so reading it
+## from a method that hands things out would make a content test depend on a runtime.
+const STARTER_TOOLS: Array[StringName] = [&"hoe", &"watering_can", &"axe", &"pickaxe"]
+
+
+func _starter_tier(action: StringName) -> int:
+	for id: StringName in STARTER_TOOLS:
+		var item := ItemRegistry.get_item(id)
+		if item != null and item.tool_action == action:
+			return item.tool_tier
+	return 0
 
 
 func _t_content_respawns() -> Dictionary:
@@ -752,7 +812,6 @@ func _t_reach_before_stamina() -> Dictionary:
 	# standing next to it. So the reverse: standing far away and nearly spent, where
 	# spending the walk is the sensible first move.
 	var far_actor := _proxy_actor(node.global_position + Vector3(0, 0, 12.0))
-	_ensure_rig().add_child(far_actor)
 	await _step(2)
 	state.stamina.current = 1
 	var status: Dictionary = service.call("status_for", node, far_actor)
@@ -770,7 +829,6 @@ func _t_reach_before_stamina() -> Dictionary:
 	if not _select_item(built["bar"], &"axe"):
 		return fail(c, "could not re-select the axe")
 	var close_actor := _proxy_actor(node.global_position + Vector3(0, 0, 2.0))
-	_ensure_rig().add_child(close_actor)
 	await _step(2)
 	var close_status: Dictionary = service.call("status_for", node, close_actor)
 	if StringName(close_status.get("reason", &"")) != &"exhausted":
@@ -1010,6 +1068,44 @@ func _t_every_refusal_reason() -> Dictionary:
 		return fail(c, "gather() worked nothing at all")
 	if not _saw_reason(&"no_target"):
 		return fail(c, "working nothing published no reason")
+	seen[&"no_target"] = true
+
+	# The state was taken out of the tree to prove `no_player_state`. Put it back
+	# before anything that needs a player, or every later probe in this case is
+	# testing the absence of a bag rather than the reason it is here for.
+	_ensure_rig().add_child(built["state"])
+	await _step(1)
+
+	# nothing_to_do: the check passed and then the world changed underneath it. This is
+	# the one reason the game cannot reach by playing, so it is produced the way it
+	# actually happens — something empties the node in the instant between the service
+	# asking "what would happen?" and the service doing it.
+	#
+	# `stamina_changed` is the seam, and it is a real one: [method
+	# GatheringService.gather] pays for the swing *after* the check and *before* the
+	# hit, so a listener on the charge lands exactly in the window the refund exists
+	# for. Charging stamina is what proves the refund too.
+	var mid_press := _place(&"oak")
+	var mid_press_service: Node = service
+	if not _equip(built, &"axe"):
+		return fail(c, "could not equip the axe")
+	var before_charge: int = built["state"].stamina.current
+	var tripwire := func(_current: int, _maximum: int) -> void:
+		if not mid_press.depleted:
+			mid_press.deplete()
+	var bus_mid := autoload(&"EventBus")
+	bus_mid.stamina_changed.connect(tripwire)
+	if mid_press_service.call("gather", mid_press, null):
+		return fail(c, "a swing landed on a node emptied mid-press")
+	if not _saw_reason(&"nothing_to_do"):
+		return fail(c, "the mid-press refusal published no reason")
+	bus_mid.stamina_changed.disconnect(tripwire)
+	# The stamina came back, or the refund the reason depends on is not there.
+	if int(built["state"].stamina.current) != before_charge:
+		return fail(c, "a swing that never landed still cost %d stamina" % [
+			before_charge - int(built["state"].stamina.current),
+		])
+	seen[&"nothing_to_do"] = true
 
 	# no_gathering_service
 	_equip(built, &"axe")
@@ -1023,6 +1119,7 @@ func _t_every_refusal_reason() -> Dictionary:
 	if not _saw_reason(&"no_gathering_service"):
 		return fail(c, "no reason for a missing service")
 	service.add_to_group(&"gathering_service")
+	seen[&"no_gathering_service"] = true
 
 	# The reasons already proven elsewhere in this suite, listed here so the contract
 	# can be checked against what the rest of the file actually reaches.
@@ -1104,6 +1201,223 @@ func _t_all_reachable() -> Dictionary:
 	if not stuck.is_empty():
 		return fail(c, "no standing spot within %.1fm of: %s" % [standing, ", ".join(stuck)])
 	return succeeded(c, "all %d nodes have somewhere to stand and swing from" % field.count())
+
+
+## Every distance a player can stand at must show the prompt, right up to the bark.
+##
+## Found by playing, not by reasoning: the aim volume is a cylinder wider and taller
+## than the tree, sized so a ray finds it "from three metres away". A player who walks
+## all the way up to the trunk is then standing *inside* that cylinder, and a
+## [RayCast3D] does not hit a shape it starts inside — so the prompt vanished at exactly
+## the range a player naturally closes to. Every other interaction case here stood at
+## a hard-coded 2.2m, which is why the suite was green throughout.
+func _t_point_blank_prompt() -> Dictionary:
+	var c := &"the_prompt_survives_walking_up_to_the_bark"
+	var built := await _build_world()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	var probe: InteractionProbe = built["probe"]
+	var field: ResourceField = built["field"]
+
+	var aimed := await _stand_and_focus(player, probe, field, FIRST_TREE)
+	if not bool(aimed["focused"]):
+		return fail(c, "could not aim at a %s: %s" % [FIRST_TREE, str(aimed["why"])])
+	var node: ResourceNode = aimed["node"]
+	var component: ResourceNodeInteractable = node.get_node_or_null(^"AimVolume/Interactable") as ResourceNodeInteractable
+	var aim: Vector3 = component.get_aim_point()
+	var radius: float = node.aim_radius()
+	var lost := ""
+	for distance: float in [2.4, 1.6, 1.0, 0.6, 0.3, 0.1]:
+		# Behind the aim point, because that is where the player stands: the aim point
+		# is the middle of the canopy, the feet are on the ground under it.
+		player.global_position = Vector3(aim.x, 0.2, aim.z + distance)
+		await _step(4)
+		var camera := probe.get_camera()
+		if camera == null:
+			return fail(c, "no active camera in the viewport")
+		var dir := (aim - camera.global_position).normalized()
+		player.set_yaw(atan2(-dir.x, -dir.z))
+		player.camera_rig.set_pitch(atan2(dir.y, Vector2(dir.x, dir.z).length()))
+		await _step(3)
+		probe.update_focus()
+		var focus := probe.get_focus()
+		if focus != component:
+			var detail := "nothing at all" if focus == null else str(focus.name)
+			lost = "at %.1fm (aim radius %.2fm) the ray found %s instead of the %s" % [
+				distance, radius, detail, component.name,
+			]
+			break
+		if not component.can_interact(player):
+			lost = "at %.1fm the node is focused but reports itself unavailable" % distance
+			break
+	if not lost.is_empty():
+		return fail(c, lost)
+	return succeeded(c, "the prompt reads the same from 2.4m out and with the player's nose on the bark")
+
+
+## The whole ore chain, in the order a player walks it.
+##
+## Found by playing: every gathering test passed while **no ore in the game could ever
+## be mined**. Copper and iron veins set `blocks_weak_tools`, the starter pickaxe is
+## tier 1, and all six upgraded tools were authored and priced into
+## `resources/gathering/items/` — a directory the shop generator did not read. The
+## tools existed, the veins existed, the tier maths was right, and the valley was
+## full of grey boulders that could not be opened by anyone. Every content test passed
+## because each of them asked a different half of the question.
+##
+## Four halves, asserted in sequence, because any one alone would have shipped the
+## same bug again: the tier-1 pickaxe is refused *by name*, the tool is *on the shelf*,
+## buying it *moves exactly its price*, and with it in hand the vein *gives ore*.
+func _t_ore_chain() -> Dictionary:
+	var c := &"ore_is_reachable_by_working_for_it"
+	var built := await _build_world()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	var service: Node = built["service"]
+	var state: Node = built["state"]
+	var bag: Inventory = built["bag"]
+	var bar: Hotbar = built["bar"]
+	var field: ResourceField = built["field"]
+
+	# The economy runs off the *same* PlayerState the gathering service does, so wood
+	# felled here is the wood that gets sold and the pickaxe bought here is the pickaxe
+	# that gets swung. Two state objects would prove nothing about the real game.
+	var economy_script: GDScript = load("res://scripts/economy/economy_service.gd")
+	var economy: Node = economy_script.new()
+	economy.name = "EconomyService"
+	_rig.add_child(economy)
+	await _step(2)
+	var shop: ShopDefinition = ShopRegistry.get_shop(&"general_store")
+	if shop == null:
+		return fail(c, "there is no general store to sell to")
+
+	# --- 1. The starting pickaxe is turned away, by name ------------------------
+	# Standing at the vein before the first refusal, because the service refuses
+	# distance before tier and "refused" would then mean nothing about tiers. This is
+	# the same order the player meets: you walk up to the boulder and the prompt tells
+	# you your pickaxe is too weak.
+	var at_vein := await _stand_and_focus(player, built["probe"], field, &"copper_vein")
+	if not bool(at_vein["focused"]):
+		return fail(c, "could not reach a copper vein: %s" % str(at_vein["why"]))
+	var vein: ResourceNode = at_vein["node"]
+	if not _equip(built, &"pickaxe"):
+		return fail(c, "the new game does not start with a pickaxe")
+	var refuse: Dictionary = service.call("status_for", vein, player)
+	if bool(refuse.get("ok", false)):
+		return fail(c, "the starter pickaxe opened a copper vein; the gate is not doing anything")
+	if StringName(refuse.get("reason", &"")) != &"needs_better_tool":
+		return fail(c, "the starter pickaxe was refused for '%s', not for being the wrong tier" % [
+			str(refuse.get("reason", "")),
+		])
+
+	# --- 2. Fell one tree for real and sell the wood ----------------------------
+	var aimed := await _stand_and_focus(player, built["probe"], field, FIRST_TREE)
+	if not bool(aimed["focused"]):
+		return fail(c, "could not aim at a %s: %s" % [FIRST_TREE, str(aimed["why"])])
+	var tree: ResourceNode = aimed["node"]
+	if not _equip(built, &"axe"):
+		return fail(c, "the axe vanished from the bag mid-case")
+	for swing: int in range(tree.hits_required(1) + 2):
+		if tree.depleted:
+			break
+		service.call("gather", tree, player)
+		await _step(1)
+	if not tree.depleted:
+		return fail(c, "a tree survived %d gathers" % tree.hits_required(1))
+	await _step(30)
+	# The wood is in a pile on the ground, so it has to be walked over like any other
+	# drop. `collect` is what the player's body triggers; calling it directly is the
+	# same code path minus the collision, which the pickup case covers separately.
+	for drop: Node in service.call("get_drops"):
+		if StringName(drop.get("item_id")) == &"wood":
+			service.call("collect_drop", drop)
+			break
+	await _step(2)
+	var felled_wood := bag.count(&"wood")
+	if felled_wood <= 0:
+		return fail(c, "felled a whole tree and no wood reached the bag")
+
+	var gold_before := int(state.get("wallet").get("gold"))
+	var sold: Dictionary = economy.call("sell", shop, &"wood", felled_wood)
+	if not bool(sold.get("ok", false)):
+		return fail(c, "could not sell the wood: %s" % str(sold.get("reason", "?")))
+	var expected := felled_wood * ItemRegistry.sell_price_of(&"wood")
+	var earned := int(state.get("wallet").get("gold")) - gold_before
+	if earned != expected:
+		return fail(c, "sold %d wood and the wallet moved %d, not %d" % [felled_wood, earned, expected])
+	var per_tree: int = maxi(earned, 1)
+	var price := ItemRegistry.buy_price_of(&"copper_pickaxe")
+
+	# --- 3. Buy the upgrade off the shelf, for exactly its price ----------------
+	if not shop.stocks(&"copper_pickaxe"):
+		return fail(c, "the copper pickaxe is not on the shelf, so no vein can ever be opened")
+	# Standing in for "the player kept felling trees", which is the same wood sold at
+	# the same rate and would take forty-odd walks to replay. The rate is measured
+	# above rather than assumed, and the count is asserted, so this cannot quietly
+	# become a cheaper pickaxe than the one the content defines.
+	var shortfall := maxi(price - int(state.get("wallet").get("gold")), 0)
+	if shortfall > 0:
+		var more := -(-shortfall / per_tree)
+		bag.add(&"wood", more * per_tree)
+		sold = economy.call("sell", shop, &"wood", more * per_tree)
+		if not bool(sold.get("ok", false)):
+			return fail(c, "could not sell the rest of the wood: %s" % str(sold.get("reason", "?")))
+	# Bounded, because "reachable" and "sometime next season" are different claims and
+	# a price nobody can pay is the same dead end as a tool on no shelf.
+	var trees_needed := maxi(ceilf(float(price) / float(per_tree)), 1)
+	if trees_needed > 60:
+		return fail(c, "the first ore tool costs %d; that is %d trees at %dg each" % [
+			price, trees_needed, per_tree,
+		])
+	var gold_pre_buy := int(state.get("wallet").get("gold"))
+	var bought: Dictionary = economy.call("buy", shop, &"copper_pickaxe", 1)
+	if not bool(bought.get("ok", false)):
+		return fail(c, "could not buy the copper pickaxe with %dg in hand: %s" % [
+			gold_pre_buy, str(bought.get("reason", "?")),
+		])
+	var spent := gold_pre_buy - int(state.get("wallet").get("gold"))
+	if spent != price:
+		return fail(c, "bought the copper pickaxe for %d, priced at %d" % [spent, price])
+	if bag.count(&"copper_pickaxe") != 1:
+		return fail(c, "paid %d for a copper pickaxe and the bag has %d" % [
+			price, bag.count(&"copper_pickaxe"),
+		])
+
+	# --- 4. And now the vein opens ---------------------------------------------
+	if not _select_item(bar, &"copper_pickaxe"):
+		return fail(c, "the newly bought pickaxe cannot be put in hand")
+	if bar.get_selected_tool_action() != &"mine":
+		return fail(c, "the copper pickaxe in hand reads as '%s'" % bar.get_selected_tool_action())
+	# Back to the boulder: the felling happened by the oak, and the service refuses
+	# distance before it looks at tiers, so gathering from here would be refused for
+	# the wrong reason and the case would pass for the wrong reason.
+	var back := await _stand_and_focus(player, built["probe"], field, &"copper_vein")
+	if not bool(back["focused"]):
+		return fail(c, "could not walk back to a copper vein: %s" % str(back["why"]))
+	vein = back["node"]
+	var swings := 0
+	for swing: int in range(vein.hits_required(2) + 2):
+		if vein.depleted:
+			break
+		service.call("gather", vein, player)
+		await _step(1)
+		swings += 1
+	if not vein.depleted:
+		return fail(c, "a copper pickaxe could not break a copper vein in %d swings" % swings)
+	await _step(30)
+	for drop: Node in service.call("get_drops"):
+		if StringName(drop.get("item_id")) == &"copper_ore":
+			service.call("collect_drop", drop)
+			break
+	await _step(2)
+	var ore := bag.count(&"copper_ore")
+	if ore <= 0:
+		return fail(c, "broke open a copper vein and no copper reached the bag")
+	return succeeded(c, "tier 1 refused by name; %dg bought for %dg, about %d trees at %dg a tree; vein gave %d ore" % [
+		price, price, trees_needed, per_tree, ore,
+	])
 
 
 func _t_chop_through_input() -> Dictionary:
@@ -1190,6 +1504,10 @@ func _t_pickup_through_movement() -> Dictionary:
 		return fail(c, "no piles on the ground to walk over")
 	var drop: ResourceDrop = piles[0]
 	var drop_id := drop.item_id
+	# Read the amount *now*. The pickup frees the drop, so anything asked of it after
+	# the walk is a question to a freed object — which throws, and whose trace points
+	# at the line that asked rather than at the pickup that made the asking invalid.
+	var promised_amount := drop.amount
 
 	# Walk onto it by moving the player, not by calling the pickup. The area test is
 	# the thing being verified: a drop created inside the player must still be found,
@@ -1199,9 +1517,9 @@ func _t_pickup_through_movement() -> Dictionary:
 	await _wait(0.25)
 	if int(service.call("drop_count")) >= piles.size():
 		return fail(c, "walked onto %s and nothing was picked up" % drop_id)
-	if bag.count(drop_id) != before + drop.amount:
+	if bag.count(drop_id) != before + promised_amount:
 		return fail(c, "bag went %d -> %d %s by walking over a pile of %d" % [
-			before, bag.count(drop_id), drop_id, drop.amount,
+			before, bag.count(drop_id), drop_id, promised_amount,
 		])
 	# Every other pile within reach is fair game too, or felling a tree would need one
 	# trip per line of its drop table.
@@ -1360,7 +1678,13 @@ func _drop(service: Node, item_id: StringName, amount: int) -> ResourceDrop:
 	drops.add_child(drop)
 	# Wired exactly as [method GatheringService._spawn_drops] wires a felled tree's,
 	# because a pickup that nothing is listening for is a different test.
-	drop.pickup_requested.connect(service.call("collect_drop"))
+	#
+	# `Callable(service, "collect_drop")`, never `service.call("collect_drop")`: the
+	# `call` form *invokes* the method at the point of connection — with no arguments,
+	# which aborts this helper and returns `null`. A connected null callable is
+	# invisible, and the two cases that use this helper both then reported a refusal
+	# against a pile that had never been placed.
+	drop.pickup_requested.connect(Callable(service, "collect_drop"))
 	return drop
 
 
