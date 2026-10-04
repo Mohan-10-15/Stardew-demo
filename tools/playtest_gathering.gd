@@ -51,10 +51,33 @@ func _run() -> void:
 	if packed == null:
 		_fail("could not load %s" % MAIN_SCENE)
 		return
+
+	# Wait for the game to *say* it is ready rather than for a number of frames.
+	#
+	# Booting this valley is not twelve frames of work — it instantiates 146 resource
+	# nodes, their models, the player, four HUDs and the shop UI. The first version of
+	# this harness slept 12 frames and then started typing at the game, and on a slow
+	# machine that lands before the hotbar HUD exists, so the KEY_4 for the axe goes
+	# nowhere and the run fails much later with a symptom that has nothing to do with
+	# the cause: "could not walk to the tree", because the same early-input run also
+	# pressed the movement keys before the player was there to answer them. Two
+	# unrelated-looking failures, one missing `await game_ready`.
+	var bus: Node = root.get_node_or_null(^"EventBus")
+	if bus == null:
+		_fail("EventBus autoload missing")
+		return
+	var announced_ready := [false]
+	bus.game_ready.connect(func() -> void: announced_ready[0] = true)
+
 	var main: Node = packed.instantiate()
 	root.add_child(main)
-	for _i: int in range(12):
+	var ready_deadline := Time.get_ticks_msec() + 30000
+	while not bool(announced_ready[0]) and Time.get_ticks_msec() < ready_deadline:
 		await process_frame
+	if not bool(announced_ready[0]):
+		_fail("the game never announced EventBus.game_ready")
+		return
+	print("[play] game ready; playing")
 
 	var player: Node3D = main.get("player")
 	var probe: Node = _find(player, "InteractionProbe")
@@ -76,7 +99,6 @@ func _run() -> void:
 	# Listen for the gathering channel and print it. A swing that does nothing is the
 	# one failure a screenshot cannot show, and the refusal reason is the only thing
 	# that says which one it was.
-	var bus := root.get_node_or_null(^"EventBus")
 	if bus != null:
 		bus.gathering_failed.connect(
 			func(id: StringName, verb: StringName, reason: StringName) -> void:
@@ -126,7 +148,21 @@ func _run() -> void:
 		_fail("could not aim at the tree with real mouse motion")
 		return
 	var focus: Node = probe.call("get_focus")
+	# What is actually in hand when the prompt was rendered, and what the service
+	# makes of it. The prompt for `wrong_tool` and the prompt for a legal swing are
+	# both "Chop the Oak" — only the "(4 left)" suffix tells them apart — so a bare
+	# prompt line is ambiguous between "ready" and "refused", and nothing after this
+	# point says which.
+	var live_status: Dictionary = service.call("status_for", target, player)
 	print("[play] prompt reads: %s" % String(focus.call("get_prompt", player)))
+	print("[play] in hand: slot=%d stack=%s action=%s | node %s needs '%s' | status=%s" % [
+		int(bar.call("get_selected")),
+		String(bar.call("describe_selected")),
+		String(bar.call("get_selected_tool_action")),
+		String(target.get("data").get("id")),
+		String(target.get("data").get("tool_action")),
+		str(live_status),
+	])
 	await _settle(4)
 	await _shot(SHOT_DIR + "2_prompt.png")
 
@@ -342,14 +378,25 @@ func _gather_one(player: Node3D, probe: Node, service: Node, bag: Resource, bar:
 ## the mouse, because walking into a tree while the harness fights the camera for
 ## control is a harness bug, not a game bug — and the aim step that follows uses the
 ## real mouse path.
+##
+## Walks *around* things rather than at them. The first version held `move_forward`
+## and steered, so any resource between the player and the target simply stopped it:
+## the valley scatters 146 nodes and a straight line from the spawn to a chosen oak
+## crosses one often enough to matter. It then failed as "could not walk to the
+## tree", which reads like a collision bug and is not one — no player walks in a
+## straight line through a woodpile. On a stall the harness strafes with the same
+## real keys a player uses, alternating sides, and keeps the forward press down.
 func _walk_to(player: Node3D, target: Vector3, tolerance: float, ceiling: float = 30.0) -> bool:
 	var deadline := Time.get_ticks_msec() + int(ceiling * 1000.0)
+	var from_start := player.global_position
 	var flat := func() -> float:
 		return Vector2(player.global_position.x, player.global_position.z).distance_to(
 			Vector2(target.x, target.z)
 		)
 	var last: float = flat.call()
 	var stalled_since := Time.get_ticks_msec()
+	var blocked_by := ""
+	var strafe_left := true
 	Input.action_press(&"move_forward")
 	while Time.get_ticks_msec() < deadline:
 		var to := target - player.global_position
@@ -361,19 +408,77 @@ func _walk_to(player: Node3D, target: Vector3, tolerance: float, ceiling: float 
 		player.call("set_yaw", atan2(-to.x, -to.z))
 		await _seconds(0.05)
 		var now: float = flat.call()
-		if now > last - 0.01:
-			# Not getting closer. Give up on this walk rather than spend the rest of
-			# the budget pushing a player into a boulder — the step is normally small
-			# enough that two in a row means something is in the way.
-			if Time.get_ticks_msec() - stalled_since > 1500:
-				break
-			await _seconds(0.2)
-		else:
+		if now <= last - 0.01:
+			# Moving again: drop the strafe and keep going.
 			last = now
 			stalled_since = Time.get_ticks_msec()
+			Input.action_release(&"move_left")
+			Input.action_release(&"move_right")
+			continue
+		if Time.get_ticks_msec() - stalled_since <= 700:
+			# A frame of no progress is a slope or a tree edge, not a wall.
+			await _seconds(0.15)
+			continue
+		# Wedged. Side-step with a real key, still pushing forward, the way anyone
+		# squeezes past a boulder. Which side alternates so a corridor of two trees
+		# cannot trap it going the same way twice.
+		blocked_by = _blocking(player, maxf(now, 0.5))
+		var side := &"move_left" if strafe_left else &"move_right"
+		var other := &"move_right" if strafe_left else &"move_left"
+		Input.action_release(other)
+		Input.action_press(side)
+		strafe_left = not strafe_left
+		print("[play]   wedged %.2fm short of %s (blocked by %s); stepping %s" % [
+			now, str(target), blocked_by, String(side),
+		])
+		await _seconds(0.45)
+		Input.action_release(side)
+		last = flat.call()
+		stalled_since = Time.get_ticks_msec()
 	Input.action_release(&"move_forward")
+	Input.action_release(&"move_left")
+	Input.action_release(&"move_right")
 	await _settle(4)
-	return float(flat.call()) <= tolerance
+	var remaining := float(flat.call())
+	if remaining > tolerance:
+		# A walk that gave up is two different faults with the same symptom: the player
+		# is wedged against something solid and could not get around it, or the player
+		# is being moved by something else entirely. "Could not walk to the tree"
+		# covers both, and picking between them by re-running is how a harness burns
+		# an afternoon.
+		print("[play] walk gave up: %s -> %s, still %.2fm away, blocked by %s" % [
+			str(from_start), str(target), remaining,
+			blocked_by if not blocked_by.is_empty() else _blocking(player, maxf(remaining, 0.5)),
+		])
+	return remaining <= tolerance
+
+
+## A one-line description of whatever solid thing is in the player's way within
+## [param radius] of them, or a note that the way is clear.
+##
+## Reads the world rather than guessing from the walk: "the player stopped" and "the
+## player stopped *against a boulder*" are the same observation until you ask the
+## physics server which, and this is a one-shot sphere cast's worth of work.
+func _blocking(player: Node3D, radius: float) -> String:
+	var world := player.get_world_3d()
+	if world == null:
+		return "no world"
+	var space := world.direct_space_state
+	if space == null:
+		return "no physics space"
+	var query := PhysicsShapeQueryParameters3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = maxf(radius, 0.5)
+	query.shape = shape
+	query.transform = Transform3D(Basis(), player.global_position + Vector3(0.0, 0.9, 0.0))
+	query.collision_mask = PhysicsLayers.WORLD
+	query.collide_with_bodies = true
+	var hits: Array[Dictionary] = space.intersect_shape(query, 6)
+	var names: Array[String] = []
+	for hit: Dictionary in hits:
+		var collider: Object = hit.get("collider")
+		names.append(String(collider.name) if collider != null else "?")
+	return ", ".join(names) if not names.is_empty() else "nothing in the way"
 
 
 ## Turns the camera onto [param target] with real mouse-motion events.
