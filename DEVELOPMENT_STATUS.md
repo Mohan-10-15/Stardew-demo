@@ -1825,6 +1825,51 @@ boot       OK
 - `RogueHooded` is tinted and stripped but never placed in the world; halda uses it and the
   player could too.
 
+### Two more bugs, both from opening the game in a window
+
+The pipeline is headless, so it cannot see either of these. Both were printed by a real
+windowed run and neither produced a failing test.
+
+**`Error calling from signal 'hotbar_selection_changed' to callable ... called with 1`.**
+`InteractionHUD` connected `_refresh_prompt()`, which takes no arguments, straight to
+`EventBus.hotbar_selection_changed`, which carries a slot. Godot errors the first time the
+hotbar moves. It never fires headless because nothing changes the selection, so a fully
+green `check.ps1` sat on top of it. Fixed with a named `_on_hotbar_selection_changed`
+adapter rather than an optional parameter on `_refresh_prompt`, because the slot genuinely
+is not needed and a bare `_slot: int = -1` on a method called from three places would
+quietly accept the wrong argument too.
+
+**`Invalid access to property or key 'id' on a base object of type 'Nil'`.**
+`FarmService.plant` named the consumed item in its `item_removed` event by re-reading
+`hotbar.get_selected_stack()` *after* the seed had already left the bag. Planting the last
+parsnip seed in the game emptied the slot, so that read returned null. The crop grew anyway
+and the bag was never told it had lost anything.
+
+It survived because a stack of two or more still holds the same item id after one is taken,
+so the re-read returned a valid stack and the id happened to be right. Every existing plant
+test ran on a starter loadout, so every one of them passed. The last seed in the bag is the
+rarest thing a player does and the one most likely to be a session's final action.
+
+New case `planting_the_last_seed`, and it took two attempts to write honestly. The first
+built through `_build_world()`, which grants the starter loadout into a `PlayerStateService`
+that stays in the suite's shared rig — and this case became the first in the run to call it,
+so the loadout outlived the case, `Inventory.resize(1)` in a later harvesting test refused to
+shrink past six occupied slots, and that test failed with `bag still has 18 free slots`. The
+second attempt snapshotted the bag through `to_dict`/`from_dict` and still leaked, because
+`add` puts the seeds back in a *different* slot once the original stack has been consumed.
+The fix was to stop sharing: `_make_service` gives the case its own bag, which is how the
+harvesting test avoids the problem in the first place.
+
+```
+passed: 388   failed: 0
+import     OK
+tests      OK
+boot       OK
+```
+
+Windowed run, stderr empty. Worth remembering that the number the pipeline reports and the
+number a player sees are not the same number: the pipeline could not see either of these.
+
 ---
 
 ## Group roadmap

@@ -35,6 +35,7 @@ func get_cases() -> Array[StringName]:
 		&"planting_untilled_soil_is_refused",
 		&"planting_an_unknown_crop_is_refused",
 		&"planting_twice_on_one_tile_is_refused",
+		&"planting_the_last_seed",
 		&"an_unwatered_crop_does_not_grow",
 		&"a_watered_crop_grows_one_day",
 		&"a_crop_is_ripe_exactly_on_its_last_day",
@@ -192,6 +193,8 @@ func _run_async(case: StringName) -> Dictionary:
 			tile.till()
 			tile.plant(&"parsnip")
 			return check_false(case, tile.plant(&"potato"))
+		&"planting_the_last_seed":
+			return await _t_planting_the_last_seed(case)
 		&"an_unwatered_crop_does_not_grow":
 			# The single most important farming rule, and the one this suite exists
 			# to protect: no water means no growth, ever. Two nights in a row,
@@ -1249,6 +1252,50 @@ func _select_seed_slot(bar: Hotbar) -> bool:
 			bar.select(i)
 			return bar.get_selected_seed() == &"parsnip"
 	return false
+
+
+## Planting the *last* seed of a kind in the bag works.
+##
+## `FarmService.plant` used to name the consumed item by re-reading the hotbar *after* the
+## seed had left it, to emit `item_removed`. Planting the last parsnip seed in the game
+## emptied the slot, so that read returned null and the emit threw
+## `Invalid access to property or key 'id' on a base object of type 'Nil'` — the crop grew
+## anyway and the bag was never told it had lost anything.
+##
+## It survived a green suite because a stack of two or more still holds the same item id
+## after one is taken, so the re-read returned a valid stack and the id happened to be
+## right. Every existing plant test used a starter loadout and every one of them passed.
+## Only the last seed in the bag breaks it, which is the rarest thing a player does and the
+## one most likely to be the run's final action.
+##
+## Built through [method _make_service] rather than [method _build_world] on purpose.
+## `_build_world` grants the starter loadout into a `PlayerStateService` that stays in the
+## suite's shared rig, and this case used to be the first to call it — so the loadout
+## outlived the case, the next case's `Inventory.resize(1)` refused to shrink past six
+## occupied slots, and a harvesting test failed with `bag still has 18 free slots`.
+func _t_planting_the_last_seed(c: StringName) -> Dictionary:
+	var service := await _make_service()
+	if service == null:
+		return fail(c, "could not make a farm service")
+	var bag: Inventory = service.get("inventory")
+	var bar: Hotbar = service.get("hotbar")
+	if bag == null or bar == null:
+		return fail(c, "the service has no bag")
+	# Exactly one, because one is the only number that fails.
+	bag.add(&"parsnip_seeds", 1)
+	if not _select_seed_slot(bar):
+		return fail(c, "the seed did not reach the hotbar")
+	var tile := _make_tile(0, 0)
+	tile.till()
+	tile.water()
+
+	if not bool(service.call("plant", tile, null)):
+		return fail(c, "planting the last seed was refused")
+	if tile.crop_id != &"parsnip":
+		return fail(c, "the crop did not grow, the tile holds '%s'" % tile.crop_id)
+	if bag.count(&"parsnip_seeds") != 0:
+		return fail(c, "%d seeds left in the bag" % bag.count(&"parsnip_seeds"))
+	return succeeded(c)
 
 
 func _t_every_tile_aimable() -> Dictionary:

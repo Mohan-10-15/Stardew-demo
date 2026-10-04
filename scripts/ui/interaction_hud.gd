@@ -171,13 +171,25 @@ func _watch_state(value: bool) -> void:
 		return
 	_watching_state = value
 	if value:
-		EventBus.hotbar_selection_changed.connect(_refresh_prompt)
+		EventBus.hotbar_selection_changed.connect(_on_hotbar_selection_changed)
 		EventBus.inventory_changed.connect(_refresh_prompt)
 		EventBus.npc_friendship_changed.connect(_on_friendship_changed)
 	else:
-		EventBus.hotbar_selection_changed.disconnect(_refresh_prompt)
+		EventBus.hotbar_selection_changed.disconnect(_on_hotbar_selection_changed)
 		EventBus.inventory_changed.disconnect(_refresh_prompt)
 		EventBus.npc_friendship_changed.disconnect(_on_friendship_changed)
+
+
+## The selected slot changed, so the prompt may now describe a different item.
+##
+## Its own method rather than connecting [method _refresh_prompt] straight to the signal,
+## because that signal carries a slot and this one takes nothing: Godot errors with
+## `Error calling from signal 'hotbar_selection_changed' to callable ... called with 1`
+## the first time the hotbar moves, and only in a real window — the headless boot check
+## never changes the selection, so a green pipeline sat on top of it. The slot is not
+## needed here; the prompt re-reads the probe and the bag either way.
+func _on_hotbar_selection_changed(_slot: int) -> void:
+	_refresh_prompt()
 
 
 ## A villager's standing moved, so whether they can take a present may have moved with it.

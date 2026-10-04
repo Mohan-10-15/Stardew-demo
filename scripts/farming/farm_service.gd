@@ -275,12 +275,23 @@ func plant(target: SoilTile, actor: Node) -> bool:
 		EventBus.farming_failed.emit(target.tile_index, &"plant", "wrong_season")
 		return false
 
-	if inventory.remove(hotbar.get_selected_stack().id, 1) <= 0:
+	# The stack is read once, before the seed leaves the bag. It used to be re-read here to
+	# name the item in the `item_removed` event — which is the stack that was just emptied.
+	# Planting the last parsnip seed in the game therefore threw
+	# `Invalid access to property or key 'id' on a base object of type 'Nil'`, the crop
+	# grew anyway, and the bag never heard about the seed it had just lost. With more than
+	# one in the stack it worked by accident, because the slot still held the same item id.
+	var seed_stack := hotbar.get_selected_stack()
+	if seed_stack == null:
+		EventBus.farming_failed.emit(target.tile_index, &"plant", "no_seed")
+		return false
+	var seed_item_id := seed_stack.id
+	if inventory.remove(seed_item_id, 1) <= 0:
 		EventBus.farming_failed.emit(target.tile_index, &"plant", "no_seed")
 		return false
 
 	target.plant(seed_id)
-	EventBus.item_removed.emit(hotbar.get_selected_stack().id, 1)
+	EventBus.item_removed.emit(seed_item_id, 1)
 	return true
 
 
