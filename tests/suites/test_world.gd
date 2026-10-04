@@ -41,6 +41,12 @@ func get_cases() -> Array[StringName]:
 		&"the_ground_is_tinted_and_not_one_flat_green",
 		&"the_pond_basin_tint_actually_differs_from_the_field",
 		&"the_world_is_built_from_the_library_and_not_from_the_old_helper",
+		&"every_decoration_is_scattered_at_its_full_count",
+		&"the_same_seed_scatters_the_same_scenery_twice",
+		&"no_decoration_stands_where_something_already_is",
+		&"only_collidable_scenery_has_a_collider",
+		&"batched_scenery_costs_one_node_not_one_per_tuft",
+		&"no_decoration_is_also_a_gatherable",
 	]
 
 
@@ -488,6 +494,18 @@ func _run_async(case: StringName) -> Dictionary:
 			return _t_basin_tint_differs()
 		&"the_world_is_built_from_the_library_and_not_from_the_old_helper":
 			return await _t_world_uses_the_library()
+		&"every_decoration_is_scattered_at_its_full_count":
+			return await _t_decorations_place_in_full()
+		&"the_same_seed_scatters_the_same_scenery_twice":
+			return await _t_decorations_deterministic()
+		&"no_decoration_stands_where_something_already_is":
+			return await _t_decorations_clear_of_reserved()
+		&"only_collidable_scenery_has_a_collider":
+			return await _t_decoration_colliders()
+		&"batched_scenery_costs_one_node_not_one_per_tuft":
+			return await _t_decorations_batched()
+		&"no_decoration_is_also_a_gatherable":
+			return _t_decorations_are_not_gatherables()
 	return fail(case, "no case implementation for %s" % case)
 
 # --- Materials -------------------------------------------------------------
@@ -682,3 +700,241 @@ func _t_world_uses_the_library() -> Dictionary:
 	if bare.is_empty():
 		return succeeded(c, "all %d primitives use the library" % checked)
 	return fail(c, "%d primitives are not on the library, e.g. %s" % [bare.size(), ", ".join(bare.slice(0, 5))])
+
+# --- Scenery ---------------------------------------------------------------
+#
+# Decoration is the easiest system in the project to get quietly wrong: nothing
+# breaks, nothing errors, and a valley with no scenery is still a working valley.
+# So these assert on counts, determinism and keep-outs rather than on "some
+# nodes appeared".
+
+
+func _scenery() -> DecorationField:
+	return _world.get_node_or_null(^"DecorationField") as DecorationField if _world != null else null
+
+
+## Every definition asks for a count. A definition that asks for twelve and places
+## zero is a defect that logs one line and looks like a design choice.
+##
+## Two real ones were found by reading the boot log rather than by looking at the
+## valley: the willows' region was the pond, which is entirely keep-out, and the
+## ground cover was registering itself in the occupancy list and rejecting every
+## willow as "too close to a blade of grass".
+func _t_decorations_place_in_full() -> Dictionary:
+	var c := &"every_decoration_is_scattered_at_its_full_count"
+	await _build()
+	var field := _scenery()
+	if field == null:
+		return fail(c, "the world has no DecorationField - was the world scene regenerated?")
+	var short: Array[String] = []
+	for data: DecorationData in DecorationRegistry.scatterable_decorations():
+		var placed := 0
+		if data.batched:
+			var batch := field.batch(data.id)
+			placed = batch.multimesh.instance_count if batch != null else 0
+		else:
+			placed = _count_children_named(field, "%s_" % data.id)
+		if placed != data.spawn_count:
+			short.append("%s placed %d of %d" % [data.id, placed, data.spawn_count])
+	if short.is_empty():
+		return succeeded(c, "every decoration placed its full count (%d props total)" % field.placed_count())
+	return fail(c, "%d short: %s" % [short.size(), ", ".join(short)])
+
+
+## Scenery is only reproducible if the generator's stream is. Placement is not saved,
+## so a world rebuilt from a save would otherwise grow a different valley.
+func _t_decorations_deterministic() -> Dictionary:
+	var c := &"the_same_seed_scatters_the_same_scenery_twice"
+	await _build()
+	var first := _scenery_positions()
+	# Build a second field from the same seed, next to the first rather than instead of
+	# it, so the comparison is between two live fields.
+	var second := DecorationField.new()
+	second.name = "DecorationFieldProbe"
+	second.seed_value = _scenery().seed_value
+	root().add_child(second)
+	await tree.process_frame
+	var reread := _scenery_positions_of(second)
+	second.queue_free()
+	if first.size() != reread.size():
+		return fail(c, "first build had %d props, second had %d" % [first.size(), reread.size()])
+	for i: int in first.size():
+		if not (first[i] as Vector3).is_equal_approx(reread[i] as Vector3):
+			return fail(c, "prop %d moved between builds: %s vs %s" % [
+				i, first[i], reread[i],
+			])
+	return succeeded(c, "%d props in identical positions across two builds" % first.size())
+
+
+func _scenery_positions() -> Array[Vector3]:
+	return _scenery_positions_of(_scenery())
+
+
+## Every prop position under a field, batches included, in a stable order.
+func _scenery_positions_of(field: DecorationField) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	if field == null:
+		return out
+	for child: Node in _sorted_children(field):
+		if child is MultiMeshInstance3D:
+			var multimesh := (child as MultiMeshInstance3D).multimesh
+			if multimesh != null:
+				for i: int in multimesh.instance_count:
+					# `.origin`, not the whole transform: this array is positions, and
+					# pushing a Transform3D into it fails *silently* — the typed array
+					# rejects the element and the batch's props quietly never get
+					# compared, so the determinism test passed while checking 103 of
+					# 831 props.
+					out.append(
+						((child as MultiMeshInstance3D).global_transform * multimesh.get_instance_transform(i)).origin
+					)
+		else:
+			out.append((child as Node3D).global_position)
+	return out
+
+
+static func _sorted_children(from: Node) -> Array[Node]:
+	var out: Array[Node] = []
+	for child: Node in from.get_children():
+		out.append(child)
+	out.sort_custom(func(a: Node, b: Node) -> bool: return a.name < b.name)
+	return out
+
+
+## Scenery must not stand where the player needs to be: not in the pond, not on a
+## path, not inside the farm plot, and not inside a tree.
+func _t_decorations_clear_of_reserved() -> Dictionary:
+	var c := &"no_decoration_stands_where_something_already_is"
+	await _build()
+	var field := _scenery()
+	if field == null:
+		return fail(c, "no DecorationField")
+	var gatherables: Array[Vector2] = []
+	var resource_field := _world.get_node_or_null(^"ResourceField")
+	if resource_field is ResourceField:
+		for node: ResourceNode in (resource_field as ResourceField).nodes:
+			gatherables.append(Vector2(node.position.x, node.position.z))
+	# Only props that reserve space need to clear the gatherables; ground cover with
+	# zero spacing is explicitly allowed to lie next to anything.
+	var collidable: Array[Vector3] = []
+	var names := {"thicket": true, "berry_bramble": true, "young_birch": true, "young_pine": true,
+		"willow": true, "sapling_oak": true, "fallen_log": true}
+	for child: Node3D in _decorated_props(field):
+		if not names.has(String(child.name).replace("_prop", "")):
+			continue
+		collidable.append(child.global_position)
+	var problems: Array[String] = []
+	for at: Vector3 in collidable:
+		var flat := Vector2(at.x, at.z)
+		if WorldBuilder.is_reserved(flat):
+			problems.append("%s is in a reserved zone at %s" % [at, flat])
+		for other: Vector2 in gatherables:
+			if flat.distance_to(other) < 0.5:
+				problems.append("a prop at %s is inside a gatherable" % flat)
+				break
+	if problems.is_empty():
+		return succeeded(c, "%d collidable props, none in a keep-out or inside a gatherable" % collidable.size())
+	return fail(c, "%d problems, e.g. %s" % [problems.size(), problems[0]])
+
+
+## A collider on grass is a wall you trip over at knee height; no collider on a tree
+## is a wall you walk through. Both are the kind of thing only a test catches.
+func _t_decoration_colliders() -> Dictionary:
+	var c := &"only_collidable_scenery_has_a_collider"
+	await _build()
+	var field := _scenery()
+	if field == null:
+		return fail(c, "no DecorationField")
+	var wrong: Array[String] = []
+	var checked := 0
+	for data: DecorationData in DecorationRegistry.scatterable_decorations():
+		if data.batched:
+			continue
+		for child: Node in field.get_children():
+			if not String(child.name).begins_with("%s_" % data.id):
+				continue
+			checked += 1
+			var body := child as StaticBody3D
+			var has_shape := false
+			for grandchild: Node in child.get_children():
+				if grandchild is CollisionShape3D:
+					has_shape = true
+			if data.collides and not has_shape:
+				wrong.append("%s collides but has no shape" % data.id)
+			if not data.collides and has_shape:
+				wrong.append("%s does not collide but has a shape" % data.id)
+	if checked == 0:
+		return fail(c, "no non-batched props found to check")
+	if wrong.is_empty():
+		return succeeded(c, "%d props match their definition's collider flag" % checked)
+	return fail(c, "%d wrong: %s" % [wrong.size(), ", ".join(wrong.slice(0, 4))])
+
+
+## Batching is the difference between a few hundred nodes and a few. Asserted by
+## counting nodes, because "the batch exists" says nothing about whether the
+## non-batched path is still being taken.
+func _t_decorations_batched() -> Dictionary:
+	var c := &"batched_scenery_costs_one_node_not_one_per_tuft"
+	await _build()
+	var field := _scenery()
+	if field == null:
+		return fail(c, "no DecorationField")
+	var batched_props := 0
+	var batch_nodes := 0
+	for data: DecorationData in DecorationRegistry.scatterable_decorations():
+		if not data.batched:
+			continue
+		batched_props += data.spawn_count
+		batch_nodes += 1
+	var total_children := field.get_child_count()
+	# The unbatched props are one node each; the batched ones are one node per kind.
+	var unbatched_props := 0
+	for data: DecorationData in DecorationRegistry.scatterable_decorations():
+		if not data.batched:
+			unbatched_props += data.spawn_count
+	if total_children != unbatched_props + batch_nodes:
+		return fail(c, "the field has %d nodes; expected %d unbatched props plus %d batches" % [
+			total_children, unbatched_props, batch_nodes,
+		])
+	return succeeded(c, "%d batched props cost %d nodes; %d unbatched props cost %d" % [
+		batched_props, batch_nodes, unbatched_props, unbatched_props,
+	])
+
+
+static func _decorated_props(field: DecorationField) -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	if field == null:
+		return out
+	for child: Node in field.get_children():
+		if child is Node3D:
+			out.append(child as Node3D)
+	return out
+
+
+static func _count_children_named(parent: Node, prefix: String) -> int:
+	var count := 0
+	for child: Node in parent.get_children():
+		if String(child.name).begins_with(prefix):
+			count += 1
+	return count
+
+
+## Scenery must not be harvestable, and must not reuse a harvestable's model. A
+## shared model makes the same tree both choppable and scenery, and which one the
+## player gets depends on which builder runs second.
+func _t_decorations_are_not_gatherables() -> Dictionary:
+	var c := &"no_decoration_is_also_a_gatherable"
+	var harvestable: Dictionary = {}
+	for data: ResourceNodeData in ResourceNodeRegistry.all_nodes():
+		harvestable[data.model] = true
+		harvestable[data.depleted_model] = true
+	for data: DecorationData in DecorationRegistry.all_decorations():
+		if harvestable.has(data.model):
+			return fail(c, "'%s' uses %s, which a gatherable also draws" % [data.id, data.model.get_file()])
+		if not data.is_valid():
+			return fail(c, "'%s' is not a valid definition" % data.id)
+		# A scenery definition with a tool action would be a harvestable in everything
+		# but name.
+		if "yields" in data:
+			return fail(c, "'%s' carries yields, so it is not scenery" % data.id)
+	return succeeded(c, "%d decorations, none sharing a gatherable's model" % DecorationRegistry.all_decorations().size())

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_peylj"]
+
+[resource]
+script = ExtResource("1_peylj")
+id = &"wildflower"
+display_name = "Wildflowers"
+model = "res://assets/models/quaternius/NaturePack/Flowers.fbx"
+model_tint = Color(1.05, 0.98, 1, 1)
+scale_jitter = 1.4
+spawn_radius = 92.0
+spawn_count = 120
+collides = false
+batched = true
+casts_shadow = false

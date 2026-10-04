@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_rlaxb"]
+
+[resource]
+script = ExtResource("1_rlaxb")
+id = &"corn_clump_tall"
+display_name = "Tall Corn Clump"
+model = "res://assets/models/quaternius/NaturePack/Corn_2.fbx"
+model_tint = Color(1, 1, 0.88, 1)
+scale_jitter = 1.2
+spawn_region = Vector2(0, -20)
+spawn_radius = 26.0
+spawn_count = 16
+spawn_spacing = 3.0
+collides = false
+batched = true
+casts_shadow = false

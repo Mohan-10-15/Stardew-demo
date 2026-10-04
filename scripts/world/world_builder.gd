@@ -555,7 +555,7 @@ static func _scatter(data: ResourceNodeData, field: ResourceField, rng: RandomNu
 		# than a wood.
 		var radius := sqrt(rng.randf()) * data.spawn_radius
 		var candidate := data.spawn_region + Vector2(cos(angle), sin(angle)) * radius
-		if _is_reserved(candidate):
+		if is_reserved(candidate):
 			continue
 		if _too_close(field, candidate, data.spawn_spacing):
 			continue
@@ -579,7 +579,10 @@ static func _scatter(data: ResourceNodeData, field: ResourceField, rng: RandomNu
 ## a single fact with a single implementation. The path check is the important one:
 ## a 1.2 m oak trunk across the farm-to-village path would wall the starting area in
 ## half, and it would look like a bug rather than like scenery.
-static func _is_reserved(pos: Vector2) -> bool:
+##
+## Public because [DecorationField] asks the same question. Two keep-out lists that
+## drift apart produce a valley where a path is clear of trees and full of bushes.
+static func is_reserved(pos: Vector2) -> bool:
 	# Inside the pond basin, and the water plus a shoreline margin.
 	if pos.distance_to(REGION_POND) < POND_RADIUS + 2.0:
 		return true

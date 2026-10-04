@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_riuyx"]
+
+[resource]
+script = ExtResource("1_riuyx")
+id = &"reed_plant"
+display_name = "Reed"
+model = "res://assets/models/quaternius/NaturePack/Plant_5.fbx"
+model_tint = Color(0.9, 1.05, 0.88, 1)
+scale_jitter = 1.45
+spawn_region = Vector2(-14, 44)
+spawn_radius = 26.0
+spawn_inner_radius = 18.5
+spawn_count = 70
+collides = false
+batched = true
+casts_shadow = false

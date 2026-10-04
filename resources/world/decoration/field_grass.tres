@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_7m7jd"]
+
+[resource]
+script = ExtResource("1_7m7jd")
+id = &"field_grass"
+display_name = "Field Grass"
+model = "res://assets/models/quaternius/NaturePack/Wheat.fbx"
+model_tint = Color(1.06, 1, 0.78, 1)
+scale_jitter = 1.25
+spawn_region = Vector2(0, -20)
+spawn_radius = 30.0
+spawn_count = 70
+collides = false
+batched = true
+casts_shadow = false

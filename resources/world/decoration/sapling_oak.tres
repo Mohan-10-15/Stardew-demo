@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_d042y"]
+
+[resource]
+script = ExtResource("1_d042y")
+id = &"sapling_oak"
+display_name = "Oak Sapling"
+model = "res://assets/models/quaternius/NaturePack/CommonTree_1.fbx"
+model_tint = Color(0.96, 1.04, 0.9, 1)
+scale_jitter = 1.25
+spawn_region = Vector2(-42, 26)
+spawn_radius = 46.0
+spawn_count = 14
+spawn_spacing = 4.5
+collider_radius_scale = 0.18

@@ -1563,6 +1563,141 @@ about whether any of it looks good.
 
 ---
 
+## Graphics, pass 3: scenery
+
+The valley had ground, water, buildings and 260 choppable trees, and nothing else. No
+grass, no flowers, no bushes. It looked like a terrain test.
+
+`resources/world/decoration/*.tres` are 15 scenery definitions — data, not code, like
+every other content kind in this project. `DecorationRegistry` loads them;
+`DecorationField` scatters them; `tools/generate_decoration_data.gd` writes them.
+
+```
+[DecorationRegistry] Loaded 15 decorations
+[DecorationField] scattered 831 decorations (256 reserved, 132 too close)
+```
+
+831 props, and 111 nodes. The difference is batching: anything under about knee height is
+one `MultiMeshInstance3D` per definition rather than one node per instance.
+
+```
+grass_tuft_batch   260      wildflower_batch   120
+low_plant_batch     90      meadow_plant_batch  80
+reed_plant_batch    70      field_grass_batch   70
+corn_clump_batch    22      corn_clump_tall_batch 16
+```
+
+### Scenery is not a gatherable
+
+The two systems look alike and are kept apart on purpose. A gatherable is choppable,
+respawns, and yields something. Scenery is scenery. The generator *refuses* to write a
+definition whose model a gatherable also draws, because then the same tree is scenery
+sometimes and a harvestable other times depending on which builder ran.
+
+That check earned itself immediately. `TreeStump.fbx` is the *depleted* art of every felled
+tree, and the first pass happily scheduled twelve permanent stumps. The generator
+rejected them, correctly: a stump standing in the wood looks exactly like a tree somebody
+already cut, and a player who walks into it expecting four swings of wood and gets nothing
+has been told a lie by the art.
+
+### Batched and collidable is a contradiction
+
+A `MultiMesh` cannot have a collider, so a definition that is both would silently be a
+prop the player walks through. The generator treats it as an error rather than a default.
+
+### Bugs found, and what actually caught them
+
+**Six definitions placed fewer props than they asked for, and one placed none.** The boot
+log said `willow: placed 0 of 6`. Two separate causes:
+
+1. `willow` and `reed_plant` had the pond as their spawn region. The pond basin and a
+   shoreline margin are both keep-out, so the entire region was unplantable. Fixed with
+   `spawn_inner_radius`, so a definition can ask for an annulus: reeds now grow in a ring
+   at the water's edge, which is where reeds belong and which a disc could not express.
+2. `young_pine` shared its exact region with the pine *gatherable*, which is placed first
+   at tighter spacing. The saplings had nowhere left to go.
+
+**Every prop after the first of its kind lost its name.** Godot does not salvage a
+colliding node name: add a second `thicket_body` and the tree grows a sibling called
+`@StaticBody3D@7`. So 34 thickets were 34 differently-named nodes, the remote scene tree
+could not tell a thicket from a bramble, and nothing could count them. Props are now
+numbered up front — `thicket_000`.
+
+**Ground cover was blocking trees.** Scatter appends each placement to an occupancy list
+so the next definition keeps its distance. Ground cover scattered with a spacing of *zero*
+was still appending, so by the time the willows were placed the list held 260 grass tufts
+and every willow was rejected as "too close to a blade of grass". Only a definition that
+actually reserves space is on the list now.
+
+**Non-batched props were being scaled twice.** The FBX importer applies a root scale for
+its centimetre-to-metre conversion. A `MultiMesh` has no hierarchy to inherit it, so the
+batch has to fold it into each instance transform — but the unbatched path gets it for
+free from the imported node, and folding it in again squared it.
+
+**A sapling could be planted in front of a choppable oak.** Found by an existing test, not
+a new one: `every_demo_prop_is_reachable_on_foot` failed with `could not focus: AimVolume`
+and nothing else useful.
+
+### On that test, which failed three times for three different reasons
+
+The message said only that the crosshair did not focus something. It was the message
+behind a bad aim vector, a camera inside its own target, and now scenery in the line of
+fire, and the bare name distinguished none of them.
+
+`InteractionProbe` now keeps the reason: `get_last_blocker()` for something solid and
+non-interactable in the way, `get_last_rejected()` for a target the ray *found* and then
+refused for want of reach or availability. The test reports which of the four ways it
+failed, and how far away the player actually ended up. `could not focus` was never a
+diagnosis.
+
+The test also used one fixed approach bearing, so a bush anywhere north of a prop failed
+it for a reason no player would notice — they step round it. It now sweeps up to eight
+directions and requires one clear approach, and reports anything focusable from two or
+fewer sides as wedged. The sweep stops at the first clear bearing: trying all eight for
+all 250 interactables cost more than the rest of the suite combined and timed the stage
+out.
+
+### A test that passed while checking 103 of 831 props
+
+The determinism test builds the field twice from one seed and compares positions. It
+pushed a `Transform3D` into an `Array[Vector3]`; the typed array rejects the element
+silently, so every batched prop was dropped from *both* sides and the test compared the
+103 unbatched ones and called it a match. Only the `zero SCRIPT ERROR` rule caught it —
+the suite was green. Positions now come from `.origin`.
+
+### TESTS PERFORMED
+
+Six new cases in `test_world.gd`:
+
+| Case | Asserts |
+| --- | --- |
+| `every_decoration_is_scattered_at_its_full_count` | all 831 props placed; no definition short |
+| `the_same_seed_scatters_the_same_scenery_twice` | two fields, one seed, identical positions |
+| `no_decoration_stands_where_something_already_is` | no collidable prop in a keep-out or inside a gatherable |
+| `only_collidable_scenery_has_a_collider` | colliders match the definition's flag |
+| `batched_scenery_costs_one_node_not_one_per_tuft` | node count is unbatched props + one per batch |
+| `no_decoration_is_also_a_gatherable` | no scenery shares a gatherable's model |
+
+Plus `every_demo_prop_is_reachable_on_foot`, rewritten to sweep approach bearings and
+name its blocker.
+
+```
+passed: 382   failed: 0
+import     OK
+tests      OK
+boot       OK
+```
+
+### Not done
+
+- No visual check. The pass proves scenery is placed, deterministic, collidable and
+  reachable; it does not prove a valley with grass looks better than one without.
+- No settings menu entry for scenery density.
+- Reeds and willows ring the pond by rule, not by terrain-following, so a few stand in
+  shallow water. Real reed placement wants a height-band test against `terrain_height`.
+
+---
+
 ## Group roadmap
 
 | # | Group | # | Group |

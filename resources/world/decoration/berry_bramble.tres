@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_f6g23"]
+
+[resource]
+script = ExtResource("1_f6g23")
+id = &"berry_bramble"
+display_name = "Bramble"
+model = "res://assets/models/quaternius/NaturePack/BushBerries_2.fbx"
+model_tint = Color(0.95, 0.98, 0.9, 1)
+scale_jitter = 1.25
+spawn_radius = 88.0
+spawn_count = 18
+spawn_spacing = 6.0
+collider_radius_scale = 0.42

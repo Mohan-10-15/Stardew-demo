@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_6vi0c"]
+
+[resource]
+script = ExtResource("1_6vi0c")
+id = &"willow"
+display_name = "Willow"
+model = "res://assets/models/quaternius/NaturePack/Willow_1.fbx"
+model_tint = Color(1, 1, 0.92, 1)
+scale_jitter = 1.15
+spawn_region = Vector2(-14, 44)
+spawn_radius = 38.0
+spawn_inner_radius = 24.0
+spawn_count = 6
+spawn_spacing = 8.0
+collider_radius_scale = 0.22

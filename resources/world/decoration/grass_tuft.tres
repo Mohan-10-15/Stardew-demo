@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DecorationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/world/decoration_data.gd" id="1_uy25l"]
+
+[resource]
+script = ExtResource("1_uy25l")
+id = &"grass_tuft"
+display_name = "Grass"
+model = "res://assets/models/quaternius/NaturePack/Grass_Short.fbx"
+model_tint = Color(0.92, 1.06, 0.82, 1)
+scale_jitter = 1.35
+spawn_radius = 96.0
+spawn_count = 260
+collides = false
+batched = true
+casts_shadow = false

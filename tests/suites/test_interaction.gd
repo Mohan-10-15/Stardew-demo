@@ -624,17 +624,109 @@ func _t_world_props_reachable() -> Dictionary:
 	if props.is_empty():
 		return fail(c, "world has no interactable props to walk to")
 
+	# Enough directions to notice a prop boxed in on three sides, few enough that the
+	# test stays quick: each bearing is a teleport, a settle and a raycast.
 	var unreachable: Array[String] = []
+	var wedged: Array[String] = []
+	var tightest := 99
 	for it: Interactable in _collect_interactables(world):
 		var host := it.get_parent() as Node3D
 		if host == null:
 			continue
-		var ok := await _aim_at(player, probe, host, it)
-		if not ok:
-			unreachable.append(String(host.name))
+		# Every bearing, not one. A single fixed offset only proves the prop is
+		# focusable from due south, and a valley full of scenery fails it constantly
+		# for reasons a player never notices — they step round the bush. Requiring at
+		# least one clear approach is the property that matters, and requiring *most* of
+		# them is what catches a prop that has genuinely been grown into a thicket.
+		var clear := 0
+		for bearing: int in APPROACH_BEARINGS:
+			if not await _aim_at(player, probe, host, it, bearing):
+				continue
+			clear += 1
+			# The first clear approach is enough. Sweeping all eight for all 250
+			# interactables cost more than the whole rest of the suite and timed the
+			# stage out, and the extra six tell us nothing unless the first one failed.
+			if clear == 1:
+				break
+		if clear == 0:
+			unreachable.append("%s under %s -- no clear approach from any of %d bearings; %s" % [
+				String(host.name), blocker_name(probe, it), APPROACH_BEARINGS,
+				why_not_focused(probe, player, it),
+			])
+		else:
+			tightest = mini(tightest, clear)
+			if clear <= 2:
+				wedged.append("%s under %s is focusable from only %d of %d sides" % [
+					String(host.name), blocker_name(probe, it), clear, APPROACH_BEARINGS,
+				])
 	if not unreachable.is_empty():
-		return fail(c, "could not focus: %s" % ", ".join(unreachable))
-	return succeeded(c, "%d props all focusable" % props.size())
+		return fail(c, "%d unreachable: %s" % [unreachable.size(), "; ".join(unreachable.slice(0, 6))])
+	return succeeded(c, "%d props focusable; tightest had %d of %d clear approaches%s" % [
+		props.size(), tightest, APPROACH_BEARINGS,
+		"" if wedged.is_empty() else "; %d wedged: %s" % [wedged.size(), "; ".join(wedged.slice(0, 4))],
+	])
+
+
+## Which of the three ways this can fail actually happened. "The crosshair did not focus
+## it" on its own has been the message behind four unrelated bugs, and each one needed a
+## different fix: a bad aim vector, a camera inside the target, scenery in the line of
+## fire, and a target the player was standing too far back from.
+static func why_not_focused(probe: InteractionProbe, player: PlayerController, target: Interactable) -> String:
+	var blocker := probe.get_last_blocker()
+	if blocker != null:
+		return "occluded by %s" % blocker_name(probe)
+	var rejected := probe.get_last_rejected()
+	if rejected != null:
+		var from: Vector3 = player.global_position
+		var spot: Vector3 = rejected.get_focus_point()
+		return "found it at %.1fm but reach is %.1fm (player at %s, target at %s)" % [
+			from.distance_to(spot), rejected.max_distance, _v(from), _v(spot),
+		]
+	return "the ray hit empty space (no collider along a %.1fm line)" % probe.get_last_ray_length()
+
+
+## One decimal place. The exact values are not interesting; the question is always
+## "how far below the camera is this, and how far sideways".
+static func _v(v: Vector3) -> String:
+	return "(%.1f, %.1f, %.1f)" % [v.x, v.y, v.z]
+
+
+## The ancestor chain above an interactable, skipping generated names. Its purpose is
+## to say *which kind* of thing a nameless "AimVolume" belongs to, and secondarily to
+## name whatever solid body stopped the probe's ray — a collider is usually nested under
+## a named holder, and "Village/Shop/AimVolume" beats "StaticBody3D@42".
+static func blocker_name(probe: InteractionProbe, of: Node = null) -> String:
+	if of != null:
+		var chain: Array[String] = []
+		var up: Node = of
+		for _i: int in 5:
+			if up == null:
+				break
+			var named := String(up.name)
+			if not named.begins_with("@"):
+				chain.append(named)
+			up = up.get_parent()
+		return "/".join(chain)
+	var blocker := probe.get_last_blocker()
+	if blocker == null:
+		return "nothing (the ray hit empty space)"
+	var names: Array[String] = []
+	var at: Node = blocker
+	for _i: int in 4:
+		if at == null:
+			break
+		var own := String(at.name)
+		if not own.begins_with("@"):
+			names.append(own)
+		at = at.get_parent()
+	if names.is_empty():
+		return blocker.get_class()
+	return "/".join(names)
+
+
+## The approach directions tried per prop. Eight is every 45 degrees, which is close
+## enough to "can a player get to it" without pretending to be a pathfinder.
+const APPROACH_BEARINGS: int = 8
 
 
 ## Positions the player within interaction range of `host`, aims the real camera
@@ -654,12 +746,18 @@ func _aim_at(
 	player: PlayerController,
 	probe: InteractionProbe,
 	host: Node3D,
-	target_component: Interactable = null
+	target_component: Interactable = null,
+	bearing: int = 0
 ) -> bool:
 	var target: Vector3 = host.global_position + Vector3(0, 0.9, 0)
 	if target_component != null:
 		target = target_component.get_aim_point()
-	player.global_position = Vector3(target.x, 0.2, target.z + 2.0)
+	# Standing off by `reach` at `bearing`. A different bearing each call, so repeated
+	# calls walk the player around the prop instead of shoving them through it.
+	var angle := TAU * float(bearing) / float(APPROACH_BEARINGS)
+	var reach: float = target_component.max_distance if target_component != null else 3.2
+	var stand := Vector3(cos(angle), 0.0, sin(angle)) * (reach * 0.6)
+	player.global_position = Vector3(target.x + stand.x, 0.2, target.z + stand.z)
 	await _step(5)
 
 	var camera := probe.get_camera()

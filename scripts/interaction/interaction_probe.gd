@@ -35,6 +35,17 @@ var _hold_elapsed: float = 0.0
 var _hold_target: Interactable = null
 var _last_ray_length: float = 0.0
 
+## Whatever stood between the camera and the target on the last probe, when it was
+## something the ray hit that is not an [Interactable]. Null when the last ray hit a
+## real target or hit nothing at all.
+var _last_blocker: Node = null
+
+## An [Interactable] the ray *did* find and then refused, for want of reach or
+## availability. Distinct from [_last_blocker], which is scenery in the way. Without the
+## split, "the crosshair did not focus it" cannot tell "a bush is between you and it"
+## from "you are standing too far back", and those have opposite fixes.
+var _last_rejected: Interactable = null
+
 
 func _ready() -> void:
 	# PAUSABLE, explicitly, for the same reason as `PlayerController._ready`:
@@ -154,13 +165,22 @@ func _find_target() -> Interactable:
 
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
+		# Cleared, not just left alone. A blocker left over from a previous probe would
+		# be reported against the wrong target, which is worse than reporting nothing.
+		_last_blocker = null
+		_last_rejected = null
 		return null
 
 	_last_ray_length = origin.distance_to(hit["position"])
 
 	var target := Interactable.resolve(hit["collider"] as Node)
 	if target == null:
+		# Something solid was in the way and it is not interactable. Kept so a failure
+		# report can say *what* was in the way: "could not focus" on its own has been
+		# the message behind three different bugs, none of which the message identified.
+		_last_blocker = hit["collider"] as Node
 		return null
+	_last_blocker = null
 	return _accept(target)
 
 
@@ -168,11 +188,14 @@ func _find_target() -> Interactable:
 func _accept(target: Interactable) -> Interactable:
 	var actor := get_actor()
 	if not target.is_available(actor):
+		_last_rejected = target
 		return null
 	if actor is Node3D:
 		var distance := (actor as Node3D).global_position.distance_to(target.get_focus_point())
 		if distance > target.max_distance:
+			_last_rejected = target
 			return null
+	_last_rejected = null
 	return target
 
 
@@ -253,6 +276,16 @@ func clear_focus() -> void:
 
 func get_last_ray_length() -> float:
 	return _last_ray_length
+
+
+## The non-interactable node that stopped the last probe's ray, if any.
+func get_last_blocker() -> Node:
+	return _last_blocker
+
+
+## The interactable the last probe found and then refused, if that is what happened.
+func get_last_rejected() -> Interactable:
+	return _last_rejected
 
 
 ## Fraction of the current target's hold requirement that has elapsed, for the

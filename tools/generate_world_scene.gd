@@ -80,7 +80,15 @@ func _initialize() -> void:
 	grid.position = _farm_centre()
 	root.add_child(grid)
 
-	for child: Node in [sun, sky, graphics, cycle, clock, grid]:
+	# --- Scenery ----------------------------------------------------------
+	# After the farm grid, because `resource_field_path` points at the ResourceField the
+	# builder has already filled, and it reads it during its own `_ready`.
+	var scenery := Node3D.new()
+	scenery.name = "DecorationField"
+	scenery.set_script(load("res://scripts/world/decoration_field.gd"))
+	root.add_child(scenery)
+
+	for child: Node in [sun, sky, graphics, cycle, clock, grid, scenery]:
 		child.owner = root
 
 	var packed := PackedScene.new()
