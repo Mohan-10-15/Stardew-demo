@@ -4,15 +4,12 @@ extends SceneTree
 ## Run:
 ##     godot --headless --path . --script res://tools/generate_player_scene.gd
 ##
-## The character is built from primitive meshes (capsule body, sphere head) —
-## original placeholder geometry, no external art.
+## The body is drawn at runtime from `resources/player/player_avatar.tres` by
+## `scripts/player/player_avatar.gd`, on a bare `Model` node carrying that script.
+## It used to be five primitive meshes — a capsule, a box, two spheres and a nose wedge
+## — which is what a body looks like when nobody has decided what it is yet.
 
 const OUTPUT_PATH := "res://scenes/player/player.tscn"
-
-const SKIN := Color(0.85, 0.63, 0.47)
-const SHIRT := Color(0.29, 0.55, 0.78)
-const PANTS := Color(0.26, 0.28, 0.36)
-const HAIR := Color(0.24, 0.16, 0.11)
 
 
 func _initialize() -> void:
@@ -48,56 +45,13 @@ func _initialize() -> void:
 	root.add_child(collision)
 
 	# --- Visual body -----------------------------------------------------
-	# Hidden in first person by CameraRig.register_body_mesh().
-	var body := MeshInstance3D.new()
-	body.name = "Body"
-	var body_mesh := CapsuleMesh.new()
-	body_mesh.radius = 0.35
-	body_mesh.height = 1.5
-	body.mesh = body_mesh
-	body.position = Vector3(0, 0.85, 0)
-	body.material_override = _mat(PANTS)
-	root.add_child(body)
-
-	var torso := MeshInstance3D.new()
-	torso.name = "Torso"
-	var torso_mesh := BoxMesh.new()
-	torso_mesh.size = Vector3(0.62, 0.62, 0.38)
-	torso.mesh = torso_mesh
-	torso.position = Vector3(0, 1.18, 0)
-	torso.material_override = _mat(SHIRT)
-	root.add_child(torso)
-
-	var head := MeshInstance3D.new()
-	head.name = "Head"
-	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.21
-	head_mesh.height = 0.44
-	head.mesh = head_mesh
-	head.position = Vector3(0, 1.62, 0)
-	head.material_override = _mat(SKIN)
-	root.add_child(head)
-
-	var hair := MeshInstance3D.new()
-	hair.name = "Hair"
-	var hair_mesh := SphereMesh.new()
-	hair_mesh.radius = 0.215
-	hair_mesh.height = 0.45
-	hair.mesh = hair_mesh
-	hair.position = Vector3(0, 1.66, 0.01)
-	hair.material_override = _mat(HAIR)
-	root.add_child(hair)
-
-	# A forward-facing nose wedge gives a readable facing direction, which
-	# matters a lot in third person.
-	var nose := MeshInstance3D.new()
-	nose.name = "FacingMarker"
-	var nose_mesh := BoxMesh.new()
-	nose_mesh.size = Vector3(0.08, 0.08, 0.14)
-	nose.mesh = nose_mesh
-	nose.position = Vector3(0, 1.6, -0.2)
-	nose.material_override = _mat(Color(0.95, 0.75, 0.6))
-	root.add_child(nose)
+	# An empty node with a script on it. The model itself is built at runtime by
+	# `PlayerAvatar`, not baked in here — see that script for why baking it silently
+	# loses the tint.
+	var avatar := Node3D.new()
+	avatar.name = "Model"
+	avatar.set_script(load("res://scripts/player/player_avatar.gd"))
+	root.add_child(avatar)
 
 	# --- Camera rig ------------------------------------------------------
 	var rig := Node3D.new()
@@ -123,24 +77,21 @@ func _initialize() -> void:
 	probe.set("ray_length", 3.5)
 	root.add_child(probe)
 
-	for child: Node in [collision, body, torso, head, hair, nose, rig, camera, probe]:
+	for child: Node in [collision, avatar, rig, camera, probe]:
 		child.owner = root
 
 	var err := _save(root)
+	# Freed before quitting, which this generator did not used to need. Packing does
+	# not release the tree, and the tree now holds a real imported model with meshes,
+	# materials and textures, so leaving it alive dumps a screenful of RID-leak errors
+	# at exit — and a generator that emits ERROR lines fails the pipeline that runs it.
+	root.free()
 	if err != OK:
 		printerr("[generate_player_scene] failed: %d" % err)
 		quit(1)
 		return
 	print("[generate_player_scene] wrote %s" % OUTPUT_PATH)
 	quit(0)
-
-
-func _mat(color: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = color
-	m.roughness = 0.85
-	m.metallic = 0.0
-	return m
 
 
 func _save(root: Node) -> int:

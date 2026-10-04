@@ -1698,6 +1698,135 @@ boot       OK
 
 ---
 
+## The player avatar, and the pack that ships a weapon with every character
+
+The primitive player — a capsule, a box, two spheres and a nose wedge — is replaced by
+`Rogue.fbx` from the same CC0 KayKit pack the villagers use, tinted blue so the player is
+never confused with fen, who wears the same body in green.
+
+It is built at runtime by `scripts/player/player_avatar.gd` rather than baked into
+`player.tscn`. Baking was tried and silently lost the tint: `PackedScene.pack` writes the
+transforms of a node's *owned* children, and an instanced model is saved as a reference to
+the FBX with a transform override, so every `material_override` set on its children is
+discarded. The generator printed the tint it had applied, the scene loaded clean, and the
+player rendered as an untinted Rogue — exactly the body as fen, which is the one thing the
+tint exists to prevent.
+
+### A character in this pack is a body plus its whole armoury
+
+`Rogue.fbx` is not one mesh. It is a character *and* a 1H crossbow, a 2H crossbow, two
+knives and a throwable, all parented under the same imported root. Every one of the six
+villagers was instanced whole and carrying their archetype's full kit, and so was the
+player. `tools/probe_model_meshes.gd` found it by listing the contents of every model in the
+project rather than trusting filenames.
+
+Stripping them needed an explicit name list, because the two obvious rules are both wrong
+against the real files:
+
+- **Keep meshes prefixed with the file name.** Empties `RogueHooded.fbx` completely — it
+  reuses `Rogue_` for every part — and keeps `Barbarian_Round_Shield`, which is a shield.
+- **Keep the skinned meshes.** Limbs, torso and head are skinned and the props are not,
+  which is true and tempting, and it deletes the cape, hat, helmet and hood, which are
+  unskinned and are absolutely part of the body.
+
+The list lives in `ModelArt.ATTACHMENT_MESH_NAMES` because it can rot, so it cannot rot
+silently: `attachment_list_names_real_meshes` fails if a name stops matching a real mesh,
+and `every_character_model_drops_held_props` asserts the filter still removes something
+from all five characters — including `RogueHooded`, the one a prefix rule empties.
+
+Dropped per model: Barbarian 5, Knight 7, Mage 4, Rogue 5, RogueHooded 5.
+
+### A skinned mesh's own bounds are not where it is drawn
+
+This was the expensive one, and it had been wrong for every villager since NPCs landed.
+
+`VisualInstance3D.get_aabb()` on a skinned mesh is its geometry in **bone-local** space,
+because the vertices are authored around the joint and the skeleton carries them into place.
+Every limb of `Rogue.fbx` therefore reports a box near the origin — a leg is
+0.24 × 0.53 × 0.40 as authored — and composing them gives a union 2.13m tall with the feet
+0.88m below the root, for a character that is really 1.82m and standing on its own origin.
+
+The numbers it produced were plausible, which is why nothing caught it:
+
+| measurement | mesh walk | truth |
+| --- | --- | --- |
+| body height | 2.13m | 1.82m |
+| feet below root | 0.88m | 0.09m |
+| body width | 4.13m (with props) | ~1.9m, arms out |
+
+So every villager hovered about a metre off the floor, and the player with them. The ground
+offset is applied as `-box.position.y * scale`, so an error in the box is an error in the
+offset, doubled.
+
+`ModelArt` now measures a skinned model from its **bones** — every bone's head *and* tail,
+since the head bone's tail is the crown and the foot bone's tail is the toe. Static models
+still take the mesh walk, which is what keeps the importer's unit conversion intact for the
+whole Quaternius nature pack.
+
+Villager colliders were never affected: they come from `NpcData.target_height`, not the
+box. Only the ground offset was, which is why the villagers looked fine from a distance and
+were wrong up close.
+
+### Two heights, and picking the wrong one is silent
+
+`natural_height` answers "how far is the top of this model above its origin". That is right
+for a crop growing out of a soil tile and wrong for a figure: the rig is authored with its
+root at the hips, so 0.09m of the body hangs below the origin. Dividing by the
+height-above-origin and then grounding the result yields a body that stands 1.84m when it
+was asked for 1.75m, every time, by exactly the amount it sank. `instantiate_standing`
+divides by the box's own **size** instead, and the soil tiles keep `natural_height`.
+
+Verified on the player: `feet y=0.000, crown y=1.750, height=1.750` against a requested
+1.75m, scale 0.9147.
+
+### `measured_bounds()` and an AABB operator
+
+`_box * _model_xform()` returned a box whose lowest corner sat 0.163m below the floor on a
+body that was standing on it, with the scale applied correctly and only the translation
+landing in the wrong place. Replaced with the arithmetic spelled out — scale the corners,
+then move them — so the two numbers it depends on can be read straight off the failure
+message.
+
+### TESTS PERFORMED
+
+Five new cases in `tests/suites/test_player_integration.gd`, 387 passing, 0 failing:
+
+- `avatar_stands_on_the_ground` — measures the real built avatar: feet within 5cm of the
+  origin and the drawn height within 5cm of `target_height`.
+- `avatar_drops_held_props` — no mesh under the player's model is in the attachment list.
+- `npc_drops_held_props` — the same for a real `Npc` built from fen's definition, so the
+  player cannot be fixed while the villagers stay broken.
+- `every_character_model_drops_held_props` — all five characters, and each must report a
+  non-zero count, so a filter that silently matches nothing cannot pass.
+- `attachment_list_names_real_meshes` — every name in the list still exists in the pack.
+
+Two existing cases, `body_meshes_hidden_in_first_person` and
+`body_meshes_visible_in_third_person`, looked up `^"Head"` — one of the five primitives
+sitting directly on the player. The modelled avatar is an imported scene under `Model`, so
+that lookup no longer finds anything. Both now read the meshes off the `PlayerAvatar` and
+check *every* one, not a single named part.
+
+```
+passed: 387   failed: 0
+import     OK
+tests      OK
+boot       OK
+```
+
+### Not done
+
+- No visual check. Feet at y=0.000 is arithmetic, not a screenshot; nobody has confirmed the
+  avatar reads as a person, that the tint is distinct from fen's green at gameplay distance,
+  or that a knight without a shield on his back looks right.
+- The avatar has no walk animation. The rig is in its bind pose, so the player strides with
+  a character frozen mid-stride — worse than the primitives it replaced. `AnimationPlayer`
+  exists in the imported scene; nothing drives it yet.
+- No idle, no first-person arm, no tool-in-hand swing.
+- `RogueHooded` is tinted and stripped but never placed in the world; halda uses it and the
+  player could too.
+
+---
+
 ## Group roadmap
 
 | # | Group | # | Group |

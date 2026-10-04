@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="PlayerAvatarData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/player/player_avatar_data.gd" id="1_avatar"]
+
+[resource]
+script = ExtResource("1_avatar")
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+model_tint = Color(0.45, 0.68, 0.78, 1)
+target_height = 1.75

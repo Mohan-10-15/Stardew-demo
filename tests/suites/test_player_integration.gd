@@ -10,6 +10,19 @@ const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const WORLD_SCENE := "res://scenes/world/world.tscn"
 const PHYSICS_STEPS := 30
 
+## Every character body the CC0 pack ships, listed rather than derived from the villager
+## definitions. The attachment filter has to hold for the whole pack and not just the six
+## villagers currently in the game, because the next villager added is an archetype nobody
+## has tested — and `RogueHooded` in particular shares every mesh name with `Rogue` except
+## its head, so a filter tuned on one of the pair passes on the other for the wrong reason.
+const CHARACTER_MODELS: Array[String] = [
+	"res://assets/models/kaykit/Characters/Barbarian.fbx",
+	"res://assets/models/kaykit/Characters/Knight.fbx",
+	"res://assets/models/kaykit/Characters/Mage.fbx",
+	"res://assets/models/kaykit/Characters/Rogue.fbx",
+	"res://assets/models/kaykit/Characters/RogueHooded.fbx",
+]
+
 var _rig: Node3D = null
 
 
@@ -53,6 +66,11 @@ func get_cases() -> Array[StringName]:
 		&"body_meshes_hidden_in_first_person",
 		&"body_meshes_visible_in_third_person",
 		&"a_nested_body_mesh_is_hidden_in_first_person",
+		&"avatar_stands_on_the_ground",
+		&"avatar_drops_held_props",
+		&"npc_drops_held_props",
+		&"every_character_model_drops_held_props",
+		&"attachment_list_names_real_meshes",
 		&"camera_is_the_only_current_camera",
 		&"world_builds_with_collision",
 		&"world_has_ground_surface",
@@ -153,6 +171,16 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_meshes_tp()
 		&"a_nested_body_mesh_is_hidden_in_first_person":
 			return await _t_nested_mesh_hidden_in_first_person()
+		&"avatar_stands_on_the_ground":
+			return await _t_avatar_stands_on_the_ground()
+		&"avatar_drops_held_props":
+			return await _t_avatar_drops_held_props()
+		&"npc_drops_held_props":
+			return await _t_npc_drops_held_props()
+		&"every_character_model_drops_held_props":
+			return _t_every_character_model_drops_held_props()
+		&"attachment_list_names_real_meshes":
+			return _t_attachment_list_names_real_meshes()
 		&"camera_is_the_only_current_camera":
 			return await _t_single_camera()
 		&"world_builds_with_collision":
@@ -606,11 +634,12 @@ func _t_meshes_fp() -> Dictionary:
 		return fail(c, "could not build scene")
 	var player: PlayerController = built["player"]
 	await await_step(5)
-	var head := player.get_node_or_null(^"Head") as MeshInstance3D
-	if head == null:
-		return fail(c, "Head mesh missing")
-	if head.visible:
-		return fail(c, "Head still visible in first person")
+	var meshes := _avatar_meshes(player)
+	if meshes.is_empty():
+		return fail(c, "the avatar drew no meshes at all")
+	for mesh: MeshInstance3D in meshes:
+		if mesh.visible:
+			return fail(c, "%s still visible in first person" % mesh.name)
 	return succeeded(c)
 
 
@@ -623,12 +652,199 @@ func _t_meshes_tp() -> Dictionary:
 	await await_step(5)
 	player.camera_rig.toggle_mode()
 	await await_step(5)
-	var head := player.get_node_or_null(^"Head") as MeshInstance3D
-	if head == null:
-		return fail(c, "Head mesh missing")
-	if not head.visible:
-		return fail(c, "Head hidden in third person, character would be invisible")
+	var meshes := _avatar_meshes(player)
+	if meshes.is_empty():
+		return fail(c, "the avatar drew no meshes at all")
+	for mesh: MeshInstance3D in meshes:
+		if not mesh.visible:
+			return fail(c, "%s hidden in third person, character would be invisible" % mesh.name)
 	return succeeded(c)
+
+
+## Every mesh the player's avatar actually drew.
+##
+## Read off the [PlayerAvatar] rather than hard-coding a node name. These two cases used to
+## look up `^"Head"`, which was one of five primitive meshes sitting directly on the player;
+## the modelled avatar is an imported scene under `Model`, so that lookup no longer finds
+## anything at all. Checking *every* mesh instead of one named part is also closer to what
+## the assertion is about — a rig that hides the head and leaves the torso inside the
+## camera is the failure worth catching.
+func _avatar_meshes(player: PlayerController) -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	var avatar := player.get_node_or_null(^"Model") as PlayerAvatar
+	if avatar == null:
+		return out
+	var model := avatar.get_model()
+	if model == null:
+		return out
+	_collect_meshes(model, out)
+	return out
+
+
+static func _collect_meshes(from: Node, out: Array[MeshInstance3D]) -> void:
+	if from == null:
+		return
+	if from is MeshInstance3D:
+		out.append(from as MeshInstance3D)
+	for child: Node in from.get_children():
+		_collect_meshes(child, out)
+
+
+## The avatar stands on the player's origin, at the height it was asked for.
+##
+## Both halves were wrong at once and neither raised anything. The rig is authored with its
+## root at the hips, so the feet hang 0.09m below the imported origin and an ungrounded body
+## is buried to the waist; and because the pack embeds five weapons under the same root, the
+## measured body was 4.1m wide and 2.4m tall, which put that offset a metre out. The result
+## was an avatar hovering above the floor in third person with a green suite.
+func _t_avatar_stands_on_the_ground() -> Dictionary:
+	var c := &"avatar_stands_on_the_ground"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(3)
+	var avatar := player.get_node_or_null(^"Model") as PlayerAvatar
+	if avatar == null or not avatar.built:
+		return fail(c, "the avatar did not build")
+	var box := avatar.measured_bounds()
+	if box.size.y <= 0.0:
+		return fail(c, "measured bounds are empty, so nothing can be asserted about them")
+	if absf(box.position.y) > 0.05:
+		var model := avatar.get_model()
+		return fail(c, "feet are %.3fm off the floor (box %s, model at y=%.4f scaled by %.4f)" % [
+			box.position.y, box, model.position.y, model.scale.y,
+		])
+	var wanted := avatar.get_definition().target_height
+	if absf(box.size.y - wanted) > 0.05:
+		return fail(c, "avatar stands %.3fm, was asked for %.2fm" % [box.size.y, wanted])
+	return succeeded(c)
+
+
+## No held props survive on the player's body.
+##
+## `Rogue.fbx` is a 1.25m character *and* a 1H crossbow, a 2H crossbow, two knives and a
+## throwable, all under one imported root. Instanced whole, the player carries the whole
+## armoury — which also made the measured body four metres wide, so this case is really two
+## assertions wearing one name.
+func _t_avatar_drops_held_props() -> Dictionary:
+	var c := &"avatar_drops_held_props"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(3)
+	var meshes := _avatar_meshes(player)
+	if meshes.is_empty():
+		return fail(c, "the avatar drew no meshes at all")
+	for mesh: MeshInstance3D in meshes:
+		if ModelArt.is_attachment(String(mesh.name)):
+			return fail(c, "%s is still attached to the player" % mesh.name)
+	return succeeded(c)
+
+
+## Every character model in the pack loses its held props, not just the player's.
+##
+## The six shipped villagers were instanced whole too, so each was carrying its archetype's
+## entire armoury — four shields and three swords for the Knight, a mug and three axes for
+## the Barbarian. Asserted per model, because the filter that fixes the Rogue is a *name
+## list*, and a list that happens to work for one archetype is exactly the list that leaves
+## the other four broken. `RogueHooded` is the interesting one: it reuses `Rogue_` for
+## every part, so no prefix rule can strip it.
+func _t_every_character_model_drops_held_props() -> Dictionary:
+	var c := &"every_character_model_drops_held_props"
+	for path: String in CHARACTER_MODELS:
+		if not ModelArt.can_load(path):
+			return fail(c, "cannot load %s" % path)
+		var node := ModelArt.instantiate(path)
+		if node == null:
+			return fail(c, "%s did not instantiate" % path)
+		var before := _attachments_under(node)
+		ModelArt.strip_attachments(node)
+		var after := _attachments_under(node)
+		node.free()
+		if after > 0:
+			return fail(c, "%s still carries %d held props" % [path.get_file(), after])
+		if before == 0:
+			return fail(c, "%s reported no held props, so this proves nothing" % path.get_file())
+	return succeeded(c)
+
+
+## Every name in the attachment list still names a mesh that exists.
+##
+## The list in [member ModelArt.ATTACHMENT_MESH_NAMES] is the one thing here that cannot
+## report its own staleness — an entry for a mesh the pack no longer ships costs nothing and
+## protects nothing. So the list is checked against the real files, which turns "someone
+## deleted an asset" into a failing test instead of a silently shorter filter.
+func _t_attachment_list_names_real_meshes() -> Dictionary:
+	var c := &"attachment_list_names_real_meshes"
+	var present: Dictionary = {}
+	for path: String in CHARACTER_MODELS:
+		var packed := ModelArt.scene(path)
+		if packed == null:
+			return fail(c, "cannot load %s" % path)
+		var node := packed.instantiate()
+		if node == null:
+			return fail(c, "%s did not instantiate" % path)
+		_mesh_names(node, present)
+		node.free()
+	for name: String in ModelArt.ATTACHMENT_MESH_NAMES:
+		if not present.has(name):
+			return fail(c, "%s is in the attachment list but in no character model" % name)
+	return succeeded(c)
+
+
+## A villager stands on the ground too, and carries nothing it should not.
+##
+## The avatar's copy of this bug was found first because the player is the one body a test
+## looks at. The villagers were measured with the same broken box, so they were floating by
+## the same amount, and their colliders — which come from `target_height`, not the box —
+## were fine the whole time, which is why nothing looked obviously wrong from the outside.
+func _t_npc_drops_held_props() -> Dictionary:
+	var c := &"npc_drops_held_props"
+	var npc := Npc.new()
+	npc.name = "Fen"
+	# Data before the node enters the tree: `_ready` builds the collider and the model out
+	# of it, so a definition assigned afterwards measures an empty one and the villager
+	# comes out with no body at all.
+	npc.data = load("res://resources/npc/npcs/fen.tres")
+	if npc.data == null:
+		return fail(c, "no fen definition")
+	_reset_rig()
+	_rig = Node3D.new()
+	root().add_child(_rig)
+	_rig.add_child(npc)
+	await await_step(3)
+	var model := npc.get_node_or_null(^"Model")
+	var meshes: Array[MeshInstance3D] = []
+	if model != null:
+		_collect_meshes(model, meshes)
+	if meshes.is_empty():
+		return fail(c, "the villager drew no meshes at all")
+	for mesh: MeshInstance3D in meshes:
+		if ModelArt.is_attachment(String(mesh.name)):
+			return fail(c, "%s is still attached to the villager" % mesh.name)
+	return succeeded(c)
+
+
+static func _attachments_under(from: Node) -> int:
+	if from == null:
+		return 0
+	var n := 0
+	if from is MeshInstance3D and ModelArt.is_attachment(String(from.name)):
+		n += 1
+	for child: Node in from.get_children():
+		n += _attachments_under(child)
+	return n
+
+
+static func _mesh_names(from: Node, out: Dictionary) -> void:
+	if from == null:
+		return
+	if from is MeshInstance3D:
+		out[String(from.name)] = true
+	for child: Node in from.get_children():
+		_mesh_names(child, out)
 
 
 ## A nested body mesh is hidden in first person too.

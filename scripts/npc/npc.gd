@@ -56,6 +56,10 @@ var wandering: bool = true
 var attending: bool = false
 
 var _model: Node3D = null
+
+## The attachment-stripping notice is per-archetype, not per-villager, and saying it six
+## times is how a real warning gets read past.
+var _warned_about_props: bool = false
 var _box: AABB = AABB()
 var _rng := RandomNumberGenerator.new()
 var _wander_target: Vector2 = Vector2.ZERO
@@ -80,7 +84,12 @@ func _ready() -> void:
 	friendship = Friendship.new()
 	_rng.seed = hash(String(data.id))
 	_gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 24.0)
-	_box = ModelArt.natural_aabb(data.model)
+	# `body_aabb`, not `natural_aabb`. A character file in this pack holds the body *and
+	# every weapon the archetype carries* under one imported root, so the whole-file box
+	# is up to 4.1m wide and about 0.7m too tall. Both uses of `_box` below are wrong
+	# with it: the ground offset sinks the villager to the ankles, and the collider grows
+	# to swallow a bystander.
+	_box = ModelArt.body_aabb(data.model)
 	_build_collider()
 	_build_model()
 	_pick_wander_target()
@@ -111,7 +120,7 @@ func _build_collider() -> void:
 ## measured height rather than trusting the importer's unit conversion, and the tint is
 ## applied per instance so five shared bodies can carry a cast of six.
 func _build_model() -> void:
-	_model = ModelArt.instantiate(data.model, body_height())
+	_model = ModelArt.instantiate_standing(data.model, body_height())
 	if _model == null:
 		# The content generator refuses an unloadable model, so this only happens if a
 		# definition was authored after it last ran. A villager with no body is better
@@ -119,6 +128,14 @@ func _build_model() -> void:
 		Log.warn("Npc", "%s has no model at %s" % [data.id, data.model])
 		return
 	_model.name = "Model"
+	# Before the tint and before anything reads the tree, so nothing downstream can see a
+	# weapon. Every villager was instanced whole and carried the archetype's entire
+	# armoury: four shields and three swords for the Knight, a mug and three axes for the
+	# Barbarian, two crossbows and a throwable for the Rogue.
+	var carried := ModelArt.strip_attachments(_model)
+	if carried > 0 and not _warned_about_props:
+		_warned_about_props = true
+		Log.info("Npc", "%s: dropped %d held props from %s" % [data.id, carried, data.model.get_file()])
 	if not ModelArt.is_white(data.model_tint):
 		ModelArt.apply_tint(_model, data.model_tint)
 	# The character pack's pivots sit at the feet, but a pack that changes its mind

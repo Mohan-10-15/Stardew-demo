@@ -51,6 +51,10 @@ static var _heights: Dictionary = {}
 ## Cached measured bounds in metres per model path.
 static var _aabbs: Dictionary = {}
 
+## Cached body-only bounds, with held props excluded. Separate from [_aabbs] because the
+## two answer different questions for a character and only one is right.
+static var _body_aabbs: Dictionary = {}
+
 ## Cached root [member Node3D.scale] as the importer set it, per model path.
 ##
 ## A rescale has to *compose* with this rather than replace it, because the
@@ -63,6 +67,186 @@ static var _root_scales: Dictionary = {}
 ## GDScript: passing one into a recursive walk and assigning to it discards the
 ## result silently, which is documented at length in `tools/probe_model_sizes.gd`.
 static var _bounds: AABB = AABB()
+
+
+## Mesh names that are a *prop held or worn by* a KayKit character rather than part of
+## its body.
+##
+## ## Why a list of names, when the pack offers better signals
+##
+## Two obvious rules were tried against the real files and both are wrong:
+##
+## * **Keep the meshes whose name starts with the file's name.** Works for four of the
+##   five characters and empties `RogueHooded.fbx` completely, because that model reuses
+##   `Rogue_` for every one of its parts. It also keeps `Barbarian_Round_Shield`, which is
+##   a shield.
+## * **Keep the skinned meshes.** The limbs, torso and head are skinned and the
+##   attachments are not, which is true and tempting — and it silently deletes the cape,
+##   the hat, the helmet and the hood, which are unskinned and are absolutely part of
+##   the body. A knight with no helmet is a different character.
+##
+## So the list is explicit, which means it can rot. It cannot rot silently, because
+## `every_character_model_draws_only_its_body` asserts that no attachment mesh survives in
+## any character, and `the_attachment_list_still_names_real_meshes` asserts every name
+## here still exists somewhere in the pack — so deleting an asset fails a test instead of
+## quietly leaving a dead entry behind.
+##
+## Kept here, in the one place that knows how models turn into nodes, rather than in a
+## per-content-type script: [Npc] and [PlayerAvatar] both need it, and two copies of this
+## list is how one of them ends up filtering and the other not.
+const ATTACHMENT_MESH_NAMES: Array[String] = [
+	"1H_Axe", "1H_Axe_Offhand", "2H_Axe",
+	"1H_Crossbow", "2H_Crossbow",
+	"1H_Sword", "1H_Sword_Offhand", "2H_Sword",
+	"1H_Wand", "2H_Staff",
+	"Knife", "Knife_Offhand",
+	"Mug", "Throwable",
+	"Round_Shield", "Rectangle_Shield", "Spike_Shield", "Badge_Shield",
+	"Barbarian_Round_Shield",
+	"Spellbook", "Spellbook_open",
+]
+
+
+## Whether a mesh of this name is a held or worn prop rather than a character's body.
+static func is_attachment(mesh_name: String) -> bool:
+	return ATTACHMENT_MESH_NAMES.has(mesh_name)
+
+
+## Deletes every attachment mesh under [param root] and returns how many went.
+##
+## Takes the node apart, so only ever call it on a fresh [method instantiate] — the
+## cached [PackedScene] is shared and must not be edited.
+##
+## ## What this was hiding
+##
+## `Rogue.fbx` is not one mesh. It is a 1.25m character *and five weapons* — a 1H
+## crossbow, a 2H crossbow, two knives and a throwable — all parented under the same
+## imported root. Instanced whole, every villager carries the entire armoury, and the
+## bounds measured for the body come out 4.1m wide and 2.4m tall, which is what put the
+## ground offset 0.7m off and had the character standing with its ankles buried.
+##
+## [method tools/probe_model_meshes.gd] is what found it, by listing the contents of
+## every model in the project rather than trusting the filenames.
+static func strip_attachments(root: Node) -> int:
+	var removed := 0
+	for child: Node in root.get_children():
+		if child is MeshInstance3D and is_attachment(String((child as MeshInstance3D).name)):
+			root.remove_child(child)
+			child.free()
+			removed += 1
+			continue
+		removed += strip_attachments(child)
+	return removed
+
+
+## The bounds of a model's *body*, in metres, ignoring any attachment meshes.
+##
+## Separate from [method natural_aabb] rather than a parameter on it, because the two
+## answer different questions and only one is right most of the time. A rock has no
+## attachments and the two agree; a character does not, and measuring the whole file gives
+## a box that includes the weapons and is therefore not a body.
+static func body_aabb(path: String) -> AABB:
+	return _measure(path, true)
+
+
+## Measures [param path] once, caching under whichever of the two tables matches
+## [param body_only].
+##
+## Dictionaries are reference types in GDScript, so binding the cache to a local and
+## writing through it writes to the static table. That is deliberate: one function, two
+## caches, and no chance of the two paths drifting apart in how they measure.
+static func _measure(path: String, body_only: bool) -> AABB:
+	var cache: Dictionary = _body_aabbs if body_only else _aabbs
+	if cache.has(path):
+		return cache[path]
+	var box := AABB()
+	var packed := scene(path)
+	if packed != null:
+		var node := packed.instantiate()
+		if node != null:
+			if body_only:
+				strip_attachments(node)
+			# Seed with the root's own transform. Starting from identity and only
+			# composing the *children* misses a scale set on the root, which is precisely
+			# where the FBX importer puts the centimetre-to-metre conversion.
+			var root_xform := Transform3D.IDENTITY
+			if node is Node3D:
+				root_xform = (node as Node3D).transform
+			var skeleton := _find_skeleton(node)
+			if skeleton != null:
+				box = _bone_bounds(root_xform, skeleton)
+			else:
+				_bounds = AABB()
+				_walk(node, root_xform)
+				box = _bounds
+			# A PackedScene node is not refcounted, so it has to be freed by hand.
+			node.free()
+	cache[path] = box
+	return box
+
+
+## The first [Skeleton3D] at or under [param node], or `null` for a static model.
+static func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node as Skeleton3D
+	for child: Node in node.get_children():
+		var found := _find_skeleton(child)
+		if found != null:
+			return found
+	return null
+
+
+## The extent of a posed rig: every bone's head *and* tail, in root space.
+##
+## ## Why the bones and not the meshes
+##
+## The mesh walk in [method _walk] is the right answer for the Quaternius nature pack and
+## the wrong one for the KayKit characters, and it fails in a way that looks like a
+## plausible number rather than an error.
+##
+## A skinned mesh's own [method VisualInstance3D.get_aabb] is its geometry in *bone-local*
+## space, because the vertices are authored around the joint and the skeleton is what
+## carries them into place. Every limb of `Rogue.fbx` therefore reports a box near the
+## origin — a leg is 0.24 x 0.53 x 0.40 as authored — and composing them all gives a union
+## 2.13m tall with the feet 0.88m below the root, when the character is really 1.30m tall
+## standing on its own origin. Scaled by the 1.75m target that error is the difference
+## between a villager standing on the ground and hovering a metre above it, which is why
+## this had to be fixed before the avatar looked right rather than after.
+##
+## Both ends of each bone are used, not just the head: the head bone's tail is the crown
+## and the foot bone's tail is the toe, so the tails are where a height that matches the
+## artwork actually comes from. Bones have no width, which is fine — every caller wants
+## the floor and the ceiling, and the horizontal extent of a character comes from its
+## [member NpcData.target_height] instead.
+static func _bone_bounds(root_xform: Transform3D, skeleton: Skeleton3D) -> AABB:
+	var to_world := root_xform * _chain_to_root(skeleton)
+	var box := AABB()
+	var found := false
+	for index: int in skeleton.get_bone_count():
+		# A bone is a segment, not a point, and Godot 4's Transform3D has no `tail`
+		# member to read one from: the far end is the head's own offset rotated into the
+		# bone's axes, which is the convention the engine itself uses to draw a rig. So
+		# the tail is recomposed rather than looked up, and a bone with no offset collapses
+		# to its head and contributes nothing.
+		var rest := skeleton.get_bone_rest(index)
+		var pose := skeleton.get_bone_global_pose(index)
+		for point: Vector3 in [pose.origin, pose * (rest.basis * rest.origin)]:
+			var world := to_world * point
+			box = AABB(world, Vector3.ZERO) if not found else box.expand(world)
+			found = true
+	return box
+
+
+## The transform carrying [param node]'s own space up to its root's local space,
+## excluding the root's own transform.
+static func _chain_to_root(node: Node) -> Transform3D:
+	var xform := Transform3D.IDENTITY
+	var current: Node = node
+	while current != null and current.get_parent() != null:
+		if current is Node3D:
+			xform = (current as Node3D).transform * xform
+		current = current.get_parent()
+	return xform
 
 
 ## The imported scene for [param path], or `null` if it cannot be loaded.
@@ -94,29 +278,16 @@ static func can_load(path: String) -> bool:
 ## geometry, reports an empty box at the origin rather than something arbitrary, and
 ## callers treat a zero size as "leave the model at native size".
 ##
+## A skinned model is measured from its bones instead of its meshes — see
+## [method _bone_bounds] for why the mesh walk cannot be trusted on a character — while a
+## static one is walked as before, which is what keeps the importer's unit conversion
+## intact for the whole nature pack.
+##
 ## The gatherable nodes size their colliders from this, which is what keeps a rock's
 ## hitbox inside its own artwork instead of near the authored size somebody typed
 ## into a `.tres` and never revisited.
 static func natural_aabb(path: String) -> AABB:
-	if _aabbs.has(path):
-		return _aabbs[path]
-	_bounds = AABB()
-	var packed := scene(path)
-	if packed != null:
-		var node := packed.instantiate()
-		if node != null:
-			# Seed the walk with the root's own transform. Starting from identity
-			# and only composing the *children* misses a scale set on the root, which
-			# is precisely where the FBX importer puts the centimetre-to-metre
-			# conversion.
-			var start := Transform3D.IDENTITY
-			if node is Node3D:
-				start = (node as Node3D).transform
-			_walk(node, start)
-			# A PackedScene node is not refcounted, so it has to be freed by hand.
-			node.free()
-	_aabbs[path] = _bounds
-	return _bounds
+	return _measure(path, false)
 
 
 ## How tall the model at [param path] stands, in metres, as imported.
@@ -174,6 +345,32 @@ static func instantiate(path: String, target_height: float = 0.0) -> Node3D:
 		var natural := natural_height(path)
 		if natural > 0.0:
 			node.scale = node.scale * (target_height / natural)
+	return node
+
+
+## A fresh instance of [param path] scaled to *stand* [param target_height] tall, feet on
+## the imported origin.
+##
+## ## Why this is not [method instantiate] with a target height
+##
+## [method natural_height] answers "how far is the top of this model above its origin",
+## which is the right question for a crop growing out of a soil tile and the wrong one for
+## a character. A KayKit rig is authored with its root at the hips, so 0.09m of the figure
+## hangs below the origin: dividing by the height-above-origin and then grounding the result
+## produces a body that stands 1.84m when it was asked for 1.75m, every time, by exactly
+## the amount it sank. A standing height is the box's own size, so that is what this
+## divides by.
+##
+## The soil tiles and the gatherables keep using [method natural_height], where the
+## offset-free reading is the one they want. Both conventions stay because both callers
+## exist, and collapsing them into one flag is how a rock ends up sunk into the terrain.
+static func instantiate_standing(path: String, target_height: float) -> Node3D:
+	var node := instantiate(path)
+	if node == null:
+		return null
+	var box := body_aabb(path)
+	if target_height > 0.0 and box.size.y > 0.0:
+		node.scale = node.scale * (target_height / box.size.y)
 	return node
 
 
@@ -254,5 +451,6 @@ static func clear_cache() -> void:
 	_scenes.clear()
 	_heights.clear()
 	_aabbs.clear()
+	_body_aabbs.clear()
 	_root_scales.clear()
 	_tints.clear()
