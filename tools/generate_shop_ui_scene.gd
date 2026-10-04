@@ -10,9 +10,13 @@ extends SceneTree
 ## would put one fixed set of items in the UI layer — content logic in the view.
 ##
 ## Only the chrome is authored: title, gold line, the row container, the message
-## line, and the close button.
+## line, the close button, and the controls line.
 
 const OUTPUT_PATH := "res://scenes/ui/shop_ui.tscn"
+
+## What the confirm key does to the highlighted row. Kept as a constant because it is
+## written into the scene *and* asserted by the tests, and two literals for one verb drift.
+const CONFIRM_WORD := "buy or sell"
 
 const TEXT_COLOR := Color(0.98, 0.96, 0.88)
 const SHADOW_COLOR := Color(0, 0, 0, 0.8)
@@ -80,6 +84,13 @@ func _initialize() -> void:
 	close.custom_minimum_size = Vector2(0, 30)
 	column.add_child(close)
 
+	# The controls, written down. A panel that can be driven entirely from the keyboard
+	# and never says so is a panel most players will assume is mouse-only — the mouse
+	# still works, so nothing looks broken, and the first person to try W/S gets silence.
+	var hint := _make_label("Hint", "W/S or arrows: move · Enter or Space: %s · E or Esc: close" % CONFIRM_WORD, 12)
+	hint.add_theme_color_override("font_color", Color(0.72, 0.70, 0.62))
+	column.add_child(hint)
+
 	_own(root, root)
 	if _save(root) != OK:
 		printerr("[generate_shop_ui_scene] failed")
@@ -95,8 +106,14 @@ func _initialize() -> void:
 ## saved scene, because a node with no `owner` is omitted from a `PackedScene`
 ## without any error at all. The panel then opened as an empty box. Recursing
 ## cannot be forgotten; see `generate_hotbar_hud_scene.gd` for the same note.
+##
+## The root is skipped, because a scene's own root cannot own itself: Godot rejects
+## the assignment with `Condition "p_owner == this" is true`, which every other
+## generator in this directory prints on every run and everybody has learned to
+## ignore. The root does not need an owner — it is the node being packed.
 func _own(node: Node, top: Node) -> void:
-	node.owner = top
+	if node != top:
+		node.owner = top
 	for child: Node in node.get_children():
 		_own(child, top)
 

@@ -27,6 +27,16 @@ extends Resource
 @export var camera_switch_key_action: StringName = &"toggle_camera_mode"
 @export var show_debug_overlay: bool = false
 
+@export_group("Graphics")
+## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision
+## a player makes is "how much am I willing to pay", and low/high with nothing between
+## forces someone with a middling machine to pick a side and then live with it.
+##
+## Read by [code]scripts/world/graphics_quality.gd[/code], which owns what each tier
+## actually turns on. Nothing else may read it: a second place that decides what "high"
+## means is a second place to forget to update.
+@export_enum("Low", "Medium", "High") var graphics_quality: int = 2
+
 
 func duplicate_config() -> GameConfig:
 	return duplicate(true) as GameConfig

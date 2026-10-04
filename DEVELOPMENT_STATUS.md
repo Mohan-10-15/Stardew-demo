@@ -1159,9 +1159,407 @@ Carried forward so they are not rediscovered as bugs later:
 | Crop art | **CLOSED (geometry), open (visual review).** `SoilTile` draws real CC0 growth-stage models from the Quaternius Ultimate Nature Pack, data-driven per crop and swapped at the halfway mark. The procedural stalk remains the fallback for crops with no art. The one thing left is a human looking at `art_review_crop_stages.png` — the models are stand-ins, so "does a field of these look good" is not answerable by a test. |
 | Watering can refill | The can has durability but no fill state or refill action. |
 | Wallet display | **CLOSED.** The status HUD shows the amount and follows every transaction. |
-| Shop UI | **CLOSED.** `ShopUI` lists prices, takes clicks, and says why a refused trade was refused. |
+| Shop UI | **CLOSED.** `ShopUI` lists prices, takes clicks **or the keyboard** (`W`/`S`/arrows to move, `Enter` to trade, `E`/`Esc` to close), and says why a refused trade was refused. |
 | Stamina display | **CLOSED.** The status HUD draws a bar and turns the readout red when stamina is empty. |
 | Mouse-look while a modal screen is up | The shop panel pauses the tree, so movement and the interaction probe stop. Mouse look does not, because `PlayerController._handle_look` reads mouse motion in `_unhandled_input`. Cosmetic — the panel is opaque — but noted. |
+
+---
+
+## Post-Group-14 polish batch — the shop from the keyboard, and a visible crosshair
+
+Driven by a player report: **the shop could not be driven without a mouse.** The panel
+answered clicks only. Every button was built with `focus_mode = FOCUS_NONE`, so the
+engine's own focus navigation was off, and nothing read the movement or arrow keys. A
+player with a keyboard had no way to pick a row at all.
+
+Also in this batch: the crosshair drew a bare dot until something was focused, which
+reads as "there is no crosshair" — the thing it exists to do is tell you where you are
+aiming, and it only appeared once you had already succeeded.
+
+### IMPLEMENTED
+
+| Change | Where |
+|---|---|
+| A highlight the panel owns: one row at a time, drawn with a stylebox override so the price stays readable | `scripts/ui/shop_ui.gd` (`_entries`, `_select`, `_paint_row`, `_selection_style`) |
+| `W`/`S` **and** the arrow keys move the highlight, wrapping at both ends | `shop_ui.gd` (`_unhandled_input` → `_consume_step`) |
+| `Enter`/`Space` trades the highlighted row; `E`/`Esc` close | `shop_ui.gd` |
+| Mouse hover moves the same highlight, so a player who hovers and then presses Enter gets *that* row | `shop_ui.gd` (`_register_entry`) |
+| The controls are written on the panel | `tools/generate_shop_ui_scene.gd` → `Hint` label |
+| The crosshair is always a plus; focus brightens it | `scripts/ui/crosshair.gd` |
+
+### BUGS FOUND BY PLAYING IT, NOT BY TESTING IT
+
+`tools/playtest_shop.gd` walks the real player to the real counter, opens the shop with
+the real `E`, and drives it with real key events. Two things came out of it that no
+existing test could have found:
+
+| Bug | Cause | Fix |
+|---|---|---|
+| The highlight jumped back to the top row after every purchase | `_rebuild()` reset `_selected = -1` and re-selected row 0. Nothing rebuilt after a trade before, so it never showed | `_rebuild` now remembers the highlight **by trade identity** (`kind` + `item_id`), not by index — an index is wrong anyway, because selling the last of something removes rows above it (`_index_of_trade`) |
+| A "Sell" row outlived the item it sold | `_report` only refreshed the gold label. The rows were a snapshot: sell your last parsnip and its Sell row stayed, so Enter aimed at a trade that could no longer happen | `_report` rebuilds the rows; the message is now cleared in `open()` so it survives the rebuild and does not greet the next shop |
+| The playtest itself reported a false failure | It confirmed whatever row the arrows left on — a 1000g steel axe with 500g in the wallet. The refusal was *correct*, and invisible in a log that printed only gold | The playtest now picks its row by reading the price off the screen, the way a player does, and prints the panel's own message |
+
+That third row is the reason the playtest logs the panel's message text: a correct
+refusal and a broken panel look identical in a log that only prints gold.
+
+### TESTS PERFORMED
+
+Five new cases in `tests/suites/test_ui.gd`, all driving the real generated scene:
+
+- `the_shop_panel_moves_its_highlight_with_the_keyboard` — `W` wraps at the top, `S`
+  steps back, the arrow keys work too, and **exactly one** row carries the stylebox
+  (an invisible highlight would pass every other assertion here)
+- `the_keyboard_confirms_the_highlighted_row` — both halves of the trade, the panel
+  stays open, and the highlight stays on the row that was just bought
+- `a_sold_row_leaves_the_shop_panel` — the last parsnip is sold from the keyboard and
+  its row goes with it
+- `the_key_that_opened_the_shop_still_closes_it` — `E` closes and charges nothing, the
+  trap being one key that both confirms and closes
+- `the_shop_panel_says_which_keys_do_what` — the generated `Hint` label is visible and
+  names movement, confirm and close
+
+Key events go through `Input.parse_input_event`, **not** `Input.action_press`.
+`action_press` only moves the action *state* and never delivers an event, so a test
+written that way asserts against a path the player cannot reach.
+
+**350/350 pass.** `tools/check.ps1`: import OK, tests OK, boot OK, zero `SCRIPT ERROR`.
+
+### STILL NEEDS HUMAN EYES
+
+`tools/playtest_shop.gd` writes six screenshots (`art_review_shop_01_counter.png`
+through `_06_closed.png`, git-ignored). The structural claims are asserted in tests; the
+*look* of the highlight and the crosshair is not answerable by a test, and the reviewer
+of this batch cannot see images.
+
+---
+
+## Camera and item audit
+
+Asked to audit rather than reproduce: both areas already had passing tests, so the
+question was not "is there a test" but "what would a test written from reading the code
+have asserted". Four defects, all of the kind that pass every existing test.
+
+### Camera
+
+| Bug | Cause | Fix |
+|---|---|---|
+| **The first-person eye orbits the player's feet.** Pitch down 45° and the viewpoint drops from 1.62 m to 1.15 m and slides forward; pitch up and it goes the other way | The rig node sits at the player's *origin* — the feet — and carries the pitch, so a camera at plain local `(0, height, 0)` is rotated about the feet. `first_person_camera_is_at_eye_height` passed because it only ever measured pitch 0 | Counter-rotate the eye offset by minus the pitch: `Vector3(0, h, 0).rotated(Vector3.RIGHT, -_pitch)`. The eye now depends on body yaw only, while the camera's zero local rotation still aims it along the pitch |
+| **A nested body mesh is never hidden in first person** | `_discover_body_meshes` walked one level of `get_children()`. That is the exact shape the primitive avatar happens to have — five meshes directly on the player. An imported character is one scene under a `Model` node, so nothing is found, nothing is registered, and the view is rendered from inside the player's chest with no error | Recursive walk (`_collect_meshes`), still skipping `*_always_visible` |
+| **A mesh registered after `_ready` stayed visible in first person** | Visibility is applied by `_apply_mode`, which runs on a mode *change*. A late registration was recorded and never applied | `register_body_mesh` now applies the current mode immediately |
+
+The third one only became visible once the second was fixed, and it is the one that
+would have bitten the avatar swap: a new model appearing mid-game would have shown the
+player the inside of their own character until they toggled the camera twice.
+
+Also added: `PlayerController.set_pitch`, the mirror of the existing `set_yaw`. Without
+it a test or tool that can turn the player to face a thing but cannot tilt the view has
+to write the *rig's* pitch, leaving the controller's own copy stale — so the next real
+mouse move snaps the view back to where it was.
+
+### Items
+
+The inventory and hotbar are the best-tested code in the project — stacking, splitting,
+quality ordering, slot nulling, swap-or-merge, durability save round-trip, broken tools
+leaving the bag, full-bag refusals. Two real gaps, both **invisible system**:
+
+| Bug | Cause | Fix |
+|---|---|---|
+| **Tool durability was never shown to the player** | `Inventory.set_durability`'s own comment says it publishes `contents_changed` "which is what lets the HUD show durability" — and nothing read it. `ItemStack.describe()` has no room for it, and a hoe looked identical on its last swing as on the day it was bought | `Hotbar.describe_slot` appends `uses/maximum` for tools only. Guarded by a test that a seed packet and a stack of wood still read plain |
+| **A breaking tool said nothing at all** | `EventBus.tool_broken` and `FarmService.tool_broken` were emitted and had **no subscriber anywhere in the project**. The stack left the bag, the held slot went empty, and the player got no word — the empty hand was the only symptom | `NoticeLabel` in the interaction HUD, driven by `tool_broken`, three-second timeout, regenerated through `tools/generate_hud_scene.gd` |
+
+Two bugs in the new work itself, both caught by the tests written alongside it:
+
+- The notice countdown was written *after* the probe search in `_process`, behind
+  `if _probe == null: return`. In any tree without a player the notice never expired —
+  and it looked fine in the real game, because the real game has a probe. It is now
+  ticked ahead of the probe lookup.
+- The test that catches that waited "150 frames". Headless runs unthrottled, so 150
+  frames can be a fraction of a second and the countdown would not be near its end — a
+  test that would have passed the broken HUD. It waits on `create_timer(3.4)` instead.
+
+### Content note, not a bug
+
+`hoe` and `scythe` carry **no durability** and never wear out. Every axe, pickaxe and the
+watering can does. Nothing is upgraded past the starter hoe, so this looks deliberate,
+but it means the break notice can only ever be about a tool from that other set.
+
+### TESTS PERFORMED
+
+- `first_person_eye_stays_at_eye_height_when_pitched` — world-space, at 0°/−45°/+45°/−70°.
+  Local position is correct-looking in every one of those; the error is entirely in how
+  the rig's rotation composes with it, which is why it has to be asserted in world space.
+- `a_nested_body_mesh_is_hidden_in_first_person` — adds a `Model` node with a mesh *after*
+  discovery has run, which is the honest version of the avatar swap.
+- `the_hotbar_shows_remaining_tool_uses`, `only_tools_carry_a_durability_readout`
+- `a_broken_tool_is_announced_on_the_hud`, `the_broken_tool_notice_clears_itself`
+
+**356/356 pass.** `tools/check.ps1`: import OK, tests OK, boot OK, zero `SCRIPT ERROR`.
+
+---
+
+## The log, on screen
+
+`Log` wrote to `user://hollowbrook.log` and to stdout. Neither is anywhere a player or
+the person debugging a playtest is looking, so every "did that actually happen?"
+question during a session was unanswerable at the time it was asked.
+
+| Change | Where |
+|---|---|
+| A bounded in-memory ring of the last 400 lines, with the timestamp, level, category and message | `scripts/core/log.gd` (`_remember`, `recent`) |
+| `line_logged`, emitted for every line that passes the filters | `event_bus`-style signal on `Log` |
+| `F3` toggles a panel that renders those lines, coloured by level, following the tail | `scripts/ui/log_panel.gd`, generated by `tools/generate_log_panel_scene.gd` |
+| `InputActions.TOGGLE_LOG_PANEL`, bound through the generator | `input_actions.gd`, `rebuild_input_map.gd` |
+
+Two decisions worth recording:
+
+- **It does not pause the game.** Every other panel here is modal, so pausing was the
+  reflex. That defeats the panel: the point is to watch the log *while* playing, and a
+  log you must close to see what your last action did is no use.
+- **One `RichTextLabel`, not a label per line.** A label per line is a node per line,
+  rebuilt on every change — and a busy frame emits dozens, which is exactly when the
+  panel is most wanted.
+
+It stays open until `F3` or `Esc`. An earlier version faded itself after three seconds,
+on the theory that a panel over the game is in the way; the moment you open a log is the
+moment you want to watch it for another twenty seconds.
+
+Also fixed in passing: `Log._timestamp()` existed and was **never called** — the docstring
+claimed the log "adds timestamps" and the file had none. It is live now.
+
+Third occurrence of a bug this project has already paid for twice: the new generator
+forgot `child.owner = root`, so `PackedScene.pack` silently dropped every node and the
+panel instantiated as an empty layer. Caught by asserting on the generated node paths
+rather than on "the scene loaded".
+
+### TESTS PERFORMED
+
+`test_core`: `the_log_keeps_its_recent_lines_in_memory`,
+`the_recent_log_is_bounded` (drives it past the cap deliberately and asserts it trims
+rather than grows, and that the newest line is last), `recent_log_hands_out_a_copy`,
+`suppressed_lines_are_not_remembered`.
+
+`test_ui`: the panel starts hidden; `F3` opens it and the rendered text contains both a
+line logged *before* opening and one logged *while* open, and `F3` closes it; it does not
+pause the tree; the header names the `user://` log path.
+
+**364/364 pass.** `tools/check.ps1`: import OK, tests OK, boot OK, zero `SCRIPT ERROR`.
+
+The panel's *appearance* is unverified — see the note above about screenshots.
+
+---
+
+## Graphics, pass 1: light that is actually lit
+
+The world had a sun, a sky, and `tonemap_mode = 2`. Everything else was left at the
+engine default: no ambient occlusion, no bloom, no fog, and a single-sample
+`anti_aliasing/quality/msaa_3d` set once in `project.godot` and never revisited.
+Flat, aliased, and correct on exactly one machine.
+
+### The one interesting decision
+
+"Add SSAO" is not a decision a player makes. "How much do I pay per frame" is. So the
+effects are grouped into three tiers and the tier is a saved setting, applied live, from
+`user://config.cfg` — not a value baked into `world.tscn`, which is the only kind this
+project could express before.
+
+| | Low | Medium | High |
+|---|---|---|---|
+| Tonemap | ACES | ACES | ACES |
+| SSAO | off | on | on |
+| Glow | off | off | on |
+| Depth fog | off | on | on |
+| Shadow splits | 1 (orthogonal) | 2 | 4 |
+| Shadow distance | 45m | 70m | 90m |
+| MSAA | off | 2x | 4x |
+| Saturation | 1.02 | 1.05 | 1.06 |
+
+SSIL and SDFGI are on in no tier. Both would help, both are expensive on integrated
+graphics, and shipping a "high" preset that is a slideshow is worse than shipping a
+modest one that holds 60.
+
+`glow_bloom` rather than `glow_strength`, deliberately: the plain version lifts the whole
+frame toward white, which on a bright daylight palette reads as a washed-out screenshot
+rather than as light.
+
+### Where the tiers live
+
+`scripts/world/graphics_quality.gd`, one dictionary per tier, applied key by key with
+`set()`. A chain of `if quality >= HIGH` branches is where a setting gets added to two
+tiers and forgotten in the third.
+
+Two things about that `set()` loop:
+
+- **It reads the real property lists** (`get_property_list()`) instead of testing
+  `get(key) != null`. A property whose current value happens to be null — a null texture,
+  a null override — is indistinguishable from one that does not exist, and the setting
+  would be dropped on the one machine where it was already unset.
+- **A key no node recognises is logged, not swallowed.** A property that does not exist
+  is not an error, it is nothing, and a typo in a graphics table is otherwise completely
+  invisible.
+
+### The bug this pass found in its own test
+
+The new tier-key test built an `Environment` and a `DirectionalLight3D` to read their
+property lists off and never disposed of them. `check.ps1` failed on
+`ERROR: 1 RID allocations of type 'RendererSceneCull::Instance' were leaked at exit` —
+a line that points at nothing anyone wrote. Bisecting it against a clean worktree at
+`HEAD` narrowed it to one un-freed light in one test; the fix is `sun.free()`, and the
+`Environment` is refcounted so it must *not* be freed.
+
+Worth recording because the suite exists partly to assert "nothing leaked". A suite that
+becomes the leak is the worst version of that failure: it trains you to distrust the
+gate.
+
+### TESTS PERFORMED
+
+`test_world`: every key in all three tiers is a real property on the environment, the
+sun, or the one viewport key handled by name (55 checked); the *configured* tier is
+asserted on the live `Environment` rather than on the table, so "applied to the wrong
+object" and "applied before the environment existed" both fail; **high has SSAO + glow +
+fog and low has none of the three**, which is what catches a "low" that is just "high
+with smaller numbers"; 7 clamps to high and -3 to low; and no tier writes a property
+`DayNightCycle` owns — `ambient_light_energy` in particular, which would make the two
+scripts overwrite each other every frame and flicker the valley.
+
+`test_core`: the tier reaches `user://config.cfg` and survives a reload, and a
+hand-edited 9 is clamped to 2.
+
+**370/370 pass.** `tools/check.ps1`: import OK, tests OK, boot OK, zero `SCRIPT ERROR`.
+
+### Not done
+
+No settings menu exists in this project yet, so the tier is config-only — exactly like
+`fullscreen`, `vsync_enabled` and the volume sliders. It reaches the screen when the
+settings UI does.
+
+How it *looks* is unverified. See the screenshot note above.
+
+---
+
+## Graphics, pass 2: surfaces
+
+Everything in the valley was a flat colour with a roughness. One green plane 220m
+across, ten brown boxes, one blue pane. Lighting that well does not help, because the
+problem is not the light — there is nothing on the surfaces for it to find.
+
+### A library, because fifteen call sites is fifteen chances to disagree
+
+`scripts/world/world_materials.gd` — twelve named surfaces, each with an albedo, a
+roughness, a metallic, a specular and a tiling. `world_builder.gd` asks for `&"wood"`
+instead of `material(COL_WOOD, 0.9)`.
+
+An unknown name returns `null`, not a fallback. A typo that hands back wood where the
+author meant glass is precisely the bug nobody finds by playing.
+
+### One shared noise, multiplied
+
+A tiling noise map assigned to `albedo_texture` *multiplies* `albedo_color`, so a
+near-white map turns a flat colour into a surface with variation on it without moving
+the hue the palette picked.
+
+One `NoiseTexture2D` for the whole world, tiled differently per surface through
+`uv1_scale` — not one per material. Nine simultaneous 256×256 generations at world
+build is nine times the cost for a difference nobody can see. `seamless = true`,
+because the visible artefact of a non-tiling map on a 220m plane is a grid of
+repeating blobs, and it would be the first thing on screen.
+
+The ramp is 0.86–1.0, not 0.0–1.0. A full-range noise map over a surface reads as
+camouflage; a 14% dip reads as a surface.
+
+### The ground
+
+One mesh, one green, 220m across — a green table, and no post-process fixes that. SSAO
+finds edges that are not there and bloom has nothing to bloom. So the variation went
+into the surface data: 2025 vertex colours, multiplying the grass material.
+
+Wet margin at the pond rim, silt on the basin floor, trampled earth on the road between
+the farm and the village, and a broad low-frequency blotch so open field is not
+uniform. Vertex colour rather than a second texture because it costs nothing at
+runtime, has no resolution to choose, and cannot tile visibly.
+
+**The first version of this was wrong in a way that would never have been caught by
+looking.** It ramped on elevation — "dry grass up high, lush down low" is the reflex —
+and `terrain_height` is `0.0` at every one of the 2025 vertices outside the pond basin.
+A gradient that exists in the code and cannot be seen in the world is worse than not
+writing it, because the next person assumes the terrain varies. The tint is now written
+against the one landform the terrain actually has.
+
+That is why the test asserts on the *spread* of the vertex colours and that the spread
+straddles white, not merely on the array being present.
+
+### Water
+
+Alpha transparency, roughness 0.08, specular 0.55 against wood's 0.20. The specular is
+the whole point: a visible highlight is what separates water from a blue pane before
+any ripple texture exists.
+
+### What the tests found
+
+**A real bug in `ModelArt.apply_tint`.** The new "materials are shared" test failed at
+104 distinct materials across 263 meshes. `apply_tint` duplicated a material per
+*instance*, so a wood of eighty trees with one tint owned eighty identical materials and
+nothing the renderer could batch. The duplicate is unavoidable — the alternative is
+editing the shared resource and tinting every other instance in the valley at once —
+but it only has to exist once per (source material, tint) pair. Now cached: 104 → 96.
+
+**And then the test itself was wrong.** 96 is about right for a valley built from
+twenty imported CC0 models, each carrying its own authored materials. The assertion had
+been "distinct materials × 4 > meshes", which is a ratio, and ratios are the wrong
+shape for this question. It now counts per *mesh resource*: five or more meshes sharing
+one mesh must share one material. 11 repeated meshes, none duplicating.
+
+**And then the farm.** A test asserting that every primitive in the world wears a
+library material failed on 70 primitives — every soil tile and every crop. They were
+building their own `StandardMaterial3D` in `soil_tile.gd`. A tilled field is the single
+largest flat surface a player looks at, 35 tiles directly below their own feet, so it
+was the worst possible place for a colour with nothing on it. All 116 primitives are on
+the library now.
+
+### TESTS PERFORMED
+
+`test_world`: all twelve surfaces resolve and an unknown name returns null; all twelve
+share one *seamless* detail texture with a tiling scale above zero; no repeated mesh
+duplicates its material; the ground's 2025 vertex colours vary and straddle white; the
+pond basin is darker than the slope, which is darker than open field; and all 116
+primitives wear library materials.
+
+**376/376 pass.** `tools/check.ps1`: import OK, tests OK, boot OK, zero `SCRIPT ERROR`.
+
+### The playtest, and what it can and cannot prove
+
+`tools/playtest_graphics.gd` boots the real main scene, prints the *live* state of
+every setting back off the running nodes, and saves six vantage points:
+
+```
+tonemap=3 exposure=1.00
+ssao=true radius=1.60 intensity=2.80
+glow=true bloom=0.060 threshold=1.10
+fog=true density=0.0060 sky_affect=0.25
+saturation=1.06 contrast=1.02
+sun energy=0.55 shadows=true mode=2 max_distance=90
+msaa_3d=2
+ground vertices=2025 tinted=2025
+263 meshes, 96 distinct materials
+```
+
+Reading values off live nodes is the point: a setting written into a resource and never
+reaching the environment cannot pass here.
+
+It also measures each frame — luminance mean, standard deviation, range and distinct
+colour count — because nobody can tell from a pass/fail whether the valley rendered:
+
+```
+gfx_01_farm      mean=0.620 sd=0.177 range=0.015..0.959 colours=2302
+gfx_05_ground    mean=0.438 sd=0.141 range=0.015..0.959 colours=2075
+gfx_06_shoreline mean=0.651 sd=0.131 range=0.016..0.959 colours=1378
+```
+
+1,378–2,302 distinct colours per frame, with a real luminance spread. That rules out a
+frame that failed to draw, and a frame that drew one flat green. It rules out nothing
+about whether any of it looks good.
+
+**Still unverified: whether it looks good.** `art_review_gfx_01_farm.png` through
+`art_review_gfx_06_shoreline.png` need a human eye.
 
 ---
 

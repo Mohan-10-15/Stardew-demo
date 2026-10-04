@@ -48,9 +48,11 @@ func get_cases() -> Array[StringName]:
 		&"default_camera_mode_is_honoured_from_config",
 		&"switching_preserves_player_position",
 		&"first_person_camera_is_at_eye_height",
+		&"first_person_eye_stays_at_eye_height_when_pitched",
 		&"third_person_camera_is_behind_the_player",
 		&"body_meshes_hidden_in_first_person",
 		&"body_meshes_visible_in_third_person",
+		&"a_nested_body_mesh_is_hidden_in_first_person",
 		&"camera_is_the_only_current_camera",
 		&"world_builds_with_collision",
 		&"world_has_ground_surface",
@@ -133,6 +135,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_position_preserved()
 		&"first_person_camera_is_at_eye_height":
 			return await _t_fp_height()
+		&"first_person_eye_stays_at_eye_height_when_pitched":
+			return await _t_fp_eye_survives_pitch()
 		&"third_person_camera_is_behind_the_player":
 			return await _t_tp_behind()
 		&"third_person_camera_is_at_shoulder_height":
@@ -147,6 +151,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_meshes_fp()
 		&"body_meshes_visible_in_third_person":
 			return await _t_meshes_tp()
+		&"a_nested_body_mesh_is_hidden_in_first_person":
+			return await _t_nested_mesh_hidden_in_first_person()
 		&"camera_is_the_only_current_camera":
 			return await _t_single_camera()
 		&"world_builds_with_collision":
@@ -397,6 +403,52 @@ func _t_fp_height() -> Dictionary:
 	return succeeded(c, "eye %.2f" % eye_local)
 
 
+## The eye stays at eye height when you look up or down.
+##
+## The rig sits at the player's *origin*, at the feet, and carries the pitch. A camera
+## parented to it therefore orbits the feet rather than the head: look down and the
+## eye swings back and down, look up and it drops forward. `_t_fp_height` above cannot
+## see this — it only ever measures the camera with the pitch at zero.
+##
+## Asserted in **world** space, because that is where the defect lives: local position is
+## correct-looking in every case, and the error is entirely in how the rig's rotation
+## composes with it. The eye must stay a fixed distance above the feet, directly over
+## them, at every pitch.
+func _t_fp_eye_survives_pitch() -> Dictionary:
+	var c := &"first_person_eye_stays_at_eye_height_when_pitched"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+	if not player.camera_rig.is_first_person():
+		player.camera_rig.set_mode(CameraRig.Mode.FIRST_PERSON, true)
+		await await_step(2)
+	var cam := player.camera_rig.get_camera()
+	var want_height: float = player.camera_rig.first_person_height
+	var worst := ""
+	# Both ends and straight down, because the error is a function of pitch and the
+	# ends are where it is largest.
+	for degrees: float in [0.0, -45.0, 45.0, -70.0]:
+		player.set_pitch(deg_to_rad(degrees))
+		await await_step(3)
+		var offset := cam.global_position - player.global_position
+		if absf(offset.y - want_height) > 0.02:
+			worst = "pitch %+.0f deg: eye %.2f above the feet, expected %.2f" % [
+				degrees, offset.y, want_height,
+			]
+			break
+		# Directly over the player. Drift along the view axis is the orbit.
+		var sideways := Vector2(offset.x, offset.z).length()
+		if sideways > 0.02:
+			worst = "pitch %+.0f deg: eye %.3fm off the body axis" % [degrees, sideways]
+			break
+	if not worst.is_empty():
+		return fail(c, worst)
+	return succeeded(c, "eye held %.2fm above the feet from -70 to +45 degrees"
+		% want_height)
+
+
 func _t_tp_behind() -> Dictionary:
 	var c := &"third_person_camera_is_behind_the_player"
 	var built := await _build_world_and_player()
@@ -577,6 +629,49 @@ func _t_meshes_tp() -> Dictionary:
 	if not head.visible:
 		return fail(c, "Head hidden in third person, character would be invisible")
 	return succeeded(c)
+
+
+## A nested body mesh is hidden in first person too.
+##
+## The rig discovers the meshes it hides by walking the player, and that walk used to be
+## one level deep — which is the shape the primitive avatar happens to have, five meshes
+## sitting directly on the player. A modelled character is one imported scene under a
+## `Model` node, so the walk finds nothing, registers nothing, and the first-person view
+## is rendered from inside the player's own chest with no error anywhere.
+##
+## So this nests a mesh under a fresh child *after* the rig has already discovered
+## everything, which is the honest version of the swap: it fails unless discovery is
+## re-run over the whole subtree.
+func _t_nested_mesh_hidden_in_first_person() -> Dictionary:
+	var c := &"a_nested_body_mesh_is_hidden_in_first_person"
+	var built := await _build_world_and_player()
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var player: PlayerController = built["player"]
+	await await_step(5)
+	if not player.camera_rig.is_first_person():
+		player.camera_rig.set_mode(CameraRig.Mode.FIRST_PERSON, true)
+		await await_step(2)
+
+	# The shape an imported avatar arrives in: a node holding several meshes.
+	var model := Node3D.new()
+	model.name = "Model"
+	player.add_child(model)
+	var hat := MeshInstance3D.new()
+	hat.name = "Hat"
+	hat.mesh = BoxMesh.new()
+	model.add_child(hat)
+	await await_step(2)
+	player.camera_rig.call("_discover_body_meshes")
+	await await_step(2)
+
+	if hat.visible:
+		return fail(c, "a mesh nested under Model is still visible in first person")
+	player.camera_rig.set_mode(CameraRig.Mode.THIRD_PERSON, true)
+	await await_step(2)
+	if not hat.visible:
+		return fail(c, "the nested mesh stayed hidden in third person")
+	return succeeded(c, "hidden in first person, shown in third")
 
 
 func _t_single_camera() -> Dictionary:

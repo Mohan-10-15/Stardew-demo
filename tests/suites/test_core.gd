@@ -16,6 +16,11 @@ func get_cases() -> Array[StringName]:
 		&"log_file_is_written",
 		&"log_respects_category_level",
 		&"game_state_pause_roundtrip",
+		&"the_log_keeps_its_recent_lines_in_memory",
+		&"the_recent_log_is_bounded",
+		&"recent_log_hands_out_a_copy",
+		&"suppressed_lines_are_not_remembered",
+		&"the_graphics_quality_setting_persists_and_clamps",
 	]
 
 
@@ -39,6 +44,16 @@ func _run(case: StringName) -> Dictionary:
 			return _check_log_levels()
 		&"game_state_pause_roundtrip":
 			return _check_pause()
+		&"the_log_keeps_its_recent_lines_in_memory":
+			return _check_log_memory()
+		&"the_recent_log_is_bounded":
+			return _check_log_memory_bounded()
+		&"recent_log_hands_out_a_copy":
+			return _check_log_memory_is_a_copy()
+		&"suppressed_lines_are_not_remembered":
+			return _check_log_memory_respects_levels()
+		&"the_graphics_quality_setting_persists_and_clamps":
+			return _check_graphics_quality_persists()
 	return fail(case, "unhandled case")
 
 
@@ -116,6 +131,29 @@ func _check_config_persist() -> Dictionary:
 	return succeeded(c, "fov %s persisted" % target)
 
 
+## The graphics tier is the first setting whose value decides what the renderer
+## does, so it is also the first one where a value that survives to disk but never
+## reaches [Environment] is worth asserting on. This checks the persistence half;
+## the apply half lives in `test_world`, against a real world.
+func _check_graphics_quality_persists() -> Dictionary:
+	var c := &"the_graphics_quality_setting_persists_and_clamps"
+	var original: int = int(Config.settings.graphics_quality)
+	Config.set_value(&"graphics", "graphics_quality", 0)
+	if int(Config.settings.graphics_quality) != 0:
+		return fail(c, "low was not stored in memory")
+	var cfg := ConfigFile.new()
+	if cfg.load(Config.CONFIG_PATH) != OK:
+		return fail(c, "config file could not be reloaded from disk")
+	if int(cfg.get_value("graphics", "graphics_quality", -1)) != 0:
+		return fail(c, "low did not reach the config file")
+	# A hand-edited config file is the realistic source of a bad value.
+	Config.set_value(&"graphics", "graphics_quality", 9)
+	if int(Config.settings.graphics_quality) != 2:
+		return fail(c, "a 9 in the config file was not clamped to high, got %d" % int(Config.settings.graphics_quality))
+	Config.set_value(&"graphics", "graphics_quality", original)
+	return succeeded(c, "tier persisted and 9 clamped to 2")
+
+
 func _check_config_reset() -> Dictionary:
 	var c := &"config_reset_restores_defaults"
 	Config.settings.fov = 111.0
@@ -162,4 +200,74 @@ func _check_pause() -> Dictionary:
 	GameState.set_paused(false)
 	if GameState.paused or tree.paused:
 		return fail(c, "tree did not unpause")
+	return succeeded(c)
+
+
+## The log keeps what it just said, in memory.
+##
+## The file is the wrong place to read a log from: it lives outside the game, and it is
+## flushed on every line, so the panel that shows the log while you play would have to
+## re-read a file on every frame. This asserts the ring buffer directly.
+func _check_log_memory() -> Dictionary:
+	var c := &"the_log_keeps_its_recent_lines_in_memory"
+	var marker := "memory probe %d" % Time.get_ticks_msec()
+	Log.info("TestSuite", marker)
+	var found := false
+	for entry: Dictionary in Log.recent():
+		if str(entry.get("message", "")) == marker:
+			found = true
+			if not entry.has("time") or str(entry.get("time", "")).is_empty():
+				return fail(c, "the line was remembered with no timestamp")
+			if str(entry.get("category", "")) != "TestSuite":
+				return fail(c, "category came back as '%s'" % str(entry.get("category", "")))
+	if not found:
+		return fail(c, "the line was not in the recent buffer")
+	return succeeded(c, marker)
+
+
+## The buffer is bounded, and drops the oldest.
+##
+## An unbounded log behind a UI is a slow-motion crash: a long session would grow an
+## array without limit, and the panel would rebuild from all of it. This drives it past
+## the cap deliberately — `recent()` is capped at a few hundred entries, so the count
+## must stay near that however much is logged.
+func _check_log_memory_bounded() -> Dictionary:
+	var c := &"the_recent_log_is_bounded"
+	var before := Log.recent().size()
+	var chunk := before + Log.MEMORY_LINES + 50
+	for i: int in range(chunk):
+		Log.quiet("BulkProbe", "line %d" % i, Log.Level.DEBUG)
+	var after := Log.recent().size()
+	if after > before + Log.MEMORY_LINES:
+		return fail(c, "%d lines retained after logging %d over a cap of %d"
+			% [after, chunk, Log.MEMORY_LINES])
+	if after <= 0:
+		return fail(c, "the buffer was emptied rather than trimmed")
+	# Oldest first, so the newest line is the last one — the order the panel relies on.
+	var last: Dictionary = Log.recent()[after - 1]
+	if str(last.get("message", "")) != "line %d" % (chunk - 1):
+		return fail(c, "the newest line is '%s'" % str(last.get("message", "")))
+	return succeeded(c, "%d lines retained" % after)
+
+
+## A caller cannot corrupt the log by sorting what it was handed.
+func _check_log_memory_is_a_copy() -> Dictionary:
+	var c := &"recent_log_hands_out_a_copy"
+	var handed: Array = Log.recent(5)
+	handed.clear()
+	if Log.recent().size() <= 5:
+		return fail(c, "clearing the returned array emptied the log's own history")
+	return succeeded(c)
+
+
+## Suppressed lines stay out of memory as well as out of the file.
+func _check_log_memory_respects_levels() -> Dictionary:
+	var c := &"suppressed_lines_are_not_remembered"
+	Log.set_category_level("silent_probe", Log.Level.ERROR)
+	Log.quiet("silent_probe", "should not be remembered", Log.Level.WARN)
+	for entry: Dictionary in Log.recent():
+		if str(entry.get("message", "")) == "should not be remembered":
+			Log.set_category_level("silent_probe", Log.Level.DEBUG)
+			return fail(c, "a suppressed line was kept in memory anyway")
+	Log.set_category_level("silent_probe", Log.Level.DEBUG)
 	return succeeded(c)

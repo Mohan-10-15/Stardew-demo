@@ -548,12 +548,14 @@ func _soil_grass_color() -> Color:
 	return Color(0.45, 0.33, 0.22)
 
 
+## The material for a soil or crop colour.
+##
+## Routed through [WorldMaterials] rather than built here, so the farm plot gets the
+## same shared detail texture as the rest of the valley. A tilled field is the single
+## largest flat surface a player looks at — 35 tiles directly below their own feet —
+## so it was the worst place for a colour with nothing on it.
+##
+## `for_color` caches by colour and roughness, so every tile of the same state still
+## shares one material instance.
 func _make_material(color: Color) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 1.0
-	mat.metallic = 0.0
-	# Godot 4 renamed SpatialMaterial.specular; using the old name logs a remap
-	# warning per material at load.
-	mat.metallic_specular = 0.1
-	return mat
+	return WorldMaterials.for_color(color, 1.0)

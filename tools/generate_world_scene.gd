@@ -41,6 +41,15 @@ func _initialize() -> void:
 	sky.environment = env
 	root.add_child(sky)
 
+	# --- Graphics quality --------------------------------------------------
+	# After the environment and the sun, so its `_ready` finds both. It re-applies on
+	# `settings_applied`, which is what makes the tier a *setting* rather than a value
+	# frozen into this file at generation time.
+	var graphics := Node.new()
+	graphics.name = "Graphics"
+	graphics.set_script(load("res://scripts/world/graphics_quality.gd"))
+	root.add_child(graphics)
+
 	# --- Day/night cycle ---------------------------------------------------
 	# A child node rather than a script on the world root, so it subscribes and
 	# unsubscribes with the world's own lifetime and can be removed in an editor
@@ -71,7 +80,7 @@ func _initialize() -> void:
 	grid.position = _farm_centre()
 	root.add_child(grid)
 
-	for child: Node in [sun, sky, cycle, clock, grid]:
+	for child: Node in [sun, sky, graphics, cycle, clock, grid]:
 		child.owner = root
 
 	var packed := PackedScene.new()

@@ -25,15 +25,26 @@ extends CanvasLayer
 @onready var _crosshair: Control = get_node_or_null(^"Crosshair")
 @onready var _prompt: Label = get_node_or_null(^"PromptContainer/PromptLabel")
 @onready var _hold_bar: ProgressBar = get_node_or_null(^"PromptContainer/HoldBar")
+@onready var _notice: Label = get_node_or_null(^"PromptContainer/NoticeLabel")
+
+## How long a notice stays up. Long enough to read one line, short enough that a
+## second event does not land on top of a forgotten first one.
+const NOTICE_SECONDS := 3.0
 
 var _probe: InteractionProbe = null
 var _watching_state := false
+var _notice_left := 0.0
 
 
 func _ready() -> void:
 	if _crosshair != null:
 		_crosshair.visible = true
 	_set_prompt_visible(false)
+	_set_notice("")
+	# Connected here rather than in `_watch_state`, which is about the *prompt*'s
+	# dependencies: a tool breaking does not change what any key will do, it changes
+	# what the player needs to be told.
+	EventBus.tool_broken.connect(_on_tool_broken)
 
 	_probe = _find_probe(get_tree().get_root())
 	if _probe == null:
@@ -48,7 +59,12 @@ func _ready() -> void:
 	_bind_probe()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	# Ahead of the probe search, deliberately. The two are unrelated, and putting the
+	# countdown behind `if _probe == null: return` means a notice never expires in any
+	# tree without a player — which is also why it looked fine in the game and failed in
+	# the test that actually looked.
+	_tick_notice(delta)
 	if _probe == null:
 		_attach_probe()
 		if _probe == null:
@@ -167,3 +183,30 @@ func _watch_state(value: bool) -> void:
 ## A villager's standing moved, so whether they can take a present may have moved with it.
 func _on_friendship_changed(_npc_id: StringName, _hearts: int, _tier_name: String) -> void:
 	_refresh_prompt()
+
+
+## The held tool wore out and is gone from the bag.
+##
+## [signal EventBus.tool_broken] had no subscriber anywhere in the project: the stack was
+## removed, the held slot went empty, and the player was left swinging at the soil with
+## nothing in hand and no reason given. A tool that disappears without a word is
+## indistinguishable from a bug, and the empty hand it leaves behind is the part that
+## actually costs the player — the tool has to be bought again.
+func _on_tool_broken(item_id: StringName) -> void:
+	_set_notice("Your %s broke." % ItemRegistry.display_name_of(item_id))
+
+
+func _set_notice(text: String) -> void:
+	_notice_left = 0.0
+	if _notice == null:
+		return
+	_notice.text = text
+	_notice.visible = not text.is_empty()
+
+
+func _tick_notice(delta: float) -> void:
+	if _notice == null or not _notice.visible:
+		return
+	_notice_left += delta
+	if _notice_left >= NOTICE_SECONDS:
+		_set_notice("")

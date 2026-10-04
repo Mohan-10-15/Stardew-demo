@@ -13,12 +13,25 @@ enum Level { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3, OFF = 4 }
 
 const LEVEL_NAMES := ["DEBUG", "INFO ", "WARN ", "ERROR", "OFF  "]
 
+## Emitted for every line that passes the filters, as `{time, level, category, message}`.
+##
+## The in-game panel ([code]scripts/ui/log_panel.gd[/code]) listens to this rather than
+## polling the file: the file is flushed on every line and lives outside the game, so
+## reading it back is both slow and impossible to see while playing.
+signal line_logged(entry: Dictionary)
+
+## Lines kept in memory for the panel. Bounded because this is a log, not a journal —
+## an hour of play at four lines a frame would otherwise be an unbounded array behind a
+## UI. Oldest goes first.
+const MEMORY_LINES := 400
+
 ## Categories whose output is suppressed at the given level.
 var _category_levels: Dictionary = {}
 var _global_level: Level = Level.DEBUG
 var _log_to_file: bool = true
 var _file: FileAccess = null
 var _file_path: String = ""
+var _recent: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -76,7 +89,31 @@ func error(category: String, message: String) -> void:
 ## suite, where deliberately-bad input would otherwise pollute CI output.
 func quiet(category: String, message: String, level: Level = Level.ERROR) -> void:
 	if _is_enabled(category, level):
+		_remember(level, category, message)
 		_write_file("%s [%s] %s" % [LEVEL_NAMES[level], category, message])
+
+
+## The most recent lines, oldest first, for the in-game panel.
+##
+## Returns a copy of the array but the same dictionaries, so a caller that sorts or
+## filters them cannot corrupt the log's own history. A copy of the *array* is what
+## makes `recent().clear()` harmless, which is the mistake a caller will otherwise make.
+func recent(count: int = -1) -> Array[Dictionary]:
+	if count < 0 or count >= _recent.size():
+		return _recent.duplicate()
+	return _recent.slice(_recent.size() - count)
+
+
+func _remember(level: Level, category: String, message: String) -> void:
+	_recent.append({
+		"time": _timestamp(),
+		"level": int(level),
+		"category": category,
+		"message": message,
+	})
+	while _recent.size() > MEMORY_LINES:
+		_recent.pop_front()
+	line_logged.emit(_recent[_recent.size() - 1])
 
 
 func _emit(level: Level, category: String, message: String) -> void:
@@ -89,6 +126,7 @@ func _emit(level: Level, category: String, message: String) -> void:
 			push_error("%s [%s] %s" % [LEVEL_NAMES[level], category, message])
 		_:
 			print("[%s] %s" % [category, message])
+	_remember(level, category, message)
 	_write_file("%s [%s] %s" % [LEVEL_NAMES[level], category, message])
 
 

@@ -30,6 +30,17 @@ func get_cases() -> Array[StringName]:
 		&"gatherable_colliders_sit_on_their_own_model",
 		&"no_decorative_trees_are_left_in_the_valley",
 		&"ground_supports_the_spawn_point",
+		&"every_graphics_tier_names_only_properties_that_exist",
+		&"the_configured_tier_is_applied_to_the_live_environment",
+		&"lowering_the_tier_actually_turns_effects_off",
+		&"an_out_of_range_tier_is_clamped_rather_than_treated_as_high",
+		&"the_day_night_cycle_still_owns_the_ambient_light",
+		&"every_named_surface_has_a_material_and_an_unknown_one_is_null",
+		&"every_surface_carries_the_shared_detail_texture",
+		&"world_meshes_share_material_instances_rather_than_making_their_own",
+		&"the_ground_is_tinted_and_not_one_flat_green",
+		&"the_pond_basin_tint_actually_differs_from_the_field",
+		&"the_world_is_built_from_the_library_and_not_from_the_old_helper",
 	]
 
 
@@ -276,6 +287,173 @@ func _t_ground_supports_spawn() -> Dictionary:
 	return succeeded(c, "spawn %s rests on ground at y=%.2f" % [spawn, hit["position"].y])
 
 
+# --- Graphics quality -----------------------------------------------------
+#
+# The tier table is the one place in the project that decides what "high" means.
+# Every failure below is a table typo, a property that no longer exists after a
+# Godot upgrade, or a value silently not reaching the renderer. All three look
+# identical in-game: the setting changes and nothing happens.
+
+
+func _graphics() -> Node:
+	if _world == null:
+		return null
+	return _world.get_node_or_null(^"Graphics")
+
+
+func _world_environment() -> Environment:
+	if _world == null:
+		return null
+	var node := _world.get_node_or_null(^"Environment") as WorldEnvironment
+	return node.environment if node != null else null
+
+
+## Every key in every tier must be a real property on the environment, the sun,
+## or the one viewport key we handle by name.
+##
+## The probe light is freed explicitly, and only the light: a [DirectionalLight3D] is
+## not a [Resource], so constructing one allocates a renderer light instance
+## immediately, even outside the scene tree, and leaving it to the exit-time leak check
+## is how a suite that asserts "nothing leaked" becomes the thing that leaks — failing
+## `check.ps1` on a line nobody can attribute to anything they wrote that day. The
+## [Environment] is refcounted and simply goes out of scope; `free()` on it is an
+## error, not a tidy-up.
+func _t_tier_keys_exist() -> Dictionary:
+	var c := &"every_graphics_tier_names_only_properties_that_exist"
+	var known := {}
+	var missing := ""
+	var sun := DirectionalLight3D.new()
+	known = _property_names(Environment.new())
+	var sun_known := _property_names(sun)
+	known["msaa"] = true
+	for tier: int in GraphicsQuality.TIERS:
+		for key: String in GraphicsQuality.TIERS[tier]:
+			if not (known.has(key) or sun_known.has(key)):
+				missing = "tier %s names '%s', which no node has" % [
+					GraphicsQuality.tier_name(tier), key
+				]
+				break
+		if not missing.is_empty():
+			break
+	sun.free()
+	if not missing.is_empty():
+		return fail(c, missing)
+	return succeeded(c, "all three tiers name only real properties (%d checked)" % _tier_key_count())
+
+
+static func _tier_key_count() -> int:
+	var count := 0
+	for tier: int in GraphicsQuality.TIERS:
+		count += (GraphicsQuality.TIERS[tier] as Dictionary).size()
+	return count
+
+
+static func _property_names(target: Object) -> Dictionary:
+	var names := {}
+	for property: Dictionary in target.get_property_list():
+		names[String(property["name"])] = true
+	return names
+
+
+## The tier a fresh world boots into must actually be on its environment — not
+## merely present in the table. This is the case that catches "applied to the
+## wrong object" and "applied before the environment existed".
+func _t_tier_applied() -> Dictionary:
+	var c := &"the_configured_tier_is_applied_to_the_live_environment"
+	await _build()
+	var quality := _graphics() as GraphicsQuality
+	if quality == null:
+		return fail(c, "the world has no Graphics node - was the world scene regenerated?")
+	if not quality.is_configured():
+		return fail(c, "Graphics found no Environment to configure")
+	var env := _world_environment()
+	if env == null:
+		return fail(c, "the world has no environment")
+	var expected: Dictionary = GraphicsQuality.TIERS[quality.current_tier()]
+	if not bool(expected["ssao_enabled"]) and env.ssao_enabled:
+		return fail(c, "tier %s leaves SSAO off but the environment has it on" % quality.current_tier())
+	if bool(expected["ssao_enabled"]) and not env.ssao_enabled:
+		return fail(c, "tier %s wants SSAO but the environment does not have it" % quality.current_tier())
+	if not bool(expected["glow_enabled"]) and env.glow_enabled:
+		return fail(c, "tier %s leaves glow off but the environment has it on" % quality.current_tier())
+	# The tonemap is the one value that is on at every tier, so it can be asserted
+	# outright rather than only in the negative.
+	if env.tonemap_mode != Environment.TONE_MAPPER_ACES:
+		return fail(c, "tonemap is %d, expected ACES" % env.tonemap_mode)
+	return succeeded(c, "tier %s is live on the environment" % GraphicsQuality.tier_name(quality.current_tier()))
+
+
+## Dropping the tier must switch things *off*, not merely change a number. A
+## tier table where "low" is high with smaller numbers is the classic failure,
+## and it is invisible unless something is asserted after the change.
+func _t_tier_lowers_effects() -> Dictionary:
+	var c := &"lowering_the_tier_actually_turns_effects_off"
+	await _build()
+	var quality := _graphics() as GraphicsQuality
+	if quality == null or not quality.is_configured():
+		return fail(c, "no configured Graphics node to drive")
+	var env := _world_environment()
+	var config := autoload(&"Config")
+	var previous: int = int(config.settings.graphics_quality)
+	config.settings.graphics_quality = GraphicsQuality.Tier.HIGH
+	quality.apply()
+	if not env.ssao_enabled or not env.glow_enabled:
+		return fail(c, "high should have both SSAO and glow on, got ssao=%s glow=%s" % [
+			env.ssao_enabled, env.glow_enabled
+		])
+	config.settings.graphics_quality = GraphicsQuality.Tier.LOW
+	quality.apply()
+	if env.ssao_enabled:
+		return fail(c, "low left SSAO on")
+	if env.glow_enabled:
+		return fail(c, "low left glow on")
+	if env.fog_enabled:
+		return fail(c, "low left fog on")
+	config.settings.graphics_quality = previous
+	quality.apply()
+	return succeeded(c, "high had SSAO+glow+fog, low had none of the three")
+
+
+## A config file is a text file a person can edit. A typo'd 7 must not resolve
+## to the last entry in the table and turn on everything.
+func _t_tier_clamped() -> Dictionary:
+	var c := &"an_out_of_range_tier_is_clamped_rather_than_treated_as_high"
+	await _build()
+	var quality := _graphics() as GraphicsQuality
+	if quality == null:
+		return fail(c, "no Graphics node to ask")
+	var config := autoload(&"Config")
+	var previous: int = int(config.settings.graphics_quality)
+	config.settings.graphics_quality = 7
+	if quality.current_tier() != GraphicsQuality.Tier.HIGH:
+		return fail(c, "7 did not clamp to high, got %d" % quality.current_tier())
+	config.settings.graphics_quality = -3
+	if quality.current_tier() != GraphicsQuality.Tier.LOW:
+		return fail(c, "-3 did not clamp to low, got %d" % quality.current_tier())
+	config.settings.graphics_quality = previous
+	return succeeded(c, "7 -> high, -3 -> low")
+
+
+## [GraphicsQuality] must not write anything the day/night cycle also owns, or
+## the two overwrite each other every frame and the valley flickers.
+func _t_ambient_left_alone() -> Dictionary:
+	var c := &"the_day_night_cycle_still_owns_the_ambient_light"
+	for tier: int in GraphicsQuality.TIERS:
+		var table: Dictionary = GraphicsQuality.TIERS[tier]
+		for contested: String in [
+			"ambient_light_energy",
+			"ambient_light_source",
+			"background_mode",
+			"sky",
+			"background_energy_multiplier",
+		]:
+			if table.has(contested):
+				return fail(c, "tier %s writes '%s', which DayNightCycle owns" % [
+					GraphicsQuality.tier_name(tier), contested
+				])
+	return succeeded(c, "no tier writes a property DayNightCycle owns")
+
+
 func _run_async(case: StringName) -> Dictionary:
 	match case:
 		&"world_builds_expected_regions":
@@ -288,4 +466,219 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_no_decorative_trees()
 		&"ground_supports_the_spawn_point":
 			return await _t_ground_supports_spawn()
+		&"every_graphics_tier_names_only_properties_that_exist":
+			return _t_tier_keys_exist()
+		&"the_configured_tier_is_applied_to_the_live_environment":
+			return await _t_tier_applied()
+		&"lowering_the_tier_actually_turns_effects_off":
+			return await _t_tier_lowers_effects()
+		&"an_out_of_range_tier_is_clamped_rather_than_treated_as_high":
+			return await _t_tier_clamped()
+		&"the_day_night_cycle_still_owns_the_ambient_light":
+			return _t_ambient_left_alone()
+		&"every_named_surface_has_a_material_and_an_unknown_one_is_null":
+			return _t_surfaces_resolve()
+		&"every_surface_carries_the_shared_detail_texture":
+			return _t_surfaces_have_detail()
+		&"world_meshes_share_material_instances_rather_than_making_their_own":
+			return await _t_materials_shared()
+		&"the_ground_is_tinted_and_not_one_flat_green":
+			return await _t_ground_is_tinted()
+		&"the_pond_basin_tint_actually_differs_from_the_field":
+			return _t_basin_tint_differs()
+		&"the_world_is_built_from_the_library_and_not_from_the_old_helper":
+			return await _t_world_uses_the_library()
 	return fail(case, "no case implementation for %s" % case)
+
+# --- Materials -------------------------------------------------------------
+#
+# Every one of these asserts on the *shared library* rather than on the values
+# a particular mesh ended up with. The failure this guards against is the quiet
+# one: a surface that keeps its flat colour because the call site was rewritten to
+# the old helper and nobody opened the game.
+
+
+## Every declared surface resolves, and a name that does not exist does not.
+##
+## Null rather than a fallback: a typo returning wood where the author meant glass
+## is exactly the kind of bug that is invisible until someone plays it.
+func _t_surfaces_resolve() -> Dictionary:
+	var c := &"every_named_surface_has_a_material_and_an_unknown_one_is_null"
+	var names := WorldMaterials.surface_names()
+	if names.is_empty():
+		return fail(c, "the surface table is empty")
+	for surface: StringName in names:
+		var m := WorldMaterials.surface(surface)
+		if m == null:
+			return fail(c, "surface '%s' is declared but resolves to null" % surface)
+		if m.albedo_texture == null:
+			return fail(c, "surface '%s' has no albedo texture" % surface)
+	if WorldMaterials.surface(&"not_a_surface") != null:
+		return fail(c, "an unknown surface name returned a material instead of null")
+	return succeeded(c, "%d surfaces resolve, unknown names return null" % names.size())
+
+
+## One shared detail texture, not one per surface: nine simultaneous 256x256
+## generations at world build for a difference nobody can see.
+func _t_surfaces_have_detail() -> Dictionary:
+	var c := &"every_surface_carries_the_shared_detail_texture"
+	var shared := WorldMaterials.detail_texture()
+	if shared == null:
+		return fail(c, "no shared detail texture")
+	if not shared.seamless:
+		return fail(c, "the detail texture is not seamless; it will tile visibly")
+	for surface: StringName in WorldMaterials.surface_names():
+		var m := WorldMaterials.surface(surface)
+		if m.albedo_texture != shared:
+			return fail(c, "surface '%s' has its own texture instead of the shared one" % surface)
+		if m.uv1_scale.x <= 0.0:
+			return fail(c, "surface '%s' has a uv1_scale of %f, so the texture cannot tile" % [surface, m.uv1_scale.x])
+	return succeeded(c, "%d surfaces share one seamless detail texture" % WorldMaterials.surface_names().size())
+
+
+## Repeated instances of one mesh must not each own a private material.
+##
+## The first version of this asserted a ratio of distinct materials to meshes, and
+## failed at 104 across 263. That was the assertion being wrong, not the world: a
+## valley built from twenty imported CC0 models legitimately has ~20 sets of authored
+## materials, and 96 is about right. The defect it was *meant* to catch is a
+## per-instance duplicate — the tint path in [ModelArt] was making one copy per tree,
+## so a wood of eighty identical trees owned eighty identical materials.
+##
+## So this counts per *mesh resource*: if five or more meshes share one mesh, they
+## must share one material.
+func _t_materials_shared() -> Dictionary:
+	var c := &"world_meshes_share_material_instances_rather_than_making_their_own"
+	await _build()
+	var by_mesh: Dictionary = {}
+	for mesh: MeshInstance3D in _collect_meshes(_world):
+		if mesh.mesh == null:
+			continue
+		var material := mesh.material_override
+		if material == null and mesh.mesh.get_surface_count() > 0:
+			material = mesh.mesh.surface_get_material(0)
+		if material == null:
+			continue
+		var id := mesh.mesh.get_instance_id()
+		if not by_mesh.has(id):
+			by_mesh[id] = {"meshes": 0, "materials": {}}
+		by_mesh[id]["meshes"] += 1
+		by_mesh[id]["materials"][material.get_instance_id()] = true
+	var duplicated := 0
+	var checked := 0
+	for id: int in by_mesh:
+		var group: Dictionary = by_mesh[id]
+		if int(group["meshes"]) < 5:
+			continue
+		checked += 1
+		if (group["materials"] as Dictionary).size() > 1:
+			duplicated += 1
+	if by_mesh.is_empty():
+		return fail(c, "no mesh in the world has a material at all")
+	if checked == 0:
+		return fail(c, "no mesh is instanced five or more times, so this asserts nothing")
+	if duplicated > 0:
+		return fail(c, "%d of %d repeated meshes own more than one material between them" % [duplicated, checked])
+	return succeeded(c, "%d repeated meshes, none duplicating its material (%d distinct meshes overall)" % [checked, by_mesh.size()])
+
+
+## The ground must carry per-vertex tint, and the tint must actually vary.
+##
+## The first version of this ramped on elevation, which is 0.0 at all but the pond
+## basin - a gradient that exists in the code and cannot be seen. So the assertion is
+## on the *spread* of the colours, not merely on the array being present.
+func _t_ground_is_tinted() -> Dictionary:
+	var c := &"the_ground_is_tinted_and_not_one_flat_green"
+	await _build()
+	var ground := _world.get_node_or_null(^"Ground") as StaticBody3D
+	if ground == null:
+		return fail(c, "the world has no Ground body")
+	var mesh := ground.get_node_or_null(^"GroundMesh") as MeshInstance3D
+	if mesh == null or mesh.mesh == null:
+		return fail(c, "the ground has no mesh")
+	var array := mesh.mesh.surface_get_arrays(0)
+	if array.is_empty():
+		return fail(c, "the ground mesh has no surface arrays")
+	var colors: PackedColorArray = array[Mesh.ARRAY_COLOR]
+	if colors.is_empty():
+		return fail(c, "the ground mesh has no vertex colours, so it is still one flat green")
+	var lowest := Color(9, 9, 9, 9)
+	var highest := Color(-9, -9, -9, -9)
+	for value: Color in colors:
+		lowest = Color(minf(lowest.r, value.r), minf(lowest.g, value.g), minf(lowest.b, value.b), 1.0)
+		highest = Color(maxf(highest.r, value.r), maxf(highest.g, value.g), maxf(highest.b, value.b), 1.0)
+	if lowest.is_equal_approx(highest):
+		return fail(c, "all %d ground vertices share the colour %s" % [colors.size(), lowest])
+	if not (lowest.r <= 1.0 and highest.r >= 1.0):
+		return fail(c, "the tint never straddles white, so it is a shift not a modulation: %s..%s" % [lowest, highest])
+	return succeeded(c, "%d vertices tinted from %s to %s" % [colors.size(), lowest, highest])
+
+
+## The shoreline gradient has to differ from open field, or the pond is a green field
+## with a blue disc dropped on it.
+func _t_basin_tint_differs() -> Dictionary:
+	var c := &"the_pond_basin_tint_actually_differs_from_the_field"
+	var field := WorldBuilder.ground_tint(60.0, 60.0, WorldBuilder.GROUND_LEVEL)
+	var deep := WorldBuilder.ground_tint(
+		WorldBuilder.REGION_POND.x, WorldBuilder.REGION_POND.y, WorldBuilder.POND_FLOOR_DEPTH
+	)
+	var shallow := WorldBuilder.ground_tint(
+		WorldBuilder.REGION_POND.x + WorldBuilder.POND_RADIUS * 0.6,
+		WorldBuilder.REGION_POND.y,
+		WorldBuilder.terrain_height(
+			WorldBuilder.REGION_POND.x + WorldBuilder.POND_RADIUS * 0.6, WorldBuilder.REGION_POND.y
+		),
+	)
+	if deep.is_equal_approx(field):
+		return fail(c, "the pond floor is tinted exactly like the field")
+	if shallow.is_equal_approx(deep):
+		return fail(c, "the pond slope is one flat tint from rim to floor")
+	if deep.get_luminance() >= shallow.get_luminance():
+		return fail(c, "the deep floor is not darker than the slope (%.3f vs %.3f)" % [
+			deep.get_luminance(), shallow.get_luminance()
+		])
+	return succeeded(c, "field %s, slope %s, floor %s" % [field, shallow, deep])
+
+
+## Every [MeshInstance3D] under a node, at any depth.
+static func _collect_meshes(from: Node) -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	if from == null:
+		return out
+	if from is MeshInstance3D:
+		out.append(from as MeshInstance3D)
+	for child: Node in from.get_children():
+		out.append_array(_collect_meshes(child))
+	return out
+
+## The primitives the builder makes must be wearing the library's materials, not a
+## hand-rolled one from the old helper.
+##
+## The library's surfaces are the only materials in this project with a detail
+## texture on them, so "has the shared detail texture" is exactly "came from the
+## library". This is the test that catches a call site being left behind during the
+## rewrite - the kind of thing that leaves one flat fence post in an otherwise
+## textured valley and is genuinely hard to spot by playing.
+func _t_world_uses_the_library() -> Dictionary:
+	var c := &"the_world_is_built_from_the_library_and_not_from_the_old_helper"
+	await _build()
+	var shared := WorldMaterials.detail_texture()
+	var checked := 0
+	var bare: Array[String] = []
+	for mesh: MeshInstance3D in _collect_meshes(_world):
+		# Imported CC0 models bring their own authored materials and are meant to.
+		if mesh.mesh == null or not (mesh.mesh is PrimitiveMesh):
+			continue
+		var material := mesh.material_override
+		if material == null:
+			bare.append(mesh.name)
+			continue
+		checked += 1
+		var standard := material as StandardMaterial3D
+		if standard == null:
+			bare.append(mesh.name)
+		elif standard.albedo_texture != shared:
+			bare.append(mesh.name)
+	if bare.is_empty():
+		return succeeded(c, "all %d primitives use the library" % checked)
+	return fail(c, "%d primitives are not on the library, e.g. %s" % [bare.size(), ", ".join(bare.slice(0, 5))])

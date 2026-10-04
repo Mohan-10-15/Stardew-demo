@@ -271,6 +271,21 @@ func set_yaw(value: float) -> void:
 		camera_rig.rotation.y = 0.0
 
 
+## Sets the aim pitch directly, and pushes it to the rig.
+##
+## The mirror of [method set_yaw], and added for the same reason: a test or tool that can
+## turn the player to face a thing but cannot tilt the view has to reach through
+## `camera_rig` to do it, which means writing the rig's pitch and leaving
+## [member _pitch] stale — so the next real mouse move snaps the view back.
+##
+## Clamped through the same [method PlayerMotion.apply_pitch] limits the mouse uses, so
+## a scripted aim cannot put the camera somewhere the player could not.
+func set_pitch(value: float) -> void:
+	_pitch = PlayerMotion.apply_pitch(_pitch, value - _pitch, movement_config)
+	if camera_rig != null:
+		camera_rig.set_pitch(_pitch)
+
+
 ## Aim yaw: the direction the player is looking. This is what the camera and
 ## the movement basis follow.
 func get_yaw() -> float:

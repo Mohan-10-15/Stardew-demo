@@ -88,11 +88,24 @@ func get_selected_stack() -> Inventory.ItemStack:
 
 ## Text for one slot, for the HUD. Empty slots render as a dash rather than
 ## nothing at all, so the row reads as nine slots instead of looking broken.
+##
+## A tool also carries its remaining uses, as `uses/maximum`. The durability counter
+## was already stored on the stack and already published [signal
+## Inventory.contents_changed] on every wear — with the stated intent of letting the HUD
+## show it — but nothing ever read it, so a hoe looked identical on the last swing it
+## had left as on the day it was bought. The player had no way to know to buy a spare,
+## and no warning before the empty hand.
 func describe_slot(slot: int) -> String:
 	var stack := slot_stack(slot)
 	if stack == null or stack.is_empty():
 		return "-"
-	return stack.describe()
+	var text := stack.describe()
+	if inventory == null:
+		return text
+	var definition := ItemRegistry.get_item(stack.id)
+	if definition == null or not definition.uses_durability:
+		return text
+	return "%s %d/%d" % [text, inventory.get_durability(stack), maxi(definition.durability, 1)]
 
 
 func describe_selected() -> String:

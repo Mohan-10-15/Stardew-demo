@@ -78,6 +78,8 @@ func get_cases() -> Array[StringName]:
 		# --- hotbar ----------------------------------------------------------
 		&"the_hotbar_wraps_in_both_directions",
 		&"the_hotbar_shows_nine_slots",
+		&"the_hotbar_shows_remaining_tool_uses",
+		&"only_tools_carry_a_durability_readout",
 		&"the_held_tool_comes_from_the_held_item",
 		&"the_held_seed_comes_from_the_held_item",
 		# --- the real thing --------------------------------------------------
@@ -595,6 +597,36 @@ func _run_async(case: StringName) -> Dictionary:
 			)
 		&"the_hotbar_shows_nine_slots":
 			return check_equals(case, Hotbar.SLOT_COUNT, 9)
+		&"the_hotbar_shows_remaining_tool_uses":
+			# The axe, not the hoe: `hoe` and `scythe` carry no durability at all and
+			# never wear out, so they are the two tools this can never be true of.
+			var bag := Inventory.new(12)
+			bag.add(&"axe", 1)
+			var bar := Hotbar.new(bag)
+			var definition := ItemRegistry.get_item(&"axe")
+			if definition == null or not definition.uses_durability:
+				return fail(case, "the axe does not wear out, so there is nothing to show")
+			var full := bar.describe_slot(0)
+			if not full.contains("%d/%d" % [definition.durability, definition.durability]):
+				return fail(case, "a new axe reads '%s', expected the full count" % full)
+			var stack := bag.get_slot(0)
+			bag.set_durability(stack, definition.durability - 5)
+			var worn := bar.describe_slot(0)
+			if not worn.contains("%d/%d" % [definition.durability - 5, definition.durability]):
+				return fail(case, "after five swings the axe reads '%s'" % worn)
+			if worn == full:
+				return fail(case, "the slot text did not change as the tool wore down")
+			return succeeded(case, "'%s' -> '%s'" % [full, worn])
+		&"only_tools_carry_a_durability_readout":
+			var bag := Inventory.new(12)
+			bag.add(&"parsnip_seeds", 5)
+			bag.add(&"wood", 12)
+			var bar := Hotbar.new(bag)
+			var seeds := bar.describe_slot(0)
+			var wood := bar.describe_slot(1)
+			if seeds.contains("/") or wood.contains("/"):
+				return fail(case, "seeds '%s' wood '%s': a slash means a wear counter" % [seeds, wood])
+			return succeeded(case, "'%s' and '%s'" % [seeds, wood])
 		&"the_held_tool_comes_from_the_held_item":
 			var bag := Inventory.new(12)
 			bag.add(&"hoe", 1)

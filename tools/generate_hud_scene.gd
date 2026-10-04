@@ -8,6 +8,8 @@ const OUTPUT_PATH := "res://scenes/ui/interaction_hud.tscn"
 
 const CROSS_COLOR := Color(0.95, 0.95, 0.92, 0.85)
 const PROMPT_COLOR := Color(0.98, 0.96, 0.88)
+## Warm, so a notice never reads as the prompt it sits above.
+const NOTICE_COLOR := Color(0.96, 0.84, 0.52)
 const SHADOW_COLOR := Color(0, 0, 0, 0.75)
 
 
@@ -62,6 +64,26 @@ func _initialize() -> void:
 	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(prompt)
 
+	# --- Notice ----------------------------------------------------------
+	# Above the prompt, because a notice is about something that just happened and the
+	# prompt is about what the key will do next: the notice is read first and then
+	# disappears, while the prompt stays. Sized and coloured like the prompt but a
+	# step down, so the two are not competing for the same glance.
+	var notice := Label.new()
+	notice.name = "NoticeLabel"
+	notice.text = ""
+	notice.visible = false
+	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice.add_theme_font_size_override("font_size", 17)
+	notice.add_theme_color_override("font_color", NOTICE_COLOR)
+	notice.add_theme_color_override("font_shadow_color", SHADOW_COLOR)
+	notice.add_theme_constant_override("shadow_offset_x", 2)
+	notice.add_theme_constant_override("shadow_offset_y", 2)
+	notice.add_theme_constant_override("shadow_outline_size", 2)
+	notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(notice)
+	container.move_child(notice, 0)
+
 	var hold := ProgressBar.new()
 	hold.name = "HoldBar"
 	hold.visible = false
@@ -71,7 +93,7 @@ func _initialize() -> void:
 	hold.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	container.add_child(hold)
 
-	for child: Node in [crosshair, container, prompt, hold]:
+	for child: Node in [crosshair, container, notice, prompt, hold]:
 		child.owner = root
 
 	var err := _save(root)

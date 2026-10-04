@@ -40,6 +40,9 @@ func load_config() -> void:
 	settings.sfx_volume = float(cfg.get_value("audio", "sfx_volume", settings.sfx_volume))
 	settings.camera_switch_key_action = StringName(cfg.get_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action)))
 	settings.show_debug_overlay = bool(cfg.get_value("gameplay", "show_debug_overlay", settings.show_debug_overlay))
+	settings.graphics_quality = clampi(
+		int(cfg.get_value("graphics", "graphics_quality", settings.graphics_quality)), 0, 2
+	)
 
 
 func save_config() -> void:
@@ -57,6 +60,7 @@ func save_config() -> void:
 	cfg.set_value("audio", "sfx_volume", settings.sfx_volume)
 	cfg.set_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action))
 	cfg.set_value("gameplay", "show_debug_overlay", settings.show_debug_overlay)
+	cfg.set_value("graphics", "graphics_quality", settings.graphics_quality)
 	var err := cfg.save(CONFIG_PATH)
 	if err != OK:
 		Log.error("Config", "Failed to save config: %d" % err)
@@ -119,6 +123,14 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.camera_switch_key_action = StringName(value)
 				"show_debug_overlay":
 					settings.show_debug_overlay = value
+		&"graphics":
+			match key:
+				"graphics_quality":
+					# Clamped on the way in as well as on the way out. A config file is
+					# a text file a person can edit, and `clampi` here is what stops a
+					# typo'd 7 from reaching the renderer as a tier that exists in no
+					# table and silently means "high".
+					settings.graphics_quality = clampi(int(value), 0, 2)
 		_:
 			Log.warn("Config", "Unknown config section '%s'" % section)
 			return

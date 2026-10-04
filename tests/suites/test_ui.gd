@@ -16,6 +16,8 @@ extends TestSuite
 const STATUS_SCENE := "res://scenes/ui/player_status_hud.tscn"
 const HOTBAR_SCENE := "res://scenes/ui/hotbar_hud.tscn"
 const SHOP_SCENE := "res://scenes/ui/shop_ui.tscn"
+const INTERACTION_SCENE := "res://scenes/ui/interaction_hud.tscn"
+const LOG_PANEL_SCENE := "res://scenes/ui/log_panel.tscn"
 const SHOP_NODE := "GeneralStore"
 
 var _rig: Node = null
@@ -50,6 +52,20 @@ func get_cases() -> Array[StringName]:
 		&"opening_a_shop_pauses_the_game",
 		&"closing_a_shop_resumes_the_game",
 		&"a_shop_freed_while_open_does_not_strand_the_pause",
+		# --- the shop from the keyboard -----------------------------------
+		&"the_shop_panel_moves_its_highlight_with_the_keyboard",
+		&"the_keyboard_confirms_the_highlighted_row",
+		&"a_sold_row_leaves_the_shop_panel",
+		&"the_key_that_opened_the_shop_still_closes_it",
+		&"the_shop_panel_says_which_keys_do_what",
+		# --- telling the player something broke -------------------------------
+		&"a_broken_tool_is_announced_on_the_hud",
+		&"the_broken_tool_notice_clears_itself",
+		# --- the log, on screen ---------------------------------------------
+		&"the_log_panel_starts_hidden",
+		&"the_log_panel_opens_on_its_key_and_shows_what_was_logged",
+		&"the_log_panel_does_not_stop_the_game",
+		&"the_log_panel_says_where_the_log_file_is",
 	]
 
 
@@ -75,6 +91,28 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_shop_resumes()
 		&"a_shop_freed_while_open_does_not_strand_the_pause":
 			return await _t_shop_unpause_on_free()
+		&"the_shop_panel_moves_its_highlight_with_the_keyboard":
+			return await _t_shop_keyboard_moves()
+		&"the_keyboard_confirms_the_highlighted_row":
+			return await _t_shop_keyboard_confirms()
+		&"a_sold_row_leaves_the_shop_panel":
+			return await _t_shop_sell_row_goes_when_empty()
+		&"the_key_that_opened_the_shop_still_closes_it":
+			return await _t_shop_interact_still_closes()
+		&"the_shop_panel_says_which_keys_do_what":
+			return await _t_shop_hint()
+		&"a_broken_tool_is_announced_on_the_hud":
+			return await _t_tool_break_announced()
+		&"the_broken_tool_notice_clears_itself":
+			return await _t_tool_break_notice_clears()
+		&"the_log_panel_starts_hidden":
+			return await _t_log_panel_hidden()
+		&"the_log_panel_opens_on_its_key_and_shows_what_was_logged":
+			return await _t_log_panel_shows_lines()
+		&"the_log_panel_does_not_stop_the_game":
+			return await _t_log_panel_does_not_pause()
+		&"the_log_panel_says_where_the_log_file_is":
+			return await _t_log_panel_names_the_file()
 		&"opening_a_shop_builds_a_row_per_stocked_item":
 			return await _t_shop_rows()
 		&"the_shop_panel_titles_itself_from_the_content":
@@ -472,6 +510,403 @@ func _t_shop_sell_rows() -> Dictionary:
 	if sells_seeds:
 		return fail(c, "offered to buy back seed packets, which are stocked")
 	return succeeded(c, "%d sell rows" % sell_rows)
+
+
+## The keyboard moves the highlight, and the highlight is drawn.
+##
+## Real key events through `Input.parse_input_event`, not `Input.action_press`. The panel
+## reads `_unhandled_input`, and `Input.action_press` only moves the action *state* — it
+## never delivers an event, so a test written that way would assert against a code path
+## the player cannot reach.
+##
+## Asserted in both spellings on purpose. W/S is the pair that opened the counter and must
+## work here; the arrows are what a player expects from any menu, and a panel that only
+## answers W/S is a panel that looks broken to anyone whose hand is already on them.
+func _t_shop_keyboard_moves() -> Dictionary:
+	var c := &"the_shop_panel_moves_its_highlight_with_the_keyboard"
+	var made := await _make_shop_rig()
+	if made.is_empty():
+		return fail(c, "could not build the scene")
+	var shop: Shop = made["shop"]
+	var panel: CanvasLayer = made["panel"]
+	EventBus.shop_opened.emit(shop)
+	await _step(2)
+
+	var first: Dictionary = panel.call("selected_entry")
+	if first.is_empty():
+		return fail(c, "the panel opened with no row selected")
+	if not StringName(first.get("kind", &"")) == &"buy":
+		return fail(c, "the first row is a '%s', not a buy" % str(first.get("kind", "")))
+
+	# W is up the list, so from the top row it wraps to the bottom.
+	await _tap_key(KEY_W)
+	await _step(2)
+	var wrapped: Dictionary = panel.call("selected_entry")
+	if StringName(wrapped.get("item_id", &"")) == StringName(first.get("item_id", &"")):
+		return fail(c, "W at the top row left the highlight on '%s'" % str(wrapped.get("item_id", "")))
+
+	# One S back down lands on the top row again, which also proves the wrap was a
+	# wrap and not a clamp.
+	await _tap_key(KEY_S)
+	await _step(2)
+	var back: Dictionary = panel.call("selected_entry")
+	if StringName(back.get("item_id", &"")) != StringName(first.get("item_id", &"")):
+		return fail(c, "S did not step back to '%s', highlight is on '%s'"
+			% [str(first.get("item_id", "")), str(back.get("item_id", ""))])
+
+	# And the arrow keys move it too.
+	await _tap_key(KEY_DOWN)
+	await _step(2)
+	var arrowed: Dictionary = panel.call("selected_entry")
+	if StringName(arrowed.get("item_id", &"")) == StringName(back.get("item_id", &"")):
+		return fail(c, "the down arrow did nothing")
+
+	# The highlight has to be *visible*, or the keyboard is driving something the player
+	# cannot see. One row styled, all the others not.
+	var styled := 0
+	for child: Node in (made["rows"] as VBoxContainer).get_children():
+		var row := child as PanelContainer
+		if row == null or not String(row.name).begins_with("Buy_"):
+			continue
+		if row.has_theme_stylebox_override("panel"):
+			styled += 1
+	if styled != 1:
+		return fail(c, "%d buy rows are highlighted, expected exactly 1" % styled)
+	return succeeded(c, "W/S and the arrows move one visible highlight over %d rows"
+		% EconomyService.buyable_stock(shop.shop).size())
+
+
+## Enter trades the highlighted row.
+##
+## Both halves again: gold leaves and the item arrives, and the panel stays open so a
+## player can buy two packets without reopening the world.
+func _t_shop_keyboard_confirms() -> Dictionary:
+	var c := &"the_keyboard_confirms_the_highlighted_row"
+	var made := await _make_shop_rig()
+	if made.is_empty():
+		return fail(c, "could not build the scene")
+	var shop: Shop = made["shop"]
+	var panel: CanvasLayer = made["panel"]
+	var state: Node = made["state"]
+	EventBus.shop_opened.emit(shop)
+	await _step(2)
+
+	var row: Dictionary = panel.call("selected_entry")
+	var item_id := StringName(row.get("item_id", &""))
+	if item_id.is_empty():
+		return fail(c, "no row to confirm")
+	var gold_before: int = state.get("wallet").gold
+	await _tap_key(KEY_ENTER)
+	await _step(3)
+
+	if not panel.visible:
+		return fail(c, "confirming a row closed the panel")
+	var gold_after: int = state.get("wallet").gold
+	if gold_after >= gold_before:
+		return fail(c, "Enter on '%s' left the gold at %d" % [item_id, gold_after])
+	if state.get("inventory").count(item_id) < 1:
+		return fail(c, "Enter on '%s' charged %dg and delivered nothing"
+			% [item_id, gold_before - gold_after])
+	# Still on the same row afterwards. A keyboard player buying three packets presses
+	# Enter three times, and a rebuild that resets the highlight to the top makes the
+	# second and third press buy whatever happens to be first.
+	var again: Dictionary = panel.call("selected_entry")
+	if StringName(again.get("item_id", &"")) != item_id:
+		return fail(c, "the highlight moved off '%s' to '%s' after buying it"
+			% [item_id, str(again.get("item_id", ""))])
+	return succeeded(c, "Enter bought %s for %dg and kept it selected"
+		% [item_id, gold_before - gold_after])
+
+
+## A sell row disappears once the last one is sold.
+##
+## The keyboard makes this bug obvious in a way the mouse hid: the row is rebuilt after
+## every trade, so a Sell row that outlived its item leaves Enter aimed at a trade that
+## can no longer happen, and the panel keeps offering it.
+func _t_shop_sell_row_goes_when_empty() -> Dictionary:
+	var c := &"a_sold_row_leaves_the_shop_panel"
+	var made := await _make_shop_rig()
+	if made.is_empty():
+		return fail(c, "could not build the scene")
+	var shop: Shop = made["shop"]
+	var panel: CanvasLayer = made["panel"]
+	var rows: VBoxContainer = made["rows"]
+	var state: Node = made["state"]
+	state.get("inventory").add(&"parsnip", 1)
+	EventBus.shop_opened.emit(shop)
+	await _step(2)
+
+	var sell_row := rows.get_node_or_null(^"Sell_parsnip")
+	if sell_row == null:
+		return fail(c, "no sell row for the one parsnip the player carries")
+	# Walk down to it and sell it from the keyboard. The row count is bounded because
+	# the rows are finite; the failure case is "reached the bottom without finding it".
+	var reached := false
+	for _i: int in range(64):
+		var entry: Dictionary = panel.call("selected_entry")
+		if StringName(entry.get("kind", &"")) == &"sell" \
+				and StringName(entry.get("item_id", &"")) == &"parsnip":
+			reached = true
+			break
+		await _tap_key(KEY_S)
+		await _step(1)
+	if not reached:
+		return fail(c, "could not reach the parsnip sell row with the keyboard")
+	var gold_before: int = state.get("wallet").gold
+	await _tap_key(KEY_ENTER)
+	await _step(3)
+
+	if state.get("inventory").count(&"parsnip") != 0:
+		return fail(c, "the parsnip was not sold")
+	if int(state.get("wallet").gold) <= gold_before:
+		return fail(c, "selling the parsnip paid nothing")
+	if rows.get_node_or_null(^"Sell_parsnip") != null:
+		return fail(c, "the sell row is still on screen with no parsnips left")
+	return succeeded(c, "sold the last parsnip and its row went with it")
+
+
+## The key that opened the counter is still the key that shuts it.
+##
+## The trap this guards: one key both confirms and closes, so the obvious wiring makes E
+## buy the highlighted row, or makes the second E of a player's life charge them for a
+## seed packet they did not mean to buy.
+func _t_shop_interact_still_closes() -> Dictionary:
+	var c := &"the_key_that_opened_the_shop_still_closes_it"
+	var made := await _make_shop_rig()
+	if made.is_empty():
+		return fail(c, "could not build the scene")
+	var shop: Shop = made["shop"]
+	var panel: CanvasLayer = made["panel"]
+	var state: Node = made["state"]
+	EventBus.shop_opened.emit(shop)
+	await _step(2)
+	if not panel.visible:
+		return fail(c, "the panel did not open")
+	var gold_before: int = state.get("wallet").gold
+
+	await _tap_key(KEY_E)
+	await _step(3)
+	if panel.visible:
+		return fail(c, "E left the shop open")
+	if int(state.get("wallet").gold) != gold_before:
+		return fail(c, "closing the shop with E also charged the player")
+	return succeeded(c, "E closed it and bought nothing")
+
+
+## The controls are written on the panel.
+##
+## A panel that can be driven entirely from the keyboard and never says so is a panel
+## most players will assume is mouse-only: the mouse still works, so nothing looks
+## broken, and the first person to press W gets silence.
+func _t_shop_hint() -> Dictionary:
+	var c := &"the_shop_panel_says_which_keys_do_what"
+	var made := await _make_shop_rig()
+	if made.is_empty():
+		return fail(c, "could not build the scene")
+	var shop: Shop = made["shop"]
+	var panel: CanvasLayer = made["panel"]
+	EventBus.shop_opened.emit(shop)
+	await _step(2)
+	var hint := panel.get_node_or_null(^"Center/Panel/Column/Hint") as Label
+	if hint == null:
+		return fail(c, "the generated panel has no Hint label")
+	if not hint.visible:
+		return fail(c, "the controls line is hidden while the shop is open")
+	for needed: String in ["W/S", "Enter", "close"]:
+		if not hint.text.contains(needed):
+			return fail(c, "the controls line never mentions '%s': '%s'" % [needed, hint.text])
+	return succeeded(c, "'%s'" % hint.text)
+
+
+## A tool breaking is *said*, not just done.
+##
+## [signal EventBus.tool_broken] had no subscriber anywhere in the project. The stack was
+## removed from the bag, the held slot went empty, and the player got no word at all —
+## which is why this drives the real HUD scene and asserts on the rendered label rather
+## than on a return value: the claim is that the player is told.
+func _t_tool_break_announced() -> Dictionary:
+	var c := &"a_broken_tool_is_announced_on_the_hud"
+	_reset_rig()
+	_ensure_rig()
+	var hud := _instantiate(INTERACTION_SCENE)
+	if hud == null:
+		return fail(c, "the interaction HUD scene did not load")
+	_rig.add_child(hud)
+	await _step(3)
+	var notice := hud.get_node_or_null(^"PromptContainer/NoticeLabel") as Label
+	if notice == null:
+		return fail(c, "the generated HUD has no NoticeLabel")
+	if notice.visible:
+		return fail(c, "a notice is on screen with nothing having happened")
+
+	EventBus.tool_broken.emit(&"axe")
+	await _step(3)
+	if not notice.visible:
+		return fail(c, "the tool broke and the HUD said nothing")
+	if not notice.text.contains("Axe"):
+		return fail(c, "the notice never names the tool: '%s'" % notice.text)
+	if not notice.text.to_lower().contains("broke"):
+		return fail(c, "the notice never says it broke: '%s'" % notice.text)
+	return succeeded(c, "'%s'" % notice.text)
+
+
+## The notice does not stay up forever.
+##
+## A permanent message is a permanent thing to look past. Timed out on the HUD's own
+## clock rather than a scene-tree timer, so the countdown follows the same pause rules as
+## everything else on the HUD.
+func _t_tool_break_notice_clears() -> Dictionary:
+	var c := &"the_broken_tool_notice_clears_itself"
+	_reset_rig()
+	_ensure_rig()
+	var hud := _instantiate(INTERACTION_SCENE)
+	if hud == null:
+		return fail(c, "the interaction HUD scene did not load")
+	_rig.add_child(hud)
+	await _step(3)
+	var notice := hud.get_node_or_null(^"PromptContainer/NoticeLabel") as Label
+	if notice == null:
+		return fail(c, "the generated HUD has no NoticeLabel")
+
+	EventBus.tool_broken.emit(&"axe")
+	await _step(3)
+	if not notice.visible:
+		return fail(c, "the notice never appeared, so there is nothing to clear")
+	# On the clock, not on a frame count. Headless runs unthrottled, so 150 frames can be
+	# a fraction of a second of real time and the countdown would not be near its end —
+	# which is how this test passed a HUD that never expired the notice at all.
+	await tree.create_timer(3.4).timeout
+	await _step(3)
+	if notice.visible:
+		return fail(c, "the notice is still up after 3.4s: '%s'" % notice.text)
+	return succeeded(c, "gone within its three seconds")
+
+
+## The log panel is not on screen at boot.
+func _t_log_panel_hidden() -> Dictionary:
+	var c := &"the_log_panel_starts_hidden"
+	var panel := await _make_log_panel()
+	if panel == null:
+		return fail(c, "could not build the scene")
+	if panel.visible:
+		return fail(c, "the log panel is visible at boot")
+	return succeeded(c)
+
+
+## F3 shows the log, and the log is really in there.
+##
+## Real key events, not `Input.action_press` — the same reason as the shop panel: the
+## panel reads `_unhandled_input`, and `action_press` never delivers an event.
+##
+## The assertion is on rendered text, because the claim being made is "the player can
+## read the log", not "the panel called `recent`".
+func _t_log_panel_shows_lines() -> Dictionary:
+	var c := &"the_log_panel_opens_on_its_key_and_shows_what_was_logged"
+	var panel := await _make_log_panel()
+	if panel == null:
+		return fail(c, "could not build the scene")
+	var text := panel.get_node_or_null(^"Panel/Column/Scroll/Text") as RichTextLabel
+	if text == null:
+		return fail(c, "the generated panel has no RichTextLabel")
+
+	# Something the log has genuinely said, written through the real logger.
+	var marker := "panel probe %d" % Time.get_ticks_msec()
+	Log.info("TestSuite", marker)
+
+	await _tap_key(KEY_F3)
+	await _step(3)
+	if not panel.visible:
+		return fail(c, "F3 did not open the log panel")
+	if not text.get_parsed_text().contains(marker):
+		return fail(c, "the panel opened without the line that was just logged")
+
+	# And a line logged *while it is open* arrives without reopening anything.
+	var later := "live probe %d" % Time.get_ticks_msec()
+	Log.info("TestSuite", later)
+	await _step(3)
+	if not text.get_parsed_text().contains(later):
+		return fail(c, "a line logged while the panel was open never appeared")
+
+	await _tap_key(KEY_F3)
+	await _step(3)
+	if panel.visible:
+		return fail(c, "F3 did not close the log panel")
+	return succeeded(c, "opened, showed both lines, closed")
+
+
+## Reading the log must not stop the world.
+##
+## Every other panel in this game is modal, so the reflex here is to pause. That would
+## defeat the panel: the whole point is watching the log *while* playing, and a log you
+## have to close to see what your last action did is no use.
+func _t_log_panel_does_not_pause() -> Dictionary:
+	var c := &"the_log_panel_does_not_stop_the_game"
+	var panel := await _make_log_panel()
+	if panel == null:
+		return fail(c, "could not build the scene")
+	var before_paused: bool = GameState.paused
+	await _tap_key(KEY_F3)
+	await _step(3)
+	if not panel.visible:
+		return fail(c, "the panel did not open")
+	if GameState.paused != before_paused:
+		GameState.set_paused(before_paused)
+		return fail(c, "the log panel paused the game")
+	await _tap_key(KEY_F3)
+	await _step(2)
+	return succeeded(c, "the tree kept running")
+
+
+## The header says where the log file is.
+##
+## The whole reason this panel exists is that `user://hollowbrook.log` is somewhere the
+## player is not looking. A panel that shows the lines but not the path sends you back
+## to where you started.
+func _t_log_panel_names_the_file() -> Dictionary:
+	var c := &"the_log_panel_says_where_the_log_file_is"
+	var panel := await _make_log_panel()
+	if panel == null:
+		return fail(c, "could not build the scene")
+	var header := panel.get_node_or_null(^"Panel/Column/Header") as Label
+	if header == null:
+		return fail(c, "the generated panel has no Header label")
+	await _tap_key(KEY_F3)
+	await _step(3)
+	if not header.text.contains("user://"):
+		return fail(c, "the header never mentions a user:// path: '%s'" % header.text)
+	if not header.text.contains(".log"):
+		return fail(c, "the header names no log file: '%s'" % header.text)
+	await _tap_key(KEY_F3)
+	await _step(2)
+	return succeeded(c, "'%s'" % header.text)
+
+
+## The generated log panel in a rig.
+func _make_log_panel() -> CanvasLayer:
+	_reset_rig()
+	_ensure_rig()
+	var panel := _instantiate(LOG_PANEL_SCENE)
+	if panel == null:
+		return null
+	_rig.add_child(panel)
+	await _step(3)
+	return panel
+
+
+## A real key press and release, delivered as an event.
+func _tap_key(code: int) -> void:
+	var press := InputEventKey.new()
+	press.keycode = code
+	press.physical_keycode = code
+	press.pressed = true
+	Input.parse_input_event(press)
+	await tree.process_frame
+	var release := InputEventKey.new()
+	release.keycode = code
+	release.physical_keycode = code
+	release.pressed = false
+	Input.parse_input_event(release)
+	await tree.process_frame
 
 
 ## The Buy button in the row for [param item_id], or null.

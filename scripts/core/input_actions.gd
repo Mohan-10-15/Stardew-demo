@@ -29,6 +29,11 @@ const JOURNAL := &"journal"
 const TOGGLE_CAMERA_MODE := &"toggle_camera_mode"
 const PAUSE := &"pause"
 
+## Shows the in-game log panel. A developer-facing action, deliberately bound to a key
+## nobody plays with and deliberately *not* routed through the pause menu: a log you
+## have to unpause, navigate a menu and close again to read is a log nobody reads.
+const TOGGLE_LOG_PANEL := &"toggle_log_panel"
+
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"
 const HOTBAR_3 := &"hotbar_3"

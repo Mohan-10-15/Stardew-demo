@@ -1,17 +1,33 @@
 extends Control
-## Draws the aiming crosshair.
+## Draws the aiming crosshair: a plus, always.
 ##
-## Drawn in code rather than sampled from a texture so it stays crisp at any
-## resolution and can react to the interaction state later (for example
-## highlighting when an interactable is focused).
+## Drawn in code rather than sampled from a texture so it stays crisp at any resolution
+## and can react to the interaction state.
+##
+## ## Always a plus
+##
+## The first version drew a bare dot and grew arms only when something was focused, on
+## the theory that the arms were clutter over an empty field. In a real window that reads
+## as a dot that sometimes grows, not as a crosshair: the marker's shape is what tells the
+## player where the interaction ray starts, and a shape that changes means the player never
+## learns where "here" is. A plus is a plus in every situation, so what changes is only
+## how brightly it is drawn.
+##
+## The brightness still carries the one bit of information worth carrying: a dim plus is
+## aimed at nothing, a bright plus is aimed at something you can interact with.
 
+## Half-length of each arm, measured out from the gap.
 const ARM_LENGTH := 7.0
-const GAP := 3.0
+## Half the empty space at the centre. Non-zero, so the middle of the crosshair is not
+## solid black over a bright sky.
+const GAP := 2.0
 const THICKNESS := 2.0
 
 @export var color: Color = Color(0.95, 0.95, 0.92, 0.85)
 @export var outline_color: Color = Color(0, 0, 0, 0.6)
-## Radius of the centre dot.
+## Drawn dimmed when nothing is focused.
+@export var idle_color: Color = Color(0.86, 0.86, 0.84, 0.45)
+## Radius of the centre dot that closes the gap on the plus.
 @export var dot_radius: float = 1.5
 
 var _focused: bool = false
@@ -28,6 +44,10 @@ func set_focused(value: bool) -> void:
 	queue_redraw()
 
 
+## The plus, as four segments with a gap at the middle.
+##
+## `add_theme` nothing: an outline is drawn as a second, thicker polyline underneath,
+## which is what keeps it readable against both a bright sky and dark soil.
 func _draw() -> void:
 	var centre := size * 0.5
 	var arms := PackedVector2Array([
@@ -42,9 +62,5 @@ func _draw() -> void:
 	])
 	draw_polyline(arms, outline_color, THICKNESS + 2.0)
 	draw_circle(centre, dot_radius, outline_color)
-	if _focused:
-		draw_polyline(arms, color, THICKNESS)
-		draw_circle(centre, dot_radius, color)
-	else:
-		# Unfocused: a dimmer dot only, so the arms do not clutter the screen.
-		draw_circle(centre, dot_radius, color)
+	draw_polyline(arms, color if _focused else idle_color, THICKNESS)
+	draw_circle(centre, dot_radius, color if _focused else idle_color)

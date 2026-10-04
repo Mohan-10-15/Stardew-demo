@@ -107,17 +107,45 @@ func is_first_person() -> bool:
 
 ## Registers a mesh to hide while in first person, so the player does not see
 ## the inside of their own head. The body stays collidable either way.
+##
+## Applies the current mode on the spot. Registering is not enough on its own: the
+## visibility lives in `_apply_mode`, which runs when the mode *changes*, so a mesh
+## discovered later — anything swapped in at runtime — stayed visible in first person
+## until the player toggled the camera twice.
 func register_body_mesh(mesh: MeshInstance3D) -> void:
-	if mesh != null and not _meshes.has(mesh):
-		_meshes.append(mesh)
+	if mesh == null or _meshes.has(mesh):
+		return
+	_meshes.append(mesh)
+	mesh.visible = mode == Mode.THIRD_PERSON
 
 
 ## Auto-discovers the player's visual meshes so the scene does not have to wire
 ## them up by hand. Anything under a node named `*_always_visible` is skipped.
+##
+## Recursive, and that is not tidiness. The search used to be
+## `_player.get_children()`, one level deep, which is exactly the shape the current
+## primitive avatar happens to have — five meshes directly on the player. Swap in a
+## modelled character, which is one imported scene nested under a `Model` node, and
+## *nothing* is found: no error, no warning, and the first-person view is suddenly
+## rendered from inside the player's own chest. A test asserted the meshes hide, and
+## passed, because the meshes it knew about were the ones it moved there itself.
 func _discover_body_meshes() -> void:
 	for child: Node in _player.get_children():
-		if child is MeshInstance3D and not String(child.name).ends_with("_always_visible"):
+		if String(child.name).ends_with("_always_visible"):
+			continue
+		if child is MeshInstance3D:
 			register_body_mesh(child as MeshInstance3D)
+		for deeper: Node in child.get_children():
+			_collect_meshes(deeper)
+
+
+func _collect_meshes(from: Node) -> void:
+	if String(from.name).ends_with("_always_visible"):
+		return
+	if from is MeshInstance3D:
+		register_body_mesh(from as MeshInstance3D)
+	for child: Node in from.get_children():
+		_collect_meshes(child)
 
 
 func set_pitch(value: float) -> void:
@@ -162,7 +190,16 @@ func _update_camera_transform(instant: bool) -> void:
 		_current_distance = 0.0
 		# Rig local space: the parent supplies yaw, the rig itself supplies
 		# pitch, so the camera needs no rotation of its own.
-		_camera.position = Vector3(0.0, first_person_height, 0.0)
+		#
+		# The eye offset is counter-rotated by the pitch, and that is the whole trick.
+		# The rig node sits at the player's *origin* — the feet — and carries the
+		# pitch, so a camera placed at plain local (0, height, 0) orbits the feet
+		# rather than the head: pitch down 45 degrees and the eye swings back and
+		# down half a metre, pitch up and it drops forward. Rotating the offset by
+		# minus the pitch cancels the rig's own rotation, which leaves the eye
+		# depending on the body's yaw only — where a head is — while the camera's
+		# zero local rotation still aims it along the pitch.
+		_camera.position = Vector3(0.0, first_person_height, 0.0).rotated(Vector3.RIGHT, -_pitch)
 		_camera.rotation = Vector3.ZERO
 		return
 

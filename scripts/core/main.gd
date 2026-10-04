@@ -16,6 +16,7 @@ const ClockHudScene := "res://scenes/ui/clock_hud.tscn"
 const StatusHudScene := "res://scenes/ui/player_status_hud.tscn"
 const HotbarHudScene := "res://scenes/ui/hotbar_hud.tscn"
 const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
+const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -24,6 +25,11 @@ const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 @export var status_hud_scene_path: String = StatusHudScene
 @export var hotbar_hud_scene_path: String = HotbarHudScene
 @export var shop_ui_scene_path: String = ShopUiScene
+@export var log_panel_scene_path: String = LogPanelScene
+## The in-game log. Not read by anything yet — it is spawned, toggled by `F3` and
+## otherwise left alone, which is the point: it has to exist before there is a reason
+## to want it.
+@export var log_panel: CanvasLayer = null
 @export var load_world: bool = true
 @export var load_player: bool = true
 @export var load_hud: bool = true
@@ -31,6 +37,7 @@ const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 @export var load_status_hud: bool = true
 @export var load_hotbar_hud: bool = true
 @export var load_shop_ui: bool = true
+@export var load_log_panel: bool = true
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -98,6 +105,11 @@ func _boot() -> void:
 	# a shop to open if so.
 	if load_shop_ui:
 		_spawn_shop_ui()
+	# Last, and because it reads nothing but the log: it is the one piece of UI whose
+	# subject is the boot itself, so it is the one piece that wants to exist after
+	# everything it might report on.
+	if load_log_panel:
+		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
 
 	# The player is up and their state exists, so the opening tool is ready for the
 	# first click rather than a frame later.

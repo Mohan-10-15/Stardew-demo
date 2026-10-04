@@ -87,9 +87,10 @@ static func _build_ground(root: Node3D) -> void:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
+	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
 	var faces := PackedVector3Array()
-	_build_grid(vertices, normals, uvs, indices, faces)
+	_build_grid(vertices, normals, uvs, colors, indices, faces)
 
 	# Trimesh collision from the *same* vertices as the visual mesh, so what the
 	# player walks on is exactly what they see. A box collider cannot represent
@@ -117,9 +118,10 @@ static func _build_ground(root: Node3D) -> void:
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_INDEX] = indices
 	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.material_override = material(COL_GRASS, 0.95)
+	mesh.material_override = WorldMaterials.surface(&"grass")
 	body.add_child(mesh)
 
 	_finish(body, root)
@@ -128,12 +130,13 @@ static func _build_ground(root: Node3D) -> void:
 ## Fills a flat XZ grid of GROUND_CELLS cells, sampling [method terrain_height]
 ## for each vertex.
 ##
-## Produces the vertex/normal/uv/index arrays for the visual mesh and a separate
+## Produces the vertex/normal/uv/color/index arrays for the visual mesh and a separate
 ## three-vertices-per-face list for the collider, both from this one pass.
 static func _build_grid(
 	vertices: PackedVector3Array,
 	normals: PackedVector3Array,
 	uvs: PackedVector2Array,
+	colors: PackedColorArray,
 	indices: PackedInt32Array,
 	faces: PackedVector3Array
 ) -> void:
@@ -144,9 +147,15 @@ static func _build_grid(
 		for gx: int in range(GROUND_CELLS + 1):
 			var x := -half + gx * step
 			var z := -half + gz * step
-			vertices.append(Vector3(x, terrain_height(x, z), z))
+			var height := terrain_height(x, z)
+			vertices.append(Vector3(x, height, z))
 			normals.append(Vector3.UP)
-			uvs.append(Vector2(gx / float(GROUND_CELLS), gz / float(GROUND_CELLS)))
+			# The ground's UVs run 0..1 across the whole 160m terrain, so anything
+			# tiled on it has to be tiled again by `uv1_scale`. They are scaled here
+			# rather than left 0..1 so that a per-metre tiling in the material means
+			# the same thing on the ground as on a 2m fence post.
+			uvs.append(Vector2(gx / float(GROUND_CELLS), gz / float(GROUND_CELLS)) * GROUND_SIZE)
+			colors.append(ground_tint(x, z, height))
 
 	# Two triangles per cell, wound counter-clockwise when seen from above so
 	# the surface faces up.
@@ -215,7 +224,7 @@ static func _build_water(root: Node3D) -> void:
 	plane.size = Vector2(POND_WATER_RADIUS * 2.0, POND_WATER_RADIUS * 2.0)
 	mesh.mesh = plane
 	mesh.position = Vector3(REGION_POND.x, WATER_LEVEL, REGION_POND.y)
-	var m := material(COL_WATER, 0.08)
+	var m := WorldMaterials.surface(&"water")
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mesh.material_override = m
 	_finish(mesh, root)
@@ -262,7 +271,7 @@ static func _add_path_segment(root: Node3D, from: Vector2, to: Vector2, width: f
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(width, delta.length())
 	mesh.mesh = plane
-	mesh.material_override = material(COL_PATH, 0.9)
+	mesh.material_override = WorldMaterials.surface(&"path")
 	mesh.position = Vector3(mid.x, 0.02, mid.y)
 	# PlaneMesh lies in XZ; align its local Z with the segment direction.
 	var angle := atan2(delta.x, delta.y)
@@ -277,7 +286,7 @@ static func _build_farm(root: Node3D) -> void:
 	plane.size = Vector2(22, 16)
 	soil.mesh = plane
 	soil.position = Vector3(REGION_FARM.x, 0.03, REGION_FARM.y)
-	soil.material_override = material(COL_DIRT, 0.95)
+	soil.material_override = WorldMaterials.surface(&"dirt")
 	_finish(soil, root)
 
 	# Perimeter fence posts with rails, giving the farm a readable silhouette.
@@ -332,7 +341,7 @@ static func _build_shop(root: Node3D) -> void:
 	roof.size = Vector3(2.4, 0.12, 1.6)
 	canopy.mesh = roof
 	canopy.position = Vector3(0, 2.1, 0)
-	canopy.material_override = material(COL_ROOF, 0.85)
+	canopy.material_override = WorldMaterials.surface(&"roof")
 	stall.add_child(canopy)
 
 	for side: float in [-1.0, 1.0]:
@@ -341,7 +350,7 @@ static func _build_shop(root: Node3D) -> void:
 		pole.size = Vector3(0.12, 2.1, 0.12)
 		leg.mesh = pole
 		leg.position = Vector3(side * 1.1, 1.05, 0)
-		leg.material_override = material(COL_WOOD, 0.9)
+		leg.material_override = WorldMaterials.surface(&"wood")
 		stall.add_child(leg)
 
 	var counter := MeshInstance3D.new()
@@ -349,7 +358,7 @@ static func _build_shop(root: Node3D) -> void:
 	top.size = Vector3(2.2, 0.9, 0.8)
 	counter.mesh = top
 	counter.position = Vector3(0, 0.45, 0)
-	counter.material_override = material(COL_WALL, 0.9)
+	counter.material_override = WorldMaterials.surface(&"wall")
 	stall.add_child(counter)
 
 	var shape := CollisionShape3D.new()
@@ -371,7 +380,7 @@ static func _add_post(root: Node3D, at: Vector3) -> void:
 	box.size = Vector3(0.16, 1.0, 0.16)
 	mesh.mesh = box
 	mesh.position = Vector3(0, 0.5, 0)
-	mesh.material_override = material(COL_FENCE, 0.9)
+	mesh.material_override = WorldMaterials.surface(&"fence")
 	body.add_child(mesh)
 
 	var shape := CollisionShape3D.new()
@@ -397,7 +406,7 @@ static func _add_rail(root: Node3D, from: Vector3, to: Vector3) -> void:
 	var box := BoxMesh.new()
 	box.size = Vector3(0.08, 0.1, delta.length())
 	mesh.mesh = box
-	mesh.material_override = material(COL_FENCE, 0.9)
+	mesh.material_override = WorldMaterials.surface(&"fence")
 	body.add_child(mesh)
 
 	var shape := CollisionShape3D.new()
@@ -453,7 +462,7 @@ static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float
 	box.size = Vector3(width, height, depth)
 	walls.mesh = box
 	walls.position = Vector3(0, height * 0.5, 0)
-	walls.material_override = material(COL_WALL, 0.9)
+	walls.material_override = WorldMaterials.surface(&"wall")
 	body.add_child(walls)
 
 	var shape := CollisionShape3D.new()
@@ -470,7 +479,7 @@ static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float
 	prism.size = Vector3(width * 1.18, 1.6, depth * 1.18)
 	roof.mesh = prism
 	roof.position = Vector3(0, height + 0.8, 0)
-	roof.material_override = material(COL_ROOF, 0.85)
+	roof.material_override = WorldMaterials.surface(&"roof")
 	body.add_child(roof)
 
 	# Door and windows, purely visual but they make the village feel inhabited.
@@ -479,7 +488,7 @@ static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float
 	door_box.size = Vector3(1.0, 1.9, 0.12)
 	door.mesh = door_box
 	door.position = Vector3(0, 0.95, -depth * 0.5 - 0.06)
-	door.material_override = material(Color(0.32, 0.22, 0.15), 0.9)
+	door.material_override = WorldMaterials.surface(&"door")
 	body.add_child(door)
 
 	for side: float in [-1.0, 1.0]:
@@ -488,7 +497,7 @@ static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float
 		win_box.size = Vector3(0.1, 0.9, 0.9)
 		window.mesh = win_box
 		window.position = Vector3(side * (width * 0.5 + 0.05), 1.7, 0)
-		window.material_override = material(Color(0.55, 0.72, 0.85), 0.4)
+		window.material_override = WorldMaterials.surface(&"glass")
 		body.add_child(window)
 
 	_finish(body, root)
@@ -704,7 +713,7 @@ static func _build_examine_prop(root: Node3D, spec: Dictionary) -> void:
 	var visual := MeshInstance3D.new()
 	visual.name = "Mesh"
 	visual.mesh = mesh
-	visual.material_override = material(spec["color"], 0.85)
+	visual.material_override = WorldMaterials.for_color(spec["color"], 0.85)
 	visual.position = Vector3(0, size.y * 0.5, 0)
 	body.add_child(visual)
 
@@ -781,14 +790,77 @@ static func _prop_mesh_and_shape(kind: String, size: Vector3) -> Array:
 	return [mesh, shape]
 
 
+## Thin alias kept so the palette constants above remain the single source of truth
+## for a colour, while the *surface* — its roughness, specular and detail tiling —
+## comes from [WorldMaterials]. Call sites that care about the class ask for it by
+## name; this is only for the ones that genuinely have an arbitrary colour.
 static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = color
-	m.roughness = roughness
-	m.metallic = 0.0
-	# Godot 4 renamed SpatialMaterial.specular to StandardMaterial3D.metallic_specular.
-	m.metallic_specular = 0.2
-	return m
+	return WorldMaterials.for_color(color, roughness)
+
+
+## The per-vertex tint for a point on the ground.
+##
+## ## Why this exists
+##
+## The ground is one flat mesh with one flat green, 220m across. Under any lighting
+## that is a green table, and no amount of post-processing fixes it — SSAO finds edges
+## that are not there, and bloom has nothing to bloom. Variation has to be in the
+## surface data.
+##
+## Vertex colour rather than a second texture, because it costs nothing at runtime, has
+## no resolution to choose, and cannot tile visibly.
+##
+## The tint multiplies the grass material's albedo, so it is authored as a *modulation*
+## around white, not as a colour to replace it: white leaves the palette's grass alone,
+## and the tints below only push it around.
+##
+## ## What it keys off, which is not "height"
+##
+## The first version ramped on elevation, because "dry grass up high, lush down low" is
+## the reflex. [method terrain_height] is 0.0 everywhere outside [constant POND_RADIUS]
+## and negative inside it, so that term evaluated to zero at all 2025 vertices: a
+## gradient that exists in the code and cannot be seen in the world, which is worse than
+## not writing it. The terrain has exactly one landform and the tint is now written
+## against that one landform.
+static func ground_tint(x: float, z: float, height: float) -> Color:
+	var tint := Color(1, 1, 1)
+	var pos := Vector2(x, z)
+	var to_pond := pos.distance_to(REGION_POND)
+
+	# The pond basin, below the waterline: dark silt. Above it, wet sand. The blend
+	# runs over the 2m the slope actually spans, which is wide enough to read as a
+	# beach rather than as a band.
+	if to_pond < POND_RADIUS:
+		var submerged := clampf(inverse_lerp(WATER_LEVEL, POND_FLOOR_DEPTH, height), 0.0, 1.0)
+		tint = tint.lerp(Color(0.62, 0.56, 0.44), 0.55)
+		tint = tint.lerp(Color(0.44, 0.42, 0.34), submerged * 0.6)
+	else:
+		# Damp margin just outside the rim, so the shoreline is a gradient into the
+		# water rather than a hard green-to-blue edge.
+		var damp := clampf(inverse_lerp(POND_RADIUS * 2.4, POND_RADIUS, to_pond), 0.0, 1.0)
+		tint = tint.lerp(Color(0.74, 0.80, 0.66), damp * 0.6)
+
+	# A broad, slow blotch so the field is not uniform even where nothing else reaches.
+	# Two out-of-phase sines rather than a noise lookup: it is evaluated 2025 times at
+	# world build and must not be the most expensive thing in it.
+	var blotch := sin(x * 0.11) * cos(z * 0.09) + sin(x * 0.047 + z * 0.031) * 0.6
+	tint = tint.lerp(Color(1.10, 1.12, 0.94), clampf(blotch * 0.16 + 0.16, 0.0, 0.34))
+
+	# Trampled earth around the farm and the shop, where the player actually walks.
+	tint = tint.lerp(Color(1.10, 0.98, 0.84), _worn_ground(pos) * 0.5)
+	return tint
+
+
+## How worn the ground is at a point: 1 at the middle of a path, 0 well away from one.
+static func _worn_ground(pos: Vector2) -> float:
+	var worst := 0.0
+	for centre: Vector2 in [REGION_FARM, REGION_VILLAGE]:
+		worst = maxf(worst, 1.0 - clampf(pos.distance_to(centre) / 16.0, 0.0, 1.0))
+	# The road between the two.
+	var road := REGION_VILLAGE - REGION_FARM
+	var along := clampf((pos - REGION_FARM).dot(road) / road.length_squared(), 0.0, 1.0)
+	worst = maxf(worst, 1.0 - clampf(pos.distance_to(REGION_FARM + road * along) / 7.0, 0.0, 1.0))
+	return worst
 
 
 ## Parents a node and marks it for serialisation.

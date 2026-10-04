@@ -35,6 +35,16 @@ extends RefCounted
 ## a typo in a `.tres` does not re-attempt the load on every repaint.
 static var _scenes: Dictionary = {}
 
+## Tinted materials, keyed by source material instance id plus tint.
+##
+## Found by a world-materials test that counted 104 distinct materials across 263
+## meshes: [method apply_tint] duplicated one material per *instance*, so a wood of
+## eighty trees with the same tint got eighty identical materials and nothing the
+## renderer could batch. The duplicate has to exist — the alternative is editing the
+## shared resource and tinting every other instance in the valley at once — but it
+## only has to exist once per (model, tint) pair.
+static var _tints: Dictionary = {}
+
 ## Cached measured top height in metres per model path.
 static var _heights: Dictionary = {}
 
@@ -203,7 +213,9 @@ static func is_white(tint: Color) -> bool:
 ## resource, because the same model is instanced many times over — one rock per
 ## boulder, one Knight per knight — and overwriting the shared material would tint
 ## every other instance in the valley at once. The per-surface duplicate is what
-## makes tinting one instance cheap and local.
+## makes tinting one instance cheap and local, and it is cached by (source, tint) so
+## that eighty trees of one kind share one duplicated material instead of owning
+## eighty identical copies.
 ##
 ## A white tint is treated as "no tint" by the caller rather than here, because
 ## duplicating every material to multiply it by one is pure cost.
@@ -219,11 +231,21 @@ static func apply_tint(root: Node, tint: Color) -> void:
 			if source == null and geometry.mesh != null and geometry.mesh.get_surface_count() > 0:
 				source = geometry.mesh.surface_get_material(0)
 			if source is StandardMaterial3D:
-				var copy := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
-				copy.albedo_color = (source as StandardMaterial3D).albedo_color * tint
-				copy.resource_local_to_scene = true
-				geometry.material_override = copy
+				geometry.material_override = _tinted(source as StandardMaterial3D, tint)
 		apply_tint(child, tint)
+
+
+## The tinted counterpart of [param source], shared between every instance that
+## wants the same tint.
+static func _tinted(source: StandardMaterial3D, tint: Color) -> StandardMaterial3D:
+	var key := "%d_%s" % [source.get_instance_id(), tint.to_html(true)]
+	if _tints.has(key):
+		return _tints[key]
+	var copy := source.duplicate() as StandardMaterial3D
+	copy.albedo_color = source.albedo_color * tint
+	copy.resource_local_to_scene = true
+	_tints[key] = copy
+	return copy
 
 
 ## Drops the caches. Only for tests that assert on cache behaviour or that need a
@@ -233,3 +255,4 @@ static func clear_cache() -> void:
 	_heights.clear()
 	_aabbs.clear()
 	_root_scales.clear()
+	_tints.clear()
