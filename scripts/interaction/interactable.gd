@@ -104,6 +104,21 @@ func get_prompt(_actor: Node) -> String:
 	return prompt_text
 
 
+## Extra explanation appended to the prompt, or "" for none.
+##
+## Separate from [method get_prompt] because the two answer different questions. The
+## prompt says what the key will *do* — "Talk to Mira", "Give the Wild Berry" — and that
+## must stay short enough to read at a glance. This says why the interesting thing is
+## *not* happening: "already gave Mira a gift today".
+##
+## Added because the prompt is the only channel a first interaction has. A villager who
+## silently downgrades "Give the Wild Berry" to "Talk to Mira" leaves the player holding a
+## berry and a key that did not do what they wanted, with no way to find out why; found
+## by [code]tools/playtest_npc.gd[/code] on the second press of a real gift.
+func get_prompt_note(_actor: Node) -> String:
+	return ""
+
+
 ## World point the probe measures distance from.
 ##
 ## Deliberately the *body's origin*, not the middle of the object's geometry. The

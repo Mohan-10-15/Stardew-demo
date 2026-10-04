@@ -147,6 +147,37 @@ static func is_giftable(item: ItemDefinition) -> bool:
 		or item.category == ItemDefinition.Category.FOOD
 
 
+## Whether [param item_id] — the id a bag stack actually carries — can be handed over.
+##
+## The id-level question rather than a definition-level one because a harvested crop
+## enters the bag under its crop id and has no [ItemDefinition] at all, exactly as
+## [method ItemRegistry.sell_price_of] documents for selling. Asking only
+## [method is_giftable] therefore made every crop ungiftable: a villager whose loved
+## list is written in parsnips could never be given one, and the prompt quietly
+## downgraded to "talk" while the player was holding the very thing they loved.
+static func is_giftable_id(item_id: StringName) -> bool:
+	if item_id.is_empty():
+		return false
+	var item := ItemRegistry.get_item(item_id)
+	if item != null:
+		return is_giftable(item)
+	# A crop is giftable by being a crop; there is no definition to check and nothing
+	# about a harvested parsnip that makes it unsuitable as a present.
+	return CropRegistry.has_crop(item_id)
+
+
+## Whether anything at all in the content is authored behind [param item_id].
+##
+## The "stack with no definition behind it" question, kept apart from
+## [method is_giftable_id] because the two refusals are different sentences: a hoe is a
+## thing that exists and is not a present, a `ghost_item` is a thing the game has never
+## heard of, and a player who is handed one of those deserves to know which.
+static func is_known_item(item_id: StringName) -> bool:
+	if item_id.is_empty():
+		return false
+	return ItemRegistry.has_item(item_id) or CropRegistry.has_crop(item_id)
+
+
 ## What this villager calls the reaction, for a prompt or a line of dialogue.
 static func describe_reaction(reaction: StringName) -> String:
 	match reaction:

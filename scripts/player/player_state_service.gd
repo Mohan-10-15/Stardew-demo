@@ -249,10 +249,12 @@ func spend_tool_durability(action: StringName = &"") -> Dictionary:
 ##
 ##     {"id": StringName, "item": ItemDefinition, "amount": int, "display_name": String}
 ##
-## `id` is empty when the slot is empty or holds nothing that resolves to an
-## [ItemDefinition]; `item` is null in exactly that case, so a caller that only wants
-## to check "is there anything to take" tests [member item]'s null-ness and one that
-## wants to name the thing tests `display_name`.
+## `id` is the stack's own id, and is empty only when the slot is empty; `item` is null
+## whenever the id resolves to no [ItemDefinition], which is the case for a harvested
+## crop and for a stack the content has never heard of. So a caller that only wants to
+## check "is there anything to take" tests `id`'s emptiness, one that wants to name the
+## thing tests `display_name`, and one that wants a *definition* — the HUD swatch, the
+## shop — tests `item`'s null-ness and must cope with a crop.
 ##
 ## The NPC system is the reason this exists: "is the player holding something worth
 ## giving away, and what is it called" is a question no earlier caller needed answered
@@ -270,8 +272,24 @@ func held_item_id(_actor: Node = null) -> Dictionary:
 		"id": stack.id,
 		"item": definition,
 		"amount": stack.amount,
-		"display_name": definition.display_name if definition != null else String(stack.id),
+		"display_name": _held_name(stack.id, definition),
 	}
+
+
+## What to call the thing in the player's hand.
+##
+## An [ItemDefinition] if there is one, then a [CropRegistry] crop — a harvested crop is
+## in the bag under its crop id and has no item definition, and a gift prompt reading
+## "Give the parsnip" instead of "Give the Parsnip" is the kind of small wrongness a
+## player notices before they notice the mechanics. The raw id is the last resort,
+## because a blank label reads as a rendering bug and a bare id says what is missing.
+func _held_name(id: StringName, definition: ItemDefinition) -> String:
+	if definition != null:
+		return definition.display_name
+	var crop := CropRegistry.get_crop(id)
+	if crop != null:
+		return crop.display_name
+	return String(id)
 
 
 ## Selects a hotbar slot by index, clamped, and ignores a no-op.

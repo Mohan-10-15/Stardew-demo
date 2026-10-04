@@ -246,21 +246,20 @@ func give_gift(npc: Npc, item_id: StringName, actor: Node) -> bool:
 		# The player swapped slots between reading the prompt and pressing the key.
 		EventBus.npc_gift_failed.emit(id, stack.id, &"nothing_to_do")
 		return false
-	var item := ItemRegistry.get_item(stack.id)
-	if item == null:
-		EventBus.npc_gift_failed.emit(id, stack.id, &"no_item")
+	if not NpcData.is_known_item(item_id):
+		EventBus.npc_gift_failed.emit(id, item_id, &"no_item")
 		return false
 
-	var preview := npc.gift_preview(item)
+	var preview := npc.gift_preview(item_id)
 	if not bool(preview.get("ok", false)):
-		EventBus.npc_gift_failed.emit(id, item.id, StringName(preview.get("reason", &"nothing_to_do")))
+		EventBus.npc_gift_failed.emit(id, item_id, StringName(preview.get("reason", &"nothing_to_do")))
 		return false
 
 	# `remove_stack`, not `remove`. `remove` spends the lowest quality first, so it
 	# could consume a silver berry while the one in the player's hand was normal — the
 	# same reason `PlayerStateService.spend_tool_durability` uses this.
 	if state.inventory.remove_stack(stack, 1) <= 0:
-		EventBus.npc_gift_failed.emit(id, item.id, &"nothing_to_do")
+		EventBus.npc_gift_failed.emit(id, item_id, &"nothing_to_do")
 		return false
 
 	var reaction := StringName(preview.get("reaction", &""))
@@ -268,9 +267,9 @@ func give_gift(npc: Npc, item_id: StringName, actor: Node) -> bool:
 	var delta := npc.award_gift(reaction)
 	if npc.friendship != null and npc.friendship.tier_name() != tier_before:
 		EventBus.npc_friendship_changed.emit(id, npc.friendship.hearts(), npc.friendship.tier_name())
-	EventBus.npc_gifted.emit(id, item.id, reaction)
+	EventBus.npc_gifted.emit(id, item_id, reaction)
 	Log.info("Npc", "Gave %s to %s (%s, +%d)" % [
-		item.id, id, reaction, delta,
+		item_id, id, reaction, delta,
 	])
 	return true
 

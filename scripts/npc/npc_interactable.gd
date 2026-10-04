@@ -50,6 +50,18 @@ const SERVICE_GROUP := &"npc_service"
 ## them is not a thing anyone should have to do.
 const REACH := 3.0
 
+## Refusals that mean *this villager cannot take a present*, as opposed to
+## `not_giftable`, which means the player was never trying to give one.
+##
+## The difference decides whether the press says hello or publishes a failure. Holding a
+## hoe and pressing interact on Mira is a greeting, and announcing a failed gift for it
+## would train the player to ignore the sound. Holding a berry Mira has already been given
+## today is a refused present that happens to fall back to a greeting, and it has to say
+## so — both on screen ([method get_prompt_note]) and on
+## [signal EventBus.npc_gift_failed], because a distinct success event without its distinct
+## failure is the exact thing `AGENTS.md` forbids.
+const FULL_REASONS: Array[StringName] = [&"already_gifted_today", &"gift_limit_reached"]
+
 
 func _ready() -> void:
 	super()
@@ -128,8 +140,7 @@ func preview(actor: Node) -> Dictionary:
 
 	var held: Dictionary = state.call("held_item_id", actor)
 	var item_id := StringName(str(held.get("id", &"")))
-	var item: ItemDefinition = held.get("item") as ItemDefinition
-	var gift: Dictionary = _npc.gift_preview(item)
+	var gift: Dictionary = _npc.gift_preview(item_id)
 
 	# Talking is always allowed, so it is the fallback whenever a gift would not be.
 	# A refused gift must not refuse the whole key: the player is holding a rake and
@@ -156,6 +167,24 @@ func preview(actor: Node) -> Dictionary:
 ## "Give the wild berry" or "Talk to Mira".
 func get_prompt(actor: Node) -> String:
 	return String(preview(actor).get("text", ""))
+
+
+## Why the prompt is not offering the present, or "" when it is.
+##
+## Only for the refusals in [constant FULL_REASONS]. A tool or a seed is not a refused
+## gift, it was never a gift, and "Mira does not want your hoe" would be nonsense. The
+## budget running out is worth words, because otherwise the prompt quietly changes from
+## "Give the Wild Berry" to "Talk to Mira" and the player cannot tell whether the game
+## lost track of what they are holding or the villager is simply full.
+func get_prompt_note(actor: Node) -> String:
+	var decision := preview(actor)
+	var reason := StringName(decision.get("downgrade_reason", &""))
+	if not reason in FULL_REASONS:
+		return ""
+	var who: String = _npc.data.display_name if _npc != null and _npc.data != null else "them"
+	if reason == &"already_gifted_today":
+		return "%s already has a gift from you today" % who
+	return "%s has had both of this week's gifts" % who
 
 
 ## Talks, or gives a gift.
@@ -186,6 +215,15 @@ func interact(actor: Node) -> bool:
 			_npc.attending = true
 			interacted.emit(actor)
 		return ok
+
+	# A press that falls back from a present to a hello still publishes the refusal it
+	# fell back from. Otherwise "villagers never refuse anything" is literally true in a
+	# real game: the only way to reach `give_gift` is to already hold a present the villager
+	# will take, and every refusal is answered with a greeting that says nothing. Found by
+	# `tools/playtest_npc.gd` on the second berry of the day.
+	var downgrade := StringName(decision.get("downgrade_reason", &""))
+	if downgrade in FULL_REASONS:
+		EventBus.npc_gift_failed.emit(npc_id, StringName(decision.get("item_id", &"")), downgrade)
 
 	var ok := bool(manager.call("talk", _npc, actor))
 	if ok:

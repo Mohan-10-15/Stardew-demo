@@ -3,12 +3,31 @@ extends CanvasLayer
 ##
 ## Deliberately tiny. Inventory, clock, dialogue and quests arrive in the UI
 ## group; this only covers what the player needs to aim and interact.
+##
+## ## The prompt is re-rendered, not cached
+##
+## The obvious version of this node renders the prompt once, when focus changes. That is
+## wrong the moment the prompt depends on state the player can change without moving the
+## crosshair, and all four of these were found by [code]tools/playtest_npc.gd[/code] rather
+## than by reading the code:
+##
+## - Give Mira a berry, and the label still promises "Give the Wild Berry" while the press
+##   now says hello. She is full for the day; the prompt did not know.
+## - Switch from a berry to the axe without looking away, and the label still offers a gift
+##   the player is no longer holding.
+## - Empty a stack in the bag and the label still names an item that is gone.
+##
+## So the prompt is rebuilt on the probe's focus and interaction signals *and* on the
+## [signal EventBus.hotbar_selection_changed], [signal EventBus.inventory_changed] and
+## [signal EventBus.npc_friendship_changed] signals. One label, a handful of cheap string
+## builds, and the promise on screen is the promise the key will keep.
 
 @onready var _crosshair: Control = get_node_or_null(^"Crosshair")
 @onready var _prompt: Label = get_node_or_null(^"PromptContainer/PromptLabel")
 @onready var _hold_bar: ProgressBar = get_node_or_null(^"PromptContainer/HoldBar")
 
 var _probe: InteractionProbe = null
+var _watching_state := false
 
 
 func _ready() -> void:
@@ -26,8 +45,7 @@ func _ready() -> void:
 		# retrying.
 		Log.info("InteractionHUD", "No InteractionProbe in the tree; retrying each frame")
 		return
-	_probe.focus_changed.connect(_on_focus_changed)
-	_probe.interacted.connect(_on_interacted)
+	_bind_probe()
 
 
 func _process(_delta: float) -> void:
@@ -40,18 +58,24 @@ func _process(_delta: float) -> void:
 
 ## Late-binds to the probe, retrying until one exists.
 ##
-## Cheap insurance rather than a bug fix: one tree scan per frame until the
-## probe shows up, then this stops being called at all.
+## Cheap insurance rather than a bug fix: one tree scan per frame until the probe
+## shows up, then this stops being called at all.
 func _attach_probe() -> void:
 	var found := _find_probe(get_tree().get_root())
 	if found == null:
 		return
 	_probe = found
-	_probe.focus_changed.connect(_on_focus_changed)
-	_probe.interacted.connect(_on_interacted)
+	_bind_probe()
 	# A target may already be under the crosshair by the time we bind, in which
 	# case `focus_changed` will not fire again and the prompt stays hidden.
 	_on_focus_changed(_probe.get_focus())
+
+
+## Every input to the prompt, in one place, so the two ways of binding cannot drift.
+func _bind_probe() -> void:
+	_probe.focus_changed.connect(_on_focus_changed)
+	_probe.interacted.connect(_on_interacted)
+	_watch_state(true)
 
 
 func _update_hold_bar() -> void:
@@ -92,9 +116,22 @@ func _on_focus_changed(target: Interactable) -> void:
 	# way to tell whether the crosshair had resolved a target.
 	if _crosshair != null and _crosshair.has_method(&"set_focused"):
 		_crosshair.call(&"set_focused", target != null)
+	_refresh_prompt()
 
+
+func _on_interacted(_target: Interactable, _actor: Node) -> void:
+	if _hold_bar != null:
+		_hold_bar.value = 0.0
+	# The interaction may have changed the very state the prompt is made of: a gift
+	# spends the villager's day, a purchase empties a slot. Rebuild rather than assume.
+	_refresh_prompt()
+
+
+## Rebuilds the prompt label from whatever is under the crosshair *right now*.
+func _refresh_prompt() -> void:
 	if _prompt == null or _probe == null:
 		return
+	var target := _probe.get_focus()
 	if target == null:
 		_set_prompt_visible(false)
 		return
@@ -104,10 +141,29 @@ func _on_focus_changed(target: Interactable) -> void:
 	var verb := target.get_prompt(actor)
 	# A timed interaction says so, otherwise the player holds and wonders.
 	var suffix := " (hold)" if target.hold_seconds > 0.0 else ""
-	_prompt.text = "[%s] %s%s" % [key, verb, suffix]
+	# And why the interesting option is missing, when the target can say. Kept off the
+	# prompt proper so the verb stays scannable.
+	var note := target.get_prompt_note(actor)
+	var tail := " — %s" % note if not note.is_empty() else ""
+	_prompt.text = "[%s] %s%s%s" % [key, verb, suffix, tail]
 	_prompt.visible = true
 
 
-func _on_interacted(_target: Interactable, _actor: Node) -> void:
-	if _hold_bar != null:
-		_hold_bar.value = 0.0
+## Connects the three bus signals the prompt depends on, once.
+func _watch_state(value: bool) -> void:
+	if value == _watching_state:
+		return
+	_watching_state = value
+	if value:
+		EventBus.hotbar_selection_changed.connect(_refresh_prompt)
+		EventBus.inventory_changed.connect(_refresh_prompt)
+		EventBus.npc_friendship_changed.connect(_on_friendship_changed)
+	else:
+		EventBus.hotbar_selection_changed.disconnect(_refresh_prompt)
+		EventBus.inventory_changed.disconnect(_refresh_prompt)
+		EventBus.npc_friendship_changed.disconnect(_on_friendship_changed)
+
+
+## A villager's standing moved, so whether they can take a present may have moved with it.
+func _on_friendship_changed(_npc_id: StringName, _hearts: int, _tier_name: String) -> void:
+	_refresh_prompt()

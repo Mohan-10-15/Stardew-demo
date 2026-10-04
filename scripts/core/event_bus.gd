@@ -159,6 +159,12 @@ signal npc_gifted(npc_id: StringName, item_id: StringName, reaction: StringName)
 ## - `gift_limit_reached` — the weekly gift budget is spent, on any reaction.
 ## - `nothing_to_do` — the villager's state changed between the prompt and the press.
 ##
+## Also published when the press *fell back* to a greeting: one key both talks and gives,
+## so holding a berry for a villager who is already full says hello — and says why the
+## berry was not taken. See [constant NpcInteractable.FULL_REASONS]. `not_giftable` is
+## the one reason in this list that never arrives this way, because a hoe was never a
+## refused present.
+##
 ## `no_item` and `not_giftable` are deliberately separate even though both mean "you
 ## cannot give this": one is content that failed to load and the other is a rule the
 ## game is enforcing on purpose, and a bug that produced the first would otherwise be

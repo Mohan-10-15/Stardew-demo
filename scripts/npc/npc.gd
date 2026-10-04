@@ -61,6 +61,10 @@ var _rng := RandomNumberGenerator.new()
 var _wander_target: Vector2 = Vector2.ZERO
 var _idle_for: float = 0.0
 var _gravity: float = 24.0
+## Who this villager is currently turned towards, while [member attending]. Empty until
+## somebody speaks to them; see [method face_towards].
+var _face_point := Vector3.ZERO
+var _has_face_point: bool = false
 
 
 func _ready() -> void:
@@ -146,6 +150,12 @@ func _advance(delta: float) -> void:
 	if attending or not wandering or speed <= 0.0:
 		velocity.x = move_toward(velocity.x, 0.0, MOVE_ACCELERATION * speed * delta)
 		velocity.z = move_toward(velocity.z, 0.0, MOVE_ACCELERATION * speed * delta)
+		# Keep turning towards whoever is being spoken to until they are actually facing
+		# them. One turn from [method face_towards] covers most of the arc and then stops,
+		# which leaves a villager standing at ninety degrees to the conversation — and a
+		# test that only watches the yaw change cannot tell that from facing them.
+		if attending and _has_face_point:
+			face_towards(_face_point, delta)
 		return
 
 	var offset := _wander_target - _home_position_xz()
@@ -154,7 +164,7 @@ func _advance(delta: float) -> void:
 		var direction := offset / distance
 		velocity.x = move_toward(velocity.x, direction.x * speed, MOVE_ACCELERATION * speed * delta)
 		velocity.z = move_toward(velocity.z, direction.y * speed, MOVE_ACCELERATION * speed * delta)
-		_turn_towards(atan2(direction.x, direction.y), delta)
+		_turn_towards(_yaw_towards(direction.x, direction.y), delta)
 		return
 
 	# Arrived: stand about still, then pick somewhere new to be.
@@ -173,17 +183,33 @@ func _turn_towards(yaw_target: float, delta: float) -> void:
 	rotation.y = lerp_angle(rotation.y, yaw_target, clampf(TURN_SPEED * delta, 0.0, 1.0))
 
 
-## Turns to look at a world point, and holds still while doing it.
+## Turns to look at a world point, and keeps looking at it while attending.
 ##
 ## Called by [NpcManager] when the player actually speaks, using the actor the
 ## interaction already resolved. Deliberately not automatic — "every villager in the
 ## square swivels to stare at you the moment you come within four metres" would be a
 ## chorus of heads tracking the camera and would read as a bug.
+##
+## The point is remembered so [method _advance] can finish the turn over the next few
+## ticks: turning at [constant TURN_SPEED] from an arbitrary heading takes longer than one
+## call, and a villager who stops a quarter of the way round is not facing the player.
 func face_towards(point: Vector3, delta: float) -> void:
 	var offset := point - global_position
 	if offset.length_squared() < 0.01:
 		return
-	_turn_towards(atan2(offset.x, offset.z), delta)
+	_face_point = point
+	_has_face_point = true
+	_turn_towards(_yaw_towards(offset.x, offset.z), delta)
+
+
+## The yaw that points this node's forward at an XZ offset.
+##
+## Godot's forward is -Z, hence the negated components — the same arithmetic
+## `PlayerController._update_facing` uses, and negated for the same reason. Without it a
+## villager walks backwards down the lane and turns its back on the player it was just
+## spoken to, and neither is visible to a test that only asserts a number moved.
+static func _yaw_towards(x: float, z: float) -> float:
+	return atan2(-x, -z)
 
 
 ## Chooses a new place to stand, inside [member NpcData.wander_radius] of home.
@@ -259,7 +285,11 @@ func describe() -> String:
 	return data.describe_standing(friendship)
 
 
-## What would happen if [param item] were handed over right now.
+## What would happen if [param item_id] were handed over right now.
+##
+## The id rather than an [ItemDefinition] because that is what a gift *is*: one unit out
+## of a bag slot, and a harvested crop is in the bag under its crop id with no definition
+## behind it. Taking a definition here would have made every crop ungiftable.
 ##
 ## The prompt reads this and the transaction checks it, so a prompt cannot promise a
 ## gift the press then refuses — the same one-source-of-truth bargain
@@ -271,19 +301,17 @@ func describe() -> String:
 ## still carries the reaction it *would* have been, because "you already gave them one
 ## of those today" and "they love that" are the two halves of the message a player
 ## needs.
-func gift_preview(item: ItemDefinition) -> Dictionary:
+func gift_preview(item_id: StringName) -> Dictionary:
 	var reaction := NpcData.REACTION_NEUTRAL
 	if data != null:
-		reaction = data.reaction_to(item.id if item != null else &"")
+		reaction = data.reaction_to(item_id)
 	if friendship == null:
 		return _preview(false, &"nothing_to_do", reaction)
-	if not NpcData.is_giftable(item):
+	if not NpcData.is_known_item(item_id):
 		# A tool is not a present, and a definition that will not load is not a gift.
 		# The two are different failures and say so.
-		if item == null:
-			return _preview(false, &"no_item", reaction)
-		if item.is_tool():
-			return _preview(false, &"not_giftable", reaction)
+		return _preview(false, &"no_item", reaction)
+	if not NpcData.is_giftable_id(item_id):
 		return _preview(false, &"not_giftable", reaction)
 	if reaction == NpcData.REACTION_LOVED and not friendship.can_gift_loved_today():
 		return _preview(false, &"already_gifted_today", reaction)
