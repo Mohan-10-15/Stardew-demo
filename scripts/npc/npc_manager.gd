@@ -274,6 +274,31 @@ func give_gift(npc: Npc, item_id: StringName, actor: Node) -> bool:
 	return true
 
 
+## Adds [param amount] hearts to one villager's friendship outright.
+##
+## The counterpart to [method give_gift] for rewards a player did not earn by choosing a
+## gift. Goes through [method Friendship] rather than writing [member Friendship.points]
+## from outside so the daily and weekly gift counters stay truthful: a quest that handed out
+## hearts must not look to the gift-cap code like a day on which five presents were
+## received, or it would reset the cap the player has not spent.
+##
+## Emits [signal EventBus.npc_friendship_changed] only on a tier change, for the same
+## reason [method give_gift] does. Returns false for a villager nobody has heard of, which
+## is content the quest loader should have already refused.
+func grant_hearts(npc_id: StringName, amount: int) -> bool:
+	var npc := get_npc(npc_id)
+	if npc == null or npc.friendship == null or amount <= 0:
+		return false
+	var before := npc.friendship.tier_name()
+	npc.friendship.add_hearts(amount)
+	if npc.friendship.tier_name() != before:
+		EventBus.npc_friendship_changed.emit(npc_id, npc.friendship.hearts(), npc.friendship.tier_name())
+	Log.info("Npc", "%s gained %d heart(s) to %d" % [
+		npc_id, amount, npc.friendship.hearts(),
+	])
+	return true
+
+
 ## The whole cast's saveable state, as one dictionary.
 ##
 ## Keyed by villager id rather than an array, because the next group will add villagers

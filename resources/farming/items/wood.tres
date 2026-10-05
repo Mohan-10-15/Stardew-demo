@@ -6,6 +6,7 @@
 script = ExtResource("1_2p6kj")
 id = &"wood"
 display_name = "Wood"
+plural_name = "Wood"
 category = 4
 sell_price = 4
 description = "Split and stacked. Burns, or builds."

@@ -107,28 +107,36 @@ func skip(case: StringName, message: String = "") -> Dictionary:
 	return {"name": String(case), "passed": true, "skipped": true, "message": message}
 
 
-func check_equals(case: StringName, actual: Variant, expected: Variant) -> Dictionary:
+## [param message] replaces the generated text when a failure is more informative in the
+## author's words than in "expected X but got Y" — "the purse is wrong" says which of four
+## gold assertions in one test failed, while four identical generated strings do not.
+func check_equals(case: StringName, actual: Variant, expected: Variant,
+		message: String = "") -> Dictionary:
 	if _deep_equals(actual, expected):
 		return succeeded(case)
-	return fail(case, "expected %s but got %s" % [str(expected), str(actual)])
+	return fail(case, message if message != "" else "expected %s but got %s" % [
+		str(expected), str(actual),
+	])
 
 
-func check_not_equals(case: StringName, actual: Variant, unexpected: Variant) -> Dictionary:
+func check_not_equals(case: StringName, actual: Variant, unexpected: Variant,
+		message: String = "") -> Dictionary:
 	if not _deep_equals(actual, unexpected):
 		return succeeded(case)
-	return fail(case, "expected value different from %s" % str(unexpected))
+	return fail(case, message if message != "" else "expected value different from %s"
+		% str(unexpected))
 
 
-func check_not_null(case: StringName, value: Variant) -> Dictionary:
+func check_not_null(case: StringName, value: Variant, message: String = "") -> Dictionary:
 	if value != null:
 		return succeeded(case)
-	return fail(case, "expected non-null value")
+	return fail(case, message if message != "" else "expected non-null value")
 
 
-func check_null(case: StringName, value: Variant) -> Dictionary:
+func check_null(case: StringName, value: Variant, message: String = "") -> Dictionary:
 	if value == null:
 		return succeeded(case)
-	return fail(case, "expected null but got %s" % str(value))
+	return fail(case, message if message != "" else "expected null but got %s" % str(value))
 
 
 func check_true(case: StringName, value: bool, message: String = "") -> Dictionary:

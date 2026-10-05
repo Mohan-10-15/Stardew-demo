@@ -180,6 +180,33 @@ signal npc_gift_failed(npc_id: StringName, item_id: StringName, reason: StringNa
 ## `hearts` and the new `tier_name` so it never has to ask the villager.
 signal npc_friendship_changed(npc_id: StringName, hearts: int, tier_name: String)
 
+# --- Quests ----------------------------------------------------------------
+## The player took a job on. Carries the quest and the villager who offered it, so a
+## journal can say who to go back to without loading the definition itself.
+signal quest_accepted(quest_id: StringName, giver_id: StringName)
+
+## The mandatory counterpart to [signal quest_accepted]. `reason` is machine-readable; the
+## full set is `QuestService.REASONS` and `every_quest_refusal_has_its_own_reason` in the
+## quest suite.
+signal quest_accepted_failed(quest_id: StringName, reason: StringName)
+
+## A job was handed in and paid. Separate from [signal quest_progress_changed] by a wide
+## margin: progress is the quiet counter in the corner, and this is the moment the gold
+## arrives, the parsnips leave the bag and the reward fanfare belongs.
+signal quest_turned_in(quest_id: StringName, giver_id: StringName)
+
+## The mandatory counterpart to [signal quest_turned_in]. `reason` is machine-readable; the
+## full set is `QuestService.REASONS`.
+##
+## This one fires on "not yet" refusals as well as hard errors, which is deliberate: a
+## player who walks up to a villager holding four of five parsnips must be told something,
+## and a prompt that goes quiet is indistinguishable from a dropped frame.
+signal quest_turned_in_failed(quest_id: StringName, giver_id: StringName, reason: StringName)
+
+## One objective moved. Both amounts because a listener draws a bar and cannot cache the
+## ceiling — an objective's target is content and the next quest may ask for more.
+signal quest_progress_changed(quest_id: StringName, current: int, required: int)
+
 # --- Stamina --------------------------------------------------------------
 ## The player's stamina moved. Both values, because a HUD needs the ceiling to
 ## draw the bar and cannot cache it — a potion or an upgrade will change it.

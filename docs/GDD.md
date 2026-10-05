@@ -97,6 +97,14 @@ traveling merchant. Seasonal stock. Tool upgrades. Quality-based pricing.
 Contextual dialogue. Gift tastes. Friendship hearts. **3+ scripted heart events**
 each. Birthdays. Romance and marriage for **6+**. Quest board.
 
+Jobs are given by the villager who wants the thing, not posted on a board: a `collect`,
+`deliver` or `talk` objective, an optional repeat, and a reward of gold, items and
+friendship hearts. Progress is kept beside the bag rather than read out of it, so a
+player who already had the items cannot complete a job by saying yes. The active jobs
+sit in the corner with a live tally and a `ready` mark once the objective is done — the
+player should never have to open a menu to find out what is left. A journal page with
+turned-in history is later; the tracker covers the in-play case first.
+
 ### 4.11 Story
 A main progression goal (collections unlocking areas and features). A
 collections log. An ending and credits scene, after which free play continues.

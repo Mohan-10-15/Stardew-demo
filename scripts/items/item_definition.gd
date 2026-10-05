@@ -14,6 +14,15 @@ enum Category { CROP, SEED, TOOL, FORAGE, MATERIAL, FOOD }
 
 @export var id: StringName = &""
 @export var display_name: String = "Item"
+
+## The name for more than one, when a plain "s" would be wrong or ugly.
+##
+## Left empty, [method plural] appends one. Set it for the mass nouns and the irregulars,
+## which is most of the gathering list: "20 Wood" not "20 Woods", "2 Stone" not "2
+## Stones". Guessing in code instead would mean every quest line reads "Bring 5 Parsnips"
+## correctly and "Bring 20 Woods" wrongly, which is exactly the sort of thing that survives
+## a green test run because the tests assert on the id, not the prose.
+@export var plural_name: String = ""
 @export var category: int = Category.CROP
 ## What the shipping bin pays per unit.
 @export_range(0, 10000, 1) var sell_price: int = 0
@@ -73,6 +82,16 @@ func describe() -> String:
 	if sell_price > 0:
 		return "%s — sells for %dg" % [display_name, sell_price]
 	return display_name
+
+
+## The name for [param amount] of these, in a sentence.
+##
+## One is always [member display_name]; more than one is [member plural_name] when the item
+## supplies one, and otherwise [member display_name] with an "s" on the end.
+func plural(amount: int) -> String:
+	if amount <= 1:
+		return display_name
+	return plural_name if not plural_name.is_empty() else "%ss" % display_name
 
 
 ## "Parsnip", "Hoe (12 uses left)"

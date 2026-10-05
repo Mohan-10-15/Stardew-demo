@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="1_quest"]
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="2_objective"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_reward"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="4_heart"]
+
+[sub_resource type="Resource" id="Resource_objective"]
+script = ExtResource("2_objective")
+kind = &"deliver"
+item_id = &"iron_ore"
+count = 1
+target_npc = &"bram"
+
+[sub_resource type="Resource" id="Resource_heart_sable"]
+script = ExtResource("4_heart")
+npc = &"sable"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_heart_bram"]
+script = ExtResource("4_heart")
+npc = &"bram"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_reward"]
+script = ExtResource("3_reward")
+gold = 220
+hearts = Array[ExtResource("4_heart")]([SubResource("Resource_heart_sable"), SubResource("Resource_heart_bram")])
+
+[resource]
+script = ExtResource("1_quest")
+id = &"q_sable_the_fence"
+title = "The Fence, Finally"
+description = "Sable has been asked to mend the fence for two seasons. She cannot start until there is iron for the hinges, and Bram is the one holding it."
+giver = &"sable"
+objective = SubResource("Resource_objective")
+reward = SubResource("Resource_reward")
+repeats = &"weekly"

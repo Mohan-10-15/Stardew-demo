@@ -14,6 +14,10 @@ extends Resource
 @export var id: StringName = &""
 ## Player-facing name.
 @export var display_name: String = "Crop"
+## The name for more than one, when a plain "s" would be wrong. Left empty, [method
+## plural] appends one. Mirrors [member ItemDefinition.plural_name] so a quest can ask
+## for a crop and a gathered material through one call.
+@export var plural_name: String = ""
 ## Which [enum WorldTime.Season]s this crop can be planted in. Empty means
 ## any season, which is how forageable wild crops are expressed.
 @export var seasons: Array[int] = []
@@ -126,6 +130,18 @@ func is_valid() -> bool:
 	if sprout_model.is_empty() != mature_model.is_empty():
 		return false
 	return true
+
+
+## The name for [param amount] of these, in a sentence.
+##
+## One is always [member display_name]; more than one is [member plural_name] when the crop
+## supplies one, and otherwise [member display_name] with an "s" on the end. Matches
+## [method ItemDefinition.plural] so quest prose does not have to know which kind of thing
+## it is asking for.
+func plural(amount: int) -> String:
+	if amount <= 1:
+		return display_name
+	return plural_name if not plural_name.is_empty() else "%ss" % display_name
 
 
 ## "4 days · sells for 35g · regrows"

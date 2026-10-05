@@ -6,6 +6,7 @@
 script = ExtResource("1_g0c1f")
 id = &"iron_ore"
 display_name = "Iron Ore"
+plural_name = "Iron Ore"
 category = 4
 sell_price = 30
 description = "Worth the walk back from the far rocks."

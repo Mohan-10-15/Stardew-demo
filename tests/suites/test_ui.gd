@@ -18,6 +18,7 @@ const HOTBAR_SCENE := "res://scenes/ui/hotbar_hud.tscn"
 const SHOP_SCENE := "res://scenes/ui/shop_ui.tscn"
 const INTERACTION_SCENE := "res://scenes/ui/interaction_hud.tscn"
 const LOG_PANEL_SCENE := "res://scenes/ui/log_panel.tscn"
+const QUEST_TRACKER_SCENE := "res://scenes/ui/quest_tracker.tscn"
 const SHOP_NODE := "GeneralStore"
 
 var _rig: Node = null
@@ -66,6 +67,12 @@ func get_cases() -> Array[StringName]:
 		&"the_log_panel_opens_on_its_key_and_shows_what_was_logged",
 		&"the_log_panel_does_not_stop_the_game",
 		&"the_log_panel_says_where_the_log_file_is",
+		# --- the jobs the player is carrying ------------------------------------
+		&"the_quest_tracker_is_empty_with_no_jobs",
+		&"the_quest_tracker_lists_a_job_the_player_accepted",
+		&"the_quest_tracker_counts_what_the_player_gathers",
+		&"the_quest_tracker_marks_a_job_that_can_be_handed_in",
+		&"the_quest_tracker_drops_a_job_that_is_finished",
 	]
 
 
@@ -123,6 +130,16 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_shop_refusal()
 		&"the_shop_panel_lists_what_the_player_can_sell":
 			return await _t_shop_sell_rows()
+		&"the_quest_tracker_is_empty_with_no_jobs":
+			return await _t_tracker_empty()
+		&"the_quest_tracker_lists_a_job_the_player_accepted":
+			return await _t_tracker_lists_job()
+		&"the_quest_tracker_counts_what_the_player_gathers":
+			return await _t_tracker_counts_gathering()
+		&"the_quest_tracker_marks_a_job_that_can_be_handed_in":
+			return await _t_tracker_marks_ready()
+		&"the_quest_tracker_drops_a_job_that_is_finished":
+			return await _t_tracker_drops_finished()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -935,6 +952,173 @@ func _message_text(panel: CanvasLayer) -> String:
 		^"Center/Panel/Column/Message"
 	) as Label
 	return "" if label == null else label.text
+
+
+# --- Quest tracker ------------------------------------------------------------
+
+
+## A real [QuestService] over a real bag, and the real tracker, and nothing else.
+##
+## The three together and no shortcuts: a tracker wired to a stub would pass while the
+## one the game spawns found no service, which is the failure this suite exists to catch.
+func _make_tracker() -> Dictionary:
+	_reset_rig()
+	_ensure_rig()
+	var state_script: GDScript = load("res://scripts/player/player_state_service.gd")
+	var state: Node = state_script.new()
+	state.name = "PlayerState"
+	_rig.add_child(state)
+	state.set("bag_slots", 24)
+	await _step(2)
+	var quests: Node = load("res://scripts/quest/quest_service.gd").new()
+	quests.name = "QuestService"
+	quests.set("player_state", state)
+	_rig.add_child(quests)
+	await _step(2)
+	var panel := _instantiate(QUEST_TRACKER_SCENE)
+	if panel == null:
+		return {}
+	_rig.add_child(panel)
+	await _step(3)
+	return {"state": state, "quests": quests, "panel": panel}
+
+
+## The rows the tracker is currently drawing, as text.
+func _tracker_rows(panel: CanvasLayer) -> Array[String]:
+	var rows := panel.get_node_or_null(^"Panel/Column/Rows") as VBoxContainer
+	var out: Array[String] = []
+	if rows == null:
+		return out
+	for row: Node in rows.get_children():
+		var label := row.get_node_or_null(^"Label") as Label
+		out.append("" if label == null else label.text)
+	return out
+
+
+func _tracker_visible(panel: CanvasLayer) -> bool:
+	var box := panel.get_node_or_null(^"Panel") as Control
+	return box != null and box.visible
+
+
+## Puts [param amount] of [param item_id] in the bag and announces it the way the
+## harvesting and gathering systems do.
+func _gather(bag: Inventory, item_id: StringName, amount: int) -> void:
+	if bag.add(item_id, amount) != amount:
+		return
+	root().get_node(^"EventBus").emit_signal(&"item_added", item_id, amount)
+
+
+func _t_tracker_empty() -> Dictionary:
+	var c := &"the_quest_tracker_is_empty_with_no_jobs"
+	var made := await _make_tracker()
+	if made.is_empty():
+		return fail(c, "could not build the tracker")
+	var panel: CanvasLayer = made["panel"]
+	if not _tracker_rows(panel).is_empty():
+		return fail(c, "a tracker with no jobs is drawing %s" % str(_tracker_rows(panel)))
+	# Hidden rather than an empty box. An always-visible empty panel in the corner is a
+	# piece of UI every player learns to look straight past.
+	if _tracker_visible(panel):
+		return fail(c, "an empty tracker is on screen")
+	return succeeded(c, "no jobs, no panel")
+
+
+func _t_tracker_lists_job() -> Dictionary:
+	var c := &"the_quest_tracker_lists_a_job_the_player_accepted"
+	var made := await _make_tracker()
+	if made.is_empty():
+		return fail(c, "could not build the tracker")
+	var quests: QuestService = made["quests"]
+	var state: PlayerStateService = made["state"]
+	var panel: CanvasLayer = made["panel"]
+	var job := QuestRegistry.quests_from(&"mira")[0]
+	if not quests.accept(job.id, state):
+		return fail(c, "could not accept %s" % job.id)
+	await _step(2)
+	var rows := _tracker_rows(panel)
+	if rows.size() != 1:
+		return fail(c, "one accepted job drew %d rows: %s" % [rows.size(), str(rows)])
+	var text: String = rows[0]
+	if not text.contains(job.title):
+		return fail(c, "the row does not name the job: '%s'" % text)
+	if not text.contains("Parsnip"):
+		return fail(c, "the row does not say what is wanted: '%s'" % text)
+	if not text.contains("0/%d" % job.objective.count):
+		return fail(c, "a fresh job does not read 0 of %d: '%s'" % [job.objective.count, text])
+	if not _tracker_visible(panel):
+		return fail(c, "the tracker stayed hidden with a job in hand")
+	return succeeded(c, "'%s'" % text)
+
+
+func _t_tracker_counts_gathering() -> Dictionary:
+	var c := &"the_quest_tracker_counts_what_the_player_gathers"
+	var made := await _make_tracker()
+	if made.is_empty():
+		return fail(c, "could not build the tracker")
+	var quests: QuestService = made["quests"]
+	var state: PlayerStateService = made["state"]
+	var panel: CanvasLayer = made["panel"]
+	var job := QuestRegistry.quests_from(&"mira")[0]
+	if not quests.accept(job.id, state):
+		return fail(c, "could not accept %s" % job.id)
+	await _step(2)
+	# Through the bag and the bus, because that is the path the harvesting and gathering
+	# systems take. A tracker driven by a private call would read the right number for
+	# the wrong reason.
+	_gather(state.inventory, job.objective.item_id, 2)
+	await _step(2)
+	var rows := _tracker_rows(panel)
+	if rows.size() != 1 or not rows[0].contains("2/%d" % job.objective.count):
+		return fail(c, "two gathered did not move the row: %s" % str(rows))
+	return succeeded(c, "'%s'" % rows[0])
+
+
+func _t_tracker_marks_ready() -> Dictionary:
+	var c := &"the_quest_tracker_marks_a_job_that_can_be_handed_in"
+	var made := await _make_tracker()
+	if made.is_empty():
+		return fail(c, "could not build the tracker")
+	var quests: QuestService = made["quests"]
+	var state: PlayerStateService = made["state"]
+	var panel: CanvasLayer = made["panel"]
+	var job := QuestRegistry.quests_from(&"mira")[0]
+	if not quests.accept(job.id, state):
+		return fail(c, "could not accept %s" % job.id)
+	await _step(2)
+	_gather(state.inventory, job.objective.item_id, job.objective.count)
+	await _step(2)
+	var rows := _tracker_rows(panel)
+	if rows.size() != 1 or not rows[0].contains("ready"):
+		return fail(c, "a job the player can hand in is not marked: %s" % str(rows))
+	# And still counted, because "ready" is an addition and not a replacement.
+	if not rows[0].contains("%d/%d" % [job.objective.count, job.objective.count]):
+		return fail(c, "the ready row lost its tally: '%s'" % rows[0])
+	return succeeded(c, "'%s'" % rows[0])
+
+
+func _t_tracker_drops_finished() -> Dictionary:
+	var c := &"the_quest_tracker_drops_a_job_that_is_finished"
+	var made := await _make_tracker()
+	if made.is_empty():
+		return fail(c, "could not build the tracker")
+	var quests: QuestService = made["quests"]
+	var state: PlayerStateService = made["state"]
+	var panel: CanvasLayer = made["panel"]
+	var job := QuestRegistry.quests_from(&"mira")[0]
+	if not quests.accept(job.id, state):
+		return fail(c, "could not accept %s" % job.id)
+	_gather(state.inventory, job.objective.item_id, job.objective.count)
+	await _step(2)
+	if not quests.turn_in(job.id, state, job.giver):
+		return fail(c, "could not hand the finished job in")
+	await _step(2)
+	# A finished job leaves the list the moment it pays. Keeping it until the next day
+	# fills the corner with rows the player has already dismissed.
+	if not _tracker_rows(panel).is_empty():
+		return fail(c, "a paid job is still listed: %s" % str(_tracker_rows(panel)))
+	if _tracker_visible(panel):
+		return fail(c, "the tracker is still on screen with nothing to show")
+	return succeeded(c, "the row went away when the job was paid")
 
 
 # --- Fixtures ----------------------------------------------------------------

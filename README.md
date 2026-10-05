@@ -79,7 +79,6 @@ stdout clean so the pipeline can scan it for errors.
 | Jump | `Space` | A |
 | Interact | `E` / Left click | X |
 | Inventory | `Tab` | Y |
-| Quest journal | `J` | Back |
 | Toggle camera (1st ↔ 3rd) | `V` | RB |
 | Pause / back | `Esc` | Start |
 | Hotbar 1–9 | `1`…`9` | — |
@@ -167,6 +166,5 @@ res://
 ## Development progress
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–6 are complete** (foundation, player, cameras,
-interaction, world, pond fix, time and day/night). Group 7 (farming grid) is
+next begins. **Groups 0–15 and 25 are complete.** Group 16 (NPC Schedules) is
 next. See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).

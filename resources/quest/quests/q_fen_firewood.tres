@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="1_quest"]
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="2_objective"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_reward"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="4_heart"]
+
+[sub_resource type="Resource" id="Resource_objective"]
+script = ExtResource("2_objective")
+kind = &"collect"
+item_id = &"wood"
+count = 20
+
+[sub_resource type="Resource" id="Resource_heart"]
+script = ExtResource("4_heart")
+npc = &"fen"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_reward"]
+script = ExtResource("3_reward")
+gold = 300
+hearts = Array[ExtResource("4_heart")]([SubResource("Resource_heart")])
+
+[resource]
+script = ExtResource("1_quest")
+id = &"q_fen_firewood"
+title = "Winter Wood"
+description = "Fen is not going to tell you where the good timber is. She is going to tell you how much of it she needs before the nights get long."
+giver = &"fen"
+objective = SubResource("Resource_objective")
+reward = SubResource("Resource_reward")
+repeats = &"once"

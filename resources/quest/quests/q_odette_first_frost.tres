@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="1_quest"]
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="2_objective"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_reward"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="4_heart"]
+
+[sub_resource type="Resource" id="Resource_objective"]
+script = ExtResource("2_objective")
+kind = &"talk"
+target_npc = &"halda"
+
+[sub_resource type="Resource" id="Resource_heart"]
+script = ExtResource("4_heart")
+npc = &"odette"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_reward"]
+script = ExtResource("3_reward")
+gold = 150
+hearts = Array[ExtResource("4_heart")]([SubResource("Resource_heart")])
+
+[resource]
+script = ExtResource("1_quest")
+id = &"q_odette_first_frost"
+title = "First Frost"
+description = "Odette reads the weather off the water and Halda reads it off her crops, and the two of them will not say which is right until somebody asks in person."
+giver = &"odette"
+objective = SubResource("Resource_objective")
+reward = SubResource("Resource_reward")
+repeats = &"weekly"

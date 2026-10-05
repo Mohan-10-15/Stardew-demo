@@ -18,7 +18,7 @@ reasoning.
 | M3 | Farming | **COMPLETE** |
 | M4 | Inventory, tools, economy | **COMPLETE** |
 | M5 | NPCs, dialogue, relationships | |
-| M6 | Quests | |
+| M6 | Quests | **COMPLETE** |
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
 | M9 | Weather and seasons | |
@@ -133,10 +133,20 @@ gifts, friendship and romance.
 Schedule determinism matters more than it sounds: an NPC that is in two places
 at once, or nowhere, reads as broken instantly.
 
-### M6 — Quests
+### M6 — Quests — COMPLETE
 Acceptance, tracked objectives, completion, rewards, and persistence.
 
 No quest may be completable without doing its objectives.
+
+What exists: `collect`, `deliver` and `talk` objectives as data; five quests; a
+`QuestService` with no quest id in it; a corner tracker showing up to four active jobs
+with live `current/required` and a `ready` mark; quest work in the existing villager
+interaction chain; gold, item and friendship rewards; distinct success and failure
+events for both accepting and handing in; and per-service save/restore.
+
+What does not yet exist, and is deliberately not stubbed: a quest journal page with
+turned-in history, `!` / `?` markers over villagers with work, and the aggregate
+save file that would carry quest state between sessions (M16).
 
 ### M7 — Fishing, animals, crafting, cooking
 Four interlocking systems: the timed minigame, husbandry with feed cycles, timed

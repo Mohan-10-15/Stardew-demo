@@ -15,6 +15,7 @@ const HudScene := "res://scenes/ui/interaction_hud.tscn"
 const ClockHudScene := "res://scenes/ui/clock_hud.tscn"
 const StatusHudScene := "res://scenes/ui/player_status_hud.tscn"
 const HotbarHudScene := "res://scenes/ui/hotbar_hud.tscn"
+const QuestTrackerScene := "res://scenes/ui/quest_tracker.tscn"
 const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 
@@ -24,6 +25,7 @@ const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 @export var clock_hud_scene_path: String = ClockHudScene
 @export var status_hud_scene_path: String = StatusHudScene
 @export var hotbar_hud_scene_path: String = HotbarHudScene
+@export var quest_tracker_scene_path: String = QuestTrackerScene
 @export var shop_ui_scene_path: String = ShopUiScene
 @export var log_panel_scene_path: String = LogPanelScene
 ## The in-game log. Not read by anything yet — it is spawned, toggled by `F3` and
@@ -36,6 +38,7 @@ const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 @export var load_clock_hud: bool = true
 @export var load_status_hud: bool = true
 @export var load_hotbar_hud: bool = true
+@export var load_quest_tracker: bool = true
 @export var load_shop_ui: bool = true
 @export var load_log_panel: bool = true
 @export var load_npcs: bool = true
@@ -46,12 +49,14 @@ var hud: CanvasLayer = null
 var clock_hud: CanvasLayer = null
 var status_hud: CanvasLayer = null
 var hotbar_hud: CanvasLayer = null
+var quest_tracker: CanvasLayer = null
 var shop_ui: CanvasLayer = null
 var player_state: PlayerStateService = null
 var farm_service: FarmService = null
 var gathering_service: GatheringService = null
 var economy_service: EconomyService = null
 var npc_manager: NpcManager = null
+var quest_service: QuestService = null
 var _time_service: TimeService = null
 
 
@@ -86,6 +91,7 @@ func _boot() -> void:
 		_spawn_gathering_service()
 		_spawn_economy_service()
 		_spawn_npc_manager()
+		_spawn_quest_service()
 	if load_player:
 		_spawn_player()
 	if load_hud:
@@ -100,6 +106,12 @@ func _boot() -> void:
 		_spawn_status_hud()
 	if load_hotbar_hud:
 		_spawn_hotbar_hud()
+	# After the quest service, and for the same reason as the two above: the tracker
+	# walks the tree for it, and a tracker spawned before the service exists would paint
+	# an empty panel and never learn there was work to do. It repaints on the quest
+	# signals, so an acceptance the player already made is not missed either way.
+	if load_quest_tracker:
+		_spawn_quest_tracker()
 	# Listens on `EventBus.shop_opened`, so it is order-independent: a counter the
 	# player opened before this existed would be missed, and it walks the tree for
 	# a shop to open if so.
@@ -204,6 +216,10 @@ func _spawn_status_hud() -> void:
 
 func _spawn_hotbar_hud() -> void:
 	_spawn_overlay(hotbar_hud_scene_path, "hotbar HUD", "hotbar_hud")
+
+
+func _spawn_quest_tracker() -> void:
+	_spawn_overlay(quest_tracker_scene_path, "quest tracker", "quest_tracker")
 
 
 func _spawn_shop_ui() -> void:
@@ -311,6 +327,21 @@ func _spawn_npc_manager() -> void:
 	npc_manager.name = "NpcManager"
 	add_child(npc_manager)
 	Log.info("Main", "Spawned %d villagers" % npc_manager.count())
+
+
+## The quest log.
+##
+## After the NPC manager, because it pays heart rewards through it, and after the player
+## state, because an objective has to be able to look in the bag. Both lookups also fall
+## back to a group search, so this is a convenience rather than a requirement — which is
+## what lets a test stand up a quest service next to a bag with no village at all.
+func _spawn_quest_service() -> void:
+	quest_service = QuestService.new()
+	quest_service.name = "QuestService"
+	quest_service.player_state = player_state
+	quest_service.npc_manager = npc_manager
+	add_child(quest_service)
+	Log.info("Main", "Spawned quest service over %d jobs" % QuestRegistry.all_quests().size())
 
 
 func _spawn_player() -> void:

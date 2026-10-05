@@ -116,11 +116,16 @@ to match the code, so the original reasoning is still readable.
 
 ## M5 — Quests
 
-- [ ] A quest can be accepted
-- [ ] Objective progress updates as the player does the thing
-- [ ] A quest can be completed, and its reward is granted
-- [ ] Quest state persists across save and reload
-- [ ] No quest can be completed without doing its objectives
+- [x] A quest can be accepted
+- [x] Objective progress updates as the player does the thing
+- [x] A quest can be completed, and its reward is granted
+- [x] Quest state persists across save and reload
+- [x] No quest can be completed without doing its objectives
+
+Verified in `tests/suites/test_quest.gd` (46 cases), `tests/suites/test_ui.gd`
+(5 tracker cases) and `tools/playtest_quest.gd`. The persistence line means
+`QuestService.to_dict()` / `from_dict()` round-trip, not the aggregate save file,
+which is milestone M16 and does not exist yet.
 
 ---
 

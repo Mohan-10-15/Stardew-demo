@@ -153,6 +153,19 @@ func new_week() -> void:
 	gifts_this_week = 0
 
 
+## Adds [param amount] whole hearts, ignoring [member POINTS_PER_HEART]'s remainder.
+##
+## The whole-heart version of [method award], for payment that arrives as a number of hearts
+## rather than as a reaction to a gift. Clamped like [method award] so a reward cannot push
+## a friendship past [constant MAX_HEARTS], and deliberately does **not** touch
+## [member gifts_today] or [member gifts_this_week]: nobody handed this villager a present,
+## so spending one of today's two gifts on a quest reward would be a tax nobody agreed to.
+func add_hearts(amount: int) -> int:
+	var before := hearts()
+	points = clampi(points + maxi(amount, 0) * POINTS_PER_HEART, 0, MAX_POINTS)
+	return hearts() - before
+
+
 ## One line for a prompt or a HUD: "Friend, 2 hearts (420 points)".
 func describe() -> String:
 	return "%s, %d hearts (%d points)" % [tier_name(), hearts(), points]

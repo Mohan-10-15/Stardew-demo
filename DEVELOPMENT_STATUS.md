@@ -3,13 +3,139 @@
 Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
 Dual first-person / third-person cameras, switchable at runtime.
 
-Progress: **Groups 0–14 and 25 complete.** Group 15 (Quests) is next.
+Progress: **Groups 0–15 and 25 complete.** Group 16 is next.
 
-Current baseline: **345/345 tests**, import clean, boot clean, zero script errors.
+Current baseline: **439/439 tests**, import clean, boot clean, zero script errors.
 
 ---
 
 ## Last completed group
+
+```
+GROUP: 15
+NAME: Quests
+STATUS: COMPLETE
+```
+
+Five jobs exist as data. A villager offers one in the prompt they are already reading,
+the tracker shows what is wanted and how far along it is, doing the thing moves the
+number, and handing it back pays out and takes the row off the screen.
+
+### IMPLEMENTED
+
+- **`QuestObjective`** (`scripts/quest/quest_objective.gd`): the schema. Three kinds —
+  `collect`, `deliver`, `talk` — each its own predicate in one place rather than three
+  arms of a `match` in the service. `collect` asks what has come into the bag *since the
+  job was taken* and what is still in it; `deliver` asks what the bag holds now and who
+  is standing there; `talk` asks nothing about items. Validation refuses a `collect` that
+  names a target, because that is a quest completable in two places.
+- **`QuestData`**, **`QuestReward`**, **`QuestHeartReward`** and **`QuestRegistry`**: the
+  rest of the schema, plus five definitions under `resources/quest/quests/`. Gold, items
+  and friendship hearts are one reward type, so a quest pays all three without the
+  service knowing which.
+- **`QuestProgress`**: active/turned-in state, the gathered count, the conversation flag
+  and the repeat cooldown. The reason progress is kept *beside* the bag rather than read
+  out of it is that "bring me five parsnips, with none gathered" is not the same sentence
+  as "bring me five parsnips, which you have already done" — the player who already had
+  twenty parsnips must not complete a job by saying yes.
+- **`QuestService`** (`scripts/quest/quest_service.gd`): accepts, tracks, pays, repeats,
+  saves and restores. It contains no quest id anywhere. Every outcome publishes a
+  distinct signal — `quest_accepted` / `quest_accepted_failed`,
+  `quest_turned_in` / `quest_turned_in_failed`, `quest_progress_changed` — with ten
+  machine-readable refusal reasons and none shared.
+- **`NpcInteractable`**: quest work in the existing interaction chain, in this order —
+  a valid gift, then the explained refused-present fallback, then the job, then a
+  greeting. Tools no longer hide quest work behind a swing, which is what a one-key
+  interaction invites.
+- **`QuestTrackerHud`** (`scripts/ui/quest_tracker_hud.gd`), generated into
+  `scenes/ui/quest_tracker.tscn` by `tools/generate_quest_tracker_scene.gd`: up to four
+  active jobs in the corner, each showing title, objective in the quest's own voice,
+  `current/required`, and `ready`. It is a listener and nothing else — no quest logic
+  moved into the UI.
+
+### ARCHITECTURE NOTES WORTH KEEPING
+
+- **Progress listens to three signals, not one.** `EventBus.item_added`,
+  `resource_collected` and `item_purchased` all mean "the player now holds this", and a
+  `collect` job has to advance for a felled tree, a foraged berry and a bought parsnip
+  alike. One funnel per source, no polling, no `is_satisfied_by` re-evaluation from the UI.
+- **Pluralisation belongs to the item.** Found by playing it: the tracker read "Bring 20
+  Woods to Fen". `ItemDefinition` and `CropData` now carry `plural_name` and a
+  `plural()`; `QuestReward.name_of()` resolves either registry. Appending an "s" in the
+  quest lane is right about parsnips and wrong about nearly everything else that can be
+  gathered.
+- **`is_ready_to_turn_in` is about the objective, not the payout.** A `talk` job is
+  "ready" the moment the player has done the talking, even though they are still a long
+  walk from the villager who pays. The tracker saying `ready` early is the useful lie:
+  it tells the player the job is finished and where to take it.
+- **Service-level save only, deliberately.** `QuestService.to_dict()`/`from_dict()` with
+  round-trip coverage matches every other service in the project. There is no
+  `game_state.gd` aggregator yet because the full save file is milestone M16; adding one
+  now would be a stub pretending to be a feature.
+
+### TESTS PERFORMED
+
+**439/439 total, 46 in `tests/suites/test_quest.gd`, 5 more in `tests/suites/test_ui.gd`**
+for the tracker, import clean, boot clean, zero script errors. Content, objectives,
+refusals, rewards, repeats, persistence, the real key, interaction routing and the
+drawn tracker are each covered. Every quest transaction asserts *both* halves — the
+reward left the purse *and* the row left the screen — because either half alone passes a
+quest that pays for nothing or a job that never goes away. The UI cases drive the real
+generated `quest_tracker.tscn` and read the real `Label`.
+
+### PLAYED — `tools/playtest_quest.gd`
+
+Real window, real keys, real mouse-motion events, real screenshots, no granted items: it
+accepts Odette's job by pressing the key on a villager 50 m away, walks to Halda, asks,
+walks back, hands in, and then takes Fen's firewood job and fells one actual oak with the
+actual axe and walks over the drop. One tree, deliberately: the question is whether the
+tracker counts what the player really gathered, and twenty logs is a minute of swinging
+for an answer one tree gives. The run deliberately ends with a job still in progress.
+
+It read the *HUD label* and the *tracker rows* off the real nodes, not the components
+behind them, and it found two defects that all 439 automated checks passed:
+
+1. **"Bring 20 Woods to Fen."** Every mass noun in the item list gains an "s" from a
+   naive rule. The quest id was right, the count was right, the tally moved correctly on
+   screen — and nothing in the suite was reading the prose. Fixed with `plural_name` on
+   the item data, and pinned by `an_objective_never_says_woods_or_stones`.
+2. **The walk-to-villager tolerance hid an interaction-range question.** Stopping 1.9 m
+   from a villager on the far side of the valley left the crosshair just outside their
+   aim volume, and the harness reported a broken prompt. Tightened to 1.3 m, with the
+   aim retried by walking rather than in place.
+
+### BUGS FOUND AND FIXED DURING THIS GROUP
+
+- **Collected progress could exceed the requirement.** A grant was credited in full even
+  when only part of it was still wanted, so a saved quest read "29 of 20" and the
+  tracker printed it. Each grant is now capped at
+  `mini(amount, count - collected)`.
+- **A refused job cost nothing and said nothing.** No distinct failure event existed for
+  the offer path, which `AGENTS.md` forbids for interact-style actions.
+- **Objectives printed raw database keys.** "Speak to halda" and "Bring 5 parsnips to the
+  giver" reached the screen; delivery and talk targets now resolve through `NpcRegistry`
+  and the giver is named.
+- **Progress saved a raw id in the prompt.** Covered above.
+
+### FALSE POSITIVES — investigated and dismissed
+
+- *"The quest prompt is not appearing."* It was the harness walking the whole valley for
+  the first time and stopping outside the aim volume, not the interaction range.
+- *"`ready` on the tracker before the hand-in is wrong."* It is not: `ready` means the
+  objective is done and names where to take it, which is what the player needs to know
+  mid-walk.
+
+### KNOWN GAPS (deliberately out of scope here)
+
+- No quest log page, no journal scrollback of turned-in jobs, no "!" / "?" markers over
+  villagers with work. The tracker shows only what is active.
+- No save-file-wide quest persistence yet — the service round-trips on its own, and the
+  aggregate save is M16.
+- Quest text is English-only and unlocalised, as everything else at this stage.
+
+---
+
+## Previous group
 
 ```
 GROUP: 14
@@ -68,7 +194,7 @@ the key is about to do.
 
 ### TESTS PERFORMED
 
-**345/345 total, 52 in `tests/suites/test_npc.gd`**, import clean, boot clean, zero
+**345/345 total at the time, 52 in `tests/suites/test_npc.gd`**, import clean, boot clean, zero
 script errors. Content, score, body, rules, save and the real key are each covered, and
 every gift transaction asserts *both* halves — the item left the bag *and* the points
 moved — because either half alone passes a thief or a villager who scores a present the
@@ -1890,9 +2016,9 @@ number a player sees are not the same number: the pipeline could not see either 
 | 11 | ~~Tools~~ | 28 | Art / Animation Polish |
 | 12 | ~~Resource Gathering~~ | 29 | Performance |
 | 13 | ~~Economy~~ | 30 | Testing |
-| 14 | NPC System | 31 | Final Integration |
-| 15 | NPC Schedules | 32 | Final Quality Pass |
-| 16 | Dialogue | | |
+| 14 | ~~NPC System~~ | 31 | Final Integration |
+| 15 | ~~Quests~~ | 32 | Final Quality Pass |
+| 16 | NPC Schedules | | |
 
 ---
 ## How to validate

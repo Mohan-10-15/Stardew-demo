@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/quest_tracker_hud.gd" id="1_ijrf0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j8p8x"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.09, 0.1, 0.13, 0.55)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="QuestTracker" type="CanvasLayer"]
+script = ExtResource("1_ijrf0")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -330.0
+offset_top = 78.0
+offset_right = -18.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_j8p8x")
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="HeadingLabel" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.98, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+text = "Jobs"
+vertical_alignment = 1
+
+[node name="Rows" type="VBoxContainer" parent="Panel/Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2

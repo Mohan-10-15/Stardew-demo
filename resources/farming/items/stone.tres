@@ -6,6 +6,7 @@
 script = ExtResource("1_nqucb")
 id = &"stone"
 display_name = "Stone"
+plural_name = "Stone"
 category = 4
 sell_price = 3
 description = "Heavy, dull, and everywhere."

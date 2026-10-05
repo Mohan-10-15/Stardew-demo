@@ -43,6 +43,14 @@ var _npc: Npc = null
 ## of the two classes, and naming the other to reach it closes the `class_name` cycle
 ## that `NpcManager -> Npc -> NpcInteractable -> NpcManager` is. `_find_manager` and
 ## that function fail loudly if the two ever drift.
+## Group [QuestService] registers under, and the quest lookup searches for.
+##
+## Duplicated as a literal for the same reason as [constant SERVICE_GROUP] above: naming
+## [QuestService] here to reach its constant would close
+## `NpcManager -> Npc -> NpcInteractable -> QuestService -> NpcManager`. The two must not
+## drift, and `quest_group_matches_the_service` in the quest suite fails if they do.
+const QUEST_SERVICE_GROUP := &"quest_service"
+
 const SERVICE_GROUP := &"npc_service"
 
 ## How close the player has to stand. Further than the farm's 2.6 and the same as a
@@ -151,15 +159,35 @@ func preview(actor: Node) -> Dictionary:
 		return _decision(&"gift", "Give the %s" % item_name, true, &"", item_id,
 			StringName(gift.get("reaction", &"")))
 
-	if item_id.is_empty():
-		return _decision(&"talk", "Talk to %s" % _npc.data.display_name, true, &"", &"",
-			StringName(gift.get("reaction", &"")))
-
-	# Holding something that will not be given. Talk is still on the table, and the
-	# prompt says so, but the refusal is carried along so a caller that cares can say
-	# *why* the gift is not happening rather than silently downgrading.
 	var reaction := StringName(gift.get("reaction", &""))
 	var reason := StringName(gift.get("reason", &"not_giftable"))
+
+	# A refused *present* falls back to a greeting, and keeps its reason on the
+	# dictionary so the refusal is still published and still explained. This arm is
+	# first because the player was holding something they meant to give: asking about
+	# work instead would hide the "she is full" they are owed an answer to.
+	if reason in FULL_REASONS:
+		return _decision(&"talk", "Talk to %s" % _npc.data.display_name, true, &"", item_id,
+			reaction, reason)
+
+	# Everything below is a press that would otherwise be a greeting: an empty hand, or
+	# something in it that was never a present. Work out what about the work first,
+	# because a player standing in front of a villager who has a job for them is not
+	# asking for a conversation — and a job offered behind a greeting is a job the player
+	# never discovers.
+	#
+	# Holding a tool used to hide the job prompt entirely, which left the quest system
+	# unreachable for a player who walked over with their hoe in hand — the normal state
+	# of affairs, since tools live in the first hotbar slots. Only a *present* outranks
+	# the quest decision now.
+	var quest := _quest_decision(actor)
+	if not quest.is_empty():
+		return quest
+
+	if item_id.is_empty():
+		return _decision(&"talk", "Talk to %s" % _npc.data.display_name, true, &"", &"", reaction)
+	# Holding something that will not be given. Talk is still on the table, and the
+	# prompt says so; `not_giftable` means "talk instead", not "nothing happens".
 	return _decision(&"talk", "Talk to %s" % _npc.data.display_name, true, &"", item_id,
 		reaction, reason)
 
@@ -207,7 +235,8 @@ func interact(actor: Node) -> bool:
 	# `call`, not `manager.talk(...)`. Naming the manager here would close a cycle:
 	# the manager knows about [Npc], and this component would then know about the
 	# manager. Same bargain as [ResourceNodeInteractable.interact].
-	if StringName(decision.get("action", &"")) == &"gift":
+	var action := StringName(decision.get("action", &""))
+	if action == &"gift":
 		var item_id := StringName(decision.get("item_id", &""))
 		var ok := bool(manager.call("give_gift", _npc, item_id, actor))
 		if ok:
@@ -215,6 +244,9 @@ func interact(actor: Node) -> bool:
 			_npc.attending = true
 			interacted.emit(actor)
 		return ok
+
+	if action == &"offer" or action == &"turn_in":
+		return _do_quest(action, StringName(decision.get("quest_id", &"")), actor)
 
 	# A press that falls back from a present to a hello still publishes the refusal it
 	# fell back from. Otherwise "villagers never refuse anything" is literally true in a
@@ -231,13 +263,79 @@ func interact(actor: Node) -> bool:
 	return ok
 
 
+## What this villager's quest log says the player could do about work right now, or an
+## empty dictionary to fall back to greeting.
+##
+## A finished job is asked about before an unfinished one: the player walked over with
+## five parsnips and is owed something, and being offered the *next* job instead is the one
+## ordering that loses the transaction.
+##
+## Only ever consulted when the press is not already a present. A villager who loves wild
+## berries and has a job for you must still be able to be given a berry, or their
+## loved-gift list becomes unreachable for as long as they are useful.
+func _quest_decision(actor: Node) -> Dictionary:
+	var quests := _find_quest_service()
+	if quests == null or _npc == null or _npc.data == null:
+		return {}
+	var id := _npc.data.id
+	var ready: StringName = quests.call("ready_to_turn_in_from", id)
+	if not ready.is_empty():
+		var title: String = String(quests.call("title_of", ready))
+		return _decision(&"turn_in", "Hand in: %s" % title, true, &"", &"", &"", &"", ready)
+	var offered: StringName = quests.call("next_offer_from", id)
+	if offered.is_empty():
+		return {}
+	var offer_title: String = String(quests.call("title_of", offered))
+	return _decision(&"offer", "Ask %s about '%s'" % [_npc.data.display_name, offer_title],
+		true, &"", &"", &"", &"", offered)
+
+
+## The [QuestService], found by group from the tree root.
+##
+## Typed as a bare [Node] and called dynamically for the reason
+## [method _find_manager] documents. Absent is normal rather than an error: the NPC suite
+## and a headless world with no quest content both build villagers with no quest service.
+static func _find_quest_service() -> Node:
+	var loop := Engine.get_main_loop()
+	if not loop is SceneTree:
+		return null
+	var scene_root := (loop as SceneTree).root
+	if scene_root == null:
+		return null
+	return _search_by_group(scene_root, QUEST_SERVICE_GROUP)
+
+
 func _decision(action: StringName, text: String, ok: bool, reason: StringName,
 		item_id: StringName = &"", reaction: StringName = &"",
-		downgrade_reason: StringName = &"") -> Dictionary:
+		downgrade_reason: StringName = &"", quest_id: StringName = &"") -> Dictionary:
 	return {
 		"action": action, "text": text, "ok": ok, "reason": reason,
 		"item_id": item_id, "reaction": reaction, "downgrade_reason": downgrade_reason,
+		"quest_id": quest_id,
 	}
+
+
+## Performs the quest half of the interaction.
+##
+## [param action] is `offer` or `turn_in`, matching [method preview]: this method trusts
+## the decision rather than re-asking, for the same reason [method interact] does not
+## re-check a gift. The refusal is not swallowed, though — a refused offer or hand-in
+## publishes its own failure event from the quest service, so "nothing happened" is never
+## the whole story.
+func _do_quest(action: StringName, quest_id: StringName, actor: Node) -> bool:
+	var quests := _find_quest_service()
+	if quests == null:
+		EventBus.npc_talk_failed.emit(npc_id_of(), &"no_npc_service")
+		return false
+	# The villager is passed on a hand-in, unlike a direct service call. Without it the
+	# wrong-villager check in [method QuestService.turn_in] is skipped entirely, and the
+	# player could hand Mira's job to whoever they happened to be standing next to.
+	var ok := bool(quests.call("accept", quest_id, actor)) if action == &"offer" \
+		else bool(quests.call("turn_in", quest_id, actor, npc_id_of()))
+	if ok:
+		_npc.attending = true
+		interacted.emit(actor)
+	return ok
 
 
 ## The [NpcManager], found by group from the tree root.

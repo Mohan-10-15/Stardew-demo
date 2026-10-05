@@ -142,7 +142,7 @@ A group is not done until all of these hold:
 ## 7. Group roadmap
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–14 and 25 are complete.** Group 15 (Quests) is next.
+next begins. **Groups 0–15 and 25 are complete.** Group 16 (NPC Schedules) is next.
 The full table, and the per-group record of what was implemented, what was tested
 and what was found, is in `DEVELOPMENT_STATUS.md`.
 
