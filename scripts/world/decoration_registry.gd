@@ -1,10 +1,10 @@
-class_name DecorationRegistry
+﻿class_name DecorationRegistry
 extends RefCounted
 ## The one place scenery definitions are found by id.
 ##
 ## Same shape as [ResourceNodeRegistry] on purpose: one lookup contract for every
 ## content directory, so a generator, a test and the world builder all ask the same
-## question the same way. Static and content-only, so it loads in a `--script` run —
+## question the same way. Static and content-only, so it loads in a `--script` run â€”
 ## which is how `tools/generate_decoration_data.gd` validates what it is about to write.
 
 const DECORATION_DIRECTORY := "res://resources/world/decoration/"
@@ -40,7 +40,7 @@ static func all_decorations() -> Array[DecorationData]:
 ## Every definition the world actually scatters, in a stable order.
 ##
 ## Sorted rather than in directory order so a world built twice from the same seed
-## places its scenery in the same sequence — which is what makes the placement
+## places its scenery in the same sequence â€” which is what makes the placement
 ## reproducible at all, and therefore testable.
 static func scatterable_decorations() -> Array[DecorationData]:
 	var out: Array[DecorationData] = []
@@ -64,7 +64,7 @@ static func duplicate_ids() -> Array[StringName]:
 
 
 ## The model paths in use, so a content test can assert that no definition points at
-## a model a gatherable already owns — two definitions sharing one model is how the
+## a model a gatherable already owns â€” two definitions sharing one model is how the
 ## same tree ends up both harvestable and decorative.
 static func model_paths() -> Array[String]:
 	var out: Array[String] = []
@@ -86,7 +86,7 @@ static func ensure_loaded() -> void:
 		return
 	_loaded = true
 	_load_directory(DECORATION_DIRECTORY)
-	Log.info("DecorationRegistry", "Loaded %d decorations" % _by_id.size())
+	RuntimeLog.info("DecorationRegistry", "Loaded %d decorations" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
@@ -94,7 +94,7 @@ static func _load_directory(path: String) -> void:
 	if dir == null:
 		# Not an error, same as its siblings: a checkout with no scenery authored yet
 		# still has a working world, and a warning here becomes noise nobody reads.
-		Log.info("DecorationRegistry", "no decoration directory at %s yet" % path)
+		RuntimeLog.info("DecorationRegistry", "no decoration directory at %s yet" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -108,13 +108,13 @@ static func _load_directory(path: String) -> void:
 static func _load_resource(path: String) -> void:
 	var data := ResourceLoader.load(path) as DecorationData
 	if data == null:
-		Log.warn("DecorationRegistry", "%s is not a DecorationData" % path)
+		RuntimeLog.warn("DecorationRegistry", "%s is not a DecorationData" % path)
 		return
 	if not data.is_valid():
-		Log.warn("DecorationRegistry", "%s is not a valid decoration definition" % path)
+		RuntimeLog.warn("DecorationRegistry", "%s is not a valid decoration definition" % path)
 		return
 	if _by_id.has(data.id):
-		Log.warn("DecorationRegistry", "duplicate decoration id '%s' in %s, ignoring" % [
+		RuntimeLog.warn("DecorationRegistry", "duplicate decoration id '%s' in %s, ignoring" % [
 			data.id, path,
 		])
 		if not _duplicate_ids.has(data.id):

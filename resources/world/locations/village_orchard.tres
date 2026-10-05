@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_vit71"]
+
+[resource]
+script = ExtResource("1_vit71")
+id = &"village_orchard"
+display_name = "The Orchard"
+position = Vector2(38, 18)
+kind = &"nature"
+facing = inf

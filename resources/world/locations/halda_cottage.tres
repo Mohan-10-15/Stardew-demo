@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_is6tf"]
+
+[resource]
+script = ExtResource("1_is6tf")
+id = &"halda_cottage"
+display_name = "Halda's Cottage"
+position = Vector2(31, 9.6)
+kind = &"home"
+facing = inf

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_rsned"]
+
+[resource]
+script = ExtResource("1_rsned")
+id = &"pond_shore"
+display_name = "The Pond Shore"
+position = Vector2(-14, 28.5)
+kind = &"nature"
+facing = 3.141592653589793

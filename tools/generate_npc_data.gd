@@ -44,12 +44,25 @@ const MODEL_DIR := "res://assets/models/kaykit/Characters/"
 ## Spread across all four seasons and across the plausible range of days, so the
 ## calendar has something to say and a content test can assert they are not all the
 ## same week of Spring.
+## ## The homes
+##
+## Each was authored as `house_centre + (1.5, 1.5)` in **world** axes, which put four
+## of the six inside the house they were standing in and Mira inside the VillageWell as
+## well. The houses are yawed and the doors are on the local -Z face, so the offset has
+## to be along the door's outward normal, not along world axes.
+##
+## These are the doorstep step-points from `world_builder.gd`'s own house table, each one
+## at least a metre clear of its own collider. They are the same values the cottage
+## locations are generated from, so a villager's spawn point and the place a schedule
+## sends them home cannot drift apart.
 const VILLAGERS: Array[Dictionary] = [
 	{
 		"id": &"mira", "display_name": "Mira", "model": "Knight.fbx",
 		"description": "Keeps the kitchen garden behind the shop. Will trade advice for a parsnip.",
 		"tint": Color(0.82, 0.36, 0.32, 1.0), "target_height": 1.78,
-		"home": Vector2(30.5, 3.5), "wander_radius": 7.0, "walk_speed": 1.7,
+		# House 1's front step, on the door normal. Was (30.5, 3.5): inside the house,
+		# and 0.71 m from the middle of the well.
+		"home": Vector2(29.7, -1.8), "wander_radius": 7.0, "walk_speed": 1.7,
 		"birthday_season": 1, "birthday_day": 12,
 		"loved": [&"wild_berry", &"parsnip"], "liked": [&"spring_onion", &"potato"],
 		"disliked": [&"stone"],
@@ -58,7 +71,8 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"bram", "display_name": "Bram", "model": "Barbarian.fbx",
 		"description": "Big, quiet, and always building something that will not fall down.",
 		"tint": Color(0.55, 0.38, 0.24, 1.0), "target_height": 1.92,
-		"home": Vector2(45.5, 1.5), "wander_radius": 5.0, "walk_speed": 1.5,
+		# House 2's front step. Was (45.5, 1.5): inside the house.
+		"home": Vector2(44.4, -3.8), "wander_radius": 5.0, "walk_speed": 1.5,
 		"birthday_season": 2, "birthday_day": 28,
 		"loved": [&"iron_ore", &"copper_ore"], "liked": [&"wood", &"stone"],
 		"disliked": [&"spring_onion"],
@@ -67,7 +81,8 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"odette", "display_name": "Odette", "model": "Mage.fbx",
 		"description": "Reads the weather off the water and is right more often than is comfortable.",
 		"tint": Color(0.44, 0.36, 0.72, 1.0), "target_height": 1.74,
-		"home": Vector2(49.5, 14.5), "wander_radius": 8.0, "walk_speed": 1.6,
+		# House 3's front step. Was (49.5, 14.5): inside the house.
+		"home": Vector2(47.3, 9.3), "wander_radius": 8.0, "walk_speed": 1.6,
 		"birthday_season": 3, "birthday_day": 5,
 		"loved": [&"cauliflower", &"melon"], "liked": [&"yam", &"tomato"],
 		"disliked": [&"wood"],
@@ -76,7 +91,8 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"fen", "display_name": "Fen", "model": "Rogue.fbx",
 		"description": "Comes and goes. Knows where the good berries are and will not say.",
 		"tint": Color(0.35, 0.62, 0.45, 1.0), "target_height": 1.7,
-		"home": Vector2(35.5, 17.5), "wander_radius": 11.0, "walk_speed": 2.1,
+		# House 4's front step. Was (35.5, 17.5): inside the house.
+		"home": Vector2(34.2, 12.2), "wander_radius": 11.0, "walk_speed": 2.1,
 		"birthday_season": 1, "birthday_day": 24,
 		"loved": [&"wild_horseradish", &"wild_berry"], "liked": [&"corn", &"pumpkin"],
 		"disliked": [&"iron_ore"],
@@ -85,7 +101,10 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"halda", "display_name": "Halda", "model": "RogueHooded.fbx",
 		"description": "Grows one thing, remarkably well, and guards the rest of the valley from it.",
 		"tint": Color(0.72, 0.6, 0.3, 1.0), "target_height": 1.76,
-		"home": Vector2(38.0, 10.0), "wander_radius": 6.5, "walk_speed": 1.75,
+		# There are five houses and six villagers, so two of them live on the square
+		# rather than in a cottage. Moved off the exact middle of the village disc,
+		# where a villager standing in the centre of everything is nowhere in particular.
+		"home": Vector2(31.0, 9.6), "wander_radius": 6.5, "walk_speed": 1.75,
 		"birthday_season": 2, "birthday_day": 9,
 		"loved": [&"pumpkin", &"corn"], "liked": [&"cauliflower", &"wood"],
 		"disliked": [&"wild_berry"],
@@ -96,7 +115,8 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"sable", "display_name": "Sable", "model": "Knight.fbx",
 		"description": "Mends things. Was asked to mend the fence, and did, eventually.",
 		"tint": Color(0.3, 0.32, 0.4, 1.0), "target_height": 1.8,
-		"home": Vector2(40.0, 5.0), "wander_radius": 9.0, "walk_speed": 1.65,
+		# The other square resident, on the far side of the well from Halda.
+		"home": Vector2(27.6, 8.6), "wander_radius": 9.0, "walk_speed": 1.65,
 		"birthday_season": 3, "birthday_day": 19,
 		"loved": [&"parsnip", &"potato"], "liked": [&"copper_ore", &"wood"],
 		"disliked": [&"melon"],

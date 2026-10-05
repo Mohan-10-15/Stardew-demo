@@ -1,4 +1,4 @@
-class_name ItemRegistry
+﻿class_name ItemRegistry
 extends RefCounted
 ## The one place item definitions are found by id.
 ##
@@ -148,13 +148,13 @@ static func ensure_loaded() -> void:
 	_loaded = true
 	for directory: String in ITEM_DIRECTORIES:
 		_load_directory(directory)
-	Log.info("ItemRegistry", "Loaded %d items" % _by_id.size())
+	RuntimeLog.info("ItemRegistry", "Loaded %d items" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
-		Log.warn("ItemRegistry", "cannot open %s" % path)
+		RuntimeLog.warn("ItemRegistry", "cannot open %s" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -168,13 +168,13 @@ static func _load_directory(path: String) -> void:
 static func _load_resource(path: String) -> void:
 	var item := ResourceLoader.load(path) as ItemDefinition
 	if item == null:
-		Log.warn("ItemRegistry", "%s is not an ItemDefinition" % path)
+		RuntimeLog.warn("ItemRegistry", "%s is not an ItemDefinition" % path)
 		return
 	if not item.is_valid():
-		Log.warn("ItemRegistry", "%s is not a valid item definition" % path)
+		RuntimeLog.warn("ItemRegistry", "%s is not a valid item definition" % path)
 		return
 	if _by_id.has(item.id):
-		Log.warn("ItemRegistry", "duplicate item id '%s' in %s, ignoring" % [item.id, path])
+		RuntimeLog.warn("ItemRegistry", "duplicate item id '%s' in %s, ignoring" % [item.id, path])
 		if not _duplicate_ids.has(item.id):
 			_duplicate_ids.append(item.id)
 		return

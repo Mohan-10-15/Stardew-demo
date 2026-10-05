@@ -34,9 +34,11 @@ var _seconds_per_tick := 10.0
 
 func _ready() -> void:
 	_recalculate_tick_length()
+	WeatherCalendar.apply(time)
 	Log.info("Time", "Clock ready (%s, %d ticks/day)" % [time.describe_date(), ticks_per_day])
 	# Publish the starting state so anything subscribing late still converges.
 	_publish_clock()
+	_publish_weather(false)
 	EventBus.day_started.emit(time.day_of_month)
 
 
@@ -84,6 +86,10 @@ func advance_tick() -> Dictionary:
 		# day_ended carries the day that just finished, which is not the new one.
 		EventBus.day_ended.emit(before_day)
 		EventBus.day_started.emit(time.day_of_month)
+		# The sky belongs to the day, so it is recomputed here rather than left to roll.
+		# Announced after day_started so a listener reading the date off the signal gets
+		# the new day and the weather that goes with it, in that order.
+		_publish_weather(true)
 		if bool(transition["season_rolled"]):
 			EventBus.season_changed.emit(time.season)
 		if bool(transition["year_rolled"]):
@@ -109,6 +115,7 @@ func sleep_until_morning() -> WorldTime:
 	time = Clock.next_day_morning(time)
 	EventBus.day_ended.emit(finished_day)
 	EventBus.day_started.emit(time.day_of_month)
+	_publish_weather(true)
 	_publish_clock()
 	return time
 
@@ -135,6 +142,10 @@ func set_time(new_time: WorldTime) -> void:
 	var previous_season := time.season
 	var previous_year := time.year
 	time = new_time.copy()
+	# Weather is derived from the date, so a save's stored weather is a cache and not
+	# an input. This is what makes an old save — written back when every day was Sunny
+	# because nothing had rolled it yet — come back with a real sky.
+	_publish_weather(true)
 	_publish_clock()
 	if time.day_of_month != previous_day:
 		EventBus.day_started.emit(time.day_of_month)
@@ -144,8 +155,26 @@ func set_time(new_time: WorldTime) -> void:
 		EventBus.year_changed.emit(time.year)
 
 
+## Recomputes today's weather and tomorrow's forecast, publishing whichever moved.
+##
+## [param announce] false means "the day did not change", which is only true at boot —
+## where the value is published without a signal, because a listener that has not
+## subscribed yet cannot be told about a change that happened before it existed. Every
+## real day boundary announces.
+func _publish_weather(announce: bool) -> void:
+	var changed := WeatherCalendar.apply(time)
+	if not announce:
+		return
+	if bool(changed.get("weather", false)):
+		EventBus.weather_changed.emit(time.weather)
+
+
 ## Today's [WorldTime.Weather] value. Weather selection itself is M9; this
 ## exists so callers do not need to reach into `time` for a read-only value.
+##
+## The *selection* is no longer M9's alone — [WeatherCalendar] landed with the schedule
+## group so a rain override could mean something. Everything a player sees about weather
+## (sky colour, rain, wind, thunder, what fishing does) is still M9.
 func get_weather() -> int:
 	return time.weather
 

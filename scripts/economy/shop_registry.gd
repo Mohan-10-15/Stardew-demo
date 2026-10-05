@@ -1,4 +1,4 @@
-class_name ShopRegistry
+﻿class_name ShopRegistry
 extends RefCounted
 ## The one place shop definitions are found by id.
 ##
@@ -62,13 +62,13 @@ static func ensure_loaded() -> void:
 		return
 	_loaded = true
 	_load_directory(SHOP_DIRECTORY)
-	Log.info("ShopRegistry", "Loaded %d shops" % _by_id.size())
+	RuntimeLog.info("ShopRegistry", "Loaded %d shops" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
-		Log.warn("ShopRegistry", "cannot open %s" % path)
+		RuntimeLog.warn("ShopRegistry", "cannot open %s" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -82,13 +82,13 @@ static func _load_directory(path: String) -> void:
 static func _load_resource(path: String) -> void:
 	var shop := ResourceLoader.load(path) as ShopDefinition
 	if shop == null:
-		Log.warn("ShopRegistry", "%s is not a ShopDefinition" % path)
+		RuntimeLog.warn("ShopRegistry", "%s is not a ShopDefinition" % path)
 		return
 	if not shop.is_valid():
-		Log.warn("ShopRegistry", "%s is not a valid shop definition" % path)
+		RuntimeLog.warn("ShopRegistry", "%s is not a valid shop definition" % path)
 		return
 	if _by_id.has(shop.id):
-		Log.warn("ShopRegistry", "duplicate shop id '%s' in %s, ignoring" % [shop.id, path])
+		RuntimeLog.warn("ShopRegistry", "duplicate shop id '%s' in %s, ignoring" % [shop.id, path])
 		if not _duplicate_ids.has(shop.id):
 			_duplicate_ids.append(shop.id)
 		return

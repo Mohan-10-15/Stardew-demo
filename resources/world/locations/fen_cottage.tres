@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_onybu"]
+
+[resource]
+script = ExtResource("1_onybu")
+id = &"fen_cottage"
+display_name = "Fen's Cottage"
+position = Vector2(34.2, 12.2)
+kind = &"home"
+facing = -0.04139282643497834

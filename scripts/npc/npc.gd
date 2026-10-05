@@ -69,6 +69,14 @@ var _gravity: float = 24.0
 ## somebody speaks to them; see [method face_towards].
 var _face_point := Vector3.ZERO
 var _has_face_point: bool = false
+## Schedule and destination state for path following.
+var _schedule: NpcSchedule = null
+var _path: PackedVector3Array = []
+var _path_index: int = 0
+var _target_point: Vector3 = Vector3.ZERO
+var _has_target: bool = false
+var _moving_to_scheduled: bool = false
+var _navigation: NpcNavigation = null
 
 
 func _ready() -> void:

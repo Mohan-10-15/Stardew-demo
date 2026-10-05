@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_o8buc"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_qwft3"]
+
+[sub_resource type="Resource" id="Resource_65054"]
+script = ExtResource("1_o8buc")
+to_minute = 700
+location = &"halda_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_ht88p"]
+script = ExtResource("1_o8buc")
+from_minute = 700
+to_minute = 1200
+location = &"village_orchard"
+activity = &"pruning"
+
+[sub_resource type="Resource" id="Resource_pew17"]
+script = ExtResource("1_o8buc")
+from_minute = 700
+to_minute = 1700
+location = &"village_square"
+seasons = Array[int]([2])
+activity = &"minding the harvest"
+
+[sub_resource type="Resource" id="Resource_5fgpv"]
+script = ExtResource("1_o8buc")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"arguing about the season"
+
+[sub_resource type="Resource" id="Resource_b2csr"]
+script = ExtResource("1_o8buc")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"errands"
+
+[sub_resource type="Resource" id="Resource_aglw5"]
+script = ExtResource("1_o8buc")
+from_minute = 2100
+location = &"halda_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_qwft3")
+npc_id = &"halda"
+entries = Array[ExtResource("1_o8buc")]([SubResource("Resource_65054"), SubResource("Resource_ht88p"), SubResource("Resource_pew17"), SubResource("Resource_5fgpv"), SubResource("Resource_b2csr"), SubResource("Resource_aglw5")])

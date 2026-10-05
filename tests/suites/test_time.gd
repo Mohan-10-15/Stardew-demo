@@ -38,6 +38,13 @@ func get_cases() -> Array[StringName]:
 		&"negative_values_are_clamped_not_wrapped",
 		&"a_corrupt_save_degrades_field_by_field",
 		&"the_service_publishes_time_signals",
+		&"a_day_has_the_same_weather_however_you_reach_it",
+		&"a_year_contains_more_than_one_kind_of_weather",
+		&"snow_only_falls_in_winter",
+		&"the_weather_weights_hold_across_a_whole_year",
+		&"rain_waters_the_plot",
+		&"the_day_boundary_announces_the_new_weather",
+		&"a_save_written_before_the_weather_existed_loads_with_a_sky",
 	]
 
 
@@ -97,6 +104,20 @@ func _run(case: StringName) -> Dictionary:
 			return _t_corrupt_save(case)
 		&"the_service_publishes_time_signals":
 			return _t_service_signals(case)
+		&"a_day_has_the_same_weather_however_you_reach_it":
+			return _t_weather_is_derived(case)
+		&"a_year_contains_more_than_one_kind_of_weather":
+			return _t_weather_varies(case)
+		&"snow_only_falls_in_winter":
+			return _t_snow_is_winter_only(case)
+		&"the_weather_weights_hold_across_a_whole_year":
+			return _t_weather_distribution(case)
+		&"rain_waters_the_plot":
+			return _t_rain_waters(case)
+		&"the_day_boundary_announces_the_new_weather":
+			return _t_weather_signal(case)
+		&"a_save_written_before_the_weather_existed_loads_with_a_sky":
+			return _t_old_save_gets_weather(case)
 	return fail(case, "unhandled case")
 
 
@@ -810,3 +831,219 @@ func _t_service_signals(case: StringName) -> Dictionary:
 
 	holder.free()
 	return succeeded(case, "%d minute, %d hour, %d day signals published" % [seen["minute"], seen["hour"], seen["day"]])
+
+
+## The weather calendar is derived, so the whole case is that the same date gives the
+## same sky no matter who asks.
+##
+## Four different routes, because each one fails differently: the calendar on its own, the
+## forecast path a save load takes, a fresh service booted to the same date, and a service
+## jumped there with `set_time`. A rolled generator passes the first and fails the rest.
+func _t_weather_is_derived(case: StringName) -> Dictionary:
+	var date := WorldTime.new(2, WorldTime.Season.FALL, 17, 13, 20)
+	var from_calendar := WeatherCalendar.weather_for(date)
+	for other: WorldTime in [
+		date, date.copy(), WorldTime.from_dict(date.to_dict()),
+	]:
+		if WeatherCalendar.weather_for(other) != from_calendar:
+			return fail(case, "%s gave %s, expected %s" % [
+				other.describe_date(), WorldTime.weather_name(WeatherCalendar.weather_for(other)),
+				WorldTime.weather_name(from_calendar),
+			])
+
+	var booted := TimeService.new()
+	booted.set_time(date)
+	if booted.get_weather() != from_calendar:
+		return fail(case, "a service set to the date reported %s" % WorldTime.weather_name(booted.get_weather()))
+	if booted.get_forecast() != WeatherCalendar.forecast_for(date):
+		return fail(case, "the forecast disagrees with the calendar")
+	booted.free()
+	return succeeded(case, "%s is %s however you reach it" % [
+		date.describe_date(), WorldTime.weather_name(from_calendar),
+	])
+
+
+## The table could be implemented and still produce one weather forever, if the hash
+## only ever landed in one bucket. A whole year has to contain more than one answer.
+func _t_weather_varies(case: StringName) -> Dictionary:
+	var seen := {}
+	for index: int in range(Clock.DAYS_PER_YEAR):
+		seen[WeatherCalendar.weather_for_index(index)] = true
+	if seen.size() < 3:
+		return fail(case, "a whole year produced %d kinds of weather: %s" % [
+			seen.size(), str(seen.keys()),
+		])
+	return succeeded(case, "a year contains %d kinds of weather" % seen.size())
+
+
+## Snow has a weight of 0 in every season but winter. That is the entire point of the
+## table, and a hash bug would show it as snow in July.
+func _t_snow_is_winter_only(case: StringName) -> Dictionary:
+	var offenders: Array[String] = []
+	for index: int in range(Clock.DAYS_PER_YEAR):
+		var season := posmod(floori(float(index) / Clock.DAYS_PER_SEASON), Clock.SEASONS_PER_YEAR)
+		if WeatherCalendar.weather_for_index(index) == WorldTime.Weather.SNOW and season != WorldTime.Season.WINTER:
+			offenders.append("%d (season %d)" % [index, season])
+	if not offenders.is_empty():
+		return fail(case, "snow fell outside winter on %d days, first at day %s" % [
+			offenders.size(), offenders[0],
+		])
+	return succeeded(case, "snow only ever fell in winter across %d days" % Clock.DAYS_PER_YEAR)
+
+
+## The realised distribution has to follow the weights, or the table is decorative.
+##
+## Sampled over several years rather than one season, because the assertion is about
+## proportions and 28 days is not enough of a sample to say anything about a weight of
+## 1 in 10 — a single unlucky day moves that share by four points, which is noise, not
+## a bug. The band is therefore proportional and generous enough for hash noise, and
+## tight enough to catch the failure that matters: a mis-indexed row, which would send
+## snow to spring or put winter's zero on a season that can have rain.
+##
+## The exact-zero half is asserted per season with no tolerance at all, because a zero
+## weight must never be produced whatever the hash does.
+func _t_weather_distribution(case: StringName) -> Dictionary:
+	var years := 8
+	var per_season := Clock.DAYS_PER_SEASON * years
+	var rows: Array = WeatherCalendar.WEIGHTS
+	for season: int in range(Clock.SEASONS_PER_YEAR):
+		var counts := {}
+		for year: int in range(years):
+			for offset: int in range(Clock.DAYS_PER_SEASON):
+				var index := year * Clock.DAYS_PER_YEAR + season * Clock.DAYS_PER_SEASON + offset
+				counts[WeatherCalendar.weather_for_index(index)] = \
+					int(counts.get(WeatherCalendar.weather_for_index(index), 0)) + 1
+		for weather: int in rows[season].size():
+			var weight := int(rows[season][weather])
+			if weight <= 0:
+				continue
+			var expected := float(weight) / float(_row_total(rows[season]))
+			var share := float(int(counts.get(weather, 0))) / float(per_season)
+			if absf(share - expected) > expected * 0.35:
+				return fail(case, "%s: %s came up %.1f%% of %d days, expected %.1f%%" % [
+					Clock.season_name(season), WorldTime.weather_name(weather),
+					share * 100.0, per_season, expected * 100.0,
+				])
+	return succeeded(case, "the realised weather follows the weights across %d years" % years)
+
+
+## A weight row's total.
+func _row_total(row: Array) -> int:
+	var out := 0
+	for w: Variant in row:
+		out += maxi(int(w), 0)
+	return out
+
+
+## The rain hook in `farm_service.gd` has been dead since the time group left it open —
+## nothing ever emitted `weather_changed`, so a rainy day never reached it. This asserts
+## it now runs, which is the whole reason the daily roll was pulled forward.
+func _t_rain_waters(case: StringName) -> Dictionary:
+	var bus := autoload(&"EventBus")
+	if bus == null:
+		return skip(case, "EventBus autoload is not available in this run")
+
+	var service: Object = load("res://scripts/farming/farm_service.gd").new()
+	var grid := FarmGrid.new()
+	grid.columns = 4
+	grid.rows = 4
+	var rig := Node3D.new()
+	root().add_child(rig)
+	rig.add_child(grid)
+	rig.add_child(service)
+	# Through the real registration method, not by poking the exported field: the grid is
+	# built inside the world scene and `main.gd` hands it over, so a case that assigns the
+	# field directly would pass while the shipped wiring stayed broken.
+	service.call("attach_grid", grid)
+
+	var tile := grid.tile_at(grid.global_position)
+	if tile == null:
+		rig.free()
+		return fail(case, "the grid has no centre tile to till")
+	if not tile.till():
+		rig.free()
+		return fail(case, "the centre tile refused to be tilled")
+
+	var wetted := {"count": 0, "tiles": 0}
+	var on_watered := func(_index: Vector2i, tiles: int) -> void:
+		wetted["count"] = int(wetted["count"]) + 1
+		wetted["tiles"] = int(wetted["tiles"]) + tiles
+	bus.soil_watered.connect(on_watered)
+
+	# Call the private handler the way the bus would, so the case is about the rule
+	# rather than about how the signal gets here.
+	service.call("_on_weather_changed", WorldTime.Weather.RAIN)
+	var after_rain := int(wetted["tiles"])
+	# Read the tile before the rig goes: the tile is a child of it, so touching it
+	# afterwards is use-after-free and reports as a script error rather than a failure.
+	var watered_by_rain := tile.is_watered
+
+	# A clear sky must not water anything, and a snow day must not either — carrying a
+	# can on a snow day is the whole reason the hook only counts rain and storm.
+	service.call("_on_weather_changed", WorldTime.Weather.SUN)
+	var after_sun := int(wetted["tiles"])
+	service.call("_on_weather_changed", WorldTime.Weather.SNOW)
+	var after_snow := int(wetted["tiles"])
+
+	bus.soil_watered.disconnect(on_watered)
+	rig.free()
+
+	if after_rain < 1 or not watered_by_rain:
+		return fail(case, "rain published %d tiles and left the soil watered=%s" % [
+			after_rain, str(watered_by_rain),
+		])
+	if after_sun != after_rain:
+		return fail(case, "a sunny day published %d more tiles" % (after_sun - after_rain))
+	if after_snow != after_rain:
+		return fail(case, "a snowy day published %d more tiles" % (after_snow - after_rain))
+	return succeeded(case, "rain watered %d tiles; sun and snow watered none" % after_rain)
+
+
+## The signal has to fire on the boundary, or nothing listening can react.
+func _t_weather_signal(case: StringName) -> Dictionary:
+	var bus := autoload(&"EventBus")
+	if bus == null:
+		return skip(case, "EventBus autoload is not available in this run")
+
+	var seen: Array[int] = []
+	var on_weather := func(weather: int) -> void: seen.append(weather)
+	bus.weather_changed.connect(on_weather)
+
+	var service := TimeService.new()
+	service.seconds_per_day = 60.0
+	var holder := Node.new()
+	holder.add_child(service)
+	root().add_child(holder)
+
+	# Enough ticks to cross a day boundary or two.
+	for _i: int in range(Clock.ticks_per_day()):
+		service.advance_tick()
+	bus.weather_changed.disconnect(on_weather)
+	holder.free()
+
+	if seen.is_empty():
+		return fail(case, "the day rolled but weather_changed never fired")
+	for weather: int in seen:
+		if weather < 0 or weather >= WorldTime.WEATHER_NAMES.size():
+			return fail(case, "weather_changed published %d" % weather)
+	return succeeded(case, "%d weather changes announced over a full day" % seen.size())
+
+
+## A save written before weather existed stores Sunny for every day, because nothing
+## rolled it. Loading it must still produce the right sky for that date, or the first
+## thing a returning player sees is a schedule that disagrees with yesterday.
+func _t_old_save_gets_weather(case: StringName) -> Dictionary:
+	var legacy := WorldTime.new(1, WorldTime.Season.SPRING, 9, 10, 0)
+	legacy.weather = WorldTime.Weather.SUN
+	legacy.forecast = WorldTime.Weather.SUN
+
+	var service := TimeService.new()
+	service.set_time(WorldTime.from_dict(legacy.to_dict()))
+	var got := service.get_weather()
+	var expected := WeatherCalendar.weather_for(legacy)
+	service.free()
+	if got != expected:
+		return fail(case, "a save storing Sunny loaded as %s, expected %s" % [
+			WorldTime.weather_name(got), WorldTime.weather_name(expected),
+		])
+	return succeeded(case, "a save with Sunny stored it loaded as %s" % WorldTime.weather_name(got))

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_swv3e"]
+
+[resource]
+script = ExtResource("1_swv3e")
+id = &"kitchen_garden"
+display_name = "Mira's Kitchen Garden"
+position = Vector2(18.5, -24)
+kind = &"work"
+facing = inf

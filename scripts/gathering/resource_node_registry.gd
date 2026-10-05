@@ -1,4 +1,4 @@
-class_name ResourceNodeRegistry
+﻿class_name ResourceNodeRegistry
 extends RefCounted
 ## The one place gatherable node definitions are found by id.
 ##
@@ -7,7 +7,7 @@ extends RefCounted
 ## ask the same question the same way.
 ##
 ## Static and content-only, like its siblings. It never touches the scene tree, so it
-## is loadable from a `--script` run — which is how the content generator validates
+## is loadable from a `--script` run â€” which is how the content generator validates
 ## what it is about to write.
 
 const NODE_DIRECTORY := "res://resources/gathering/nodes/"
@@ -90,7 +90,7 @@ static func ensure_loaded() -> void:
 		return
 	_loaded = true
 	_load_directory(NODE_DIRECTORY)
-	Log.info("ResourceNodeRegistry", "Loaded %d resource nodes" % _by_id.size())
+	RuntimeLog.info("ResourceNodeRegistry", "Loaded %d resource nodes" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
@@ -99,7 +99,7 @@ static func _load_directory(path: String) -> void:
 		# Not an error. A checkout with no gathering content yet still has a working
 		# world, and a warning here would turn "no nodes authored" into noise nobody
 		# reads past.
-		Log.info("ResourceNodeRegistry", "no node directory at %s yet" % path)
+		RuntimeLog.info("ResourceNodeRegistry", "no node directory at %s yet" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -113,13 +113,13 @@ static func _load_directory(path: String) -> void:
 static func _load_resource(path: String) -> void:
 	var data := ResourceLoader.load(path) as ResourceNodeData
 	if data == null:
-		Log.warn("ResourceNodeRegistry", "%s is not a ResourceNodeData" % path)
+		RuntimeLog.warn("ResourceNodeRegistry", "%s is not a ResourceNodeData" % path)
 		return
 	if not data.is_valid():
-		Log.warn("ResourceNodeRegistry", "%s is not a valid node definition" % path)
+		RuntimeLog.warn("ResourceNodeRegistry", "%s is not a valid node definition" % path)
 		return
 	if _by_id.has(data.id):
-		Log.warn("ResourceNodeRegistry", "duplicate node id '%s' in %s, ignoring" % [
+		RuntimeLog.warn("ResourceNodeRegistry", "duplicate node id '%s' in %s, ignoring" % [
 			data.id, path,
 		])
 		if not _duplicate_ids.has(data.id):

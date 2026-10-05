@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_6n4ek"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_ymjq6"]
+
+[sub_resource type="Resource" id="Resource_nye84"]
+script = ExtResource("1_6n4ek")
+to_minute = 900
+location = &"odette_cottage"
+activity = &"reading, slowly"
+
+[sub_resource type="Resource" id="Resource_wl2nq"]
+script = ExtResource("1_6n4ek")
+from_minute = 900
+to_minute = 1600
+location = &"pond_shore"
+weathers = Array[int]([0, 4, 1])
+activity = &"reading the water"
+
+[sub_resource type="Resource" id="Resource_u02j8"]
+script = ExtResource("1_6n4ek")
+from_minute = 900
+to_minute = 1600
+location = &"odette_cottage"
+weathers = Array[int]([2, 3])
+activity = &"waiting it out"
+
+[sub_resource type="Resource" id="Resource_os7sp"]
+script = ExtResource("1_6n4ek")
+from_minute = 1600
+to_minute = 1800
+location = &"village_well"
+activity = &"talking"
+
+[sub_resource type="Resource" id="Resource_wjnaf"]
+script = ExtResource("1_6n4ek")
+from_minute = 1800
+to_minute = 2100
+location = &"general_store"
+activity = &"buying tea"
+
+[sub_resource type="Resource" id="Resource_v75mv"]
+script = ExtResource("1_6n4ek")
+from_minute = 2100
+location = &"odette_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_ymjq6")
+npc_id = &"odette"
+entries = Array[ExtResource("1_6n4ek")]([SubResource("Resource_nye84"), SubResource("Resource_wl2nq"), SubResource("Resource_u02j8"), SubResource("Resource_os7sp"), SubResource("Resource_wjnaf"), SubResource("Resource_v75mv")])

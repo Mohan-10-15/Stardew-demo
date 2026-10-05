@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_6vnq6"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_1cw44"]
+
+[sub_resource type="Resource" id="Resource_f6hay"]
+script = ExtResource("1_6vnq6")
+to_minute = 800
+location = &"mira_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_036fk"]
+script = ExtResource("1_6vnq6")
+from_minute = 800
+to_minute = 1200
+location = &"kitchen_garden"
+weathers = Array[int]([0, 4])
+activity = &"tending the beds"
+
+[sub_resource type="Resource" id="Resource_q41u0"]
+script = ExtResource("1_6vnq6")
+from_minute = 800
+to_minute = 1200
+location = &"village_square"
+weathers = Array[int]([1, 2, 3])
+activity = &"sheltering"
+
+[sub_resource type="Resource" id="Resource_uv0tv"]
+script = ExtResource("1_6vnq6")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"gossip"
+
+[sub_resource type="Resource" id="Resource_85m7f"]
+script = ExtResource("1_6vnq6")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"errands"
+
+[sub_resource type="Resource" id="Resource_mcgh6"]
+script = ExtResource("1_6vnq6")
+from_minute = 2100
+location = &"mira_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_1cw44")
+npc_id = &"mira"
+entries = Array[ExtResource("1_6vnq6")]([SubResource("Resource_f6hay"), SubResource("Resource_036fk"), SubResource("Resource_q41u0"), SubResource("Resource_uv0tv"), SubResource("Resource_85m7f"), SubResource("Resource_mcgh6")])

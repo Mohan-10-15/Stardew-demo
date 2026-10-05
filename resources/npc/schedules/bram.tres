@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_mufyh"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_n28bq"]
+
+[sub_resource type="Resource" id="Resource_u7rap"]
+script = ExtResource("1_mufyh")
+to_minute = 700
+location = &"bram_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_plurf"]
+script = ExtResource("1_mufyh")
+from_minute = 700
+to_minute = 1200
+location = &"forest_edge"
+seasons = Array[int]([0, 1, 2])
+activity = &"hauling timber"
+
+[sub_resource type="Resource" id="Resource_81e4k"]
+script = ExtResource("1_mufyh")
+from_minute = 700
+to_minute = 1200
+location = &"village_square"
+seasons = Array[int]([3])
+activity = &"sorting nails"
+
+[sub_resource type="Resource" id="Resource_iimqa"]
+script = ExtResource("1_mufyh")
+from_minute = 1200
+to_minute = 1300
+location = &"village_well"
+activity = &"washing up"
+
+[sub_resource type="Resource" id="Resource_8g3li"]
+script = ExtResource("1_mufyh")
+from_minute = 1300
+to_minute = 1700
+location = &"village_square"
+activity = &"mending"
+
+[sub_resource type="Resource" id="Resource_ckws2"]
+script = ExtResource("1_mufyh")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"buying nails"
+
+[sub_resource type="Resource" id="Resource_h58va"]
+script = ExtResource("1_mufyh")
+from_minute = 2100
+location = &"bram_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_n28bq")
+npc_id = &"bram"
+entries = Array[ExtResource("1_mufyh")]([SubResource("Resource_u7rap"), SubResource("Resource_plurf"), SubResource("Resource_81e4k"), SubResource("Resource_iimqa"), SubResource("Resource_8g3li"), SubResource("Resource_ckws2"), SubResource("Resource_h58va")])

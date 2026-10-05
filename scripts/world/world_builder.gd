@@ -1,4 +1,4 @@
-class_name WorldBuilder
+﻿class_name WorldBuilder
 extends RefCounted
 ## Procedural construction of the starting valley.
 ##
@@ -8,21 +8,25 @@ extends RefCounted
 ##
 ## Collision is created alongside visuals for anything the player can walk into.
 
-const GROUND_SIZE := 220.0
+## The shape of the ground. Aliased from [WorldTerrain] rather than restated, so there
+## is one definition of where the valley floor is and content data can ask the terrain
+## without pulling this whole builder — and its dependency on [EventBus] and [Log] —
+## into a content tool's compile.
+const GROUND_SIZE := WorldTerrain.GROUND_SIZE
 ## Ground is generated as a grid of this many cells per side.
-const GROUND_CELLS := 44
+const GROUND_CELLS := WorldTerrain.GROUND_CELLS
 ## Size of the pond, measured as its radius in metres. The basin is generated
 ## out to this distance; the visible water plane is slightly smaller.
-const POND_RADIUS := 17.0
-const POND_WATER_RADIUS := 16.0
+const POND_RADIUS := WorldTerrain.POND_RADIUS
+const POND_WATER_RADIUS := WorldTerrain.POND_WATER_RADIUS
 ## Water surface height. Negative so the pond reads as a basin below the
 ## surrounding valley rather than a sheet of water laid on top of the grass.
-const WATER_LEVEL := -0.8
+const WATER_LEVEL := WorldTerrain.WATER_LEVEL
 ## Depth of the basin at its centre, below the water surface so the water has
 ## somewhere to sit.
-const POND_FLOOR_DEPTH := -2.2
+const POND_FLOOR_DEPTH := WorldTerrain.POND_FLOOR_DEPTH
 ## Ground is flat at this height everywhere except inside the pond basin.
-const GROUND_LEVEL := 0.0
+const GROUND_LEVEL := WorldTerrain.GROUND_LEVEL
 ## Interactable props pad their collider up to this height so a crosshair at
 ## eye level can actually hit them.
 const INTERACTION_COLLIDER_MIN_HEIGHT := 2.4
@@ -42,7 +46,7 @@ const COL_FENCE := Color(0.52, 0.38, 0.24)
 const REGION_FARM := Vector2(0, -20)
 const REGION_VILLAGE := Vector2(38, 8)
 const REGION_FOREST := Vector2(-42, 26)
-const REGION_POND := Vector2(-14, 44)
+const REGION_POND := WorldTerrain.REGION_POND
 
 
 ## Builds the whole scene and returns the populated root node.
@@ -66,16 +70,11 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 ## sits *in* the ground. Pure and deterministic: the visual mesh and the
 ## collision mesh are both generated from this function, so they cannot disagree
 ## the way an independently-authored collider can.
+## Delegates to [method WorldTerrain.terrain_height]. Kept as a method on this class
+## because a hundred call sites already say `WorldBuilder.terrain_height` and there is
+## nothing to gain by renaming them all.
 static func terrain_height(x: float, z: float) -> float:
-	var centre := Vector2(REGION_POND.x, REGION_POND.y)
-	var d := Vector2(x, z).distance_to(centre)
-	if d >= POND_RADIUS:
-		return GROUND_LEVEL
-	# Smoothstep from the rim down to the basin floor, so the shoreline is a
-	# slope rather than a cliff and the water plane meets land naturally.
-	var t := 1.0 - d / POND_RADIUS
-	var s := t * t * (3.0 - 2.0 * t)
-	return lerpf(GROUND_LEVEL, POND_FLOOR_DEPTH, s)
+	return WorldTerrain.terrain_height(x, z)
 
 
 static func _build_ground(root: Node3D) -> void:
@@ -253,8 +252,8 @@ static func _build_paths(root: Node3D) -> void:
 ## Every walkable path in the valley, as `[from, to, width]`.
 ##
 ## The single source for both the path meshes and the resource scatter's keep-out.
-## They used to be separate knowledge — the meshes were built from literals in
-## [method _build_paths] and the keep-out rule simply did not exist — and a tree
+## They used to be separate knowledge â€” the meshes were built from literals in
+## [method _build_paths] and the keep-out rule simply did not exist â€” and a tree
 ## could stand in the middle of the road because nothing that drew the road was
 ## asked where the road was.
 const PATH_SEGMENTS: Array[Array] = [
@@ -322,7 +321,7 @@ static func _build_shop(root: Node3D) -> void:
 	# traps").
 	var definition := ShopRegistry.get_shop(&"general_store")
 	if definition == null:
-		Log.error(
+		RuntimeLog.error(
 			"WorldBuilder", "no 'general_store' definition; the counter will be inert"
 		)
 	else:
@@ -424,8 +423,8 @@ static func _add_rail(root: Node3D, from: Vector3, to: Vector3) -> void:
 ## The single source of truth for the spawn, and [member WorldRoot.spawn_point]
 ## defaults its own value from this constant rather than carrying a second copy.
 ##
-## It was originally written here as `(0, 0, 0)` — a plausible-looking guess at the
-## middle of the valley — while the player was actually starting at `(0, 1.2, 14)`.
+## It was originally written here as `(0, 0, 0)` â€” a plausible-looking guess at the
+## middle of the valley â€” while the player was actually starting at `(0, 1.2, 14)`.
 ## Nothing failed. The keep-out simply protected an empty patch of grass fourteen
 ## metres from the player and left the real spawn inside the resource scatter, which
 ## is a tree growing out of the player's head on some seeds and not others. Duplicating
@@ -512,15 +511,15 @@ static func rng_rotate(centre: Vector2) -> float:
 ##
 ## Replaces two earlier builders: `_build_forest` drew 46 cylinder-and-sphere trees
 ## that looked like the wood but could not be touched, and `_build_rocks` scattered
-## 22 grey spheres that were scenery. Both were the same bug — the valley told the
-## player where to look and had nothing to say when they got there — and both are
+## 22 grey spheres that were scenery. Both were the same bug â€” the valley told the
+## player where to look and had nothing to say when they got there â€” and both are
 ## gone rather than hidden, because a decorative tree next to a choppable one is the
 ## same bug wearing a different hat.
 ##
 ## Placement is here and not in [ResourceField] deliberately. The field owns nodes
 ## once they exist; *where* the valley's oak grove is, is a fact about the valley.
-## Which keeps the scatter rules — keep off the paths, out of the pond, clear of the
-## farm fence — in one function instead of one per node type.
+## Which keeps the scatter rules â€” keep off the paths, out of the pond, clear of the
+## farm fence â€” in one function instead of one per node type.
 static func _build_resources(root: Node3D, rng: RandomNumberGenerator) -> void:
 	var field := ResourceField.new()
 	field.name = "ResourceField"
@@ -539,7 +538,7 @@ static func _build_resources(root: Node3D, rng: RandomNumberGenerator) -> void:
 ## Places [param count] of [param data] around its own region.
 ##
 ## One seeded generator for the whole field, consumed in a fixed order, so
-## placement is deterministic — and the rejection loop is bounded rather than
+## placement is deterministic â€” and the rejection loop is bounded rather than
 ## infinite, because a keep-out that covers the whole region would otherwise hang the
 ## boot. A node that cannot find room is skipped and logged, not forced into a spot
 ## on the path.
@@ -568,7 +567,7 @@ static func _scatter(data: ResourceNodeData, field: ResourceField, rng: RandomNu
 		node.rotation.y = rng.randf() * TAU
 		placed += 1
 	if placed < data.spawn_count:
-		Log.info("WorldBuilder", "%s: placed %d of %d" % [
+		RuntimeLog.info("WorldBuilder", "%s: placed %d of %d" % [
 			data.id, placed, data.spawn_count,
 		])
 
@@ -609,7 +608,7 @@ static func is_reserved(pos: Vector2) -> bool:
 ## Shortest distance from [param pos] to the segment [param from]-[param to].
 ##
 ## Standard point-to-segment projection, clamped at the ends so a point beyond an
-## endpoint measures to that endpoint rather than to the infinite line through it —
+## endpoint measures to that endpoint rather than to the infinite line through it â€”
 ## which would let a tree stand on a path because it happened to be collinear with
 ## one.
 static func _distance_to_segment(pos: Vector2, from: Vector2, to: Vector2) -> float:
@@ -794,7 +793,7 @@ static func _prop_mesh_and_shape(kind: String, size: Vector3) -> Array:
 
 
 ## Thin alias kept so the palette constants above remain the single source of truth
-## for a colour, while the *surface* — its roughness, specular and detail tiling —
+## for a colour, while the *surface* â€” its roughness, specular and detail tiling â€”
 ## comes from [WorldMaterials]. Call sites that care about the class ask for it by
 ## name; this is only for the ones that genuinely have an arbitrary colour.
 static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
@@ -806,7 +805,7 @@ static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D
 ## ## Why this exists
 ##
 ## The ground is one flat mesh with one flat green, 220m across. Under any lighting
-## that is a green table, and no amount of post-processing fixes it — SSAO finds edges
+## that is a green table, and no amount of post-processing fixes it â€” SSAO finds edges
 ## that are not there, and bloom has nothing to bloom. Variation has to be in the
 ## surface data.
 ##

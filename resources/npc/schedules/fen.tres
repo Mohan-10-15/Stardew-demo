@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_viw0b"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_rluum"]
+
+[sub_resource type="Resource" id="Resource_yi32d"]
+script = ExtResource("1_viw0b")
+to_minute = 700
+location = &"fen_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_mcy7a"]
+script = ExtResource("1_viw0b")
+from_minute = 700
+to_minute = 1500
+location = &"forest_edge"
+activity = &"foraging"
+
+[sub_resource type="Resource" id="Resource_axyuu"]
+script = ExtResource("1_viw0b")
+from_minute = 1500
+to_minute = 1700
+location = &"village_square"
+activity = &"selling, reluctantly"
+
+[sub_resource type="Resource" id="Resource_h8dgc"]
+script = ExtResource("1_viw0b")
+from_minute = 1700
+to_minute = 2000
+location = &"general_store"
+activity = &"buying salt"
+
+[sub_resource type="Resource" id="Resource_igj2j"]
+script = ExtResource("1_viw0b")
+from_minute = 2000
+location = &"fen_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_rluum")
+npc_id = &"fen"
+entries = Array[ExtResource("1_viw0b")]([SubResource("Resource_yi32d"), SubResource("Resource_mcy7a"), SubResource("Resource_axyuu"), SubResource("Resource_h8dgc"), SubResource("Resource_igj2j")])

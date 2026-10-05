@@ -1,4 +1,4 @@
-class_name QuestRegistry
+﻿class_name QuestRegistry
 extends RefCounted
 ## The one place quest definitions are found by id.
 ##
@@ -7,7 +7,7 @@ extends RefCounted
 ## content generator all ask the same question the same way.
 ##
 ## Static and content-only, like its siblings. It never touches the scene tree, so it is
-## loadable from a `--script` run — which is how the quest content generator validates what
+## loadable from a `--script` run â€” which is how the quest content generator validates what
 ## it is about to write.
 
 const QUEST_DIRECTORY := "res://resources/quest/quests/"
@@ -49,7 +49,7 @@ static func all_quests() -> Array[QuestData]:
 ## Every job one villager offers, sorted.
 ##
 ## This is the query the NPC prompt needs, and it is a question about content rather than
-## about the player — "what could Bram ask me for?" — so it stays here, next to the data,
+## about the player â€” "what could Bram ask me for?" â€” so it stays here, next to the data,
 ## rather than the service filtering every quest on every prompt.
 static func quests_from(giver: StringName) -> Array[QuestData]:
 	var out: Array[QuestData] = []
@@ -79,7 +79,7 @@ static func duplicate_ids() -> Array[StringName]:
 
 
 ## Definitions that loaded but are not playable. Collected rather than only logged so a
-## content test can assert the list is empty — an invalid quest that merely warns is an
+## content test can assert the list is empty â€” an invalid quest that merely warns is an
 ## invalid quest somebody will eventually ship.
 static func invalid_ids() -> Array[StringName]:
 	ensure_loaded()
@@ -108,13 +108,13 @@ static func ensure_loaded() -> void:
 		return
 	_loaded = true
 	_load_directory(QUEST_DIRECTORY)
-	Log.info("QuestRegistry", "Loaded %d quests" % _by_id.size())
+	RuntimeLog.info("QuestRegistry", "Loaded %d quests" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
-		Log.info("QuestRegistry", "no quest directory at %s yet" % path)
+		RuntimeLog.info("QuestRegistry", "no quest directory at %s yet" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -128,12 +128,12 @@ static func _load_directory(path: String) -> void:
 static func _load_resource(path: String) -> void:
 	var data := ResourceLoader.load(path) as QuestData
 	if data == null:
-		Log.warn("QuestRegistry", "%s is not a QuestData" % path)
+		RuntimeLog.warn("QuestRegistry", "%s is not a QuestData" % path)
 		return
 	if not data.is_valid():
-		Log.warn("QuestRegistry", "%s is not a completable quest definition" % path)
+		RuntimeLog.warn("QuestRegistry", "%s is not a completable quest definition" % path)
 	if _by_id.has(data.id):
-		Log.warn("QuestRegistry", "duplicate quest id '%s' in %s, ignoring" % [data.id, path])
+		RuntimeLog.warn("QuestRegistry", "duplicate quest id '%s' in %s, ignoring" % [data.id, path])
 		if not _duplicate_ids.has(data.id):
 			_duplicate_ids.append(data.id)
 		return

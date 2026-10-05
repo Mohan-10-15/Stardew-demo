@@ -1,4 +1,4 @@
-class_name CropRegistry
+﻿class_name CropRegistry
 extends RefCounted
 ## The one place crop definitions are found by id.
 ##
@@ -107,13 +107,13 @@ static func ensure_loaded() -> void:
 	# One honest line at boot: how many crops the game actually has. A count of
 	# zero means the directory moved or the scan broke, and every plant action
 	# will fail for a reason the player cannot see.
-	Log.info("CropRegistry", "Loaded %d crops" % _by_id.size())
+	RuntimeLog.info("CropRegistry", "Loaded %d crops" % _by_id.size())
 
 
 static func _load_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
-		Log.warn("CropRegistry", "cannot open %s" % path)
+		RuntimeLog.warn("CropRegistry", "cannot open %s" % path)
 		return
 	dir.list_dir_begin()
 	var entry := dir.get_next()
@@ -129,15 +129,15 @@ static func _load_resource(path: String) -> void:
 	var res := ResourceLoader.load(path)
 	var crop := res as CropData
 	if crop == null:
-		Log.warn("CropRegistry", "%s is not a CropData" % path)
+		RuntimeLog.warn("CropRegistry", "%s is not a CropData" % path)
 		return
 	if not crop.is_valid():
-		Log.warn("CropRegistry", "%s is not a valid crop definition" % path)
+		RuntimeLog.warn("CropRegistry", "%s is not a valid crop definition" % path)
 		return
 	if _by_id.has(crop.id):
 		# Two crops claiming one id is a content bug that would make a save
 		# ambiguous. First definition wins, and the collision is named.
-		Log.warn("CropRegistry", "duplicate crop id '%s' in %s, ignoring" % [crop.id, path])
+		RuntimeLog.warn("CropRegistry", "duplicate crop id '%s' in %s, ignoring" % [crop.id, path])
 		if not _duplicate_ids.has(crop.id):
 			_duplicate_ids.append(crop.id)
 		return

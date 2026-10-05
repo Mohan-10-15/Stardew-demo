@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_gcup2"]
+
+[resource]
+script = ExtResource("1_gcup2")
+id = &"odette_cottage"
+display_name = "Odette's Cottage"
+position = Vector2(47.3, 9.3)
+kind = &"home"
+facing = 0.17956360361100365

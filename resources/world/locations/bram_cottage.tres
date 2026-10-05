@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_aeri4"]
+
+[resource]
+script = ExtResource("1_aeri4")
+id = &"bram_cottage"
+display_name = "Bram's Cottage"
+position = Vector2(44.4, -3.8)
+kind = &"home"
+facing = -0.09744221789586198

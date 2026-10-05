@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_rm2ep"]
+
+[resource]
+script = ExtResource("1_rm2ep")
+id = &"general_store"
+display_name = "The General Store"
+position = Vector2(14.5, -18.4)
+kind = &"work"

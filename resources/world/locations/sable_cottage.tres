@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_ch73v"]
+
+[resource]
+script = ExtResource("1_ch73v")
+id = &"sable_cottage"
+display_name = "Sable's Cottage"
+position = Vector2(27.6, 8.6)
+kind = &"home"
+facing = inf
