@@ -9,11 +9,48 @@ with what was implemented, what was tested, and every bug found along the way.
 
 ## In flight
 
-**None.** Groups 12–13 are complete (M4 closed); the queue below is next up.
+**None.** Groups 0–16 and 25 are complete. The next task to be picked up is
+**TASK-007, Friendship** (group 17 / M6), spec'd below.
 
 ---
 
 ## Recently completed
+
+### TASK-006 — NPC schedules: the authored day (group 16) — COMPLETE
+
+Six villagers have a written day and are seen keeping it. A schedule resolves a
+post from clock, season and weather; the NPC walks there, stands at it while the
+block lasts, and re-paths when the clock crosses into the next one. Added
+`ScheduleRegistry` (the mirror of `LocationRegistry`), `TimeService.find()`, the
+opt-in `NpcManager.apply_schedules`, a three-way split in `Npc._advance` between
+attending / scheduled walk / wander, and `walk_to()` with a straight-line
+fallback.
+
+Two content bugs found by measuring rather than by playing: `_overlaps` swept an
+**empty range** (`range(600, 300)`) so nothing was ever refused, and Halda's
+unconditional orchard block shadowed her Fall harvest block. One further defect,
+found after the group was nominally complete: Bram's noon block at the well was
+**never occupied** — 40.7 real seconds of walking into a 30 second window.
+
+16 content cases in `tests/suites/test_schedule.gd`, 3 runtime cases in
+`test_npc.gd`, plus `every_block_is_reachable_in_its_own_time` as the regression.
+**476/476 green** with zero script errors. Played in a real window via
+`tools/playtest_schedule.gd` (PASS, three screenshots); five harness bugs and
+their fixes are recorded in `DEVELOPMENT_STATUS.md`.
+
+### TASK-005 — Quests (group 15) — COMPLETE
+
+Five jobs exist as data. A villager offers one in the prompt they are already
+reading, the tracker shows what is wanted and how far along it is, doing the
+thing moves the number, and handing it back pays out and takes the row off the
+screen.
+
+### TASK-004 — NPC system (group 14) — COMPLETE
+
+Six villagers spawn in the valley, walk their own rounds, turn to face the
+player when spoken to, have opinions about what they are given, and one key both
+says hello and hands over a present — with the prompt always saying which of the
+two it is about to do.
 
 ### TASK-003 — Player state, stamina and economy (group 13) — COMPLETE
 
@@ -24,17 +61,15 @@ instead of each having one. Added data-driven `ShopDefinition` content behind
 machine-readable reason, and a `Shop` counter placed by `WorldBuilder` that the
 real interact key opens.
 
-27 new cases in `tests/suites/test_economy.gd`; **229/229 green** with zero
-script errors.
-
-Six real defects found and fixed, all recorded in `DEVELOPMENT_STATUS.md`. The one
-worth remembering: stamina was charged *after* the tool was applied, so a tired
-player tilled for free — affordability is now a preflight.
+27 new cases in `tests/suites/test_economy.gd`. Six real defects found and
+fixed, all recorded in `DEVELOPMENT_STATUS.md`. The one worth remembering:
+stamina was charged *after* the tool was applied, so a tired player tilled for
+free — affordability is now a preflight.
 
 ### TASK-002 — Farming grid, crops and tools (groups 7–11) — COMPLETE
 
-Till, plant, water, sleep, grow, harvest, with `FarmService` as the rules layer and
-success/failure published as separate `EventBus` events.
+Till, plant, water, sleep, grow, harvest, with `FarmService` as the rules layer
+and success/failure published as separate `EventBus` events.
 
 ### TASK-001 — Time and calendar service (M2) — COMPLETE
 
@@ -51,40 +86,54 @@ design in `SALVAGED_DESIGN.md` was deliberately diverged from — the day
 boundary, the unit of `to_game_minutes`, and the scope of its monotonicity
 requirement.
 
+### TASK-000 — C# toolchain and the balance sweep (M19 groundwork) — COMPLETE
+
+Not a roadmap group: the cross-cutting work M19 needs before it can be anything
+other than "we wrote more tests". Portable .NET Godot build, `Hollowbrook.csproj`,
+a `csharp` stage first in `check.ps1`, and `scripts/sim/BalanceSweep.cs` — used
+exactly once. Profiling showed **nothing** justifies a second language boundary;
+`docs/MULTI_LANGUAGE_ARCHITECTURE.md` holds the numbers and the boundary rules.
+
 ---
 
 ## Next
 
-### TASK-002 — Farming grid and soil state (M3)
+### TASK-007 — Friendship, gifting and relationships (group 17 / M6)
 
-**Goal:** a tilled-soil grid the player can hoe, plant and water, with crop growth
-resolved against the clock.
+**Goal:** each villager has a relationship the player can see moving, and a
+weekly rhythm of giving that moves it. Gifts the villager likes and dislikes
+must actually differ from one another in outcome, not only in dialogue.
 
-**Context:** M3 is the first system that consumes the clock rather than producing
-it. The end-of-day moment is unambiguous: `TimeService` publishes `day_ended` and
-`day_started` exactly once per day, and the day boundary is the 2:00 AM collapse
-(D13), so growth is resolved in one place on `day_started` rather than being
-pollled from every tile.
+**Context:** M6's remaining half. `prompt.md` §32 puts quests *and*
+relationships in M6; the quest half is already complete, so this closes the
+milestone. NPCs exist (`TASK-004`), they have a day
+(`TASK-006`), and the interaction prompt already carries `interact()` — so a
+relationship layer attaches to what is there rather than introducing a new
+system. The registry-and-`EventBus` pattern used by `ScheduleRegistry` and
+`QuestRegistry` is the shape to copy: content is data, the service is stateless
+glue.
 
-`WorldTime` already carries `weather` and `forecast`, so watering rules and
-rain-based watering have somewhere to read from without changing the save format
-again.
+M5 (NPCs, dialogue) still has an open half — the dialogue system itself, and the
+other six of the twelve villagers `prompt.md` §16 requires. It is TASK-008
+below. Groups and milestones are different axes: group 17 is Friendship, and
+M5's dialogue lands whenever the batch picks it up. Both M5 and M6 have to
+close before either is reported complete.
 
-**Systems affected:** farming, interaction (hoe/seed/water actions), time
-(`day_started` / `day_ended`).
+**Systems affected:** `scripts/npc/` (relationship state, gifting rules), content
+under `resources/npc/`, `EventBus` (distinct success *and* failure events per
+`AGENTS.md` §4), UI (the readout), dialogue (reaction lines).
 
-**Acceptance criteria:** the M2+M3 rows in `docs/ACCEPTANCE.md` that describe
-planting, watering and growth.
+**Acceptance criteria:** the M6 rows in `docs/ACCEPTANCE.md` that describe
+relationships and gifting.
 
-**Per `AGENTS.md`:** every farming action must publish a clearly distinct success
-event *and* a clearly distinct failure event. Planting a seed and failing to
-plant must not look or sound the same, and neither may look or sound like
-harvesting.
+**Per `AGENTS.md`:** gifting must publish a clearly distinct success event *and*
+a clearly distinct failure event. A liked gift and a refused gift must never
+look or sound the same.
 
 **Verification:** `powershell -NoProfile -ExecutionPolicy Bypass -File
-tools/check.ps1` exits 0, at least one test drives hoe → plant → water → sleep
-through real input and asserts the resulting tile and crop state, and the whole
-sequence survives save → reload.
+tools/check.ps1` exits 0 with a real pass count, at least one test drives the
+player offering a gift through real input and asserts the resulting relationship
+state and wallet, and it survives save → reload.
 
 ---
 
@@ -95,38 +144,32 @@ specification when it is picked up, not now.
 
 | # | Milestone | Notes |
 |---|---|---|
-| TASK-003 | Farming grid and soil state | M3. Next up. Depends on TASK-001, now done |
-| TASK-004 | Crop resources and growth | M3 |
-| TASK-005 | New-game menu and title screen | M1. Straightforward; needed before save/load is reachable |
-| TASK-006 | Save system, versioned | M1/M16. `SAVE_VERSION` from the start |
-| TASK-006 | Inventory with quality tiers | M4. Slot splitting, lowest-quality-first removal |
-| TASK-007 | Tools and stamina | M4 |
-| TASK-008 | Economy, shop, currency | M4 |
-| TASK-009 | NPC entities and schedules | M5 |
-| TASK-010 | Dialogue system | M5 |
-| TASK-011 | Relationships and gifting | M5 |
-| TASK-012 | Quests | M6 |
-| TASK-013 | Fishing | M7 |
+| TASK-007 | Friendship and gifting | Group 17 / M6. Spec'd above. Next up |
+| TASK-008 | Dialogue system | M5. Needed before relationships have anything to say |
+| TASK-009 | Save system, versioned | M1/M16. `SAVE_VERSION` from the start |
+| TASK-010 | New-game menu and title screen | M1. Needed before save/load is reachable |
+| TASK-011 | Crafting and cooking | M7 |
+| TASK-012 | Buildings and upgrades | Group 20 / M11 |
+| TASK-013 | Fishing | Group 21 / M7. Needs time of day and weather to bite |
 | TASK-014 | Animals | M7 |
-| TASK-015 | Crafting and cooking | M7 |
-| TASK-016 | Mines | M8 |
-| TASK-017 | Combat and boss | M8 |
-| TASK-018 | Weather | M9 |
-| TASK-019 | Seasons and visuals | M9 |
-| TASK-020 | Cutscene system | M10. Spec in `docs/CUTSCENE_GUIDE.md` |
-| TASK-021 | Buildings and upgrades | M11 |
-| TASK-022 | Festivals | M12 |
-| TASK-023 | Story progression | M13 |
-| TASK-024 | Audio manager and music | M14 |
-| TASK-025 | UI and accessibility | M15 |
-| TASK-026 | Art and animation polish | M17 |
-| TASK-027 | Performance | M18 |
-| TASK-028 | Bot simulation and balance | M19 |
-| TASK-029 | Release integration | M20 |
+| TASK-015 | Mining | Group 22 / M8 |
+| TASK-016 | Combat and boss | M8 |
+| TASK-017 | Weather | Group 23 / M9 |
+| TASK-018 | Seasons and visuals | Group 24 / M9 |
+| TASK-019 | Festivals | M12 |
+| TASK-020 | Story progression | M13 |
+| TASK-021 | Audio manager and music | Group 27 / M14. Blocked on `docs/AUDIO_GUIDE.md` |
+| TASK-022 | Cutscene system | M10. Spec in `docs/CUTSCENE_GUIDE.md` |
+| TASK-023 | Performance | Group 29 / M18 |
+| TASK-024 | Release integration | Group 31–32 / M20 |
 
 The ordering is a dependency order, not a difficulty order. Fishing is harder
 than the menus, and it is later only because a fish needs a time of day and
 weather to bite.
+
+Already closed without a queue entry of their own: UI (group 25), bot simulation
+and balance (the C# groundwork, TASK-000), and the dialogue *prompt* half of the
+NPC system (TASK-004).
 
 ---
 

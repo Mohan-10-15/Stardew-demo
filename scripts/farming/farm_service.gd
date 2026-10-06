@@ -505,21 +505,7 @@ static func _search_for_player(node: Node) -> Node3D:
 	return null
 
 
+## The clock, found by type rather than by path. See [method TimeService.find] for why
+## it is a search at all.
 static func _find_time_service() -> TimeService:
-	var loop := Engine.get_main_loop()
-	if not loop is SceneTree:
-		return null
-	var scene_root := (loop as SceneTree).root
-	if scene_root == null:
-		return null
-	return _search_for_time(scene_root)
-
-
-static func _search_for_time(node: Node) -> TimeService:
-	if node is TimeService:
-		return node
-	for child: Node in node.get_children():
-		var found := _search_for_time(child)
-		if found != null:
-			return found
-	return null
+	return TimeService.find_in_tree()

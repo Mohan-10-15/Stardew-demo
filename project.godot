@@ -15,7 +15,7 @@ config/description="A stylized 3D farming / life-simulation game with first- and
 config/version="0.1.0"
 run/main_scene="res://scenes/core/main.tscn"
 config/quit_on_go_back=false
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 boot_splash/bg_color=Color(0.09, 0.12, 0.16, 1)
 boot_splash/show_image=false
 
@@ -40,6 +40,10 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="Hollowbrook"
 
 [editor_plugins]
 

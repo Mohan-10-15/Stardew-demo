@@ -89,6 +89,10 @@ func get_cases() -> Array[StringName]:
 		&"two_villagers_with_the_same_id_walk_the_same_way",
 		&"a_villager_is_solid_and_carries_an_interaction_component",
 		&"a_villager_with_nothing_to_say_says_nothing",
+		# --- the authored day ------------------------------------------------------
+		&"schedules_point_every_villager_at_a_real_place",
+		&"a_scheduled_villager_walks_to_their_post_and_holds_it",
+		&"the_walkability_grid_reaches_every_named_place",
 		# --- the rules ------------------------------------------------------------
 		&"talking_turns_a_villager_to_face_the_player",
 		&"a_gift_takes_the_item_and_moves_the_score_together",
@@ -202,6 +206,12 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_solid_and_component()
 		&"a_villager_with_nothing_to_say_says_nothing":
 			return await _t_no_definition()
+		&"schedules_point_every_villager_at_a_real_place":
+			return await _t_schedules_resolve()
+		&"a_scheduled_villager_walks_to_their_post_and_holds_it":
+			return await _t_scheduled_walk()
+		&"the_walkability_grid_reaches_every_named_place":
+			return await _t_navigation_grid()
 		&"talking_turns_a_villager_to_face_the_player":
 			return await _t_talk_faces()
 		&"a_gift_takes_the_item_and_moves_the_score_together":
@@ -1823,7 +1833,13 @@ const REFUSAL_REASONS: Array[StringName] = [
 ## Loaded by path for the manager rather than named, for the documented reason: naming
 ## [NpcManager] here pulls its whole dependency chain into this file's compile, which is
 ## the `class_name` cycle trap. `test_gathering` does the same with [GatheringService].
-func _build_world() -> Dictionary:
+##
+## [param schedules] turns on the authored day before the node enters the tree, which
+## is the only moment [member NpcManager.apply_schedules] can be set - `_ready` reads
+## it, builds the walkability grid and points everyone at their first destination.
+## Off by default so every other case in this file keeps the wandering cast it was
+## written against.
+func _build_world(schedules: bool = false) -> Dictionary:
 	_reset_rig()
 	var packed := load(WORLD_SCENE) as PackedScene
 	var player_packed := load(PLAYER_SCENE) as PackedScene
@@ -1845,6 +1861,8 @@ func _build_world() -> Dictionary:
 	# places it rather than by the fixture reaching in and moving people around.
 	var manager: Node = manager_script.new()
 	manager.name = "NpcManager"
+	if schedules:
+		manager.set("apply_schedules", true)
 	_rig.add_child(manager)
 	await _step(4)
 
@@ -2002,6 +2020,177 @@ func _last_talk_reason() -> String:
 	if _talk_failures.is_empty():
 		return "nothing at all"
 	return String(_talk_failures[-1]["reason"])
+
+
+## The authored day, resolved against a real clock and a real content directory.
+##
+## Asserts three separate things because each fails differently: nobody resolves to
+## nothing (an empty answer, which the fallback would happily swallow), somebody
+## resolves to a place with no [LocationData] behind it (a schedule naming a street
+## that does not exist), and *nobody* left home (a day that is written but never
+## applies - the season or weather gate that no day satisfies).
+func _t_schedules_resolve() -> Dictionary:
+	var c := &"schedules_point_every_villager_at_a_real_place"
+	var built := await _build_world(true)
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var manager: Node = built["manager"]
+	var clock := TimeService.find(_rig)
+	if clock == null:
+		return fail(c, "no TimeService in the rig")
+	# Fixed rather than left at boot time: 10:00 on a clear spring morning is inside
+	# every villager's working block, so the case says what it means whatever hour the
+	# suite happened to be started at.
+	clock.time.season = WorldTime.Season.SPRING
+	clock.time.weather = WorldTime.Weather.SUN
+	clock.time.hour = 10
+	clock.time.minute = 0
+	manager.call("refresh_schedules")
+
+	var bad: Array[String] = []
+	var posts := 0
+	for npc: Npc in manager.call("npcs"):
+		var home := StringName("%s_cottage" % npc.data.id)
+		if npc.scheduled_location_id.is_empty():
+			bad.append("%s resolved to nothing" % npc.data.id)
+			continue
+		if LocationRegistry.get_location(npc.scheduled_location_id) == null:
+			bad.append("%s wants '%s', which has no location" % [
+				npc.data.id, npc.scheduled_location_id,
+			])
+			continue
+		if npc.scheduled_location_id == home:
+			continue
+		posts += 1
+		if not npc.is_walking_to_post():
+			bad.append("%s was sent to %s but is not going" % [
+				npc.data.id, npc.scheduled_location_id,
+			])
+	if not bad.is_empty():
+		return fail(c, "; ".join(bad))
+	if posts == 0:
+		return fail(c, "all %d villagers were still at home at 10:00, so nothing was tested" % (
+			manager.call("count")
+		))
+	return succeeded(c, "%d of %d villagers are at a post at 10:00" % [
+		posts, manager.call("count"),
+	])
+
+
+## One villager, the whole walk: leave home, arrive, and stay.
+##
+## The "and stays" half is the one that would be easy to leave out. Clearing the walk
+## on arrival - the obvious way to tidy up - drops the villager straight back into
+## wandering, and they amble off the orchard row they were sent to within a couple of
+## seconds. Nothing about *arriving* would catch that; only watching afterwards does.
+func _t_scheduled_walk() -> Dictionary:
+	var c := &"a_scheduled_villager_walks_to_their_post_and_holds_it"
+	var built := await _build_world(true)
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var manager: Node = built["manager"]
+	var clock := TimeService.find(_rig)
+	if clock == null:
+		return fail(c, "no TimeService in the rig")
+	clock.time.season = WorldTime.Season.SPRING
+	clock.time.weather = WorldTime.Weather.SUN
+	clock.time.hour = 10
+	clock.time.minute = 0
+	manager.call("refresh_schedules")
+
+	var npc := manager.call("get_npc", MIRA) as Npc
+	if npc == null:
+		return fail(c, "Mira is not in the cast")
+	var place := LocationRegistry.get_location(npc.scheduled_location_id)
+	if place == null:
+		return fail(c, "Mira was sent to '%s', which has no location" % npc.scheduled_location_id)
+	if npc.scheduled_location_id == StringName("%s_cottage" % MIRA):
+		return fail(c, "Mira was still at home at 10:00, so there is no walk to watch")
+	if not npc.is_walking_to_post():
+		return fail(c, "Mira was sent to %s but is not walking there" % place.display_name)
+
+	var target := place.ground_position()
+	var start := npc.global_position.distance_to(target)
+	if start < 1.2:
+		return fail(c, "Mira started %.2fm from %s, too close to test a walk" % [
+			start, place.display_name,
+		])
+	# Driven directly rather than by waiting on the engine's 60 Hz.
+	#
+	# This is the same two lines [method Npc._physics_process] runs - `_advance` then
+	# `move_and_slide` - so what is under test is unchanged; only the waiting is, and
+	# at 1.7 m/s a 25 m walk is fifteen seconds of wall clock that would otherwise be
+	# spent proving nothing. The frame budget is derived from the distance so a longer
+	# village or a slower villager does not start failing this case for the wrong
+	# reason.
+	var budget := clampi(int(start * 120.0) + 600, 600, 8000)
+	var closest := start
+	for _tick: int in range(budget):
+		npc._advance(1.0 / 60.0)
+		npc.move_and_slide()
+		closest = minf(closest, npc.global_position.distance_to(target))
+		if closest <= 1.2:
+			break
+	if closest > 1.2:
+		return fail(c, "Mira got within %.2fm of %s but no closer (started %.1fm away)" % [
+			closest, place.display_name, start,
+		])
+	if not npc.is_walking_to_post():
+		return fail(c, "Mira arrived and then let go of her post")
+
+	# The hold is checked on real frames, unlike the walk: the question is whether she
+	# is still there once gravity, the clock and the manager's own tick have all had a
+	# go at her.
+	var arrived_at := npc.global_position
+	for _tick: int in range(30):
+		await _step(1)
+	var drift := npc.global_position.distance_to(arrived_at)
+	if drift > 1.5:
+		return fail(c, "Mira walked %.2fm away from %s after arriving" % [
+			drift, place.display_name,
+		])
+	return succeeded(c, "Mira covered %.1fm to %s and held it (wandered %.2fm)" % [
+		start, place.display_name, drift,
+	])
+
+
+## The grid, from the outside: it exists, it saw the world's obstacles, and every
+## named place in the valley is reachable from a doorstep.
+##
+## Reachability rather than "is this cell walkable", because a location can sit
+## legitimately on a blocked cell - the well's anchor is next to the well - and what
+## the game needs is that a villager sent there gets as close as a person can, which
+## is exactly what [method NpcNavigation.find_path] snaps to.
+func _t_navigation_grid() -> Dictionary:
+	var c := &"the_walkability_grid_reaches_every_named_place"
+	var built := await _build_world(true)
+	if built.is_empty():
+		return fail(c, "could not build scene")
+	var nav := _find_first(_rig, "Navigation") as NpcNavigation
+	if nav == null:
+		return fail(c, "no Navigation node was built")
+	if nav.astar == null:
+		return fail(c, "the grid was never built")
+	if nav.walkable_cells <= 0:
+		return fail(c, "nothing at all is walkable")
+	if nav.blocked_cells <= 0:
+		# A probe that finds no obstacles did not probe: it would say a villager can
+		# walk through the houses, and every later assertion would pass on that.
+		return fail(c, "no cell was rejected, so the probes never ran")
+
+	var from := LocationRegistry.get_location(&"mira_cottage")
+	if from == null:
+		return fail(c, "Mira's cottage is missing")
+	var origin := from.ground_position()
+	var bad: Array[String] = []
+	for place: LocationData in LocationRegistry.all_locations():
+		if nav.find_path(origin, place.ground_position()).is_empty():
+			bad.append(String(place.id))
+	if not bad.is_empty():
+		return fail(c, "unreachable from Mira's cottage: %s" % ", ".join(bad))
+	return succeeded(c, "%d walkable / %d blocked cells, and all %d places reachable" % [
+		nav.walkable_cells, nav.blocked_cells, LocationRegistry.all_locations().size(),
+	])
 
 
 func _last_gift_reason() -> String:

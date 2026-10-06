@@ -138,7 +138,16 @@ func _overlaps(previous: NpcScheduleEntry, current: NpcScheduleEntry) -> bool:
 	# Every minute of the playable day, not a sample. A ten-minute step would call two
 	# blocks that both claim 12:30 non-overlapping, which is exactly the kind of
 	# authoring mistake this is here to refuse.
-	for minute: int in range(Clock.DAY_START_HOUR * 100, Clock.PASS_OUT_HOUR * 100 + 100):
+	#
+	# The bounds are HHMM, not hours: 6:00 AM is `600` and 2:00 AM is `2600`, so the
+	# sweep is `600 -> 2700`. Writing `PASS_OUT_HOUR * 100` gives `2 * 100 = 200`, and
+	# `range(600, 300)` is *empty* - the check silently passed every pair of blocks in
+	# the game, which is how an unconditional block came to sit on top of a seasonal one
+	# and win every day of the year.
+	for minute: int in range(
+		Clock.to_game_minutes(Clock.DAY_START_HOUR, 0),
+		Clock.to_game_minutes(Clock.PASS_OUT_HOUR, 0) + 100,
+	):
 		if previous.covers_minute(minute) and current.covers_minute(minute):
 			return true
 	return false

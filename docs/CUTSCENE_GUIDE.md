@@ -5,7 +5,7 @@ How the cinematic system is meant to work, and the rules a cutscene must obey.
 **Status: not implemented.** No cutscene system exists yet. This document is the
 contract that `CutsceneDirector` will be built against, written now so the design
 is fixed before implementation starts forcing decisions on it. See
-`docs/ACCEPTANCE.md` M9 for the criteria it has to satisfy.
+`docs/ACCEPTANCE.md` M10 for the criteria it has to satisfy.
 
 Nothing in this document is a stub or a placeholder — it is a specification. The
 first milestone that touches cutscenes implements it; before that, there is

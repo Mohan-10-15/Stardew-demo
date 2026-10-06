@@ -1,15 +1,312 @@
 # Development Status
 
-Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5, GDScript.
-Dual first-person / third-person cameras, switchable at runtime.
+Game: **Hollowbrook Hollow** — stylized 3D farming / life-simulation, Godot 4.5,
+GDScript by default with one measured system in C# (see
+`docs/MULTI_LANGUAGE_ARCHITECTURE.md`). Dual first-person / third-person
+cameras, switchable at runtime.
 
-Progress: **Groups 0–15 and 25 complete.** Group 16 is next.
+Progress: **Groups 0–16 and 25 complete.** Group 17 (Friendship) is next.
 
-Current baseline: **439/439 tests**, import clean, boot clean, zero script errors.
+Current baseline: **476/476 tests**, C# build clean, import clean, boot clean,
+zero script errors.
 
 ---
 
 ## Last completed group
+
+```
+GROUP:  16
+NAME:   NPC schedules - the authored day
+STATUS: COMPLETE
+LANE:   People & Interface (npc, schedules) + core (registry, clock lookup)
+```
+
+Six villagers now have a written day and are seen keeping it. A schedule
+resolves a post from clock, season and weather; the NPC walks there, stands at
+it while the block lasts, and re-paths when the clock crosses into the next one.
+Nothing in the world knows who each other's systems are — the clock publishes,
+the manager reacts.
+
+### IMPLEMENTED
+
+- **Runtime wiring, opt-in.** `NpcManager.apply_schedules` is an `@export`
+  defaulting to `false`. `main.gd` sets it **before** `add_child`, because
+  `NpcManager._ready()` reads it and `_ready` runs on insertion. Every other
+  NPC test still gets the old, schedule-free world, which is why none of them
+  moved when this landed.
+- **Three movement modes in `Npc._advance`.** Attending (holding a post),
+  scheduled walk (`_moving_to_scheduled`), and seeded wander — in that order,
+  so a villager with somewhere to be does not wander off toward it in detours.
+  `_follow_schedule` **holds position and does not clear the walk on arrival**;
+  the post is not "done" when you reach it, it is where you are until the clock
+  says otherwise.
+- **`walk_to(point, facing)`** on `Npc`, with a straight-line fallback when the
+  navigation grid returns no path, returning `false` and warning. Also
+  `clear_scheduled_walk()`, `is_walking_to_post()`, `set_navigation()`,
+  `set_schedule()`, `get_schedule()`.
+- **`ScheduleRegistry`** (`scripts/npc/schedule_registry.gd`), the mirror of
+  `LocationRegistry`: one directory, `schedule_for`, `has_schedule`,
+  `all_schedules`, `duplicate_ids`, `reload`, `clear_cache`. It rejects an
+  invalid schedule at load rather than at 09:00.
+- **`TimeService.find(start)` / `find_in_tree()`** — the canonical clock
+  lookup, now used by `main.gd`, `clock_hud.gd` and `farm_service.gd` instead
+  of three private tree searches each.
+- **`apply_schedules` off means off**: no navigation grid is built for it, no
+  clock signal is subscribed, and `spawn_all` runs exactly as it did before.
+
+### TESTS
+
+- **`tests/suites/test_schedule.gd` — 16 cases**, content-only, no scene tree:
+  loading, validity, unique ids, every schedule belongs to a real villager,
+  every destination is a real location, **every schedule resolves at every hour
+  of every day in every season and every weather**, cottage locations match the
+  homes they were derived from, location validity/kind, and the two overlap
+  regressions.
+- **`tests/suites/test_npc.gd` — 3 new cases**: `_t_schedules_resolve`,
+  `_t_scheduled_walk` (drives `npc._advance(1.0/60.0)` +
+  `move_and_slide()` in a tight loop rather than waiting on frames), and
+  `_t_navigation_grid`.
+- **`every_block_is_reachable_in_its_own_time`** (new this session) — see
+  BUGS below.
+- **Full pipeline: 476/476**, `CHECK_EXIT=0`, zero `SCRIPT ERROR`.
+
+### PLAYED
+
+`tools/playtest_schedule.gd`, run against the shipped game in a real window
+(not headless), **PASS, exit 0**. Five questions:
+
+1. **Morning doorstep** — at 06:00 every villager is at their own cottage
+   doorstep, not asleep inside a wall.
+2. **Walks, not teleports** — driven through a full arrival, largest
+   single-frame move **0.042 m** against a 0.5 m threshold.
+3. **Holds the post** — a 90-frame hold with the clock frozen shows **0.000 m**
+   of movement; they stop and they *stay* stopped.
+4. **Found in the square** — the player is walked to the square at 10:00 and
+   the villagers are there, corner HUD read off the real
+   `Panel/Column/TimeLabel` ("10:00 AM").
+5. **Day rollover** — after `sleep_until_morning()` everyone is back on their
+   doorstep for 06:00.
+
+Screenshots: `art_review_schedule_1_morning.png`,
+`art_review_schedule_2_square.png`, `art_review_schedule_3_next_morning.png`
+(git-ignored). **Not yet visually reviewed** — they are an artefact of the run,
+not a substitute for looking at it.
+
+### BUGS FOUND AND FIXED
+
+Five, all in the harness rather than the game — which is itself the finding:
+the game was fine and the test was wrong, five times over.
+
+1. **`_hold_check` called without `await`.** It ran concurrently with the next
+   clock advance and reported "bram drifted 60.24 m" — he had simply been
+   reassigned while the measurement was in flight.
+2. **The clock free-ran during measurement.** A two-minute arrival wait spans
+   two in-game hours, which reassigned three villagers underneath the
+   harness. Now `TimeService.running = false` is set at boot and the script
+   drives time itself with `advance_tick()`.
+3. **Distance-to-anchor was used as "drift".** Bram stops ~2 m from
+   `forest_edge`'s authored point because `NpcNavigation.find_path` snaps the
+   goal to the nearest *walkable* cell, and trees are exactly what a forest
+   edge has. Rewritten to measure displacement from where they stopped.
+4. **The hold window opened mid-walk.** The arrival tolerance is 2.0 m but
+   `Npc.ARRIVE_DISTANCE` is 0.6 m, so "arrived" could mean "still has a metre
+   to go". `_stragglers` now also requires `speed <= 0.17`.
+5. **`var speed := member.velocity.length()` — parse error.** `velocity`
+   belongs to `CharacterBody3D`, not `Node3D`, so on a `Node3D` it arrives as
+   a Variant and the type cannot be inferred. Fixed with
+   `member.get("velocity")` and an `is Vector3` check.
+
+And one, in the content, found by measurement rather than by playing:
+
+6. **Bram's noon block at the well was never occupied.** `forest_edge →
+   village_well` is 61.1 m at his 1.5 m/s — **40.7 real seconds** — into a
+   block that lasted **30**. No error, no warning: he would have arrived at
+   13:21 and the well would have been empty all year. Content was written by
+   hand in two places that did not know each other, which is precisely what a
+   test is for. The block is now `1200–1400` and the following one `1400–1700`.
+   The regression test is `every_block_is_reachable_in_its_own_time`, verified
+   to fail against the old content with
+   `bram @ village_well from 1200: walks 40.7 s into a 30.0 s block`.
+
+### ARCHITECTURE NOTES
+
+- **Home is not a post.** `go_home()` teleports to `data.home` and clears the
+  walk; placement at day rollover is by design, not a pathing failure.
+- **A block naming a place that does not exist** warns once and stops that
+  villager — it never crashes, and `every_schedule_only_names_real_locations`
+  catches it in CI first.
+- **The navigation grid is built lazily**, only when schedules are on: 112×96,
+  9906 walkable, 846 blocked, ~82 ms. A schedule-free boot pays nothing.
+- **Schedule blocks reserve no travel time.** This is deliberate and now
+  measured: a villager is handed the next post the instant the clock crosses
+  the boundary and walks whatever separates the two. Measured across all 35
+  blocks (worst-case predecessor, every season's alternative counted), all 35
+  are occupied for some of their duration; the tightest is Bram needing 40.7 s
+  of a 60 s window — **19.3 s actually spent there**. A content author who
+  wants a villager *present* for a whole block has to leave the walk time, and
+  the test is what tells them whether they did.
+
+### KNOWN GAPS
+
+- **There is no bed.** Day rollover is reached by calling
+  `TimeService.sleep_until_morning()` directly. Sleeping needs a bed
+  interactable, and "the player went to bed at 01:00" needs to route through
+  it.
+- **The three playtest screenshots have not been looked at.** They exist and
+  the assertions on them passed; that is not the same as reviewing them.
+- **A free-running soak is not covered.** Every measurement in the playtest
+  runs with the clock held still, so nobody has watched six villagers cross
+  paths for a full in-game day in real time.
+- **Second-person paths** (`previous.to <= entry.from`, equal ends) assume
+  blocks are contiguous. A future gap between blocks has no predecessor and
+  falls back to "starts at home", which is only correct for the first block of
+  the day.
+
+---
+
+## Also completed in this session: C# toolchain and the balance sweep
+
+```
+MILESTONE: M19 groundwork — Testing, bot simulation, balance
+LANE:      core (toolchain, build scripts, docs)
+STATUS:    COMPLETE
+```
+
+Not a roadmap group — this is the cross-cutting work the brief asks for before
+M19 can be anything other than "we wrote more tests". It installs a second
+language, proves it end to end, uses it exactly once, and writes down why.
+
+### IMPLEMENTED
+
+- **`.NET build of Godot 4.5`** at `tools/Godot_v4.5-stable_mono_win64_console.exe`,
+  portable, in-repo, git-ignored. The plain GDScript-only binary is kept as a
+  fallback; `check.ps1` prefers the mono one, falls back, and prints which it
+  picked. On the fallback engine the build stage is skipped and any case that
+  needs C# reports the system missing instead of silently passing.
+- **`Hollowbrook.csproj`** (`Godot.NET.Sdk/4.5.0`, `net8.0`) plus **`nuget.config`**
+  feeding from `tools/GodotSharp/Tools` first, so a restore needs no network.
+  `AssemblyName`/`RootNamespace` are `Hollowbrook`.
+- **A `csharp` stage in `tools/check.ps1`**, now the **first** stage:
+  `csharp → import → tests → boot`. It has to be first because Godot registers a
+  `[GlobalClass]` by reflecting over the *built* DLL during the import scan —
+  building afterwards leaves the class out of `global_script_class_cache.cfg`
+  and GDScript cannot see it.
+- **`scripts/sim/BalanceSweep.cs`** — the one C# system. A deterministic sweep
+  that takes twelve flat arrays (seed cost, sell price, yield, days to grow,
+  regrow window, season mask per crop, plus the tool-price ladder) and a horizon
+  in days, and returns per planting strategy the end balance, gross revenue,
+  seed spend and the day each tool tier became affordable. Four strategies:
+  best gold per day, best profit per harvest, cheapest seed, worst profitable
+  crop. It hard-codes no crop, no price and no tool — content added tomorrow
+  changes the answer without touching the file.
+- **`scripts/sim/balance_report.gd`** — the GDScript half. Reads the real
+  `CropRegistry` and `ItemRegistry`, builds the arrays, calls the sweep once.
+  Owns the content schema; the C# half owns the loops.
+- **`tests/suites/test_balance.gd`** — 11 cases. The first asserts the boundary
+  itself (assembly loadable *and* instantiable, with a message naming the
+  command that fixes it); the rest assert that the shipped crop table progresses
+  a player: every crop enters, every strategy reports, tool gates are ascending
+  and positive, the copper gate is reachable inside two years **for the worst
+  profitable crop as well as the best**, the best strategy is never behind the
+  worst, and no strategy ever spends more on seed than it grosses.
+- **`tools/profile_boot.gd`** — the measurement the language decision rests on:
+  ```
+  world build + decoration scatter:        56.3 ms
+  NpcNavigation.build over 112x96 cells:   82.0 ms  (9981 walkable, 771 blocked)
+  WorldBuilder.is_reserved x100000:        104.0 ms (1.04 us each)
+  DecorationField._too_close x50000:       586.3 ms (11.73 us each)
+  ```
+  None of these is on a frame budget, so none of them justifies a boundary. The
+  sweep does, because it is re-run per content edit and on every test run.
+- **`docs/MULTI_LANGUAGE_ARCHITECTURE.md`**, **`docs/TECH_STACK.md`**, an
+  amended **`DECISIONS.md` D1** and a new **D14**, and an `AGENTS.md` §5/§8/§9
+  that no longer forbids the stack the repo now contains.
+
+### ARCHITECTURE NOTES WORTH KEEPING
+
+- **Flat data crosses, objects do not.** Twelve arrays in, one dictionary out,
+  marshalled in a *single* call. No marshalling per frame, no object graph, no
+  callback the other way, no C# node, no C# signal. Everything cross-cutting
+  still goes through the GDScript `EventBus`.
+- **The boundary has to fail loudly.** The real failure mode of a language
+  boundary is not an exception — it is the assembly silently not loading, at
+  which point every case that depends on it reports a trivial pass. That is why
+  `the_csharp_sweep_is_buildable_and_loadable` exists as the first case rather
+  than being folded into the others.
+- **Build before import, always.** Recorded in `docs/MULTI_LANGUAGE_ARCHITECTURE.md`
+  §2 because it is invisible until it breaks: the pipeline looks like it works
+  while `BalanceSweep` quietly drops out of the global class cache.
+
+### TESTS PERFORMED
+
+**457/457 total, 11 in `tests/suites/test_balance.gd`**, full pipeline green:
+
+```
+csharp     OK
+import     OK
+tests      OK  (passed: 457   failed: 0)
+boot       OK  (phase=PLAYING, main children=17, config=true)
+```
+
+Zero `SCRIPT ERROR` lines in any stage. The balance cases run against the real
+nine-crop table and the real four-tier tool ladder (350 / 800 / 1800 / 3600 for
+axes and pickaxes; hoe, watering can and scythe are tier 0 and free).
+
+### BUGS FOUND AND FIXED DURING THIS WORK
+
+1. **`.NET: Failed to load project assembly`, reported as a class-name mismatch.**
+   Godot derives the assembly file name from `application/config/name` unless
+   `dotnet/project/assembly_name` is set — so with the project titled *Hollowbrook
+   Hollow* it went looking for `Hollowbrook Hollow.dll`. The engine then printed
+   *"Make sure the script exists and contains a class definition with a name that
+   matches the filename"*, which is wrong and sent the investigation in a circle
+   for a while; the class name was correct all along. Fixed by pinning
+   `[dotnet] project/assembly_name="Hollowbrook"` in `project.godot`. Documented
+   as trap 1 in `docs/MULTI_LANGUAGE_ARCHITECTURE.md` §5.
+2. **A `--script` entry point cannot name an autoload-dependent `class_name`.**
+   `tools/profile_boot.gd` compiled `WorldBuilder` → `Log` before the autoloads
+   existed and failed with `Identifier not found: Log`, while the same file
+   loaded a frame later by `run_tests.gd` compiled fine. This is `AGENTS.md` §4's
+   standing trap, hit for real. Fixed by loading the script by path and calling
+   through `call()`.
+3. **`Variant` is not `IConvertible`.** `System.Convert.ToSingle(dict["end_gold"])`
+   throws `InvalidCastException` at the boundary. The Godot 4.5 C# API is
+   `AsSingle()` / `AsInt32()` — note `AsSingle`, not `AsFloat`, which does not
+   exist.
+4. **GDScript's `%` has no `%g`.** `"gate of %g" % x` prints
+   `String formatting error: unsupported format character` and produces no
+   message. `%s` with `str()` everywhere.
+5. **C# build order.** Import was running before `dotnet build`, so the global
+   class cache was written from a stale or missing DLL. Fixed by moving the
+   build stage ahead of import in `check.ps1`.
+6. **A probe freed a `Resource`.** `Can't free a RefCounted object` — the
+   boundary probe called `free()` on a `BalanceSweep` (a `Resource`). Probe
+   scripts were removed after the boundary was proven; the coverage now lives in
+   `test_balance.gd`.
+
+### FALSE POSITIVES — investigated and dismissed
+
+- **"`_too_close` is 11.73 µs, port it to C++."** It is 0.2% of a 60 fps frame
+  budget per call, and it runs once during the boot decoration scatter. Nothing
+  calls it per frame.
+- **"`NpcNavigation.build` is 82 ms, it needs native code."** It is a one-off
+  boot cost, and the grid it builds is then read-only.
+
+### KNOWN GAPS (deliberately out of scope here)
+
+- **The sweep is a planning model, not the game.** It knows nothing about
+  stamina, rain, festivals, foraging or quests — it models planting, because
+  planting is the income it can express honestly from the numbers on disk. The
+  two-year headless simulation is the thing that plays the real systems.
+- **Profile numbers are machine-specific.** Re-run `tools/profile_boot.gd`
+  before citing them on different hardware.
+- **There is still no audio content at all.** `assets/audio/` is empty and no
+  `AudioManager` exists. The contract for M14 is now written up in
+  `docs/AUDIO_GUIDE.md`; what is missing is the milestone itself.
+
+---
+
+## Previously completed group: 15
 
 ```
 GROUP: 15
@@ -135,7 +432,7 @@ behind them, and it found two defects that all 439 automated checks passed:
 
 ---
 
-## Previous group
+## Previously completed group: 14
 
 ```
 GROUP: 14
@@ -1253,7 +1550,7 @@ different numbering schemes.
 |---|---|---|
 | 1 | Audit | **COMPLETE** — pond defect reproduced, root-caused, fixed, regression-tested |
 | 2 | Foundation | **COMPLETE** — docs established, lanes, roadmap, acceptance criteria, schemas |
-| 3 | Complete game | IN PROGRESS — M2 (time and calendar) **COMPLETE**; M3 (farming) **COMPLETE**; M3b (resource gathering) **COMPLETE**; M4 next |
+| 3 | Complete game | IN PROGRESS — M0–M4 **COMPLETE**; M6 quests **COMPLETE** with its relationships half open; M5 NPCs/dialogue partial (six villagers and their schedules done, dialogue system and the other six villagers open). Next: group 17 (Friendship) — see `docs/TASKS.md` |
 
 ---
 
@@ -2018,19 +2315,21 @@ number a player sees are not the same number: the pipeline could not see either 
 | 13 | ~~Economy~~ | 30 | Testing |
 | 14 | ~~NPC System~~ | 31 | Final Integration |
 | 15 | ~~Quests~~ | 32 | Final Quality Pass |
-| 16 | NPC Schedules | | |
+| 16 | ~~NPC Schedules~~ | | |
 
 ---
 ## How to validate
 
 ```bash
-pwsh -File tools/check.ps1            # import + tests + boot
-pwsh -File tools/check.ps1 -SkipImport
-godot --path .                        # play
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1   # csharp + import + tests + boot
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1 -SkipImport
+& "tools\Godot_v4.5-stable_win64_console.exe" --path .                # play
 ```
 
-Add `--verbose` or raise `-TimeoutSeconds` if needed. The script kills any
-orphaned Godot process on exit, so a broken run never leaves the machine stuck.
+This machine has Windows PowerShell 5.1 only; the `pwsh -File tools/check.ps1`
+form from `AGENTS.md` is the same script under PowerShell 7. Add `--verbose` or
+raise `-TimeoutSeconds` if needed. The script kills any orphaned Godot process
+on exit, so a broken run never leaves the machine stuck.
 
 ### Adding tests
 Drop a new `.gd` file in `tests/suites/` extending `TestSuite`. It is discovered

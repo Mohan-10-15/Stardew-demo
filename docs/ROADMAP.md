@@ -17,8 +17,8 @@ reasoning.
 | M2 | Time and calendar | **COMPLETE** |
 | M3 | Farming | **COMPLETE** |
 | M4 | Inventory, tools, economy | **COMPLETE** |
-| M5 | NPCs, dialogue, relationships | |
-| M6 | Quests | **COMPLETE** |
+| M5 | NPCs, dialogue | |
+| M6 | Quests, relationships | quests **COMPLETE**; relationships open |
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
 | M9 | Weather and seasons | |
@@ -40,6 +40,10 @@ reasoning.
 go two or three milestones at a time — a group is a batch of related work.
 This file tracks **milestones**, which are the acceptance-test units.
 
+Milestone names and numbering come from `prompt.md` §32 and are authoritative;
+`docs/ACCEPTANCE.md` is keyed to the same scheme. Where a name here and a name
+there once disagreed, `prompt.md` won and both were changed.
+
 They are not the same axis and the mapping is not 1:1. Where a group covers
 several milestones, the milestone list is the one that decides when a feature is
 *done*; the group list decides how the work was *batched*. Groups 0–4 map to
@@ -52,7 +56,7 @@ M0 and part of M1; group 5 (time and ambience) is M2.
 ### M0 — Stabilize existing project
 **Status: COMPLETE.** Import clean, 99/99 tests at the time, boot reaches
 `PLAYING`, and the pond basin defect found during the audit is fixed with
-regression coverage. The suite is now 126 cases, having grown with each
+regression coverage. The suite is now 476 cases, having grown with each
 milestone.
 
 The point of M0 is that everything after it assumes a working baseline. Three
@@ -126,15 +130,29 @@ down — merging never across quality, overflow splitting rather than failing,
 removal taking lowest-quality-first, all-or-nothing on a full bag. Each was a
 real bug once.
 
-### M5 — NPCs, dialogue, relationships
-Twelve people, schedules that respond to time and weather, branching dialogue,
-gifts, friendship and romance.
+### M5 — NPCs, dialogue
+Twelve original NPCs, schedules that respond to time, weather, season, festival
+and quest state, and branching dialogue.
+
+`prompt.md` §16 sets the floor at **at least 12**; six ship today
+(`bram`, `fen`, `halda`, `mira`, `odette`, `sable`), so this milestone is not
+approached yet on population alone.
 
 Schedule determinism matters more than it sounds: an NPC that is in two places
-at once, or nowhere, reads as broken instantly.
+at once, or nowhere, reads as broken instantly. The schedule half is **done**
+(group 16): six authored days, resolved from clock, season and weather, walked
+rather than teleported, and pinned by
+`every_block_is_reachable_in_its_own_time`. Friendship and romance are
+deliberately *not* in this milestone — `prompt.md` §32 puts them in M6, so the
+two halves of a villager are split across the boundary on purpose.
 
-### M6 — Quests — COMPLETE
-Acceptance, tracked objectives, completion, rewards, and persistence.
+**Status: open.** NPCs and schedules exist; the dialogue system and the missing
+six villagers do not.
+
+### M6 — Quests, relationships — quests COMPLETE, relationships open
+Acceptance, tracked objectives, completion, rewards, persistence — and the
+relationship layer: gifts that like and dislike differently, friendship that
+rises and falls, romance and marriage.
 
 No quest may be completable without doing its objectives.
 
@@ -145,8 +163,14 @@ interaction chain; gold, item and friendship rewards; distinct success and failu
 events for both accepting and handing in; and per-service save/restore.
 
 What does not yet exist, and is deliberately not stubbed: a quest journal page with
-turned-in history, `!` / `?` markers over villagers with work, and the aggregate
-save file that would carry quest state between sessions (M16).
+turned-in history, `!` / `?` markers over villagers with work, the aggregate
+save file that would carry quest state between sessions (M16), and the whole
+relationships half — gift tastes are authored on `NpcData` but nothing reads
+them, friendship has no value, and romance has no path.
+
+Because the milestone covers both halves, **M6 is not complete when the quest
+list above is** — it is complete when the M6 rows in `docs/ACCEPTANCE.md` are
+all ticked.
 
 ### M7 — Fishing, animals, crafting, cooking
 Four interlocking systems: the timed minigame, husbandry with feed cycles, timed

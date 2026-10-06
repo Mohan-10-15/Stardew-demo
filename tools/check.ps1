@@ -17,12 +17,25 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$godot = Join-Path $root 'tools/Godot_v4.5-stable_win64_console.exe'
 
-if (-not (Test-Path $godot)) {
-    Write-Host "Godot not found at $godot" -ForegroundColor Red
+# The project is a .NET project (config/features carries "C#"), so the console
+# wrapper is the mono build. The plain GDScript-only build is still accepted as
+# a fallback so a machine without the .NET binary can run the suite — it simply
+# skips building the C# assembly, which means any case that needs the C# system
+# will report it missing rather than silently passing.
+$godotCandidates = @(
+    (Join-Path $root 'tools/Godot_v4.5-stable_mono_win64_console.exe'),
+    (Join-Path $root 'tools/Godot_v4.5-stable_win64_console.exe')
+)
+$godot = $godotCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if (-not $godot) {
+    Write-Host "Godot not found. Looked for:" -ForegroundColor Red
+    foreach ($c in $godotCandidates) { Write-Host "  $c" -ForegroundColor Red }
     exit 2
 }
+
+Write-Host "Engine: $(Split-Path $godot -Leaf)" -ForegroundColor DarkGray
 
 # `Start-Process -ArgumentList @(...)` joins the array with bare spaces and does
 # NOT quote elements that contain spaces, so Godot received
@@ -94,6 +107,26 @@ function Invoke-GodotStage {
 }
 
 $results = @()
+
+# The C# assembly has to exist before anything can load a C# script, and before
+# the import scan can register `BalanceSweep` as a global class — Godot reflects
+# over the built DLL to find `[GlobalClass]` types. So the build comes first:
+# build, import, test, boot. `dotnet build` rather than `--build-solutions`,
+# because this stage must also catch a compile error in a .cs file —
+# `--build-solutions` reports through the editor's own output, which this script
+# does not scan.
+$csproj = Join-Path $root 'Hollowbrook.csproj'
+if (Test-Path $csproj) {
+    Write-Host ""
+    Write-Host "### build (C#)" -ForegroundColor Cyan
+    $buildOut = & dotnet build $csproj -v minimal --nologo 2>&1 | Out-String
+    Write-Host $buildOut
+    $buildBad = ($LASTEXITCODE -ne 0) -or ($buildOut -match '(?m)^\s*error\s')
+    if ($buildBad) {
+        Write-Host "--- C# build failed ---" -ForegroundColor Red
+    }
+    $results += @{ name = 'csharp'; code = $(if ($LASTEXITCODE -ne 0) { $LASTEXITCODE } else { 0 }); hasErrors = [bool]$buildBad }
+}
 
 if (-not $SkipImport) {
     $results += Invoke-GodotStage -Name 'import' -GodotArgs @(

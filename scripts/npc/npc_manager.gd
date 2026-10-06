@@ -24,11 +24,27 @@ extends Node3D
 ## what keeps a save portable between a village that moved and a save taken before it
 ## moved.
 ##
-## ## Why there is no navigation here
+## ## The authored day
 ##
-## Group 15. [Npc] walks its own patrol within its own radius and collides with the
-## world honestly, which is enough to prove the whole interaction chain. There is no
-## [NavMesh] in the project yet and nothing here pretends otherwise.
+## With [member apply_schedules] on, every tick re-resolves where each villager
+## should be from [ScheduleRegistry] and, when the answer has changed, hands
+## [method Npc.walk_to] a path to it. Three decisions are worth spelling out:
+##
+## - **Opt-in.** The export defaults to off, and the world turns it on. Tests that
+##   place villagers themselves get the wandering behaviour they were written
+##   against, and a test that wants the day has to ask for it — which is also how the
+##   two modes stay independently testable.
+## - **Home is not a post.** Resolving to the cottage clears the walk instead of
+##   laying one, so a villager with nothing to do until 07:00 stands on their own
+##   doorstep and wanders, which is what they did before any of this existed and what
+##   still looks right. Everywhere else is a commitment: arrive and hold.
+## - **A missing location is a warning and a stop, not a crash.** A schedule that
+##   names a place with no [LocationData] behind it leaves the villager where they
+##   are, and says so once per change rather than once per tick.
+##
+## The grid is built once, lazily, and only when schedules are on: [NpcNavigation]
+## probes every collider in the world and that cost has no business being paid by a
+## test that is checking gift previews.
 
 ## Group this node registers under, so [NpcInteractable] can find it.
 ##
@@ -47,6 +63,13 @@ const SERVICE_GROUP := &"npc_service"
 ## villagers themselves, on in the world.
 @export var spawn_on_ready: bool = true
 
+## Whether villagers follow their authored day instead of wandering everywhere.
+##
+## Read in [method _ready], so a caller has to set it **before** adding this node to
+## the tree - which is the same rule [member spawn_on_ready] has always had. The world
+## sets it; the fixture in `tests/suites/test_npc.gd` deliberately leaves it off.
+@export var apply_schedules: bool = false
+
 ## Seconds a villager holds still after being spoken to before resuming their patrol.
 ## Long enough to read a line, short enough that nobody gets stuck behind a conversational
 ## neighbour.
@@ -56,6 +79,15 @@ var _cast: Node3D = null
 var _npcs: Dictionary = {}
 var _order: Array[StringName] = []
 var _attend_timers: Dictionary = {}
+
+## The walkability grid, built once when schedules are on and shared by everyone.
+var _navigation: NpcNavigation = null
+## The clock, found once rather than per tick. See [method TimeService.find].
+var _clock: TimeService = null
+## Villager id -> their [NpcSchedule], or null for "nobody authored one". Caching the
+## null is as deliberate as caching the hit: without it every tick would re-open a
+## directory looking for a file that is known not to exist.
+var _schedules: Dictionary = {}
 
 
 func _ready() -> void:
@@ -70,6 +102,8 @@ func _ready() -> void:
 		EventBus.day_started.connect(_on_day_started)
 	if spawn_on_ready:
 		spawn_all()
+	if apply_schedules:
+		_start_schedules()
 	Log.info("Npc", "Ready with %d villagers" % _npcs.size())
 
 
@@ -113,6 +147,10 @@ func spawn_npc(data: NpcData) -> Npc:
 	if not _order.has(data.id):
 		_order.append(data.id)
 	_add_interaction(npc)
+	# Equipped here as well as from [method _start_schedules], so a villager spawned
+	# after the grid was built gets it and one spawned before does not miss it - the
+	# order the two happen in is the caller's business, not the cast's.
+	_equip(npc)
 	return npc
 
 
@@ -350,6 +388,112 @@ func _on_day_started(day: int) -> void:
 	Log.info("Npc", "Day %d: %d villagers home%s" % [
 		day, count(), " (new week)" if new_week else "",
 	])
+	# After `go_home`, never before: the rollover teleports everyone to their own
+	# doorstep and drops their path, and the schedule is what decides where they walk
+	# out to next. Resolving first would build paths from yesterday's positions and
+	# have them thrown away a line later.
+	refresh_schedules()
+
+
+## Builds the grid, finds the clock, and gives every villager their day.
+##
+## Runs once, from [method _ready], and only when [member apply_schedules] is on:
+## [NpcNavigation] probes every collider in the world for its grid, and a test that is
+## checking gift previews should not pay for that.
+func _start_schedules() -> void:
+	_navigation = NpcNavigation.new()
+	_navigation.name = "Navigation"
+	# In the tree before `build`, because the probe asks the physics world for what is
+	# standing in each cell and there is no physics world outside one.
+	add_child(_navigation)
+	if not _navigation.build():
+		# Not fatal: everyone falls back to a straight line, which still gets them to
+		# the right place in an open valley. It only costs them going around things.
+		Log.warn("Npc", "no walkability grid; villagers will take direct lines")
+		_navigation = null
+
+	_clock = TimeService.find(get_tree().get_root())
+	if _clock == null:
+		Log.warn("Npc", "no TimeService in the tree; schedules will not run")
+		apply_schedules = false
+		_navigation = null
+		return
+	if not EventBus.time_minute_changed.is_connected(_on_minute_ticked):
+		EventBus.time_minute_changed.connect(_on_minute_ticked)
+
+	var following := 0
+	for npc: Npc in npcs():
+		_equip(npc)
+		if npc.get_schedule() != null:
+			following += 1
+	refresh_schedules()
+	Log.info("Npc", "Schedules on: %d of %d villagers have a day to follow" % [
+		following, count(),
+	])
+
+
+## Gives [param npc] the grid and their own day, if schedules are on.
+func _equip(npc: Npc) -> void:
+	if not apply_schedules:
+		return
+	npc.set_navigation(_navigation)
+	if not _schedules.has(npc.data.id):
+		_schedules[npc.data.id] = ScheduleRegistry.schedule_for(npc.data.id)
+	npc.set_schedule(_schedules.get(npc.data.id) as NpcSchedule)
+
+
+func _on_minute_ticked(_minute_of_day: int) -> void:
+	refresh_schedules()
+
+
+## Re-resolves where every villager should be right now.
+##
+## Public and idempotent because three callers want exactly this - the boot, every
+## clock tick and the day rollover - and so does a test, which is the reason it is not
+## private with the other two reaching in. Cheap by construction: each villager is one
+## lookup over a handful of blocks, and the answer is compared against what they are
+## already doing before anything moves.
+func refresh_schedules() -> void:
+	if not apply_schedules or _clock == null:
+		return
+	var now := _clock.time
+	for npc: Npc in npcs():
+		_refresh_schedule(npc, now)
+
+
+## One villager's destination for [param now], applied only if it has changed.
+func _refresh_schedule(npc: Npc, now: WorldTime) -> void:
+	if npc == null or npc.data == null:
+		return
+	var home_id := StringName("%s_cottage" % npc.data.id)
+	var schedule := npc.get_schedule()
+	var loc_id := home_id if schedule == null else schedule.location_at(now, home_id)
+	if loc_id.is_empty():
+		loc_id = home_id
+	if npc.scheduled_location_id == loc_id:
+		# Same answer as last minute. The villager is either still walking there or
+		# already standing there, and re-pathing either one would restart a walk that
+		# was not interrupted.
+		return
+	npc.scheduled_location_id = loc_id
+	if loc_id == home_id:
+		# Free time, not a post. Laying a path to your own front step and then holding
+		# position on it would take a villager who used to mill about their garden and
+		# make them stand statue-still in it for the rest of the morning.
+		npc.clear_scheduled_walk()
+		return
+	var place := LocationRegistry.get_location(loc_id)
+	if place == null:
+		# Once per change rather than once per tick: this fires on a schedule that
+		# names a place nobody authored, and repeating it every minute for the length
+		# of the block would bury the one line that matters.
+		Log.warn("Npc", "%s: schedule says '%s', which has no location" % [
+			npc.name, loc_id,
+		])
+		npc.clear_scheduled_walk()
+		return
+	if npc.walk_to(place.ground_position(), place.facing):
+		Log.debug("Npc", "%s -> %s (%s)" % [npc.name, loc_id, place.display_name])
 
 
 func _log_summary() -> void:

@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 ## Headless tool: writes the named-location and NPC schedule resources.
 ##
 ## Writes `resources/world/locations/*.tres` and `resources/npc/schedules/*.tres`.
@@ -109,8 +109,13 @@ const SCHEDULES: Array[Dictionary] = [
 				"thawed": true},
 			{"at": [700, 1200], "where": &"village_square", "doing": "sorting nails",
 				"winter": true},
-			{"at": [1200, 1300], "where": &"village_well", "doing": "washing up"},
-			{"at": [1300, 1700], "where": &"village_square", "doing": "mending"},
+			# Twelve o'clock to two, not one: the walk out to the forest edge and back
+			# is 61 m at Bram's 1.5 m/s, which is 40 real seconds, and a one-hour block
+			# at the well is only 30. He would arrive after it ended and never be seen
+			# there. Found by measuring every block against every walk - see
+			# `tests/suites/test_schedule.gd::every_block_is_reachable_in_its_own_time`.
+			{"at": [1200, 1400], "where": &"village_well", "doing": "washing up"},
+			{"at": [1400, 1700], "where": &"village_square", "doing": "mending"},
 			{"at": [1700, 2100], "where": &"general_store", "doing": "buying nails"},
 			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"bram_cottage", "doing": "sleeping"},
 		],
@@ -142,8 +147,15 @@ const SCHEDULES: Array[Dictionary] = [
 		"id": &"halda",
 		"blocks": [
 			{"at": [600, 700], "where": &"halda_cottage", "doing": "waking"},
-			{"at": [700, 1200], "where": &"village_orchard", "doing": "pruning"},
-			{"at": [1200, 1700], "where": &"village_well", "doing": "arguing about the season"},
+			# Both day blocks exclude Fall so that they are disjoint from the harvest
+			# block below rather than competing with it. Two blocks covering the same
+			# window must partition it - `NpcSchedule.is_valid` refuses the pair, because
+			# ordering cannot express "this one wins in Fall" without a priority field
+			# nobody would set correctly.
+			{"at": [700, 1200], "where": &"village_orchard", "doing": "pruning",
+				"not_fall": true},
+			{"at": [1200, 1700], "where": &"village_well", "doing": "arguing about the season",
+				"not_fall": true},
 			# In Fall she keeps the harvest out on display and does not leave the square.
 			{"at": [700, 1700], "where": &"village_square", "doing": "minding the harvest",
 				"fall": true},
@@ -274,7 +286,7 @@ func _write_schedules() -> int:
 
 ## Turns one authored block into a resource.
 ##
-## The condition keys are named for what they exclude rather than what they require —
+## The condition keys are named for what they exclude rather than what they require â€”
 ## `dry` means "only when it is not raining", and expands to the other three skies. That
 ## way no block has to remember to enumerate the weathers it does not care about, and
 ## adding a weather to the game later cannot silently exclude a block.
@@ -303,6 +315,10 @@ func _entry(block: Dictionary) -> NpcScheduleEntry:
 		]
 	if bool(block.get("fall", false)):
 		entry.seasons = [WorldTime.Season.FALL]
+	if bool(block.get("not_fall", false)):
+		entry.seasons = [
+			WorldTime.Season.SPRING, WorldTime.Season.SUMMER, WorldTime.Season.WINTER,
+		]
 	return entry
 
 

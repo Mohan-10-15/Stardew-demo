@@ -28,7 +28,7 @@ func _ready() -> void:
 	layer = 5
 	# Below the interaction HUD's layer 10, so a prompt always draws on top of
 	# the clock rather than the other way round.
-	_service = _find_service(get_tree().get_root())
+	_service = TimeService.find(get_tree().get_root())
 	if _service == null:
 		Log.warn("ClockHUD", "No TimeService in the tree; clock readout disabled")
 		return
@@ -68,15 +68,3 @@ func _refresh() -> void:
 				_weather_label.add_theme_color_override("font_color", Color(0.88, 0.93, 0.98))
 			_:
 				_weather_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.88))
-
-
-func _find_service(start: Node) -> TimeService:
-	if start == null:
-		return null
-	if start is TimeService:
-		return start
-	for child: Node in start.get_children():
-		var found := _find_service(child)
-		if found != null:
-			return found
-	return null

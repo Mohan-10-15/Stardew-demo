@@ -12,6 +12,15 @@ bin/
 # Portable Godot editor binaries (ship in the repo, git-ignored)
 tools/*.exe
 tools/*.zip
+# The .NET build ships a GodotSharp/ runtime folder next to the binary; ~6 MB of
+# engine assemblies that are re-downloaded with the editor.
+tools/GodotSharp/
+
+# Godot Mono / C# build intermediates. The real output lives under .godot/, which
+# is already ignored; this covers a stray `obj/` if the SDK ever falls back to its
+# default intermediate path.
+obj/
+*.user
 
 # Godot Mono / C# (unused for GDScript, kept as a guard)
 .mono/

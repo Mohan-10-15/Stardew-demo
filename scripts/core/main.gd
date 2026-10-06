@@ -325,6 +325,10 @@ func _find_farm_grid(start: Node) -> FarmGrid:
 func _spawn_npc_manager() -> void:
 	npc_manager = NpcManager.new()
 	npc_manager.name = "NpcManager"
+	# Before `add_child`, because `_ready` reads it - and the whole day is decided in
+	# `_ready`: the grid is built, the clock is found and every villager is pointed at
+	# their first destination.
+	npc_manager.apply_schedules = true
 	add_child(npc_manager)
 	Log.info("Main", "Spawned %d villagers" % npc_manager.count())
 
@@ -364,20 +368,8 @@ func _spawn_player() -> void:
 	# "!is_inside_tree()" error every boot.
 	add_child(player)
 	player.global_position = world.get_spawn_point()
-	_time_service = _find_time_service(get_tree().get_root())
+	_time_service = TimeService.find(get_tree().get_root())
 	Log.info("Main", "Spawned player at %s" % player.global_position)
-
-
-func _find_time_service(start: Node) -> TimeService:
-	if start == null:
-		return null
-	if start is TimeService:
-		return start
-	for child: Node in start.get_children():
-		var found := _find_time_service(child)
-		if found != null:
-			return found
-	return null
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -32,6 +32,41 @@ var _elapsed := 0.0
 var _seconds_per_tick := 10.0
 
 
+## The [TimeService] at or below [param start], or null.
+##
+## One tree search, four callers. [NpcManager], [ClockHUD], [FarmService] and the
+## boot sequence all need the clock and none of them can name it by path: it is a
+## child of the world, and the world is built by code rather than by a scene that
+## could have given it a name to find. Node names are a scene's business, so the
+## lookup is by type.
+##
+## Static rather than an autoload reference because `TimeService` is deliberately
+## *not* an autoload - it lives inside the world so a headless run can build one
+## without one, and so a save can restore it. The cost of that choice is a tree
+## search, and this is the single place it is written down.
+static func find(start: Node) -> TimeService:
+	if start == null:
+		return null
+	if start is TimeService:
+		return start as TimeService
+	for child: Node in start.get_children():
+		var found := find(child)
+		if found != null:
+			return found
+	return null
+
+
+## The same search, starting from the current scene tree's root.
+##
+## Null in a `--script` run that has no tree yet, which is a real answer rather
+## than an error: there is no clock to find in a tool that does not run one.
+static func find_in_tree() -> TimeService:
+	var loop := Engine.get_main_loop()
+	if not loop is SceneTree:
+		return null
+	return find((loop as SceneTree).root)
+
+
 func _ready() -> void:
 	_recalculate_tick_length()
 	WeatherCalendar.apply(time)

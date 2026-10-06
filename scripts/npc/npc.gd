@@ -6,8 +6,9 @@ extends CharacterBody3D
 ## to be blocked by a fence and push back when the player walks into them — which is
 ## the difference between a person and a decoration. There is no
 ## [NavigationAgent3D] here and no [NavMesh] in the project at all; movement is
-## [method _physics_process] plus [method CharacterBody3D.move_and_slide], and group 15
-## replaces [method _advance] with a schedule without changing anything above it.
+## [method _physics_process] plus [method CharacterBody3D.move_and_slide], and the
+## authored day arrives as [method walk_to] rather than as a component bolted onto
+## the body.
 ##
 ## ## This node knows nothing about being interacted with
 ##
@@ -18,6 +19,24 @@ extends CharacterBody3D
 ## node would then have to point back at the component for the prompt, and two type
 ## references in opposite directions is a `class_name` cycle that GDScript reports as
 ## a compile error in unrelated files.
+##
+## ## Two ways of moving, one body
+##
+## [method _advance] chooses between them in this order:
+##
+## 1. **Stopped.** Being talked to, or a walk speed of zero. Talking wins over
+##    everything, because a villager who keeps walking away mid-sentence reads as the
+##    player being ignored rather than as a schedule running.
+## 2. **Scheduled.** Walking the path [method walk_to] was given, or standing at the
+##    end of it. Deliberately independent of [member wandering]: a schedule is a
+##    commitment, not a wander, and a test that switches wandering off to observe
+##    something else should not also strand a villager three streets from where their
+##    day says they are.
+## 3. **Wandering.** The seeded disc around home, unchanged.
+##
+## The seeded disc is what a villager with no authored day does all day, and it is
+## what they do between blocks - including all of the time, for anyone whose day is
+## only written for some seasons or some weather.
 ##
 ## ## Deterministic wandering
 ##
@@ -70,13 +89,22 @@ var _gravity: float = 24.0
 var _face_point := Vector3.ZERO
 var _has_face_point: bool = false
 ## Schedule and destination state for path following.
+##
+## [member scheduled_location_id] is the *resolved* place, not a raw block: it is
+## whatever [NpcSchedule.location_at] answered for the current clock, and it is what
+## makes "the clock ticked but nobody moved" cheap - [NpcManager] compares against it
+## and rebuilds a path only when the answer actually changed.
 var _schedule: NpcSchedule = null
+var scheduled_location_id: StringName = &""
 var _path: PackedVector3Array = []
 var _path_index: int = 0
 var _target_point: Vector3 = Vector3.ZERO
 var _has_target: bool = false
 var _moving_to_scheduled: bool = false
 var _navigation: NpcNavigation = null
+## Heading to settle on once the walk is done, or [constant LocationData.FACING_UNSET].
+var _scheduled_facing: float = LocationData.FACING_UNSET
+var _has_scheduled_facing: bool = false
 
 
 func _ready() -> void:
@@ -165,22 +193,27 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 
-## Steers towards the current wander target, or stands still.
+## Steers towards the current scheduled waypoint, or the current wander target.
 ##
 ## Split from [method _physics_process] so a test can call the movement directly at a
 ## fixed delta without a physics tick, which is the difference between asserting a
 ## villager walks and asserting it does not leave its radius.
 func _advance(delta: float) -> void:
 	var speed: float = data.walk_speed
-	if attending or not wandering or speed <= 0.0:
-		velocity.x = move_toward(velocity.x, 0.0, MOVE_ACCELERATION * speed * delta)
-		velocity.z = move_toward(velocity.z, 0.0, MOVE_ACCELERATION * speed * delta)
+	if attending or speed <= 0.0:
+		_stop_moving(delta, speed)
 		# Keep turning towards whoever is being spoken to until they are actually facing
 		# them. One turn from [method face_towards] covers most of the arc and then stops,
 		# which leaves a villager standing at ninety degrees to the conversation — and a
 		# test that only watches the yaw change cannot tell that from facing them.
 		if attending and _has_face_point:
 			face_towards(_face_point, delta)
+		return
+	if _moving_to_scheduled:
+		_follow_schedule(delta, speed)
+		return
+	if not wandering:
+		_stop_moving(delta, speed)
 		return
 
 	var offset := _wander_target - _home_position_xz()
@@ -198,6 +231,106 @@ func _advance(delta: float) -> void:
 	_idle_for -= delta
 	if _idle_for <= 0.0:
 		_pick_wander_target()
+
+
+## Walks the path [method walk_to] laid down, or stands at the end of it.
+##
+## A villager who has arrived does **not** fall back to wandering: standing at the
+## place their day sent them *is* what the rest of that block means. The walk is only
+## replaced when [NpcManager] resolves a different location, which is why the path is
+## left in place here rather than cleared on arrival.
+func _follow_schedule(delta: float, speed: float) -> void:
+	if _path_index >= _path.size():
+		_stop_moving(delta, speed)
+		if _has_scheduled_facing:
+			_turn_towards(_scheduled_facing, delta)
+		return
+	_target_point = _path[_path_index]
+	_has_target = true
+	var flat := _target_point - global_position
+	flat.y = 0.0
+	var distance := flat.length()
+	if distance <= ARRIVE_DISTANCE:
+		_path_index += 1
+		if _path_index >= _path.size():
+			_has_target = false
+		return
+	var direction := flat / distance
+	velocity.x = move_toward(velocity.x, direction.x * speed, MOVE_ACCELERATION * speed * delta)
+	velocity.z = move_toward(velocity.z, direction.z * speed, MOVE_ACCELERATION * speed * delta)
+	_turn_towards(_yaw_towards(direction.x, direction.z), delta)
+
+
+## Coasts to a stop, keeping gravity handled by [method _physics_process].
+func _stop_moving(delta: float, speed: float) -> void:
+	var rate: float = MOVE_ACCELERATION * speed
+	velocity.x = move_toward(velocity.x, 0.0, rate * delta)
+	velocity.z = move_toward(velocity.z, 0.0, rate * delta)
+
+
+## Gives this villager the walkability grid, or null for a straight-line fallback.
+func set_navigation(nav: NpcNavigation) -> void:
+	_navigation = nav
+
+
+func set_schedule(schedule: NpcSchedule) -> void:
+	_schedule = schedule
+	if schedule == null:
+		clear_scheduled_walk()
+
+
+func get_schedule() -> NpcSchedule:
+	return _schedule
+
+
+## Lays a path from here to [param point] and starts walking it.
+##
+## Returns false when the grid exists and says there is no way there - an unwalkable
+## destination that nothing can snap to - and true otherwise. With no grid at all it
+## falls back to a single straight-line segment: a villager in a test rig, or one
+## whose grid failed to build, still reaches the place, they simply do not go around
+## anything on the way.
+##
+## [param facing] is applied once the last waypoint is reached, so an arriving
+## villager ends up looking at the thing they came for rather than backwards along
+## the path they walked. [constant LocationData.FACING_UNSET] leaves the arrival
+## heading alone.
+func walk_to(point: Vector3, facing: float = LocationData.FACING_UNSET) -> bool:
+	_scheduled_facing = facing
+	_has_scheduled_facing = not is_inf(facing)
+	_path = PackedVector3Array()
+	_path_index = 0
+	_has_target = false
+	_moving_to_scheduled = false
+	if _navigation != null:
+		_path = _navigation.find_path(global_position, point)
+		if _path.is_empty():
+			Log.warn("Npc", "%s: no path to %s" % [name, str(point)])
+			return false
+	else:
+		_path.append(point)
+	_moving_to_scheduled = true
+	return true
+
+
+## Drops any walk in progress. The villager resumes wandering from where it stands.
+func clear_scheduled_walk() -> void:
+	_moving_to_scheduled = false
+	_path = PackedVector3Array()
+	_path_index = 0
+	_has_target = false
+	_has_scheduled_facing = false
+
+
+## Whether this villager is committed to a scheduled destination: still walking, or
+## already standing at it.
+##
+## The distinction from [member wandering] matters to a caller asking "are they doing
+## what their day says", because a villager who has arrived is holding position and
+## still counts - clearing the walk on arrival would make them wander away from the
+## place they were sent to.
+func is_walking_to_post() -> bool:
+	return _moving_to_scheduled
 
 
 ## Points [param yaw_target] radians about Y, at [constant TURN_SPEED].
@@ -256,8 +389,11 @@ func _pick_wander_target() -> void:
 ## Puts the villager back on their own doorstep.
 ##
 ## Called on the day rollover, so a villager saved at the far edge of the valley wakes
-## up at home rather than resuming yesterday's errand at first light.
+## up at home rather than resuming yesterday's errand at first light. Any walk in
+## progress is dropped for the same reason: the path was laid from where they stood
+## yesterday, and following it from home would walk them back out to where they were.
 func go_home() -> void:
+	clear_scheduled_walk()
 	position.x = data.home.x
 	position.z = data.home.y
 	velocity = Vector3.ZERO
