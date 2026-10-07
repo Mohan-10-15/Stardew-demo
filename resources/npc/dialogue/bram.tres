@@ -1,0 +1,124 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_61hs3"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_1bj84"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_mbygo"]
+
+[sub_resource type="Resource" id="Resource_ag3y2"]
+script = ExtResource("1_61hs3")
+id = &"intro"
+text = "Bram. I build. If it's still standing next winter, I made it."
+once = true
+set_flags = Array[StringName]([&"met_bram"])
+
+[sub_resource type="Resource" id="Resource_dy7kf"]
+script = ExtResource("1_61hs3")
+id = &"greeting"
+text = "Wind's changed. Good day to get something finished."
+
+[sub_resource type="Resource" id="Resource_ncy8k"]
+script = ExtResource("1_61hs3")
+id = &"morning"
+text = "Early. Nothing to it but starting."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_ngk5k"]
+script = ExtResource("1_61hs3")
+id = &"evening"
+text = "Put the tools down. Whatever it is, it'll still be broken tomorrow."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_n2rwg"]
+script = ExtResource("1_61hs3")
+id = &"night"
+text = "Still up. A joint won't dry any faster for being watched."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_hxumc"]
+script = ExtResource("1_61hs3")
+id = &"rain"
+text = "Rain finds every gap you were proud of."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_ji5gl"]
+script = ExtResource("1_61hs3")
+id = &"storm"
+text = "Storm takes fences. Hold the door too; it'll test that next."
+weather = 2
+
+[sub_resource type="Resource" id="Resource_iaplq"]
+script = ExtResource("1_61hs3")
+id = &"snow"
+text = "Snow's honest. It shows you exactly where the roof is thin."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_cii5f"]
+script = ExtResource("1_61hs3")
+id = &"spring"
+text = "Ground softens in spring. Best month to set a foundation."
+season = 0
+
+[sub_resource type="Resource" id="Resource_7emuw"]
+script = ExtResource("1_61hs3")
+id = &"summer"
+text = "Heat swells the timber. Measure twice in summer — it'll have moved by winter."
+season = 1
+
+[sub_resource type="Resource" id="Resource_rmn0e"]
+script = ExtResource("1_61hs3")
+id = &"fall"
+text = "Before the frost. Anything left unbuilt stays unbuilt till the thaw."
+season = 2
+
+[sub_resource type="Resource" id="Resource_j4v6o"]
+script = ExtResource("1_61hs3")
+id = &"winter"
+text = "Indoor work now. Small jobs, done properly."
+season = 3
+
+[sub_resource type="Resource" id="Resource_mrthq"]
+script = ExtResource("1_61hs3")
+id = &"friend_2"
+text = "You hold the other end well. That's more than most manage."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_wqw54"]
+script = ExtResource("1_61hs3")
+id = &"friend_4"
+text = "Valley needs people who finish things. You finish things."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_ff2nc"]
+script = ExtResource("2_1bj84")
+text = "Who broke it?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_kky15"]
+script = ExtResource("2_1bj84")
+text = "Good for you."
+set_flags = Array[StringName]([&"bram_bridge_dodged"])
+
+[sub_resource type="Resource" id="Resource_tlsyg"]
+script = ExtResource("1_61hs3")
+id = &"story_1"
+text = "The old bridge over the brook. I fixed it. Twice."
+requires_flag = &"met_bram"
+once = true
+choices = Array[ExtResource("2_1bj84")]([SubResource("Resource_ff2nc"), SubResource("Resource_kky15")])
+
+[sub_resource type="Resource" id="Resource_pp0t2"]
+script = ExtResource("1_61hs3")
+id = &"story_2"
+text = "Nobody broke it. It was built wrong. I don't say that about work — I'm saying it about mine."
+requires_flag = &"met_bram"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"bram_bridge_truth"])
+
+[resource]
+script = ExtResource("3_mbygo")
+npc_id = &"bram"
+entries = Array[ExtResource("1_61hs3")]([SubResource("Resource_ag3y2"), SubResource("Resource_dy7kf"), SubResource("Resource_ncy8k"), SubResource("Resource_ngk5k"), SubResource("Resource_n2rwg"), SubResource("Resource_hxumc"), SubResource("Resource_ji5gl"), SubResource("Resource_iaplq"), SubResource("Resource_cii5f"), SubResource("Resource_7emuw"), SubResource("Resource_rmn0e"), SubResource("Resource_j4v6o"), SubResource("Resource_mrthq"), SubResource("Resource_wqw54"), SubResource("Resource_tlsyg"), SubResource("Resource_pp0t2")])

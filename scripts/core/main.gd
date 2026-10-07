@@ -18,6 +18,7 @@ const HotbarHudScene := "res://scenes/ui/hotbar_hud.tscn"
 const QuestTrackerScene := "res://scenes/ui/quest_tracker.tscn"
 const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 const LogPanelScene := "res://scenes/ui/log_panel.tscn"
+const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -28,6 +29,7 @@ const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 @export var quest_tracker_scene_path: String = QuestTrackerScene
 @export var shop_ui_scene_path: String = ShopUiScene
 @export var log_panel_scene_path: String = LogPanelScene
+@export var dialogue_ui_scene_path: String = DialogueUiScene
 ## The in-game log. Not read by anything yet — it is spawned, toggled by `F3` and
 ## otherwise left alone, which is the point: it has to exist before there is a reason
 ## to want it.
@@ -40,6 +42,7 @@ const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 @export var load_hotbar_hud: bool = true
 @export var load_quest_tracker: bool = true
 @export var load_shop_ui: bool = true
+@export var load_dialogue_ui: bool = true
 @export var load_log_panel: bool = true
 @export var load_npcs: bool = true
 
@@ -57,6 +60,8 @@ var gathering_service: GatheringService = null
 var economy_service: EconomyService = null
 var npc_manager: NpcManager = null
 var quest_service: QuestService = null
+var dialogue_service: DialogueService = null
+var dialogue_ui: CanvasLayer = null
 var _time_service: TimeService = null
 
 
@@ -92,6 +97,11 @@ func _boot() -> void:
 		_spawn_economy_service()
 		_spawn_npc_manager()
 		_spawn_quest_service()
+		# After the NPC manager: it grants hearts and reads friendship through the
+		# manager's group. Both lookups degrade to "nobody home" rather than
+		# failing, so the order is a courtesy — but it is the order the real game
+		# runs in, and the one a boot should exercise.
+		_spawn_dialogue_service()
 	if load_player:
 		_spawn_player()
 	if load_hud:
@@ -117,6 +127,12 @@ func _boot() -> void:
 	# a shop to open if so.
 	if load_shop_ui:
 		_spawn_shop_ui()
+	# Same bargain as the shop panel: a pure listener on the dialogue signals that
+	# walks the tree for the service when a conversation starts. Spawned after the
+	# service only because that is the order they are used in, not because it has
+	# to be.
+	if load_dialogue_ui:
+		_spawn_overlay(dialogue_ui_scene_path, "dialogue panel", "dialogue_ui")
 	# Last, and because it reads nothing but the log: it is the one piece of UI whose
 	# subject is the boot itself, so it is the one piece that wants to exist after
 	# everything it might report on.
@@ -346,6 +362,18 @@ func _spawn_quest_service() -> void:
 	quest_service.npc_manager = npc_manager
 	add_child(quest_service)
 	Log.info("Main", "Spawned quest service over %d jobs" % QuestRegistry.all_quests().size())
+
+
+## The conversation runner.
+##
+## Builds no content of its own: the trees come from [DialogueRegistry] when the
+## first conversation opens, so booting before the content generator has run is
+## a `no_tree` at talk time rather than a crash at boot.
+func _spawn_dialogue_service() -> void:
+	dialogue_service = DialogueService.new()
+	dialogue_service.name = "DialogueService"
+	add_child(dialogue_service)
+	Log.info("Main", "Spawned dialogue service")
 
 
 func _spawn_player() -> void:

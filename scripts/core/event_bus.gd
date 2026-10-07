@@ -207,6 +207,62 @@ signal quest_turned_in_failed(quest_id: StringName, giver_id: StringName, reason
 ## ceiling — an objective's target is content and the next quest may ask for more.
 signal quest_progress_changed(quest_id: StringName, current: int, required: int)
 
+# --- Dialogue ---------------------------------------------------------------
+## A conversation opened on one villager and one line is on screen. Separate from
+## [signal npc_talked] by a wide margin: talking is the greeting that always
+## happens, and this is the moment a panel appears, the clock should stop and the
+## player is reading rather than playing. A listener that wants to fade the music
+## down for a conversation watches this one, not the greeting.
+signal dialogue_started(npc_id: StringName, entry_id: StringName)
+
+## The conversation moved from one line to the next — a chain link followed or
+## a reply taken, either way the panel repaints. Separate from
+## [signal dialogue_started] so the pairing stays honest: one `started` opens a
+## conversation, any number of `line_changed` walk through it, and one
+## `finished` closes it. A page-turn sound listens here; a music fade listens to
+## the pair.
+signal dialogue_line_changed(npc_id: StringName, entry_id: StringName)
+
+## The conversation reached its end and every effect along the way has been
+## applied. `entry_id` is the line it ended on, which is not necessarily the one
+## it started on — a chain of `next` links lands somewhere else, and a sound cue
+## that wants to play a closing line needs to know which one that was.
+signal dialogue_finished(npc_id: StringName, entry_id: StringName)
+
+## The player picked a reply. Carries the entry the choices were offered on and
+## which reply was taken, so a quest or a story flag keyed on *what was said* can
+## listen here without re-reading the tree.
+signal dialogue_choice_taken(npc_id: StringName, entry_id: StringName, choice_index: int)
+
+## The mandatory counterpart to every dialogue success above. `reason` is
+## machine-readable; the full set is this comment and
+## `every_dialogue_refusal_has_its_own_reason` in the dialogue suite.
+##
+## - `no_service` — no [DialogueService] registered under its group, so there is
+##   nothing to open a conversation with. Emitted by the component that wanted
+##   one, because a missing service cannot emit its own failure.
+## - `no_tree` — the villager is real but no dialogue tree names them, which in
+##   a shipped build is a content gap rather than a runtime accident: every
+##   villager is validated to have one at test time.
+## - `no_matching_entry` — the tree exists but every line was ruled out by its
+##   own conditions (season, weather, time, hearts, flags, `once`). Content bug:
+##   a tree must always keep at least one unconditional fallback.
+## - `nothing_active` — `advance` or `choose` was called with no conversation
+##   open, which in a real game means a stray keypress and in a test means the
+##   caller lost track of its own state.
+## - `awaiting_choice` — `advance` was called while replies are on screen.
+##   Advancing would pick for the player, so it refuses instead.
+## - `bad_choice` — a reply index outside the replies actually offered.
+## - `bad_reference` — a `next` link or a reply points at an entry id that does
+##   not exist. Refused at load by the registry; this arm is the runtime belt
+##   for a tree that was mutated after loading. A conversation that hits one
+##   still finishes, so a dead link cannot strand the panel open.
+##
+## No two of these may share a value, for the same reason as every other failure
+## signal in this file: a shared reason is two different sentences a listener
+## cannot tell apart.
+signal dialogue_failed(npc_id: StringName, reason: StringName)
+
 # --- Stamina --------------------------------------------------------------
 ## The player's stamina moved. Both values, because a HUD needs the ceiling to
 ## draw the bar and cannot cache it — a potion or an upgrade will change it.

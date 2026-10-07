@@ -1,0 +1,118 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_u5faa"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_2ynr2"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_67qnl"]
+
+[sub_resource type="Resource" id="Resource_4j4d7"]
+script = ExtResource("1_u5faa")
+id = &"intro"
+text = "Fen. Don't follow me into the trees. ...You can, if you keep up."
+once = true
+set_flags = Array[StringName]([&"met_fen"])
+
+[sub_resource type="Resource" id="Resource_a5upa"]
+script = ExtResource("1_u5faa")
+id = &"greeting"
+text = "Berries are ripe somewhere. I'm not saying where."
+
+[sub_resource type="Resource" id="Resource_68a8m"]
+script = ExtResource("1_u5faa")
+id = &"morning"
+text = "Dew still on. Best hour of the day. Also the hour with the most mosquitoes."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_64kii"]
+script = ExtResource("1_u5faa")
+id = &"evening"
+text = "Back before dark. Usually."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_cdcfo"]
+script = ExtResource("1_u5faa")
+id = &"night"
+text = "What's awake at this hour isn't berry-picking."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_xdynp"]
+script = ExtResource("1_u5faa")
+id = &"rain"
+text = "Rain washes the tracks. Mine, and everyone else's."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_t5i83"]
+script = ExtResource("1_u5faa")
+id = &"snow"
+text = "Deep snow. Easy to follow a man, easy to be followed. I think about which one I'm doing."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_ubffj"]
+script = ExtResource("1_u5faa")
+id = &"spring"
+text = "Spring reaches the forest floor first. Before the trees can't-be-bothered to notice."
+season = 0
+
+[sub_resource type="Resource" id="Resource_1jaov"]
+script = ExtResource("1_u5faa")
+id = &"summer"
+text = "Everything grows fast enough to hear out here. Even the trouble."
+season = 1
+
+[sub_resource type="Resource" id="Resource_h80vf"]
+script = ExtResource("1_u5faa")
+id = &"fall"
+text = "Mushrooms and rats. Best and worst of the year, same month."
+season = 2
+
+[sub_resource type="Resource" id="Resource_os2xu"]
+script = ExtResource("1_u5faa")
+id = &"winter"
+text = "The valley keeps its food underground in winter. So do I."
+season = 3
+
+[sub_resource type="Resource" id="Resource_g60ks"]
+script = ExtResource("1_u5faa")
+id = &"friend_2"
+text = "You walk quiet for a farmer."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_chk8g"]
+script = ExtResource("1_u5faa")
+id = &"friend_4"
+text = "Alright. The good berries are past the fallen birch, north where the moss goes thick. Don't tell Halda."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_uqwsq"]
+script = ExtResource("2_2ynr2")
+text = "Before what?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_ch2na"]
+script = ExtResource("2_2ynr2")
+text = "Whatever you say."
+set_flags = Array[StringName]([&"fen_old_camp_dodged"])
+
+[sub_resource type="Resource" id="Resource_irmia"]
+script = ExtResource("1_u5faa")
+id = &"story_1"
+text = "Someone used to live in the deep woods. Before."
+requires_flag = &"met_fen"
+once = true
+choices = Array[ExtResource("2_2ynr2")]([SubResource("Resource_uqwsq"), SubResource("Resource_ch2na")])
+
+[sub_resource type="Resource" id="Resource_l76q0"]
+script = ExtResource("1_u5faa")
+id = &"story_2"
+text = "Before the village. There's a chimney still standing out there. I don't take anything from it."
+requires_flag = &"met_fen"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"fen_old_camp"])
+
+[resource]
+script = ExtResource("3_67qnl")
+npc_id = &"fen"
+entries = Array[ExtResource("1_u5faa")]([SubResource("Resource_4j4d7"), SubResource("Resource_a5upa"), SubResource("Resource_68a8m"), SubResource("Resource_64kii"), SubResource("Resource_cdcfo"), SubResource("Resource_xdynp"), SubResource("Resource_t5i83"), SubResource("Resource_ubffj"), SubResource("Resource_1jaov"), SubResource("Resource_h80vf"), SubResource("Resource_os2xu"), SubResource("Resource_g60ks"), SubResource("Resource_chk8g"), SubResource("Resource_irmia"), SubResource("Resource_l76q0")])

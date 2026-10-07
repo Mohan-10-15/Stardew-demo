@@ -1,0 +1,124 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_ahk6f"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_1hhb7"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_0g0a4"]
+
+[sub_resource type="Resource" id="Resource_iup0j"]
+script = ExtResource("1_ahk6f")
+id = &"intro"
+text = "Halda. I grow pumpkins. I grow them better than anyone has a right to."
+once = true
+set_flags = Array[StringName]([&"met_halda"])
+
+[sub_resource type="Resource" id="Resource_elc4i"]
+script = ExtResource("1_ahk6f")
+id = &"greeting"
+text = "Soil's alright. People are the tricky crop."
+
+[sub_resource type="Resource" id="Resource_iugn1"]
+script = ExtResource("1_ahk6f")
+id = &"morning"
+text = "Mornings are mine. Afternoons are for other people's opinions."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_tb8x7"]
+script = ExtResource("1_ahk6f")
+id = &"evening"
+text = "Sun's off the patch. Honest work's done for the day."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_4fkvj"]
+script = ExtResource("1_ahk6f")
+id = &"night"
+text = "If you're sleepwalking toward my patch, wake up."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_vibbi"]
+script = ExtResource("1_ahk6f")
+id = &"rain"
+text = "Rain's fine. Hail's the one I hold a proper grudge against."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_pq0lg"]
+script = ExtResource("1_ahk6f")
+id = &"storm"
+text = "Storm takes fences. I've rebuilt that fence three times and I remember each one."
+weather = 2
+
+[sub_resource type="Resource" id="Resource_0rvtq"]
+script = ExtResource("1_ahk6f")
+id = &"snow"
+text = "Under snow, my patch sleeps better than the village does."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_yrn1q"]
+script = ExtResource("1_ahk6f")
+id = &"spring"
+text = "Everything's a seed now and a regret by July. Plant carefully."
+season = 0
+
+[sub_resource type="Resource" id="Resource_m67gh"]
+script = ExtResource("1_ahk6f")
+id = &"summer"
+text = "Don't touch a vine to see if it's growing. It knows you're there."
+season = 1
+
+[sub_resource type="Resource" id="Resource_mthki"]
+script = ExtResource("1_ahk6f")
+id = &"fall"
+text = "This is my season. Stand back and admire."
+season = 2
+
+[sub_resource type="Resource" id="Resource_xgqoo"]
+script = ExtResource("1_ahk6f")
+id = &"winter"
+text = "Winter I count seed packets and stare at walls. It's called planning."
+season = 3
+
+[sub_resource type="Resource" id="Resource_uh7l1"]
+script = ExtResource("1_ahk6f")
+id = &"friend_2"
+text = "You water on time. That already puts you ahead of most."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_dygwo"]
+script = ExtResource("1_ahk6f")
+id = &"friend_4"
+text = "This valley has trouble coming — it does, every year. You look like the kind who faces it."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_40f1e"]
+script = ExtResource("2_1hhb7")
+text = "Go on."
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_j6pv6"]
+script = ExtResource("2_1hhb7")
+text = "I assumed sorcery."
+set_flags = Array[StringName]([&"halda_seed_dodged"])
+
+[sub_resource type="Resource" id="Resource_4h0p3"]
+script = ExtResource("1_ahk6f")
+id = &"story_1"
+text = "You've seen the size of my pumpkins. Want to know why?"
+requires_flag = &"met_halda"
+once = true
+choices = Array[ExtResource("2_1hhb7")]([SubResource("Resource_40f1e"), SubResource("Resource_j6pv6")])
+
+[sub_resource type="Resource" id="Resource_a7l22"]
+script = ExtResource("1_ahk6f")
+id = &"story_2"
+text = "Seed line. Saved it twenty years running. It remembers what the ground did wrong."
+requires_flag = &"met_halda"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"halda_seed_line"])
+
+[resource]
+script = ExtResource("3_0g0a4")
+npc_id = &"halda"
+entries = Array[ExtResource("1_ahk6f")]([SubResource("Resource_iup0j"), SubResource("Resource_elc4i"), SubResource("Resource_iugn1"), SubResource("Resource_tb8x7"), SubResource("Resource_4fkvj"), SubResource("Resource_vibbi"), SubResource("Resource_pq0lg"), SubResource("Resource_0rvtq"), SubResource("Resource_yrn1q"), SubResource("Resource_m67gh"), SubResource("Resource_mthki"), SubResource("Resource_xgqoo"), SubResource("Resource_uh7l1"), SubResource("Resource_dygwo"), SubResource("Resource_4h0p3"), SubResource("Resource_a7l22")])

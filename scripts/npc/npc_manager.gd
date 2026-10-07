@@ -100,6 +100,13 @@ func _ready() -> void:
 	# this node's process mode.
 	if not EventBus.day_started.is_connected(_on_day_started):
 		EventBus.day_started.connect(_on_day_started)
+	# Each line a conversation presents resets the attend clock (see
+	# [_on_dialogue_spoke]); connected rather than polled because a panel opened
+	# while paused still has to hold its villager's attention.
+	if not EventBus.dialogue_started.is_connected(_on_dialogue_spoke):
+		EventBus.dialogue_started.connect(_on_dialogue_spoke)
+	if not EventBus.dialogue_line_changed.is_connected(_on_dialogue_spoke):
+		EventBus.dialogue_line_changed.connect(_on_dialogue_spoke)
 	if spawn_on_ready:
 		spawn_all()
 	if apply_schedules:
@@ -225,6 +232,23 @@ func _release_attending(delta: float) -> void:
 		var npc := get_npc(id)
 		if npc != null:
 			npc.attending = false
+
+
+## Keeps a villager facing the player for as long as the conversation keeps
+## speaking.
+##
+## [method talk] starts a 1.2-second attend, which is right for a greeting and
+## wrong for a conversation: the panel can stay open far longer, and a villager
+## who turns back to their patrol mid-sentence is a person talking to nobody's
+## back. Every line the dialogue service presents resets the clock, so the
+## release lands a beat after the *last* line — exactly when the player closes
+## the panel — and an id with no villager behind it (a cutscene addressing a
+## name the village does not have) is ignored rather than left in the timer
+## table forever.
+func _on_dialogue_spoke(npc_id: StringName, _entry_id: StringName) -> void:
+	if get_npc(npc_id) == null:
+		return
+	_attend_timers[npc_id] = attend_seconds
 
 
 ## Says hello.

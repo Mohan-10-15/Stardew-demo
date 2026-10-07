@@ -53,6 +53,14 @@ const QUEST_SERVICE_GROUP := &"quest_service"
 
 const SERVICE_GROUP := &"npc_service"
 
+## Group [DialogueService] registers under, and the conversation lookup searches
+## for. A direct reference to [DialogueService.SERVICE_GROUP] rather than a
+## duplicated literal, unlike the two above: the service reaches the NPC manager
+## only by group search, so naming it here closes no cycle — and a constant
+## cannot drift from the group it names, which is the whole reason the other two
+## exist as literals with a test policing them.
+const DIALOGUE_SERVICE_GROUP := DialogueService.SERVICE_GROUP
+
 ## How close the player has to stand. Further than the farm's 2.6 and the same as a
 ## tree's 3.0: a villager is a person-sized thing and standing inside one to talk to
 ## them is not a thing anyone should have to do.
@@ -260,7 +268,30 @@ func interact(actor: Node) -> bool:
 	var ok := bool(manager.call("talk", _npc, actor))
 	if ok:
 		interacted.emit(actor)
+		_open_dialogue()
 	return ok
+
+
+## Runs the conversation half of a greeting, or says why there cannot be one.
+##
+## Called only after [NpcManager.talk] succeeded, so [signal
+## EventBus.npc_talked] has already fired: the villager has turned, the hello
+## happened, and what follows is the part that can fail on its own. With no
+## service in the tree there is no node to run a conversation — and `no_service`
+## is the one [signal EventBus.dialogue_failed] reason no other node is in a
+## position to publish, so it is published here rather than swallowed.
+##
+## [method DialogueService.open]'s own refusals (`no_tree`,
+## `no_matching_entry`) are published by the service itself; the return value is
+## deliberately not re-announced, because one press must not produce two
+## failures for one reason.
+func _open_dialogue() -> void:
+	var dialogue := _find_dialogue_service()
+	var npc_id := npc_id_of()
+	if dialogue == null:
+		EventBus.dialogue_failed.emit(npc_id, &"no_service")
+		return
+	dialogue.call("open", npc_id)
 
 
 ## What this villager's quest log says the player could do about work right now, or an
@@ -303,6 +334,21 @@ static func _find_quest_service() -> Node:
 	if scene_root == null:
 		return null
 	return _search_by_group(scene_root, QUEST_SERVICE_GROUP)
+
+
+## The [DialogueService], found by group from the tree root.
+##
+## Absent is normal in the same way as [method _find_quest_service]: the NPC suite
+## stands up villagers with no conversation in the tree, and a greeting with nothing
+## to say is still a greeting.
+static func _find_dialogue_service() -> Node:
+	var loop := Engine.get_main_loop()
+	if not loop is SceneTree:
+		return null
+	var scene_root := (loop as SceneTree).root
+	if scene_root == null:
+		return null
+	return _search_by_group(scene_root, DIALOGUE_SERVICE_GROUP)
 
 
 func _decision(action: StringName, text: String, ok: bool, reason: StringName,

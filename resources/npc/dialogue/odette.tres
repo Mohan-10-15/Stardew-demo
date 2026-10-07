@@ -1,0 +1,124 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_d7djv"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_7vc7b"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_t6k78"]
+
+[sub_resource type="Resource" id="Resource_7m181"]
+script = ExtResource("1_d7djv")
+id = &"intro"
+text = "Odette. I read the water. You can call it guessing if it keeps you comfortable."
+once = true
+set_flags = Array[StringName]([&"met_odette"])
+
+[sub_resource type="Resource" id="Resource_55qsj"]
+script = ExtResource("1_d7djv")
+id = &"greeting"
+text = "The brook's quiet today. That means something. It always means something."
+
+[sub_resource type="Resource" id="Resource_tc124"]
+script = ExtResource("1_d7djv")
+id = &"morning"
+text = "Mist on the water. Rain by evening — you didn't hear that from me, you heard it from the river."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_0ei3h"]
+script = ExtResource("1_d7djv")
+id = &"evening"
+text = "The air's gone heavy. Something out there is deciding whether to arrive."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_hm4st"]
+script = ExtResource("1_d7djv")
+id = &"night"
+text = "The water's black at night and honest about nothing. I look anyway."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_y81x1"]
+script = ExtResource("1_d7djv")
+id = &"rain"
+text = "I told the well about this days ago. It's been telling everyone since."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_xy7rr"]
+script = ExtResource("1_d7djv")
+id = &"storm"
+text = "Storm's got teeth tonight. Stay off the ridgeline and away from the old oak."
+weather = 2
+
+[sub_resource type="Resource" id="Resource_olqgq"]
+script = ExtResource("1_d7djv")
+id = &"snow"
+text = "Snow mutes the water's voice. Even I can't read it under ice."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_yhfud"]
+script = ExtResource("1_d7djv")
+id = &"spring"
+text = "Spring runoff talks more than the brook does all the rest of the year. Half of it's complaining."
+season = 0
+
+[sub_resource type="Resource" id="Resource_0ukf2"]
+script = ExtResource("1_d7djv")
+id = &"summer"
+text = "The lake gives up its heat at night. Stand close and you can hear it breathing."
+season = 1
+
+[sub_resource type="Resource" id="Resource_770ht"]
+script = ExtResource("1_d7djv")
+id = &"fall"
+text = "Water runs low and clear in fall. That's when everything true shows up."
+season = 2
+
+[sub_resource type="Resource" id="Resource_jdhsf"]
+script = ExtResource("1_d7djv")
+id = &"winter"
+text = "Ice is a lid. Whatever's under it keeps its own counsel."
+season = 3
+
+[sub_resource type="Resource" id="Resource_r17b1"]
+script = ExtResource("1_d7djv")
+id = &"friend_2"
+text = "Most people look at water to see themselves. You look at the water."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_3dohl"]
+script = ExtResource("1_d7djv")
+id = &"friend_4"
+text = "I don't say this to many. You'd have made a fine reader of water."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_h4qmc"]
+script = ExtResource("2_7vc7b")
+text = "Wrong how?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_4c3e2"]
+script = ExtResource("2_7vc7b")
+text = "A trick of the light."
+set_flags = Array[StringName]([&"odette_water_dodged"])
+
+[sub_resource type="Resource" id="Resource_n5cbb"]
+script = ExtResource("1_d7djv")
+id = &"story_1"
+text = "There's a spot past the mine where the water runs the wrong way."
+requires_flag = &"met_odette"
+once = true
+choices = Array[ExtResource("2_7vc7b")]([SubResource("Resource_h4qmc"), SubResource("Resource_4c3e2")])
+
+[sub_resource type="Resource" id="Resource_bn5bd"]
+script = ExtResource("1_d7djv")
+id = &"story_2"
+text = "Upstream. Against the slope. Nobody's ever explained it, and I've stopped going there after dusk."
+requires_flag = &"met_odette"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"odette_wrong_water"])
+
+[resource]
+script = ExtResource("3_t6k78")
+npc_id = &"odette"
+entries = Array[ExtResource("1_d7djv")]([SubResource("Resource_7m181"), SubResource("Resource_55qsj"), SubResource("Resource_tc124"), SubResource("Resource_0ei3h"), SubResource("Resource_hm4st"), SubResource("Resource_y81x1"), SubResource("Resource_xy7rr"), SubResource("Resource_olqgq"), SubResource("Resource_yhfud"), SubResource("Resource_0ukf2"), SubResource("Resource_770ht"), SubResource("Resource_jdhsf"), SubResource("Resource_r17b1"), SubResource("Resource_3dohl"), SubResource("Resource_n5cbb"), SubResource("Resource_bn5bd")])

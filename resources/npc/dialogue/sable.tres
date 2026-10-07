@@ -1,0 +1,118 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_t00dr"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_6upa5"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_hxghk"]
+
+[sub_resource type="Resource" id="Resource_qmkqk"]
+script = ExtResource("1_t00dr")
+id = &"intro"
+text = "Sable. I mend things. Eventually."
+once = true
+set_flags = Array[StringName]([&"met_sable"])
+
+[sub_resource type="Resource" id="Resource_jf1sk"]
+script = ExtResource("1_t00dr")
+id = &"greeting"
+text = "Everything around here is broken in a friendly way."
+
+[sub_resource type="Resource" id="Resource_a3a7v"]
+script = ExtResource("1_t00dr")
+id = &"morning"
+text = "Give it a minute. Things sort themselves out if nobody rushes them."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_a70v5"]
+script = ExtResource("1_t00dr")
+id = &"evening"
+text = "End of the day's for looking at everything that didn't get finished."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_4rq38"]
+script = ExtResource("1_t00dr")
+id = &"night"
+text = "Insomnia's just mending without thread."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_4vlp2"]
+script = ExtResource("1_t00dr")
+id = &"rain"
+text = "Rain rusts what it finds. I'll get to it."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_caox4"]
+script = ExtResource("1_t00dr")
+id = &"snow"
+text = "Snow's a repair job on the whole valley. Temporary, but tidy."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_meq33"]
+script = ExtResource("1_t00dr")
+id = &"spring"
+text = "Hinges, shutters, gates. Spring sends me a list every year and I lose it every year."
+season = 0
+
+[sub_resource type="Resource" id="Resource_2np50"]
+script = ExtResource("1_t00dr")
+id = &"summer"
+text = "Heat warps everything. Including my ambition."
+season = 1
+
+[sub_resource type="Resource" id="Resource_afwh4"]
+script = ExtResource("1_t00dr")
+id = &"fall"
+text = "Barn doors and boots. The valley gets itself ready; I just follow along behind."
+season = 2
+
+[sub_resource type="Resource" id="Resource_sss36"]
+script = ExtResource("1_t00dr")
+id = &"winter"
+text = "Good winter for sitting next to something I already fixed."
+season = 3
+
+[sub_resource type="Resource" id="Resource_n4at4"]
+script = ExtResource("1_t00dr")
+id = &"friend_2"
+text = "You don't rush me. That's rarer than you'd think."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_k5hkm"]
+script = ExtResource("1_t00dr")
+id = &"friend_4"
+text = "You're the one who says thank you and means the wait was worth it."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_4j7g5"]
+script = ExtResource("2_6upa5")
+text = "What was it?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_0wj2m"]
+script = ExtResource("2_6upa5")
+text = "Your business, then."
+set_flags = Array[StringName]([&"sable_door_dodged"])
+
+[sub_resource type="Resource" id="Resource_u1ms1"]
+script = ExtResource("1_t00dr")
+id = &"story_1"
+text = "I was asked to mend something I shouldn't have."
+requires_flag = &"met_sable"
+once = true
+choices = Array[ExtResource("2_6upa5")]([SubResource("Resource_4j7g5"), SubResource("Resource_0wj2m")])
+
+[sub_resource type="Resource" id="Resource_a5ihh"]
+script = ExtResource("1_t00dr")
+id = &"story_2"
+text = "A door out past the lake. It doesn't open. It never needed mending. I still think about it."
+requires_flag = &"met_sable"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"sable_old_door"])
+
+[resource]
+script = ExtResource("3_hxghk")
+npc_id = &"sable"
+entries = Array[ExtResource("1_t00dr")]([SubResource("Resource_qmkqk"), SubResource("Resource_jf1sk"), SubResource("Resource_a3a7v"), SubResource("Resource_a70v5"), SubResource("Resource_4rq38"), SubResource("Resource_4vlp2"), SubResource("Resource_caox4"), SubResource("Resource_meq33"), SubResource("Resource_2np50"), SubResource("Resource_afwh4"), SubResource("Resource_sss36"), SubResource("Resource_n4at4"), SubResource("Resource_k5hkm"), SubResource("Resource_u1ms1"), SubResource("Resource_a5ihh")])

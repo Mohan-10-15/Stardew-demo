@@ -1,0 +1,118 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_w4m7g"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_643od"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_gt5es"]
+
+[sub_resource type="Resource" id="Resource_iknuh"]
+script = ExtResource("1_w4m7g")
+id = &"intro"
+text = "You're the one who took the old farm up the path. I'm Mira. If it's advice you want, I take payment in parsnips."
+once = true
+set_flags = Array[StringName]([&"met_mira"])
+
+[sub_resource type="Resource" id="Resource_nj64q"]
+script = ExtResource("1_w4m7g")
+id = &"greeting"
+text = "Soil's telling you something every day. You just have to stop shouting long enough to hear it."
+
+[sub_resource type="Resource" id="Resource_7i5am"]
+script = ExtResource("1_w4m7g")
+id = &"morning"
+text = "Been up since first light. The garden doesn't care what time I got to bed."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_xuhjd"]
+script = ExtResource("1_w4m7g")
+id = &"evening"
+text = "A long day looks longer from the porch. Sit, if you've got the time."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_wj1mv"]
+script = ExtResource("1_w4m7g")
+id = &"night"
+text = "Shouldn't you be asleep? Neither should I, apparently."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_ewr8d"]
+script = ExtResource("1_w4m7g")
+id = &"rain"
+text = "Rain does half my watering. The other half I still do by hand, out of tradition."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_d2qge"]
+script = ExtResource("1_w4m7g")
+id = &"snow"
+text = "Under that snow, everything's still alive. Waiting. That's the whole trick of it."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_a8kv7"]
+script = ExtResource("1_w4m7g")
+id = &"spring"
+text = "Spring lies to you. One warm week, then a frost that takes the lot. Trust the calendar, not the sky."
+season = 0
+
+[sub_resource type="Resource" id="Resource_8j2vg"]
+script = ExtResource("1_w4m7g")
+id = &"summer"
+text = "Water early, harvest late. Everything else is standing in the dirt hoping at your plants."
+season = 1
+
+[sub_resource type="Resource" id="Resource_1bwjj"]
+script = ExtResource("1_w4m7g")
+id = &"fall"
+text = "This is the season that pays for the whole year. Don't waste it being sociable."
+season = 2
+
+[sub_resource type="Resource" id="Resource_plbj4"]
+script = ExtResource("1_w4m7g")
+id = &"winter"
+text = "Winter's for mending and planning. I plan the garden four times and plant it once."
+season = 3
+
+[sub_resource type="Resource" id="Resource_rbluk"]
+script = ExtResource("1_w4m7g")
+id = &"friend_2"
+text = "You actually listen. Most people nod and then do the opposite of what they nodded at."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_wyx0l"]
+script = ExtResource("1_w4m7g")
+id = &"friend_4"
+text = "This valley's better with you in it. Don't make me say that again for at least a season."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_2cp6b"]
+script = ExtResource("2_643od")
+text = "Why not?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_6widf"]
+script = ExtResource("2_643od")
+text = "I'd rather not know."
+set_flags = Array[StringName]([&"mira_field_dodged"])
+
+[sub_resource type="Resource" id="Resource_2bvqf"]
+script = ExtResource("1_w4m7g")
+id = &"story_1"
+text = "Did anyone tell you about the field behind the barn? The one nobody works."
+requires_flag = &"met_mira"
+once = true
+choices = Array[ExtResource("2_643od")]([SubResource("Resource_2cp6b"), SubResource("Resource_6widf")])
+
+[sub_resource type="Resource" id="Resource_v0vbe"]
+script = ExtResource("1_w4m7g")
+id = &"story_2"
+text = "Because whatever's in that soil, something grows there nobody planted. Halda tried. Once."
+requires_flag = &"met_mira"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"mira_field_secret"])
+
+[resource]
+script = ExtResource("3_gt5es")
+npc_id = &"mira"
+entries = Array[ExtResource("1_w4m7g")]([SubResource("Resource_iknuh"), SubResource("Resource_nj64q"), SubResource("Resource_7i5am"), SubResource("Resource_xuhjd"), SubResource("Resource_wj1mv"), SubResource("Resource_ewr8d"), SubResource("Resource_d2qge"), SubResource("Resource_a8kv7"), SubResource("Resource_8j2vg"), SubResource("Resource_1bwjj"), SubResource("Resource_plbj4"), SubResource("Resource_rbluk"), SubResource("Resource_wyx0l"), SubResource("Resource_2bvqf"), SubResource("Resource_v0vbe")])

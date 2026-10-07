@@ -17,7 +17,7 @@ reasoning.
 | M2 | Time and calendar | **COMPLETE** |
 | M3 | Farming | **COMPLETE** |
 | M4 | Inventory, tools, economy | **COMPLETE** |
-| M5 | NPCs, dialogue | |
+| M5 | NPCs, dialogue | dialogue **COMPLETE**; six villagers open |
 | M6 | Quests, relationships | quests **COMPLETE**; relationships open |
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
@@ -146,8 +146,10 @@ rather than teleported, and pinned by
 deliberately *not* in this milestone — `prompt.md` §32 puts them in M6, so the
 two halves of a villager are split across the boundary on purpose.
 
-**Status: open.** NPCs and schedules exist; the dialogue system and the missing
-six villagers do not.
+**Status: open.** Schedules and the conversation are done (group 16 and
+TASK-008 respectively — the panel, the service, six trees and 32 cases in
+`tests/suites/test_dialogue.gd`); the missing six villagers are not. Population
+is the whole of what is left.
 
 ### M6 — Quests, relationships — quests COMPLETE, relationships open
 Acceptance, tracked objectives, completion, rewards, persistence — and the
