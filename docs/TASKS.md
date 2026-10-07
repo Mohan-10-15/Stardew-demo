@@ -37,11 +37,21 @@ waiting, a bad choice index and a dangling reply each publish their **own**
 Conversation memory (`to_dict`/`from_dict`) carries the lines already heard and
 the flags a reply raised, so a one-time story beat stays spent.
 
-32 cases in `tests/suites/test_dialogue.gd`, covering selection, refusal
+33 cases in `tests/suites/test_dialogue.gd`, covering selection, refusal
 reasons, effects-on-exit, save round-trip, and the panel driven with real
-`ui_accept`/number-key input against a real scene. **508/508 green** with zero
+`ui_accept`/number-key input against a real scene. **509/509 green** with zero
 script errors. The suite arrived truncated (the fixture half was missing) and
-was finished this session; no game defect surfaced while doing it.
+was finished this session.
+
+Playing it in a real window found the one real defect: the panel pauses the
+tree, but `Main` is `PROCESS_MODE_ALWAYS`, so the clock and the cast — left on
+the default — inherited it and kept running through the conversation (20
+in-game minutes burned and Mira 2.9 m into her patrol during an eleven-second
+read of her introduction). `TimeService` and `NpcManager` now opt into
+`PROCESS_MODE_PAUSABLE` like the player already did;
+`the_valley_holds_still_while_a_conversation_runs` is the regression (proven by
+mutation), and `tools/playtest_dialogue.gd` (PASS, eight screenshots) is the
+window gate. All of it is written up in `DEVELOPMENT_STATUS.md`.
 
 ### TASK-006 — NPC schedules: the authored day (group 16) — COMPLETE
 

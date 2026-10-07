@@ -68,6 +68,14 @@ static func find_in_tree() -> TimeService:
 
 
 func _ready() -> void:
+	# PAUSABLE, stated explicitly and not left at INHERIT — the same bargain
+	# `PlayerController._ready` spells out. `Main` is `PROCESS_MODE_ALWAYS` so it
+	# can keep handling input while the game is paused, Godot resolves INHERIT by
+	# walking up to the nearest ancestor that sets a mode, and a clock left on the
+	# default therefore inherits ALWAYS: the day kept burning through a
+	# conversation, two in-game hours for every eleven seconds of reading.
+	# Measured by `tools/playtest_dialogue.gd` before this line existed.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_recalculate_tick_length()
 	WeatherCalendar.apply(time)
 	Log.info("Time", "Clock ready (%s, %d ticks/day)" % [time.describe_date(), ticks_per_day])

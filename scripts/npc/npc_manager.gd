@@ -91,6 +91,13 @@ var _schedules: Dictionary = {}
 
 
 func _ready() -> void:
+	# PAUSABLE for the reason `PlayerController._ready` gives in full: everything
+	# under `Main` inherits `PROCESS_MODE_ALWAYS`, so the cast kept walking its
+	# day while a conversation had the tree paused — Mira crossed 2.9 m of her
+	# patrol during an eleven-second reading of her own introduction. This covers
+	# the villagers and the attendance countdown together, because they hang off
+	# this node. Measured by `tools/playtest_dialogue.gd`.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group(SERVICE_GROUP)
 	_cast = Node3D.new()
 	_cast.name = "Cast"

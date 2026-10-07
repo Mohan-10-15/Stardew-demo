@@ -8,7 +8,7 @@ cameras, switchable at runtime.
 Progress: **Groups 0–16 and 25 complete, plus TASK-008 (the dialogue system,
 M5's conversation half).** Group 17 (Friendship / TASK-007) is next.
 
-Current baseline: **508/508 tests**, C# build clean, import clean, boot clean,
+Current baseline: **509/509 tests**, C# build clean, import clean, boot clean,
 zero script errors.
 
 ---
@@ -170,7 +170,8 @@ And one, in the content, found by measurement rather than by playing:
 ```
 TASK:      008 — Dialogue system
 MILESTONE: M5 (NPCs and dialogue) — the conversation half
-STATUS:    COMPLETE — tests green; not yet played in a real window
+STATUS:    COMPLETE — tests green and played in a real window
+           (tools/playtest_dialogue.gd, 8 screenshots)
 LANE:      People & Interface (dialogue UI, NPC prompt) + core (EventBus, generators)
 ```
 
@@ -205,7 +206,7 @@ holds the valley still while they say them.
 
 ### TESTS
 
-- **`tests/suites/test_dialogue.gd` — 32 cases**, in four blocks:
+- **`tests/suites/test_dialogue.gd` — 33 cases**, in four blocks:
   - *content*: six villagers one tree each, an unconditional fallback in every
     tree, every tree covering day / weather / season, no `next` pointing at a
     line that does not exist, no two trees repeating a line, every story beat
@@ -226,32 +227,109 @@ holds the valley still while they say them.
     talking to a villager opens theirs, a greeting without a service still says
     hello and reports the missing panel, the `dialogue_service` group resolves
     live, and the villager holds the player's gaze until the conversation ends.
+    The last of those, `the_valley_holds_still_while_a_conversation_runs`, is
+    the regression case for the one real defect this pass found (below): it
+    gives the rig `Main`'s `PROCESS_MODE_ALWAYS` first, so it measures the tree
+    a player actually gets rather than the pausable rig the other cases stand up.
 - **Real input, real scene**: the panel cases feed `Input.parse_input_event()`
   with real `InputEventKey`s and walk the generated panel's
   `Panel/Column/...` nodes; `talking_to_a_villager_opens_their_conversation`
   stands a player in front of Mira and presses the interact key.
-- **Full pipeline: 508/508**, `CHECK_EXIT=0`, `csharp / import / tests / boot`
+- **Full pipeline: 509/509**, `CHECK_EXIT=0`, `csharp / import / tests / boot`
   all OK, zero `SCRIPT ERROR`.
+
+### PLAYED - `tools/playtest_dialogue.gd`
+
+Boots the shipped `scenes/core/main.tscn` in a real window
+(`--rendering-driver opengl3`, not `--headless`), walks the real player to the
+real Mira with real movement keys, and drives the whole conversation with real
+key events. **PASS**, exit 0, eight screenshots at 1280x720
+(`art_review_dialogue_{1_prompt,1b_quest_taken,2_open,3_reading,4_closed,5_replies,6_after_reply,7_escape_closed}.png`,
+all gitignored, all verified non-black renders — mean luminance 114–143).
+
+What the run showed, in order:
+
+1. `[E] Ask Mira about 'First Harvest'` comes before `[E] Talk to Mira` at the
+   crosshair, so the job is taken first and the greeting is reached after — the
+   ordering the quest system intends, seen from the player's side for the first
+   time.
+2. One interact press: `npc_talked mira`, `dialogue_started mira / intro`,
+   `game paused=true`, panel credited "Mira", line typed rather than dumped.
+3. **Eleven seconds held open: clock `1/s0/d1 06:20 -> 06:20`, player `0.000 m`,
+   Mira `0.000 m`, `attending=true`.** This is the check that failed before the
+   fix below.
+4. First key on the finished line closes the panel, `dialogue_finished mira`,
+   `game paused=false`; the clock then moves `06:20 -> 06:30` in the six and a
+   half seconds after it.
+5. Second meeting opens `story_1` with two replies; key `1` selects row 0,
+   Enter takes it, `dialogue_line_changed story_2`, hearts `0 -> 1`,
+   `mira_field_secret=true`.
+6. Escape on the third meeting closes it: `dialogue_finished mira`, panel gone,
+   no refusals (`refusals=[]`).
+
+Screenshots were checked numerically (size, luminance, pixel sampling) rather
+than eyeballed — the model driving this session cannot read images. The eight
+files are ready for a human to look at.
 
 ### BUGS FOUND AND FIXED
 
-**No game defect surfaced in this pass** — said plainly rather than dressing
-harness work up as gameplay fixes. What it did find, all of it in the test file:
+**One real game defect, found only by playing it.** Test suites ran green the
+whole time it existed:
 
-1. **The suite arrived truncated.** The fixture half of `test_dialogue.gd` was
+1. **The valley did not hold still while a conversation was open.** The panel
+   does call `GameState.set_paused(true)`, and that is all it can do: a pause
+   only stops nodes that are `PROCESS_MODE_PAUSABLE`, and `Main` is
+   `PROCESS_MODE_ALWAYS` so it can keep handling input while the game is
+   paused. Godot resolves a child left on the default (`INHERIT`) by walking up
+   to the nearest ancestor that sets a mode, so the clock and the cast inherited
+   ALWAYS. Measured in the real window over eleven seconds of reading: the
+   clock burned 20 in-game minutes (two ticks) and Mira crossed 2.9 m of her
+   patrol during her own introduction — and with the new case's `time_scale` of
+   60, 80 minutes. The attendance countdown (`NpcManager._physics_process`)
+   ran too, so a line held longer than `attend_seconds` would let her turn away
+   mid-sentence. **Fix:** `scripts/time/time_service.gd` and
+   `scripts/npc/npc_manager.gd` now set
+   `process_mode = Node.PROCESS_MODE_PAUSABLE` in `_ready()`, the same bargain
+   `PlayerController._ready` already spells out (which is why the player never
+   moved and the probe never fired — they were already opted in, and that
+   comment is what pointed at the missing line). **Regression:**
+   `the_valley_holds_still_while_a_conversation_runs`, proven by mutation —
+   commenting the two lines back out fails it with "the clock ran 80 in-game
+   minutes through the conversation". Repeating Group 12's lesson: 33 green
+   cases and a 100% pass rate could not see this, because the test rig is not
+   under `Main`.
+
+And in the playtest harness, found the same day:
+
+2. **`--headless` hangs this tool silently.** The game boots and the schedule
+   logs keep arriving, so nothing looks wrong, while the first screenshot waits
+   on `frame_post_draw`, which a dummy renderer never posts — three runs sat
+   there for minutes with no second print. The file's header already said
+   "NOT `--headless`"; `_run()` now fails in a second with
+   `DisplayServer.get_name() == "headless"` instead of waiting forever.
+3. **The reading press does not always read.** The first version of step 4
+   assumed the typewriter was still running after the eleven-second hold. The
+   typewriter is on the always-running panel, so it finishes during the hold and
+   the first press ends the conversation instead. Step 4 now branches on
+   `_typing` and photographs the whole line either way.
+
+And in the test file itself, found while writing it — harness work, not
+gameplay, listed so it does not read as gameplay fixes:
+
+4. **The suite arrived truncated.** The fixture half of `test_dialogue.gd` was
    missing, so the file could not parse; `check.ps1` failed at the import stage
    before a single case ran. Writing those fixtures is most of the work that
    went green here.
-2. **`run_all()` calls `setup()`/`teardown()` once per suite, not per case.**
+5. **`run_all()` calls `setup()`/`teardown()` once per suite, not per case.**
    A case that leaves `GameState` paused, or a rig node in the tree, leaks both
    into every case after it. Each `_build_*` therefore opens with
    `_reset_rig()`, which stops recorders, frees the rig, and force-releases a
    pause a case forgot to unwind.
-3. **`Input.action_press()` never reaches `_unhandled_input`.** The panel reads
+6. **`Input.action_press()` never reaches `_unhandled_input`.** The panel reads
    key events there, so the obvious "press" opens nothing. Fixtures use
    `Input.parse_input_event()` with a real `InputEventKey`, as `test_ui.gd`
    does.
-4. **`EventRecorder.arg(i)` returns an Array padded with nulls.** The reason of
+7. **`EventRecorder.arg(i)` returns an Array padded with nulls.** The reason of
    a `dialogue_failed` is `arg(1)`; reading it without a null guard turns a
    clean assertion failure into a variant error inside the harness.
 
@@ -275,16 +353,22 @@ harness work up as gameplay fixes. What it did find, all of it in the test file:
 
 ### KNOWN GAPS
 
-- **Not played in a real window.** `AGENTS.md` §7 wants a human to see it.
-  There is no `tools/playtest_dialogue.gd` and no screenshot; the panel has
-  passed every assertion and has been seen by nobody.
+- **The eight screenshots have been measured, not eyeballed.** Size, luminance
+  and sampled pixels say the frames are real renders of the scene; whether they
+  *look* right needs a human (`art_review_dialogue_*.png`).
+- **The pause fix covers the two systems that were simulating through it.**
+  `TimeService` and `NpcManager` are now explicitly `PROCESS_MODE_PAUSABLE`;
+  other descendants of `Main` left on the default still run while the tree is
+  paused — dropped-item physics and ambience, which is where the design wants
+  them, but nothing has measured the rest.
 - **Conversation memory is not wired to a save.** `main.gd` never calls
   `to_dict`/`from_dict`, because there is no central save yet (TASK-009). The
   round-trip is proven at the service level only — exactly where quests stood
   at group 15.
 - **Six villagers, not twelve.** `prompt.md` §16 wants 12 NPCs with dialogue;
   M5 stays open until the other six exist.
-- **No audio, no portraits, no typewriter.** Lines appear whole.
+- **No audio, no portraits.** The panel does type its lines (the first press
+  finishes one early); what it has never had is a voice or a face.
 - **No friendship or gift reaction lines.** Those are TASK-007's, which is why
   M6 lists "dialogue (reaction lines)" among its affected systems.
 

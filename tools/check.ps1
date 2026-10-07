@@ -12,7 +12,10 @@ pwsh -File tools/check.ps1
 #>
 param(
     [switch]$SkipImport,
-    [int]$TimeoutSeconds = 120
+    # 120s was enough until it was not: the suite measured 120.6s at 509 cases,
+    # which made the tests stage a coin flip rather than a check. 180 leaves
+    # headroom without letting a wedged process waste much more than a minute.
+    [int]$TimeoutSeconds = 180
 )
 
 $ErrorActionPreference = 'Stop'

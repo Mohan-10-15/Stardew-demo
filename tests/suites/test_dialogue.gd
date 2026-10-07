@@ -110,6 +110,7 @@ func get_cases() -> Array[StringName]:
 		&"a_greeting_without_a_dialogue_service_still_says_hello",
 		&"the_dialogue_group_finds_a_live_service",
 		&"the_villager_keeps_facing_you_until_the_conversation_ends",
+		&"the_valley_holds_still_while_a_conversation_runs",
 	]
 
 
@@ -179,6 +180,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_group_matches()
 		&"the_villager_keeps_facing_you_until_the_conversation_ends":
 			return await _t_attending_held()
+		&"the_valley_holds_still_while_a_conversation_runs":
+			return await _t_valley_holds_still()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -1099,6 +1102,80 @@ func _t_attending_held() -> Dictionary:
 	if GameState.paused:
 		return fail(c, "the ended conversation left the world paused")
 	return succeeded(c, "held while reading, released once the panel closed")
+
+
+func _t_valley_holds_still() -> Dictionary:
+	var c := &"the_valley_holds_still_while_a_conversation_runs"
+	# The panel pauses the tree, and that only stops what is *pausable*. `Main` is
+	# `PROCESS_MODE_ALWAYS` so it can keep handling input while the game is
+	# paused, Godot resolves INHERIT by walking up to the nearest ancestor that
+	# sets a mode, and anything left on the default therefore inherits ALWAYS —
+	# including the clock and the cast. Found in a real window by
+	# `tools/playtest_dialogue.gd`, which measured 20 in-game minutes burned and
+	# 2.9 m of Mira's patrol crossed while the player read her introduction.
+	#
+	# The rig is given `Main`'s mode before anything is measured, because under
+	# the test rig's default the clock and the cast were pausable anyway and this
+	# case would have passed against the bug it exists to catch.
+	var built := await _build_game()
+	if built.is_empty():
+		return fail(c, "could not build the game")
+	_rig.process_mode = Node.PROCESS_MODE_ALWAYS
+	var clock := TimeService.find(built["world"])
+	if clock == null:
+		return fail(c, "the world has no clock")
+	var npc: Npc = built["npc"]
+	var service: DialogueService = built["service"]
+	# Sped up so ticks land well inside the waits: at the shipped five real
+	# seconds a tick, a short wait could pass without one and would prove nothing
+	# in either direction.
+	clock.time_scale = 60.0
+
+	# She has to be genuinely walking before the pause, or "she did not move"
+	# measures an idle villager rather than a frozen one.
+	var start := npc.global_position
+	if not npc.walk_to(start + Vector3(6.0, 0.0, 0.0)):
+		return fail(c, "the villager would not start walking")
+	await _wait(0.3)
+	if npc.global_position.distance_to(start) < 0.05:
+		return fail(c, "she never started walking, so there is nothing to freeze")
+
+	if not service.open(MIRA):
+		return fail(c, "Mira would not open")
+	if not GameState.paused:
+		return fail(c, "the panel did not pause the tree")
+	var clock_at := int(clock.time.hour) * 60 + int(clock.time.minute)
+	var held_at := npc.global_position
+	await _wait(0.6)
+	var clock_now := int(clock.time.hour) * 60 + int(clock.time.minute)
+	var drift := npc.global_position.distance_to(held_at)
+	if clock_now != clock_at:
+		clock.time_scale = 1.0
+		return fail(c, "the clock ran %d in-game minutes through the conversation" % (
+			clock_now - clock_at
+		))
+	if drift > 0.02:
+		clock.time_scale = 1.0
+		return fail(c, "the villager walked %.3f m while the panel was open" % drift)
+
+	# And both have to start again: a frozen measurement is worth nothing if the
+	# thing is simply dead.
+	service.advance()
+	if service.is_open():
+		clock.time_scale = 1.0
+		return fail(c, "the conversation outlived its last line")
+	await _wait(0.6)
+	var resumed_clock := int(clock.time.hour) * 60 + int(clock.time.minute)
+	var resumed_walk := npc.global_position.distance_to(held_at)
+	clock.time_scale = 1.0
+	npc.clear_scheduled_walk()
+	if resumed_clock == clock_now:
+		return fail(c, "the clock never resumed after the conversation ended")
+	if resumed_walk <= 0.05:
+		return fail(c, "the villager never resumed walking after the conversation ended")
+	if GameState.paused:
+		return fail(c, "the ended conversation left the world paused")
+	return succeeded(c, "clock and cast froze for the whole read and moved again after it")
 
 
 # --- Fixtures -----------------------------------------------------------------------

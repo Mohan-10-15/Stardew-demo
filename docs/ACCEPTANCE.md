@@ -137,7 +137,8 @@ dialogue, gift tastes, friendship, birthday and story role.
 
 Schedules are **done** for the six villagers that ship (group 16), pinned by
 `every_block_is_reachable_in_its_own_time`; the conversation is **done** as
-well (TASK-008, 32 cases in `tests/suites/test_dialogue.gd`), so an NPC can be
+well (TASK-008, 33 cases in `tests/suites/test_dialogue.gd`, plus a real-window
+playthrough via `tools/playtest_dialogue.gd`), so an NPC can be
 spoken to, answers from a scored selection over day, weather, season and bond,
 and remembers what it has already said. **Six more villagers are not** — the
 twelve `prompt.md` §16 asks for is the open half of this milestone.
