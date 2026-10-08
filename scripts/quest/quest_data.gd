@@ -38,6 +38,18 @@ const REPEATS: Array[StringName] = [REPEATS_ONCE, REPEATS_WEEKLY]
 ## What is paid.
 @export var reward: QuestReward = null
 @export var repeats: StringName = REPEATS_ONCE
+## Hearts of friendship the giver wants before they will offer this at all.
+##
+## `-1` means no gate, which is the default and the value four of the five shipped
+## jobs carry. A job is "something the player wants", which is exactly what
+## `docs/ACCEPTANCE.md` asks friendship to gate: a villager who hands a stranger the
+## keys to their delivery run before they have ever had a conversation with them is
+## a quest system with no people in it.
+##
+## The gate is applied by [method QuestService.next_offer_from], never by refusing an
+## acceptance — an id a player was somehow offered must still be accepted, so the rule
+## cannot turn into a dead end that fails for a reason the player cannot see.
+@export var min_hearts: int = -1
 
 
 ## Whether this quest is authored well enough to be offered, and — more importantly —
@@ -60,6 +72,10 @@ func is_valid() -> bool:
 	if reward == null or not reward.is_valid() or reward.is_empty():
 		return false
 	if not REPEATS.has(repeats):
+		return false
+	# `-1` is the "no gate" sentinel; anything past the meter is a threshold nothing
+	# can reach, which is a job nobody can ever be offered and no test would notice.
+	if min_hearts < -1 or min_hearts > Friendship.MAX_HEARTS:
 		return false
 	if objective.kind == QuestObjective.KIND_DELIVER and objective.target_npc == giver:
 		# A delivery to the person who asked for it is a collect. Accepting it here would
@@ -97,3 +113,8 @@ func describe_objective() -> String:
 ## Whether this quest has a repeat at all, as opposed to being a one-off.
 func repeats_forever() -> bool:
 	return repeats != REPEATS_ONCE
+
+
+## Whether friendship decides whether this job is offered at all.
+func gates_on_hearts() -> bool:
+	return min_hearts >= 0

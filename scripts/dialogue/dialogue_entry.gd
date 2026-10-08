@@ -34,6 +34,9 @@ const ANY_SEASON := -1
 const ANY_WEATHER := -1
 ## Condition: any hour. Otherwise 0–23.
 const ANY_HOUR := -1
+## Condition: any romance stage. Otherwise one of the [constant Friendship.STAGE_]
+## values.
+const NO_ROMANCE := -1
 
 ## Unique within its tree. What `next` links and reply targets aim at.
 @export var id: StringName = &""
@@ -55,6 +58,15 @@ const ANY_HOUR := -1
 ## Only said while the relationship is *at or below* this many hearts, for lines
 ## that belong to a relationship that has not warmed yet.
 @export var max_hearts: int = -1
+## Only said once the romance has reached this stage — one of
+## [constant Friendship.STAGE_DATING] or [constant Friendship.STAGE_MARRIED].
+## [constant NO_ROMANCE] for "no requirement".
+##
+## A separate condition from [member min_hearts] because the two answer different
+## questions: hearts measure how much a villager likes you and the stage measures
+## what you *are* to them, and "you gave me a parsnip yesterday" and "we are engaged"
+## can both be true at any heart count.
+@export var min_romance: int = NO_ROMANCE
 ## Only said while this story flag is set. Empty means no requirement.
 @export var requires_flag: StringName = &""
 ## Only said while this story flag is *not* set — the "before they told me"
@@ -94,6 +106,8 @@ func condition_count() -> int:
 		n += 1
 	if min_hearts >= 0 or max_hearts >= 0:
 		n += 1
+	if min_romance != NO_ROMANCE:
+		n += 1
 	if not requires_flag.is_empty():
 		n += 1
 	if not excludes_flag.is_empty():
@@ -129,6 +143,11 @@ func matches(ctx: Dictionary) -> bool:
 	if min_hearts >= 0 and hearts < min_hearts:
 		return false
 	if max_hearts >= 0 and hearts > max_hearts:
+		return false
+	# Missing key reads as "no information" and therefore fails closed, exactly like
+	# the season and weather conditions above: a context built without a romance
+	# cannot match a line written for one.
+	if min_romance != NO_ROMANCE and int(ctx.get("romance", -999)) < min_romance:
 		return false
 	var flags: Variant = ctx.get("flags", {})
 	var set_flags_now: Dictionary = flags if flags is Dictionary else {}

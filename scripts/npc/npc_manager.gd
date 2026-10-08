@@ -415,14 +415,12 @@ func _on_day_started(day: int) -> void:
 		npc.friendship.new_day()
 		if new_week:
 			npc.friendship.new_week()
+		# Re-apply marriage home override after any potential state changes; go_home uses home_position()
+		_apply_marriage_state(npc)
 		npc.go_home()
 	Log.info("Npc", "Day %d: %d villagers home%s" % [
 		day, count(), " (new week)" if new_week else "",
 	])
-	# After `go_home`, never before: the rollover teleports everyone to their own
-	# doorstep and drops their path, and the schedule is what decides where they walk
-	# out to next. Resolving first would build paths from yesterday's positions and
-	# have them thrown away a line later.
 	refresh_schedules()
 
 
@@ -443,12 +441,15 @@ func _start_schedules() -> void:
 		Log.warn("Npc", "no walkability grid; villagers will take direct lines")
 		_navigation = null
 
-	_clock = TimeService.find(get_tree().get_root())
-	if _clock == null:
-		Log.warn("Npc", "no TimeService in the tree; schedules will not run")
-		apply_schedules = false
-		_navigation = null
+func _ensure_clock() -> void:
+	if _clock != null:
 		return
+	if get_tree() == null:
+		return
+	_clock = TimeService.find(get_tree().get_root())
+
+
+
 	if not EventBus.time_minute_changed.is_connected(_on_minute_ticked):
 		EventBus.time_minute_changed.connect(_on_minute_ticked)
 
@@ -468,9 +469,15 @@ func _equip(npc: Npc) -> void:
 	if not apply_schedules:
 		return
 	npc.set_navigation(_navigation)
-	if not _schedules.has(npc.data.id):
-		_schedules[npc.data.id] = ScheduleRegistry.schedule_for(npc.data.id)
-	npc.set_schedule(_schedules.get(npc.data.id) as NpcSchedule)
+		var key := npc.data.id
+		# choose schedule key
+		if npc.friendship != null and npc.friendship.is_married():
+			key = StringName("%s_spouse" % npc.data.id)
+		if not _schedules.has(key):
+			_schedules[key] = ScheduleRegistry.schedule_for(key)
+			if _schedules[key] == null and key != npc.data.id:
+				_schedules[key] = ScheduleRegistry.schedule_for(npc.data.id)
+		npc.set_schedule(_schedules.get(key) as NpcSchedule)
 
 
 func _on_minute_ticked(_minute_of_day: int) -> void:
@@ -496,8 +503,8 @@ func refresh_schedules() -> void:
 func _refresh_schedule(npc: Npc, now: WorldTime) -> void:
 	if npc == null or npc.data == null:
 		return
-	var home_id := StringName("%s_cottage" % npc.data.id)
 	var schedule := npc.get_schedule()
+	var home_id := npc.home_location_id()
 	var loc_id := home_id if schedule == null else schedule.location_at(now, home_id)
 	if loc_id.is_empty():
 		loc_id = home_id
@@ -546,3 +553,11 @@ static func ground_position(home: Vector2) -> Vector3:
 	var x := home.x
 	var z := home.y
 	return Vector3(x, WorldBuilder.terrain_height(x, z), z)
+
+func _ensure_clock() -> void:
+	if _clock != null:
+		return
+	if get_tree() == null:
+		return
+	_clock = TimeService.find(get_tree().get_root())
+

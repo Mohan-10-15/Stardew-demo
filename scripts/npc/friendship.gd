@@ -23,6 +23,40 @@ extends Resource
 ## would mean the save format carries two numbers in two places, and a villager whose
 ## relationship was restored without its gift counters would quietly become giftable
 ## a second time in the same day.
+##
+## ## Why the romance is here too
+##
+## [member romance] is the third piece of the same relationship. Courtship is *earned*
+## through hearts, so splitting it onto [Npc] would mean a save that restored one and
+## not the other could hold a proposal with nothing to have proposed from. The bodies,
+## the schedules and the farm house are all consequences of the stage; this number is
+## the stage.
+
+## The three states of a romance, in the order they are reached.
+##
+## An int rather than an enum because it is *saved*: a `Dictionary` key and a
+## hand-edited `.tres` are both read by [method from_dict], and an enum that gained a
+## fourth value later would leave an old file's `2` meaning something else. The names
+## live here so no caller writes a bare `1`.
+const STAGE_NONE := 0
+const STAGE_DATING := 1
+const STAGE_MARRIED := 2
+
+## Hearts at which a romanceable villager will agree to court the player.
+##
+## Deliberately *below* the top of the meter: a proposal that needs ten hearts means
+## the last stretch of a relationship is the one that pays off, and a courtship
+## reachable at one heart would make the gift economy pointless. Six is the
+## "Confidant" tier, so the prompt and the meter say the same thing about when it opens.
+const COURT_HEARTS := 6
+## Hearts at which a dating villager will say yes to a proposal. Ten, the cap: asking
+## for the whole meter is what makes the proposal the end of the road rather than a
+## step on it.
+const PROPOSE_HEARTS := 10
+## What a birthday does to a positive reaction. Negative reactions are *not* doubled —
+## being handed a rock on your birthday is not twice as insulting, and doubling the
+## downside would make the day a trap rather than a treat.
+const BIRTHDAY_MULTIPLIER := 2
 
 ## Points per heart. Matches the constant the content test asserts heart thresholds
 ## against, and is a field rather than a literal everywhere so the economy can be
@@ -72,10 +106,84 @@ const TIER_NAMES: Array[String] = [
 @export var loved_today: int = 0
 ## Gifts accepted this week. Reset by [method new_week].
 @export var gifts_this_week: int = 0
+## How far the romance has come, as one of [constant STAGE_NONE],
+## [constant STAGE_DATING] or [constant STAGE_MARRIED].
+##
+## Here rather than on [Npc] for the same reason the gift counters are: it is part of
+## the relationship, it is saved with it, and a spouse restored without the rest of the
+## friendship would be a marriage nothing remembered.
+@export var romance: int = STAGE_NONE
 
 
 func hearts() -> int:
 	return clampi(int(floor(float(points) / float(POINTS_PER_HEART))), 0, MAX_HEARTS)
+
+
+## Whether the player is seeing this villager.
+func is_dating() -> bool:
+	return romance >= STAGE_DATING
+
+
+## Whether this villager lives on the farm now.
+func is_married() -> bool:
+	return romance >= STAGE_MARRIED
+
+
+## The stage as a word for a prompt or a HUD: "", "dating" or "married".
+##
+## Lower case and appended rather than substituted, because "Mira, 6/10, dating" keeps
+## the meter readable while "Mira, dating" throws away the number the whole panel is
+## there to show.
+func romance_stage_name() -> String:
+	match clampi(romance, STAGE_NONE, STAGE_MARRIED):
+		STAGE_DATING:
+			return "dating"
+		STAGE_MARRIED:
+			return "married"
+	return ""
+
+
+## Whether [method court] would succeed right now, and why not when it would not.
+##
+## The rule lives here so the prompt, the press and the test all ask one question. The
+## reason is the same machine-readable vocabulary [signal
+## EventBus.romance_started_failed] publishes, so a refusal cannot be worded one way
+## on screen and another on the bus.
+func court_refusal() -> StringName:
+	if romance >= STAGE_DATING:
+		return &"already_involved"
+	if hearts() < COURT_HEARTS:
+		return &"not_enough_hearts"
+	return &""
+
+
+## Whether [method propose] would succeed right now, and why not when it would not.
+func propose_refusal() -> StringName:
+	if romance >= STAGE_MARRIED:
+		return &"already_married"
+	if romance < STAGE_DATING:
+		return &"not_courting"
+	if hearts() < PROPOSE_HEARTS:
+		return &"not_enough_hearts"
+	return &""
+
+
+## Moves the relationship to [constant STAGE_DATING]. Returns false, unchanged, if
+## [method court_refusal] says no — so a caller cannot court a stranger by forgetting
+## to check.
+func court() -> bool:
+	if not court_refusal().is_empty():
+		return false
+	romance = STAGE_DATING
+	return true
+
+
+## Moves the relationship to [constant STAGE_MARRIED], for the same reason.
+func propose() -> bool:
+	if not propose_refusal().is_empty():
+		return false
+	romance = STAGE_MARRIED
+	return true
 
 
 ## The name of the tier this relationship has reached.
@@ -118,9 +226,17 @@ func can_gift_loved_today() -> bool:
 ## The counters advance whether or not the points did. A gift swallowed by a maxed
 ## meter still cost the player the gift, and still counts against the weekly budget —
 ## otherwise maxing one relationship would hand out unlimited free presents.
-func award(reaction: StringName) -> int:
+##
+## [param birthday] doubles a *positive* reaction and changes nothing else — not the
+## counters, not the caps, not the negative ones. A birthday is worth going out of your
+## way for, and a day on which a disliked gift costs twice as much would be a day the
+## player is better off not giving anything at all.
+func award(reaction: StringName, birthday: bool = false) -> int:
 	var before := points
-	points = clampi(points + points_for(reaction), 0, MAX_POINTS)
+	var worth := points_for(reaction)
+	if birthday and worth > 0:
+		worth *= BIRTHDAY_MULTIPLIER
+	points = clampi(points + worth, 0, MAX_POINTS)
 	gifts_today += 1
 	gifts_this_week += 1
 	if reaction == NpcData.REACTION_LOVED:
@@ -177,6 +293,7 @@ func to_dict() -> Dictionary:
 		"gifts_today": gifts_today,
 		"loved_today": loved_today,
 		"gifts_this_week": gifts_this_week,
+		"romance": romance,
 	}
 
 
@@ -184,12 +301,14 @@ func to_dict() -> Dictionary:
 ##
 ## Clamps on the way in rather than trusting the file. A save edited by hand, or
 ## written by an older build with a higher cap, would otherwise open the game with a
-## friendship of -4000 that no gift could climb out of.
+## friendship of -4000 that no gift could climb out of — and a `romance` of 9 would
+## open it with a marriage state no code knows how to leave.
 func from_dict(data: Dictionary) -> void:
 	points = clampi(int(data.get("points", 0)), 0, MAX_POINTS)
 	gifts_today = maxi(int(data.get("gifts_today", 0)), 0)
 	loved_today = maxi(int(data.get("loved_today", 0)), 0)
 	gifts_this_week = maxi(int(data.get("gifts_this_week", 0)), 0)
+	romance = clampi(int(data.get("romance", STAGE_NONE)), STAGE_NONE, STAGE_MARRIED)
 
 
 func copy() -> Friendship:

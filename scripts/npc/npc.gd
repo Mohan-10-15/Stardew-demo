@@ -394,8 +394,8 @@ func _pick_wander_target() -> void:
 ## yesterday, and following it from home would walk them back out to where they were.
 func go_home() -> void:
 	clear_scheduled_walk()
-	position.x = data.home.x
-	position.z = data.home.y
+	position.x = home_position().x
+	position.z = home_position().y
 	velocity = Vector3.ZERO
 	_pick_wander_target()
 
@@ -426,7 +426,51 @@ func aim_height() -> float:
 	return body_height()
 
 
+## A runtime override for the home. Set when the villager marries and moves to the
+## farm, cleared by [method clear_home_override]. Stored as a Vector2 (XZ) because
+## the nav, the wander disc and the prompt only ever use XZ. The height is not part
+## of a "place" identity.
+var _home_override_pos: Vector2 = Vector2.ZERO
+var _has_home_override: bool = false
+var _home_override_location: StringName = &""
+
+
+## Overrides the home used for [method home_position], wander disc and scheduled
+## "home" blocks while this villager is a spouse. [param location_id] may be empty
+## — the manager still records it if a listener wants to know why, but nothing else
+## requires it. The override is a *cache* applied by [NpcManager], not persisted
+## here.
+func set_home_override(pos: Vector2, location_id: StringName = &"") -> void:
+	_home_override_pos = pos
+	_has_home_override = true
+	_home_override_location = location_id
+
+
+## Removes the override, restoring [member NpcData.home].
+func clear_home_override() -> void:
+	_has_home_override = false
+	_home_override_location = &""
+
+
+## The location id that the marriage record points to, if any. Empty when using the
+## authored home. A spouse is expected to live at `farm_home`; nobody else should have
+## an override in a normal save. Keeping it on the node means a UI can show a note
+## without a second lookup.
+func home_location_id() -> StringName:
+	if _has_home_override:
+		return _home_override_location
+	if data == null:
+		return &""
+	# The authored home is the villager's own cottage. The content uses the pattern
+	# `<id>_cottage`; exposing it is cheap and lets [NpcManager._refresh_schedule]
+	# tell a spouse's schedule to stop pulling the authored cottage without a second
+	# field.
+	return StringName("%s_cottage" % data.id)
+
+
 func home_position() -> Vector2:
+	if _has_home_override:
+		return _home_override_pos
 	return data.home if data != null else Vector2.ZERO
 
 
@@ -434,7 +478,7 @@ func home_position() -> Vector2:
 func is_at_home() -> bool:
 	if data == null:
 		return false
-	return _home_position_xz().distance_to(data.home) < data.wander_radius * 0.5
+	return _home_position_xz().distance_to(home_position()) < data.wander_radius * 0.5
 
 
 ## "Mira (Friend, 2 hearts)" — name and standing in one string.
@@ -498,9 +542,12 @@ func _preview(ok: bool, reason: StringName, reaction: StringName) -> Dictionary:
 
 ## This villager's share of the save file.
 ##
-## Position is deliberately absent. Villagers are placed from
-## [member NpcData.home] on every load, so persisting a coordinate would mean a save
-## from a different valley layout put people inside walls.
+## Position is deliberately absent. Villagers are placed from [member NpcData.home]
+## on every load, so persisting a coordinate would mean a save from a different valley
+## layout put people inside walls. A marriage home override is a runtime consequence
+## of the relationship: it is applied by [NpcManager] when loading a save (or when a
+## proposal succeeds), and at day rollover, rather than being written into the
+## per-villager save blob.
 func to_dict() -> Dictionary:
 	return {
 		"id": data.id if data != null else &"",

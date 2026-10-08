@@ -63,6 +63,15 @@ extends Resource
 @export_range(0, 3, 1) var birthday_season: int = 0
 @export_range(1, 28, 1) var birthday_day: int = 1
 
+@export_group("Romance")
+## Whether this villager can be courted and married.
+##
+## Content, not code: romance is a *casting* decision, and a valley that gains a
+## bachelor or a villager who wants nothing to do with the player should be one field
+## here rather than a `match` over ids in the proposal rule. Six of the shipped cast
+## are candidates; a seventh who is not costs nobody a line of code.
+@export var romanceable: bool = false
+
 @export_group("Gifts")
 ## Gave these before: the reaction that matters, and the only one with a daily cap.
 @export var loved_gifts: Array[StringName] = []
@@ -78,6 +87,17 @@ extends Resource
 ## because a field defaulted is a small lie the player can catch.
 func has_birthday() -> bool:
 	return birthday_season > 0 and birthday_day > 0
+
+
+## Whether [param season] / [param day] is this villager's birthday.
+##
+## The question the gift transaction asks, kept here rather than duplicated as four
+## comparisons at the call site: a birthday is content, and comparing the fields from
+## the outside is how one caller ends up testing the month and forgetting the day.
+## A villager with no authored birthday is never anyone's birthday — not even a
+## default one — for the reason [method has_birthday] gives.
+func is_birthday_on(season: int, day: int) -> bool:
+	return has_birthday() and birthday_season == season and birthday_day == day
 
 
 func is_valid() -> bool:

@@ -180,6 +180,49 @@ signal npc_gift_failed(npc_id: StringName, item_id: StringName, reason: StringNa
 ## `hearts` and the new `tier_name` so it never has to ask the villager.
 signal npc_friendship_changed(npc_id: StringName, hearts: int, tier_name: String)
 
+## The player asked a romanceable villager to court them and was accepted. Separate
+## from [signal npc_friendship_changed] by a wide margin: a tier change is a number
+## moving, and this is the moment the relationship became a *different kind of thing*
+## — which wants its own line, its own sound and its own save entry, not a re-run of
+## "you are now a Confidant".
+signal romance_started(npc_id: StringName)
+
+## The mandatory counterpart to [signal romance_started]. `reason` is machine-readable;
+## the full set is this comment and `every_romance_refusal_has_its_own_reason` in the
+## friendship suite.
+##
+## - `no_npc` — aimed at something with no villager behind it.
+## - `no_friendship` — the villager is real but has no [Friendship] to change.
+## - `not_romanceable` — this villager cannot be courted at all (content).
+## - `not_enough_hearts` — below [constant Friendship.COURT_HEARTS].
+## - `already_involved` — already dating, or already married to someone.
+##
+## No two of these may share a value, for the reason [signal npc_talk_failed] gives:
+## a shared reason is two different sentences a listener cannot tell apart.
+signal romance_started_failed(npc_id: StringName, reason: StringName)
+
+## The player proposed and was accepted. Separate from [signal romance_started] for
+## the same reason the two halves of a courtship are separate: one is the beginning of
+## a relationship and the other is the moment a second villager moves onto the farm,
+## changes schedule and gains spouse dialogue.
+signal npc_married(npc_id: StringName)
+
+## The mandatory counterpart to [signal npc_married]. `reason` is machine-readable;
+## the full set is this comment and `every_romance_refusal_has_its_own_reason`.
+##
+## - `no_npc` — aimed at something with no villager behind it.
+## - `no_friendship` — the villager is real but has no [Friendship] to change.
+## - `not_romanceable` — this villager cannot be married at all (content).
+## - `not_courting` — the player has not courted them yet.
+## - `not_enough_hearts` — below [constant Friendship.PROPOSE_HEARTS].
+## - `already_married` — to the player already.
+##
+## Deliberately *not* a second `romance_started_failed`: a listener that wants to
+## react to a proposal and a listener that wants to react to a courtship are two
+## different listeners, and one signal with a reason bolted on would make both of them
+## guess.
+signal npc_propose_failed(npc_id: StringName, reason: StringName)
+
 # --- Quests ----------------------------------------------------------------
 ## The player took a job on. Carries the quest and the villager who offered it, so a
 ## journal can say who to go back to without loading the definition itself.
