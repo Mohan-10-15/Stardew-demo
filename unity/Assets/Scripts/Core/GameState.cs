@@ -211,6 +211,13 @@ namespace EmberHollow.Core
         /// <summary>Counters keyed by name, driving the end-of-day summary.</summary>
         public List<StatCounter> Stats = new List<StatCounter>();
 
+        /// <summary>
+        /// Items waiting in the shipping bin. They leave the bag on deposit but
+        /// are only paid out at the next sleep, so a save keeps its payout day
+        /// intact. Empty slots are never stored; see ShippingSim.
+        /// </summary>
+        public List<ItemStack> ShippingBin = new List<ItemStack>();
+
         public SkillState Skill(SkillId id)
         {
             for (int i = 0; i < Skills.Count; i++)
@@ -240,6 +247,15 @@ namespace EmberHollow.Core
                 stats.Add(new StatCounter { Key = Stats[i].Key, Value = Stats[i].Value });
             }
 
+            List<ItemStack> shipping = new List<ItemStack>();
+            if (ShippingBin != null)
+            {
+                for (int i = 0; i < ShippingBin.Count; i++)
+                {
+                    shipping.Add(ShippingBin[i] != null ? ShippingBin[i].Copy() : ItemStack.Empty());
+                }
+            }
+
             return new PlayerState
             {
                 Name = Name,
@@ -254,6 +270,7 @@ namespace EmberHollow.Core
                 Skills = skills,
                 Inventory = Inventory.Copy(),
                 Stats = stats,
+                ShippingBin = shipping,
             };
         }
     }

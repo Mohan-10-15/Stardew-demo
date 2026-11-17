@@ -243,3 +243,19 @@ isolation.
 
 A milestone is not done until both tiers are green **with real counts**, a WebGL
 `BuildPipeline.BuildPlayer` succeeds, and nothing is left stubbed.
+
+### Verification without an Editor (fallback only)
+
+When no Editor is installed (see D-0022), `scripts/verify-core.ps1` compiles the
+whole `EmberHollow.Core` assembly and the engine-free part of the EditMode tier
+with the .NET 8 SDK. It uses the small NUnit shim in `tools/core-verify/`, runs
+`[Test]` methods by reflection and prints real pass/fail counts. It cannot run
+PlayMode, UI Toolkit or `BuildPipeline.BuildPlayer`, so it never substitutes for
+a milestone gate; it only stops a broken Core edit from going unnoticed on this
+machine.
+
+The M1 economy lives in the same engine-free assembly as farming:
+`Core/Shipping/ShippingSim.cs` (atomic deposit, quality-aware payout) and
+`Core/Time/SleepSim.cs` (payout, day rollover, one summary event). Both are
+called through thin `SimulationRunner` delegates; no rule lives in a
+MonoBehaviour.

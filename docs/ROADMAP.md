@@ -50,8 +50,13 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
       (hotbar, stow, use-in-front), `FarmTileView` pooled tile overlays, and the
       UI Toolkit HUD — till → plant → water → grow → harvest driven through the
       real scene by `FarmInteractionPlayModeTests`
- - [ ] **T-0106** WORKER-3: a real pixel font for the UI, replacing the built-in
-      font, plus the shipping-bin and money panels
+ - [~] **T-0106** WORKER-3: a real pixel font for the UI, replacing the built-in
+      font, plus the shipping-bin and money panels — **code written**: KenPixel
+      (CC0) wired into USS, a dedicated money panel, an event-driven shipping
+      panel and day-summary banner, plus `ShippingSim`/`SleepSim` in Core with
+      distinct success/failure events. Engine-free Core verified **169/169**
+      with `scripts/verify-core.ps1`; Unity EditMode/PlayMode and WebGL are
+      **not run** because Unity is not installed on this machine (D-0022).
 
 ---
 
@@ -62,8 +67,12 @@ Anything deferred is recorded here as an unchecked item. Nothing is cut silently
       the controls exist; only the tool-specific feedback is thin
 - [x] Till → plant → water → harvest loop
 - [x] Hotbar
-- [ ] Shipping bin and money
-- [ ] Sleep and day rollover
+- [~] Shipping bin and money — deposit removes items from the bag, quality tiers
+      pay 100/125/150% of base value, sleep cashes the bin; Core verified 169/169,
+      Unity-side unrun (D-0022)
+- [~] Sleep and day rollover — `SleepSim` pays the bin, advances to 06:00, runs
+      `DailyTick`, restores vitals and emits one `DaySummary`; gated on reaching
+      the bed in the scene. Unity PlayMode unrun (D-0022)
 - [ ] Save / load, 3 slots
 - [ ] First crops
 - [ ] Continuous 8-directional movement from day one

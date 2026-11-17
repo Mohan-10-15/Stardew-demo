@@ -41,6 +41,8 @@ namespace EmberHollow.Engine
             public readonly List<InputAction> All = new List<InputAction>();
             public readonly InputAction Use;
             public readonly InputAction Stow;
+            public readonly InputAction OpenShipping;
+            public readonly InputAction Sleep;
 
             private Bindings()
             {
@@ -66,6 +68,16 @@ namespace EmberHollow.Engine
                 Stow.AddBinding("<Keyboard>/q");
                 Stow.AddBinding("<Gamepad>/rightShoulder");
                 All.Add(Stow);
+
+                OpenShipping = new InputAction("OpenShipping", InputActionType.Button);
+                OpenShipping.AddBinding("<Keyboard>/b");
+                OpenShipping.AddBinding("<Gamepad>/buttonEast");
+                All.Add(OpenShipping);
+
+                Sleep = new InputAction("Sleep", InputActionType.Button);
+                Sleep.AddBinding("<Keyboard>/enter");
+                Sleep.AddBinding("<Gamepad>/start");
+                All.Add(Sleep);
             }
 
             public static Bindings Create() => new Bindings();
@@ -140,6 +152,16 @@ namespace EmberHollow.Engine
             if (_bindings.Use.WasPressedThisFrame())
             {
                 UseSelected();
+            }
+
+            if (_bindings.OpenShipping.WasPressedThisFrame())
+            {
+                OpenShipping();
+            }
+
+            if (_bindings.Sleep.WasPressedThisFrame())
+            {
+                TrySleep();
             }
         }
 
@@ -240,6 +262,33 @@ namespace EmberHollow.Engine
             Stowed = !Stowed;
             RefreshHeld();
             return Stowed;
+        }
+
+        /// <summary>
+        /// Opens the shipping panel. This only asks the UI to open; the deposit
+        /// itself is a separate action so produce cannot be shipped by accident.
+        /// </summary>
+        public void OpenShipping()
+        {
+            Runner.Bus.Emit(GameEvents.ShippingOpened, null);
+        }
+
+        /// <summary>
+        /// Sleeps only when the player is standing by the bed. The proximity
+        /// check lives here at the input edge so the engine-free sim never has to
+        /// know about transforms; a rejected attempt still gets its own notice
+        /// and a distinct failed result.
+        /// </summary>
+        public SleepResult TrySleep()
+        {
+            BedStation bed = FindFirstObjectByType<BedStation>();
+            if (bed == null || !bed.InRange(transform.position))
+            {
+                Runner.Bus.Emit(GameEvents.SleepBlocked, new SleepBlockedEvent { Reason = "no-bed" });
+                return new SleepResult { Succeeded = false, Reason = "no-bed" };
+            }
+
+            return Runner.Sleep();
         }
 
         /// <summary>Re-reads the selected slot so the HUD cannot drift from state.</summary>

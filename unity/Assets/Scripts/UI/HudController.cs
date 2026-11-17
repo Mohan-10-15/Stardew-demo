@@ -10,15 +10,16 @@ using UnityEngine.UIElements;
 namespace EmberHollow.UI
 {
     /// <summary>
-    /// The heads-up display: date, clock, weather, energy, money, the hotbar, and
-    /// a line saying what the last action did.
+    /// The heads-up display: date, clock, weather, energy, money, the hotbar,
+    /// the shipping-bin panel, the end-of-day summary banner, and a line saying
+    /// what the last action did.
     ///
     /// UI Toolkit, per the rulebook, so there is no canvas and no font atlas to
     /// manage. The view subscribes to the bus rather than polling the state, so
     /// the numbers it shows are the ones the simulation just published.
     ///
     /// Nothing here decides anything. It reads state and formats it; the only
-    /// logic is turning a tool id and quantity into a readable label.
+    /// logic is turning ids, quantities and event payloads into readable labels.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -43,7 +44,17 @@ namespace EmberHollow.UI
         private VisualElement? _notice;
         private Label? _noticeText;
 
+        private VisualElement? _shippingPanel;
+        private VisualElement? _shippingList;
+        private Label? _shippingValue;
+        private Label? _shippingEmpty;
+        private Button? _shippingClose;
+
+        private VisualElement? _daySummary;
+        private Label? _daySummaryText;
+
         private float _noticeUntil;
+        private float _daySummaryUntil;
 
         private void Start()
         {
@@ -70,6 +81,15 @@ namespace EmberHollow.UI
             _subscriptions.Add(_runner.Subscribe(GameEvents.WeatherChanged, _ => Refresh()));
             _subscriptions.Add(_runner.Subscribe(GameEvents.NoticePosted, OnNotice));
 
+            _subscriptions.Add(_runner.Subscribe(GameEvents.ShippingOpened, OnShippingOpened));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.ShippingDeposited, _ => RefreshShipping()));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.ShippingSold, OnShippingSold));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.ShippingBlocked, OnShippingBlocked));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.MoneyChanged, OnMoneyChanged));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.DaySummary, OnDaySummary));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.SleepSucceeded, OnSleepSucceeded));
+            _subscriptions.Add(_runner.Subscribe(GameEvents.SleepBlocked, OnSleepBlocked));
+
             Refresh();
         }
 
@@ -78,6 +98,11 @@ namespace EmberHollow.UI
             if (_interaction != null)
             {
                 _interaction.Acted -= OnActed;
+            }
+
+            if (_shippingClose != null)
+            {
+                _shippingClose.clicked -= HideShippingPanel;
             }
 
             for (int i = 0; i < _subscriptions.Count; i++)
@@ -108,6 +133,21 @@ namespace EmberHollow.UI
             _hotbar = root.Q<VisualElement>("hotbar");
             _notice = root.Q<VisualElement>("notice");
             _noticeText = root.Q<Label>("notice-text");
+
+            // These panels are optional: a HUD built before T-0106 still renders
+            // without them, so a missing name is skipped rather than fatal.
+            _shippingPanel = root.Q<VisualElement>("shipping-panel");
+            _shippingList = root.Q<VisualElement>("shipping-list");
+            _shippingValue = root.Q<Label>("shipping-value");
+            _shippingEmpty = root.Q<Label>("shipping-empty");
+            _shippingClose = root.Q<Button>("shipping-close");
+            _daySummary = root.Q<VisualElement>("day-summary");
+            _daySummaryText = root.Q<Label>("day-summary-text");
+
+            if (_shippingClose != null)
+            {
+                _shippingClose.clicked += HideShippingPanel;
+            }
 
             if (_date == null || _time == null || _hotbar == null)
             {
@@ -154,6 +194,7 @@ namespace EmberHollow.UI
         {
             UpdateTarget();
             UpdateNotice();
+            UpdateDaySummary();
         }
 
         /// <summary>Shows what the player is about to act on, so actions are not blind.</summary>
@@ -327,6 +368,220 @@ namespace EmberHollow.UI
             _noticeUntil = Time.unscaledTime + 2.2f;
         }
 
+        // --- Shipping bin -----------------------------------------------------
+
+        private void OnShippingOpened(object? payload)
+        {
+            if (_shippingPanel == null)
+            {
+                return;
+            }
+
+            _shippingPanel.AddToClassList("visible");
+            RefreshShipping();
+        }
+
+        private void HideShippingPanel()
+        {
+            _shippingPanel?.RemoveFromClassList("visible");
+        }
+
+        /// <summary>
+        /// Rebuilds the bin rows from state. Event-driven only - never called
+        /// from Update - so touching the visual list is cheap and bounded.
+        /// </summary>
+        private void RefreshShipping()
+        {
+            if (_runner == null || _shippingList == null)
+            {
+                return;
+            }
+
+            _shippingList.Clear();
+
+            bool hasItems = false;
+            List<ItemStack>? bin = _runner.State.Player.ShippingBin;
+            if (bin != null)
+            {
+                for (int i = 0; i < bin.Count; i++)
+                {
+                    ItemStack stack = bin[i];
+                    if (stack == null || stack.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    hasItems = true;
+
+                    var row = new VisualElement();
+                    row.AddToClassList("shipping-row");
+
+                    var name = new Label(DescribeItem(stack.Id));
+                    name.AddToClassList("shipping-row-name");
+                    row.Add(name);
+
+                    var qty = new Label("x" + stack.Qty.ToString(CultureInfo.InvariantCulture));
+                    qty.AddToClassList("shipping-row-qty");
+                    row.Add(qty);
+
+                    // Capture the id, not the loop variable's stack object, so
+                    // the click still ships the right item after a refresh.
+                    string itemId = stack.Id;
+                    QualityTier quality = stack.Quality;
+                    var ship = new Button(() => OnShipOne(itemId, quality)) { text = "Ship 1" };
+                    ship.AddToClassList("shipping-ship-button");
+                    row.Add(ship);
+
+                    _shippingList.Add(row);
+                }
+            }
+
+            if (_shippingEmpty != null)
+            {
+                _shippingEmpty.EnableInClassList("visible", !hasItems);
+            }
+
+            if (_shippingValue != null)
+            {
+                int count = _runner.ShippingCount;
+                int value = _runner.ShippingValue;
+                _shippingValue.text = "In bin: " + count.ToString("N0", CultureInfo.InvariantCulture)
+                    + "    Value: " + value.ToString("N0", CultureInfo.InvariantCulture) + "g";
+            }
+        }
+
+        private string DescribeItem(string itemId)
+        {
+            return _runner != null && _runner.Content.TryGetItem(itemId, out ItemDef def)
+                ? def.DisplayName
+                : itemId;
+        }
+
+        private void OnShipOne(string itemId, QualityTier quality)
+        {
+            if (_runner == null)
+            {
+                return;
+            }
+
+            // Ship publishes its own success/failure events; the handlers below
+            // supply the feedback and refresh the rows, so no notice is posted
+            // twice here. The tier comes from the row the player clicked.
+            _runner.Ship(itemId, 1, quality, out _);
+            RefreshShipping();
+        }
+
+        private void OnShippingSold(object? payload)
+        {
+            if (payload is ShippingSoldEvent sold)
+            {
+                int lines = sold.Lines != null ? sold.Lines.Count : 0;
+                ShowNotice(
+                    "Sold " + lines.ToString(CultureInfo.InvariantCulture)
+                    + " item(s) for " + sold.Gold.ToString("N0", CultureInfo.InvariantCulture) + "g",
+                    succeeded: true);
+            }
+            else
+            {
+                ShowNotice("Shipping bin sold", succeeded: true);
+            }
+
+            RefreshShipping();
+        }
+
+        private void OnShippingBlocked(object? payload)
+        {
+            ShowNotice(FailureText(ExtractReason(payload)), succeeded: false);
+            RefreshShipping();
+        }
+
+        private void OnMoneyChanged(object? payload)
+        {
+            if (payload is MoneyChangedEvent changed && _money != null)
+            {
+                _money.text = changed.Money.ToString("N0", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                Refresh();
+            }
+        }
+
+        // --- Day / sleep ------------------------------------------------------
+
+        private void OnDaySummary(object? payload)
+        {
+            if (_daySummary == null || _daySummaryText == null)
+            {
+                return;
+            }
+
+            string date = string.Empty;
+            string weather = string.Empty;
+            int gold = 0;
+
+            if (payload is DaySummaryEvent summary)
+            {
+                date = summary.Date ?? string.Empty;
+                weather = summary.Weather ?? string.Empty;
+                gold = summary.GoldEarned;
+            }
+
+            _daySummaryText.text = date
+                + "\n" + weather
+                + "\nEarned " + gold.ToString("N0", CultureInfo.InvariantCulture) + "g";
+            _daySummary.AddToClassList("visible");
+            _daySummaryUntil = Time.unscaledTime + 4f;
+        }
+
+        private void UpdateDaySummary()
+        {
+            if (_daySummary == null || !_daySummary.ClassListContains("visible"))
+            {
+                return;
+            }
+
+            if (Time.unscaledTime >= _daySummaryUntil)
+            {
+                _daySummary.RemoveFromClassList("visible");
+            }
+        }
+
+        private void OnSleepSucceeded(object? payload)
+        {
+            // Sleeping sells the bin: close it so the player sees the summary.
+            HideShippingPanel();
+            RefreshShipping();
+        }
+
+        private void OnSleepBlocked(object? payload)
+        {
+            string reason = ExtractReason(payload);
+            ShowNotice(
+                reason == "no-bed" ? "Move to the bed to sleep" : FailureText(reason),
+                succeeded: false);
+        }
+
+        /// <summary>
+        /// The sim uses stable reason codes. Payloads use public fields, not
+        /// properties, so match the known event types directly instead of
+        /// reflecting over a property that can never exist.
+        /// </summary>
+        private static string ExtractReason(object? payload)
+        {
+            if (payload is ShippingBlockedEvent shipping)
+            {
+                return shipping.Reason;
+            }
+
+            if (payload is SleepBlockedEvent sleep)
+            {
+                return sleep.Reason;
+            }
+
+            return payload is string text ? text : string.Empty;
+        }
+
         private static string Capitalise(string value)
         {
             if (string.IsNullOrEmpty(value))
@@ -362,6 +617,18 @@ namespace EmberHollow.UI
                     return "No seeds left";
                 case "wrong-season":
                     return "Out of season";
+                case "unknown-item":
+                    return "That item is not in the game";
+                case "unsellable":
+                    return "The bin only takes sellable goods";
+                case "not-in-bag":
+                    return "That is not in your bag";
+                case "empty-bin":
+                    return "The shipping bin is empty";
+                case "no-bed":
+                    return "Move to the bed to sleep";
+                case "already-passed-out":
+                    return "You were already carried home";
                 default:
                     return string.IsNullOrEmpty(reason) ? "That did not work" : reason;
             }

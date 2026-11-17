@@ -5,12 +5,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$Unity = 'C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe'
-$Project = 'C:\mohan\Game\Stardew dmeo\unity'
+# Override with $env:EMBER_UNITY_EXE if Unity is installed somewhere else.
+$Unity = if ($env:EMBER_UNITY_EXE) { $env:EMBER_UNITY_EXE } else { 'C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe' }
+$Project = 'C:\mohan\projects\Stardew dmeo\unity'
 $ArtifactDir = Join-Path $Project 'Logs\TestResults'
 
 if (-not (Test-Path -LiteralPath $Unity)) {
-    throw "Unity Editor not found at $Unity"
+    throw "Unity Editor not found at $Unity. Install 6000.3.25f1 (docs/DECISIONS.md D-0001) or set EMBER_UNITY_EXE."
 }
 if (-not (Test-Path -LiteralPath $Project)) {
     throw "Unity project not found at $Project"

@@ -31,3 +31,7 @@ unity/Recordings/
 Logs/
 *.png
 !unity/Assets/**/*.png
+
+# .NET verification harness build output (never commit compiled artifacts)
+tools/core-verify/bin/
+tools/core-verify/obj/

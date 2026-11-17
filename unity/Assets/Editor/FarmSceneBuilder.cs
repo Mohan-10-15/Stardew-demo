@@ -80,6 +80,7 @@ namespace EmberHollow.EditorTools
             int placed = 0;
             placed += BuildEnvironment();
             placed += BuildFarmstead();
+            placed += BuildEconomyStations();
             placed += BuildPlayer();
             placed += BuildSimulation();
             placed += BuildHud();
@@ -186,6 +187,56 @@ namespace EmberHollow.EditorTools
             }
 
             return placed;
+        }
+
+        /// <summary>
+        /// Places the two economy stations the player must reach on foot: a bed
+        /// to end the day and a crate to ship produce from. No bed or crate prefab
+        /// ships in the CC0 packs, so they are primitives with shared URP
+        /// materials. Build always starts from an empty scene, so re-running is
+        /// idempotent.
+        /// </summary>
+        private static int BuildEconomyStations()
+        {
+            Material wood = MaterialFor("Farm/Mat_Station_Wood", new Color(0.39f, 0.26f, 0.15f));
+            Material cloth = MaterialFor("Farm/Mat_Station_Cloth", new Color(0.30f, 0.42f, 0.62f));
+            Material linen = MaterialFor("Farm/Mat_Station_Linen", new Color(0.88f, 0.84f, 0.72f));
+            Material iron = MaterialFor("Farm/Mat_Station_Iron", new Color(0.22f, 0.23f, 0.25f));
+
+            // Just east of the barn cluster: inside the fence, clear of every
+            // prop in FarmLayout, and a short walk from the spawn at (0, 0, 6).
+            var bed = new GameObject("Bed");
+            bed.transform.position = new Vector3(-10f, 0f, -2f);
+            AddBox(bed.transform, "Bed_Frame", new Vector3(0f, 0.16f, 0f), new Vector3(2.2f, 0.32f, 4.2f), wood);
+            AddBox(bed.transform, "Bed_Mattress", new Vector3(0f, 0.36f, 0.2f), new Vector3(2.0f, 0.14f, 3.5f), linen);
+            AddBox(bed.transform, "Bed_Blanket", new Vector3(0f, 0.46f, 0.9f), new Vector3(2.05f, 0.12f, 2.0f), cloth);
+            AddBox(bed.transform, "Bed_Pillow", new Vector3(0f, 0.48f, -1.45f), new Vector3(1.5f, 0.16f, 0.7f), linen);
+            AddBox(bed.transform, "Bed_Headboard", new Vector3(0f, 0.55f, -2.05f), new Vector3(2.2f, 1.1f, 0.18f), wood);
+            bed.AddComponent<BedStation>();
+            MarkStaticRecursive(bed);
+
+            var bin = new GameObject("ShippingBin");
+            bin.transform.position = new Vector3(-7f, 0f, -2f);
+            AddBox(bin.transform, "Bin_Body", new Vector3(0f, 0.65f, 0f), new Vector3(2.2f, 1.3f, 1.6f), wood);
+            AddBox(bin.transform, "Bin_Lid", new Vector3(0f, 1.36f, 0f), new Vector3(2.35f, 0.12f, 1.75f), iron);
+            AddBox(bin.transform, "Bin_Slot", new Vector3(0f, 1.43f, 0f), new Vector3(1.6f, 0.04f, 0.3f), iron);
+            bin.AddComponent<ShippingBinStation>();
+            MarkStaticRecursive(bin);
+
+            Debug.Log($"[FarmScene] Economy stations placed: bed={bed.transform.position}, bin={bin.transform.position}");
+            return 2;
+        }
+
+        private static GameObject AddBox(
+            Transform parent, string name, Vector3 localPosition, Vector3 scale, Material material)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = name;
+            box.transform.SetParent(parent, false);
+            box.transform.localPosition = localPosition;
+            box.transform.localScale = scale;
+            ApplyMaterial(box, material);
+            return box;
         }
 
         private static int BuildPlayer()
@@ -512,20 +563,32 @@ namespace EmberHollow.EditorTools
         /// Builds the UI Toolkit HUD: writes the uxml and uss, creates the panel
         /// settings, and assembles the object the HUD lives on.
         ///
-        /// The markup is generated here rather than committed as hand-placed
-        /// files so a single <c>FarmSceneBuilder.Build</c> reproduces the whole
-        /// playable game, markup included. Nobody can click in the Editor, so
-        /// "add a UI document by hand" is not an option anyone has.
+        /// The embedded markup below is a fallback for a checkout that has no
+        /// HUD files. Since T-0106 the committed Hud.uxml/Hud.uss are the source
+        /// of truth (they carry the shipping panel, the money panel and the
+        /// pixel font); regenerating the scene must not overwrite them, or one
+        /// <c>Build</c> would silently undo the whole UI task. D-0019 records
+        /// why generation existed in the first place.
         /// </summary>
         private static int BuildHud()
         {
             string uiDir = "Assets/UI";
             EnsureFolder(uiDir);
 
-            WriteIfChanged($"{uiDir}/Hud.uxml", HudMarkup());
-            WriteIfChanged($"{uiDir}/Hud.uss", HudStylesheet());
-            AssetDatabase.ImportAsset($"{uiDir}/Hud.uxml", ImportAssetOptions.ForceSynchronousImport);
-            AssetDatabase.ImportAsset($"{uiDir}/Hud.uss", ImportAssetOptions.ForceSynchronousImport);
+            string uxmlPath = $"{uiDir}/Hud.uxml";
+            string ussPath = $"{uiDir}/Hud.uss";
+            if (!File.Exists(uxmlPath))
+            {
+                WriteIfChanged(uxmlPath, HudMarkup());
+            }
+
+            if (!File.Exists(ussPath))
+            {
+                WriteIfChanged(ussPath, HudStylesheet());
+            }
+
+            AssetDatabase.ImportAsset(uxmlPath, ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.ImportAsset(ussPath, ImportAssetOptions.ForceSynchronousImport);
 
             var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{uiDir}/Hud.uxml");
             if (visualTree == null)

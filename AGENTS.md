@@ -2,7 +2,15 @@
 
 # Ember Hollow — Team Rulebook (Unity 6 LTS)
 
-> **The line above is the ONLY verified Unity Editor on this machine.** Every
+> **Status 2026-11-17:** this repo moved to `C:\mohan\projects\Stardew dmeo` and
+> Unity is **not currently installed on this machine** (`where /r C:\ Unity.exe`
+> finds nothing). The path above is still the canonical install location and the
+> only one ever verified here; use it once Unity is restored, or set
+> `EMBER_UNITY_EXE` in `scripts/run-tests.ps1`. Until then, verify engine-free
+> Core code with `scripts/verify-core.ps1` and mark Unity-side work unverified.
+> See docs/DECISIONS.md D-0022.
+>
+> **The line above was the ONLY verified Unity Editor on this machine.** Every
 > headless `-executeMethod`, test, and `BuildPipeline.BuildPlayer` invocation in
 > this project must use that exact path. It was confirmed on 2026-09-30 via
 > `Unity Hub.exe -- --headless editors -i`, which reported:
@@ -20,9 +28,9 @@
 
 ```
 "C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" ^
-  -batchmode -projectPath "C:\mohan\Game\Stardew dmeo\unity" ^
+  -batchmode -projectPath "C:\mohan\projects\Stardew dmeo\unity" ^
   -executeMethod Namespace.ClassName.MethodName ^
-  -logFile "C:\mohan\Game\Stardew dmeo\unity\Logs\<name>.log"
+  -logFile "C:\mohan\projects\Stardew dmeo\unity\Logs\<name>.log"
 ```
 
 The Unity project root is **`unity/`**, a subdirectory of this repo — NOT the repo

@@ -1,3 +1,9 @@
+/* Kenney's Kenpixel, CC0 1.0 - see Assets/UI/Fonts/LICENSE-CC0.txt. */
+@font-face {
+    font-family: KenPixel;
+    src: url("Assets/UI/Fonts/KenPixel.ttf");
+}
+
 /* Parchment and wood, kept in the two palettes the rest of the UI uses. */
 .hud {
     position: absolute;
@@ -5,6 +11,7 @@
     top: 0;
     right: 0;
     bottom: 0;
+    font-family: KenPixel;
 }
 
 .panel {
@@ -33,7 +40,7 @@
 
 .date {
     color: rgb(240, 226, 196);
-    font-size: 19px;
+    font-size: 21px;
     -unity-font-style: bold;
     margin-bottom: 3px;
 }
@@ -44,7 +51,7 @@
 
 .stat {
     color: rgb(214, 198, 166);
-    font-size: 15px;
+    font-size: 17px;
     margin-right: 14px;
     margin-bottom: 2px;
 }
@@ -94,12 +101,12 @@
 
 .slot-key {
     color: rgb(150, 128, 96);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .slot-name {
     color: rgb(240, 226, 196);
-    font-size: 12px;
+    font-size: 14px;
     -unity-text-align: middle-center;
     white-space: normal;
     margin-top: 2px;
@@ -108,7 +115,7 @@
 
 .slot-qty {
     color: rgb(240, 205, 110);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .target {
@@ -116,7 +123,7 @@
     left: 50%;
     bottom: 118px;
     color: rgb(214, 198, 166);
-    font-size: 14px;
+    font-size: 16px;
     -unity-text-align: middle-center;
 }
 
@@ -155,7 +162,7 @@
 
 .notice-text {
     color: rgb(226, 240, 226);
-    font-size: 16px;
+    font-size: 18px;
     -unity-font-style: bold;
 }
 
@@ -171,5 +178,183 @@
 
 .hint {
     color: rgba(214, 198, 166, 0.7);
-    font-size: 12px;
+    font-size: 13px;
+}
+
+/* --- Dedicated money panel ------------------------------------------------- */
+.money-panel {
+    right: 16px;
+    top: 42px;
+    min-width: 170px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    border-left-color: rgb(196, 156, 64);
+    border-right-color: rgb(196, 156, 64);
+    border-top-color: rgb(196, 156, 64);
+    border-bottom-color: rgb(196, 156, 64);
+}
+
+.money-caption {
+    color: rgb(196, 156, 64);
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-right: 10px;
+}
+
+.money-panel .money {
+    margin-right: 0;
+}
+
+/* --- Shipping bin panel (hidden until GameEvents.ShippingOpened) ---------- */
+.shipping-panel {
+    left: 50%;
+    top: 50%;
+    translate: (-50%, -50%);
+    width: 440px;
+    max-height: 78%;
+    display: none;
+    flex-direction: column;
+}
+
+.shipping-panel.visible {
+    display: flex;
+}
+
+.shipping-title {
+    color: rgb(240, 205, 110);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-bottom: 4px;
+}
+
+.shipping-list {
+    flex-grow: 1;
+    min-height: 140px;
+    max-height: 340px;
+    width: 100%;
+    overflow: scroll;
+    padding: 4px;
+    background-color: rgba(20, 14, 10, 0.55);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(96, 70, 46);
+    border-right-color: rgb(96, 70, 46);
+    border-top-color: rgb(96, 70, 46);
+    border-bottom-color: rgb(96, 70, 46);
+    margin-bottom: 6px;
+}
+
+.shipping-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 32px;
+    padding: 3px 4px 3px 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(122, 88, 55, 0.6);
+}
+
+.shipping-row-name {
+    color: rgb(240, 226, 196);
+    font-size: 15px;
+    flex-grow: 1;
+    -unity-text-align: middle-left;
+}
+
+.shipping-row-qty {
+    color: rgb(240, 205, 110);
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.shipping-ship-button {
+    color: rgb(240, 226, 196);
+    font-size: 14px;
+    background-color: rgb(96, 70, 46);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(122, 88, 55);
+    border-right-color: rgb(122, 88, 55);
+    border-top-color: rgb(122, 88, 55);
+    border-bottom-color: rgb(122, 88, 55);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    padding: 2px 8px 2px 8px;
+}
+
+.shipping-ship-button:hover {
+    background-color: rgb(122, 88, 55);
+    color: rgb(240, 205, 110);
+}
+
+.shipping-value {
+    color: rgb(240, 205, 110);
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-top: 2px;
+    margin-bottom: 6px;
+}
+
+.shipping-empty {
+    display: none;
+    color: rgba(214, 198, 166, 0.85);
+    font-size: 14px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.shipping-empty.visible {
+    display: flex;
+}
+
+.shipping-close {
+    align-self: center;
+    min-width: 110px;
+    color: rgb(240, 226, 196);
+    font-size: 15px;
+    -unity-text-align: middle-center;
+}
+
+/* --- End-of-day summary banner -------------------------------------------- */
+.day-summary {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    translate: (-50%, -50%);
+    display: none;
+    padding: 16px 28px 16px 28px;
+    background-color: rgba(38, 48, 68, 0.95);
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(196, 156, 64);
+    border-right-color: rgb(196, 156, 64);
+    border-top-color: rgb(196, 156, 64);
+    border-bottom-color: rgb(196, 156, 64);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.day-summary.visible {
+    display: flex;
+}
+
+.day-summary-text {
+    color: rgb(240, 226, 196);
+    font-size: 19px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
 }

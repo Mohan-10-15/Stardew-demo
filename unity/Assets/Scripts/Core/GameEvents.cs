@@ -46,6 +46,20 @@ namespace EmberHollow.Core
         public const string ShippingSold = "shipping:sold";
         public const string ShippingBlocked = "shipping:blocked";
 
+        /// <summary>Success: an item was placed in the shipping bin.</summary>
+        public const string ShippingDeposited = "shipping:deposited";
+
+        /// <summary>The player asked the HUD to open the shipping panel.</summary>
+        public const string ShippingOpened = "ui:shipping-open";
+
+        // --- Sleep / day end ----------------------------------------------------
+        public const string SleepSucceeded = "sleep:succeeded";
+
+        public const string SleepBlocked = "sleep:blocked";
+
+        /// <summary>One end-of-day report for the summary banner.</summary>
+        public const string DaySummary = "day:summary";
+
         // --- Player ------------------------------------------------------------
         public const string PlayerExhausted = "player:exhausted";
         public const string PlayerCollapsed = "player:collapsed";

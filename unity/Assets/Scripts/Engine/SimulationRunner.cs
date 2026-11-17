@@ -266,6 +266,72 @@ namespace EmberHollow.Engine
             return result;
         }
 
+        /// <summary>
+        /// Deposits produce into the persistent shipping bin. The sim owns the
+        /// distinct success/failure events; this adapter only mirrors committed
+        /// state, so the HUD does not refresh on a rejected deposit.
+        /// </summary>
+        public bool Ship(string itemId, int qty, out string reason)
+        {
+            EnsureInitialised();
+            bool shipped = ShippingSim.Deposit(State, itemId, qty, Content, Bus, out reason);
+            if (shipped)
+            {
+                Bus.Emit(GameEvents.StateChanged, State);
+            }
+
+            return shipped;
+        }
+
+        /// <summary>
+        /// Ships a specific quality tier, so a UI row showing gold produce ships
+        /// that stack rather than a cheaper normal one in an earlier slot.
+        /// </summary>
+        public bool Ship(string itemId, int qty, QualityTier quality, out string reason)
+        {
+            EnsureInitialised();
+            bool shipped = ShippingSim.Deposit(State, itemId, qty, quality, Content, Bus, out reason);
+            if (shipped)
+            {
+                Bus.Emit(GameEvents.StateChanged, State);
+            }
+
+            return shipped;
+        }
+
+        /// <summary>What the bin would pay at the next sleep, for the shipping UI.</summary>
+        public int ShippingValue
+        {
+            get
+            {
+                EnsureInitialised();
+                return ShippingSim.BinValue(State, Content);
+            }
+        }
+
+        /// <summary>Number of items waiting in the bin, for the shipping UI.</summary>
+        public int ShippingCount
+        {
+            get
+            {
+                EnsureInitialised();
+                return ShippingSim.BinCount(State);
+            }
+        }
+
+        /// <summary>
+        /// Commits a sleep: cashes the bin in and rolls to the next morning.
+        /// Only an explicit sleep action may call this — never <see cref="Update"/>,
+        /// because one call advances a whole day at once.
+        /// </summary>
+        public SleepResult Sleep()
+        {
+            EnsureInitialised();
+            SleepResult result = SleepSim.Sleep(State, Content, Rng, Bus);
+            Bus.Emit(GameEvents.StateChanged, State);
+            return result;
+        }
+
         public void SetPaused(bool paused)
         {
             Paused = paused;

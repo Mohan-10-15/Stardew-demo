@@ -51,10 +51,11 @@ library without a license record here.
 
 | Font | Source URL | License | Notes |
 |------|-----------|---------|-------|
-| — | — | — | M0 HUD pixel font, task T-0104. |
+| Kenney Fonts — Kenpixel | `https://www.kenney.nl/assets/kenney-fonts` (mirrored in `node_modules/three/examples/fonts/ttf/kenpixel.ttf`) | CC0 1.0 — `unity/Assets/UI/Fonts/LICENSE-CC0.txt` | `unity/Assets/UI/Fonts/KenPixel.ttf`, added 2026-11-17 for T-0106 |
 
-Pixel fonts will be open-licensed (SIL OFL or CC0) so the WebGL build can embed
-the file without a licensing question.
+Kenpixel is a CC0 pixel font, so the WebGL build can embed it without a
+licensing question. It is applied to the UI Toolkit HUD through an `@font-face`
+rule in `Assets/UI/Hud.uss`. Unity generates the `.meta` file on first import.
 
 ---
 

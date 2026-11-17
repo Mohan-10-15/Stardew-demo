@@ -56,12 +56,53 @@ Docs are the orchestrator's; put doc-worthy notes in the task report.
 | T-0101 | WORKER-1 | Import one KayKit character pack + one Quaternius farm pack; log in ASSET_LICENSES | **DONE** — KayKit Adventurers + Quaternius FarmBuildings, 45 prefabs, 85 shared URP materials, EditMode 164/164, PlayMode 5/5 |
 | T-0102 | WORKER-1 | Walkable lit farm scene from imported prefabs + Cinemachine angled third-person follow | **DONE** — `Assets/Scenes/Farm.unity`, 45 objects, EditMode 171/171, PlayMode 11/11, WebGL 17.5 MB |
 | T-0103 | WORKER-2 | `SimulationRunner` MonoBehaviour adapter wiring Core to the scene, with EditMode tests | **DONE** — EditMode 189/189, PlayMode 17/17, WebGL 18.4 MB |
-| T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | queued |
+| T-0104 | WORKER-3 | UI Toolkit base style (parchment/wood, real pixel font) + HUD + Input System action map | **PARTIAL** — HUD, hotbar, target line and action feedback done; font landed in T-0106 |
+| T-0105 | ORCHESTRATOR | Playable farm slice: tile mapping, hotbar, tool use, pooled tile view, HUD | **DONE** — PlayMode drove till → plant → water → harvest |
+| T-0106 | WORKER-1/2/3 | Pixel font, shipping bin + money panels, sleep payout and day summary | **CODE DONE, UNITY UNVERIFIED** — Core 169/169 via `scripts/verify-core.ps1`; PlayMode/WebGL need Unity (D-0022) |
+
+### T-0106 completion notes
+
+Two workers and the orchestrator built this slice in parallel on 2026-11-17.
+
+**Core (orchestrator).** `Assets/Scripts/Core/Shipping/ShippingSim.cs` and
+`Assets/Scripts/Core/Time/SleepSim.cs` are engine-free. A deposit removes items
+from the bag atomically (quality preserved, tools refused) and publishes
+`ShippingDeposited` or `ShippingBlocked` — never both. Payout happens only at
+sleep: `ShippingSim.Collect` pays 100/125/150% of base price for normal/silver/
+gold, validates every line before mutating, and emits `ShippingSold` plus
+`MoneyChanged`. `SleepSim.Sleep` collects, advances to the next 06:00 with
+`GameClock.NextDayMorning`, runs `DailyTick`, restores vitals, publishes exactly
+one `DaySummary` and clears `day:` counters afterwards. `GameState.Player` now
+carries `ShippingBin`, deep-copied by `PlayerState.Copy`.
+
+**Engine (WORKER-1).** `SimulationRunner.Ship/ShippingValue/ShippingCount/Sleep`
+are thin delegates. `PlayerInteractionController` binds B to open shipping and
+Enter to sleep; sleep is gated on a `BedStation` within 2.5 m and a refusal
+publishes `SleepBlocked` with reason `no-bed`. `FarmSceneBuilder` now places a
+bed and a crate with the matching marker components.
+
+**UI (WORKER-3).** KenPixel (CC0) replaces the built-in font via `@font-face`.
+The HUD gains a dedicated gold panel, an event-driven shipping panel with
+"Ship 1" buttons, and a four-second end-of-day summary banner.
+
+**Verification.** `powershell -ExecutionPolicy Bypass -File scripts\verify-core.ps1`
+compiled the whole Core assembly with .NET 8 and ran the pure EditMode tier:
+**169 passed, 0 failed** (15 new shipping/sleep tests). Unity is not installed
+on this machine, so PlayMode, UI and WebGL remain unverified. Regenerate the
+scene and run the real gates when Unity is restored:
+
+```
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\projects\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "C:\mohan\projects\Stardew dmeo\unity\Logs\t0106-scene.log"
+powershell -ExecutionPolicy Bypass -File scripts\run-tests.ps1
+```
+
+`Farm.unity` on disk has **not** been regenerated, so it does not yet contain the
+bed or the crate. `ShippingSleepPlayModeTests` mounts its own bed when absent.
 
 ### T-0103 completion notes
 
 ```
-"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "...t0103-scene.log"
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\projects\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "...t0103-scene.log"
 ```
 
 `SimulationRunner` is now the single owner of `GameState`, `EventBus`, `Rng` and
@@ -110,7 +151,7 @@ powershell -ExecutionPolicy Bypass -File scripts\run-windows.ps1
 Build it first:
 
 ```
-"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.WindowsBuilder.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\windows-build.log"
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\projects\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.WindowsBuilder.Build -logFile "C:\mohan\projects\Stardew dmeo\Logs\windows-build.log"
 ```
 
 `WindowsBuilder.Build` uses the Mono backend for fast iteration;
@@ -155,7 +196,7 @@ exists.
 ### T-0102 completion notes
 
 ```
-"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\t0102-scene.log"
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\projects\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.FarmSceneBuilder.Build -logFile "C:\mohan\projects\Stardew dmeo\Logs\t0102-scene.log"
 ```
 
 `Farm.unity` contains a fenced 26 m yard, a tilled plot, 8 Quaternius buildings,
@@ -194,7 +235,7 @@ and belong with the next art import.
 Invoked as:
 
 ```
-"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\Game\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.ArtPackImporter.Build -logFile "C:\mohan\Game\Stardew dmeo\Logs\t0101-import.log"
+"C:\Users\mohan\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -quit -projectPath "C:\mohan\projects\Stardew dmeo\unity" -executeMethod EmberHollow.EditorTools.ArtPackImporter.Build -logFile "C:\mohan\projects\Stardew dmeo\Logs\t0101-import.log"
 ```
 
 `Assets/Editor/ArtPackImporter.cs` rebuilds every prefab from the source FBX and

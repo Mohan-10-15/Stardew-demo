@@ -412,7 +412,11 @@ single `-executeMethod` reproducing the whole playable game, markup included, is
 the only version of this that is actually maintainable here.
 
 `WriteIfChanged` keeps the generated text stable so re-running the builder does
-not churn the files.
+not churn the files. **Update (2026-11-17, T-0106):** the committed
+`Hud.uxml`/`Hud.uss` are now the source of truth once they exist — the embedded
+strings are only a fallback for a checkout missing them. Otherwise one
+`FarmSceneBuilder.Build` would silently erase the shipping panel, money panel
+and pixel-font rule that a UI worker just wrote.
 
 UI Toolkit ships as a built-in module in Unity 6, so `com.unity.ui` is not
 installed and the usual `DefaultRuntimeTheme.tss` path does not exist. The theme
@@ -494,3 +498,66 @@ Both of these reproduce on real hardware GL, not just software:
 
 Both are open. Neither is a reason to distrust the native Windows player, which
 was verified separately by launching it and reading `Player.log`.
+
+---
+
+## D-0022 - The repo moved and Unity is no longer installed on this machine
+
+**Date:** 2026-11-17
+
+`AGENTS.md` was written when the checkout lived at `C:\mohan\Game\Stardew dmeo`
+and Unity 6000.3.25f1 was installed at the per-user Hub path on line 1. Both are
+stale now: the repo is `C:\mohan\projects\Stardew dmeo`, and a full
+`where /r C:\ Unity.exe` finds no Editor anywhere. `scripts/run-tests.ps1` still
+pointed at the old project path and would have thrown before reaching a missing
+Editor.
+
+The canonical Editor path is kept as the documented install location, but the
+scripts now resolve the project relative to this checkout and let
+`EMBER_UNITY_EXE` override the Editor path. Every Unity-dependent gate is
+reported as **unrun**, not as passed: EditMode/PlayMode counts and WebGL build
+sizes in older docs are historical, not evidence about the current tree.
+
+**Consequence:** feature work can continue, but only engine-free code can be
+verified here. See D-0024.
+
+---
+
+## D-0023 - Shipping pays at sleep, and quality multipliers are whole percents
+
+**Date:** 2026-11-17
+
+The shipping bin takes sellable items out of the bag immediately but pays out
+only at sleep. Paying on deposit would make the bin a selling shortcut, remove
+the reason to walk back to it at the end of the day, and give the end-of-day
+summary nothing to report.
+
+`ShippingSim` uses 100/125/150% of an item's base `SellPrice` for normal/silver/
+gold and rounds down. Whole percentages keep the arithmetic integer-only, which
+matters because prices live in a `JsonUtility` save and floating-point drift
+would make loaded and fresh money differ. Quality is carried into the bin rather
+than resolved at payout, so a gold parsnip still pays gold after a reload.
+
+Payout validates every line before touching money: a save containing an unknown
+item id fails atomically with `ShippingBlocked` and keeps the bin intact rather
+than paying for part of it. An empty bin is its own failure event, so sleeping
+with nothing to sell does not play the cash cue.
+
+---
+
+## D-0024 - Core is verified with .NET 8 when Unity is unavailable
+
+**Date:** 2026-11-17
+
+`EmberHollow.Core` has `"noEngineReferences": true`, so its tests need no scene
+and no Editor. `scripts/verify-core.ps1` compiles the whole Core assembly plus
+the engine-free part of the EditMode tier with the .NET 8 SDK, using a small NUnit
+shim under `tools/core-verify/`, and runs every `[Test]` method by reflection.
+
+This is a **fallback**, not a replacement: it does not run PlayMode, UI Toolkit
+or `BuildPipeline.BuildPlayer`, and the shim is deliberately narrower than NUnit.
+Its value is that a machine without a 6 GB Editor can still catch a broken Core
+change. The first run caught a wrong assertion in the new summary test before
+any Unity code was touched.
+
+Current result: **169 passed, 0 failed**.

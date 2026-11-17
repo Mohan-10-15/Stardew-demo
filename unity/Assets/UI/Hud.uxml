@@ -8,12 +8,29 @@
             </ui:VisualElement>
             <ui:VisualElement class="row">
                 <ui:Label name="energy" class="stat energy" />
-                <ui:Label name="money" class="stat money" />
             </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="money-panel" class="panel money-panel">
+            <ui:Label text="GOLD" class="money-caption" />
+            <ui:Label name="money" class="stat money" />
         </ui:VisualElement>
 
         <ui:VisualElement name="notice" class="notice">
             <ui:Label name="notice-text" class="notice-text" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="shipping-panel" class="panel shipping-panel">
+            <ui:Label text="Shipping Bin" class="shipping-title" />
+            <ui:VisualElement name="shipping-list" class="shipping-list" />
+            <ui:Label name="shipping-value" class="shipping-value" />
+            <ui:Label name="shipping-empty" class="shipping-empty"
+                      text="Nothing in the bin. Fill it from your bag, then sleep to sell." />
+            <ui:Button name="shipping-close" text="Close" class="shipping-close" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="day-summary" class="day-summary">
+            <ui:Label name="day-summary-text" class="day-summary-text" />
         </ui:VisualElement>
 
         <ui:Label name="target" class="target" />
@@ -22,7 +39,7 @@
         </ui:VisualElement>
 
         <ui:VisualElement class="controls">
-            <ui:Label text="WASD move    SPACE use    1-8 select    Q stow" class="hint" />
+            <ui:Label text="WASD move    SPACE use    1-8 select    Q stow    B shipping    ENTER sleep (at bed)" class="hint" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
