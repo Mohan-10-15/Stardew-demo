@@ -120,6 +120,7 @@ func get_cases() -> Array[StringName]:
 		&"an_objective_with_an_unknown_kind_is_not_valid",
 		# --- the loop -------------------------------------------------------------
 		&"a_villager_offers_their_job",
+		&"friendship_gates_a_job_offer",
 		&"a_quest_can_be_accepted",
 		&"the_same_job_cannot_be_taken_twice",
 		&"an_unknown_job_cannot_be_accepted",
@@ -193,6 +194,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_unknown_kind_invalid()
 		&"a_villager_offers_their_job":
 			return await _t_offer_visible()
+		&"friendship_gates_a_job_offer":
+			return await _t_friendship_gate()
 		&"a_quest_can_be_accepted":
 			return await _t_accept()
 		&"the_same_job_cannot_be_taken_twice":
@@ -686,6 +689,14 @@ func _t_offer_visible() -> Dictionary:
 	for giver: Variant in QuestRegistry.givers().keys():
 		var id := StringName(str(giver))
 		var offered := quests.next_offer_from(id)
+		var jobs := QuestRegistry.quests_from(id)
+		if not jobs.is_empty() and jobs[0].gates_on_hearts():
+			# A friendship-gated job is deliberately invisible to a stranger. The
+			# gate opening at the authored hearts is asserted in
+			# `friendship_gates_a_job_offer`; here a *gated* offer would be the bug.
+			if not offered.is_empty():
+				return fail(c, "%s offered gated work to a stranger" % id)
+			continue
 		if offered.is_empty():
 			return fail(c, "%s has a job and will not mention it" % id)
 		if not mine.has(offered):
@@ -693,6 +704,35 @@ func _t_offer_visible() -> Dictionary:
 	if quests.title_of(GHOST_JOB) != "":
 		return fail(c, "an unknown job has a title")
 	return succeeded(c, "%d villagers each have a job to offer" % QuestRegistry.givers().size())
+
+
+## Friendship opens a job rather than closing a door: at zero hearts Odette has
+## nothing to say about the frost dispute, at two she sends the player to Halda.
+## The gate is on the *offer*, so a job handed out by another system can still be
+## accepted and finished — tested through the service that owns the rule.
+func _t_friendship_gate() -> Dictionary:
+	var c := &"friendship_gates_a_job_offer"
+	var built := await _build_village()
+	if built.is_empty():
+		return fail(c, "could not stand up the village")
+	var quests: QuestService = built["quests"]
+	var manager: NpcManager = built["manager"]
+	var data := QuestRegistry.get_quest(ODETTE_JOB)
+	if data == null or not data.gates_on_hearts():
+		return fail(c, "%s is not authored with a heart gate" % ODETTE_JOB)
+	if manager.hearts_of(ODETTE) >= data.min_hearts:
+		return fail(c, "the fixture started Odette above the gate")
+	if not quests.next_offer_from(ODETTE).is_empty():
+		return fail(c, "Odette offered gated work to a stranger")
+	var npc: Npc = built["npcs"][ODETTE]
+	npc.friendship.add_hearts(data.min_hearts)
+	if manager.hearts_of(ODETTE) < data.min_hearts:
+		return fail(c, "hearts did not cross the gate")
+	if quests.next_offer_from(ODETTE) != ODETTE_JOB:
+		return fail(c, "Odette still will not offer '%s' at %d hearts" % [
+			ODETTE_JOB, manager.hearts_of(ODETTE),
+		])
+	return succeeded(c, "the job opened at %d hearts and was silent below it" % data.min_hearts)
 
 
 func _t_accept() -> Dictionary:

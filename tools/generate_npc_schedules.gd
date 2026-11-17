@@ -33,6 +33,17 @@ const NPC_DIR := "res://resources/npc/npcs/"
 ##   5 cm below the rim: inside the walkable band, but not in the water.
 const SHARED_PLACES: Array[Dictionary] = [
 	{
+		# Where a married villager lives. Inside the farm fence (±11, ±8 from
+		# (0, -20)) but outside the 14x10 plot, so a spouse has a spot of their own
+		# that is still walkable and still on the farm. Marriage is a change of
+		# address, not a teleport into the cabbages.
+		# Literal, not `NpcManager.MARRIAGE_HOME`: naming that class here would pull
+		# its EventBus references into a `--script` compile before autoloads exist.
+		"id": &"farm_home", "display_name": "The Farmhouse",
+		"kind": LocationData.KIND_HOME, "position": Vector2(9.0, -19.0),
+		"facing": LocationData.FACING_UNSET,
+	},
+	{
 		"id": &"village_well", "display_name": "The Village Well",
 		"kind": LocationData.KIND_SOCIAL, "position": Vector2(30.0, 6.4),
 		# 2.4 m from the well's axis, clear of its 1.1 m radius, looking back at it.
@@ -176,6 +187,26 @@ const SCHEDULES: Array[Dictionary] = [
 ]
 
 
+## The day a villager keeps once they move onto the farm.
+##
+## Deliberately a *different* day from the single one, not just the old blocks with
+## a new home id: a spouse who still walks the same round is a marriage that only
+## changed a number in a save. They start and end at the farmhouse, spend the
+## working hours where the farm needs them, and still go into the village — so a
+## player can find them at the well and know the wedding did not delete a person.
+##
+## The blocks are wide enough that even a villager at the far cottage can walk in
+## from their old home inside the first window; `every_block_is_reachable_in_its_own_time`
+## checks that against the real walk speeds.
+const SPOUSE_BLOCKS: Array[Dictionary] = [
+	{"at": [600, 900], "where": &"farm_home", "doing": "waking"},
+	{"at": [900, 1200], "where": &"kitchen_garden", "doing": "working the beds"},
+	{"at": [1200, 1700], "where": &"village_well", "doing": "seeing neighbours"},
+	{"at": [1700, 2100], "where": &"general_store", "doing": "errands"},
+	{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"farm_home", "doing": "sleeping"},
+]
+
+
 func _initialize() -> void:
 	_ensure_dir(LOCATION_DIR)
 	_ensure_dir(SCHEDULE_DIR)
@@ -190,6 +221,7 @@ func _initialize() -> void:
 	var exit_code := 0
 	exit_code += _write_locations(npcs)
 	exit_code += _write_schedules()
+	exit_code += _write_spouse_schedules(npcs)
 	quit(1 if exit_code > 0 else 0)
 
 
@@ -281,6 +313,35 @@ func _write_schedules() -> int:
 		errors += _save(schedule, "%s%s.tres" % [SCHEDULE_DIR, npc_id])
 
 	print("[generate_npc_schedules] wrote %d schedules to %s" % [written, SCHEDULE_DIR])
+	return errors
+
+
+## One spouse day per romanceable villager, keyed `<id>_spouse`.
+##
+## Written for the romanceable cast rather than all six so a future bachelor who
+## cannot be married never acquires a day they cannot use. The key is a schedule
+## id in its own right — [ScheduleRegistry] keys on the resource's `npc_id`, so
+## reusing the villager's own id would overwrite their single day.
+func _write_spouse_schedules(npcs: Dictionary) -> int:
+	var errors := 0
+	var written := 0
+	for npc_id: StringName in npcs:
+		var data: NpcData = npcs[npc_id]
+		if not data.romanceable:
+			continue
+		var schedule := NpcSchedule.new()
+		schedule.npc_id = StringName("%s_spouse" % npc_id)
+		for block: Dictionary in SPOUSE_BLOCKS:
+			schedule.entries.append(_entry(block))
+		if not schedule.is_valid():
+			printerr("[generate_npc_schedules] spouse schedule for %s is invalid: %s" % [
+				npc_id, schedule.describe(),
+			])
+			errors += 1
+			continue
+		errors += _save(schedule, "%s%s.tres" % [SCHEDULE_DIR, schedule.npc_id])
+		written += 1
+	print("[generate_npc_schedules] wrote %d spouse schedules to %s" % [written, SCHEDULE_DIR])
 	return errors
 
 

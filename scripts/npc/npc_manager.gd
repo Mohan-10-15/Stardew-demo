@@ -52,6 +52,11 @@ extends Node3D
 ## of the two classes to name the other, and that closes a `class_name` cycle.
 const SERVICE_GROUP := &"npc_service"
 
+## The named place a married villager moves to. Kept in content rather than a
+## coordinate so the farm can move without rewriting the romance rule, and so a
+## test can assert the spouse's new home is a real, walkable location.
+const MARRIAGE_HOME := &"farm_home"
+
 ## How close the player must be for the press to count.
 ##
 ## Re-checked here rather than trusted from the prompt, because a prompt is not a
@@ -333,7 +338,14 @@ func give_gift(npc: Npc, item_id: StringName, actor: Node) -> bool:
 
 	var reaction := StringName(preview.get("reaction", &""))
 	var tier_before := npc.friendship.tier_name() if npc.friendship != null else ""
-	var delta := npc.award_gift(reaction)
+	# A birthday doubles a positive reaction and nothing else. The question is
+	# answered here, at the transaction, rather than in the friendship resource:
+	# the clock lives in the tree and the resource is saved data with no tree access.
+	var birthday := false
+	var clock := TimeService.find_in_tree()
+	if clock != null and npc.data != null:
+		birthday = npc.data.is_birthday_on(clock.time.season, clock.time.day_of_month)
+	var delta := npc.award_gift(reaction, birthday)
 	if npc.friendship != null and npc.friendship.tier_name() != tier_before:
 		EventBus.npc_friendship_changed.emit(id, npc.friendship.hearts(), npc.friendship.tier_name())
 	EventBus.npc_gifted.emit(id, item_id, reaction)
@@ -368,6 +380,110 @@ func grant_hearts(npc_id: StringName, amount: int) -> bool:
 	return true
 
 
+## Hearts one villager has with the player, or zero for nobody / no relationship.
+##
+## The read side of the friendship rule, used by quest gates and the relationship
+## HUD. Keeping it here means a consumer never reaches into a villager's friendship
+## resource itself, and a villager who is not in the cast reads as a stranger.
+func hearts_of(npc_id: StringName) -> int:
+	var npc := get_npc(npc_id)
+	if npc == null or npc.friendship == null:
+		return 0
+	return npc.friendship.hearts()
+
+
+# --- Romance ----------------------------------------------------------------
+
+## Asks [param npc] to court the player.
+##
+## Same shape as [method give_gift]: check through the same rule the prompt asks,
+## then change, then publish one distinct success and one distinct failure. The
+## refusal reasons are the ones [method Friendship.court_refusal] already uses, so
+## a line cannot be worded one way on screen and another on the bus.
+func court(npc: Npc, actor: Node) -> bool:
+	var id := _id_of(npc)
+	if npc == null:
+		EventBus.romance_started_failed.emit(id, &"no_npc")
+		return false
+	if npc.friendship == null:
+		EventBus.romance_started_failed.emit(id, &"no_friendship")
+		return false
+	if npc.data == null or not npc.data.romanceable:
+		EventBus.romance_started_failed.emit(id, &"not_romanceable")
+		return false
+	var reason := npc.friendship.court_refusal()
+	if not reason.is_empty():
+		EventBus.romance_started_failed.emit(id, reason)
+		return false
+	npc.friendship.court()
+	_npc_turns_to(npc, actor)
+	EventBus.romance_started.emit(id)
+	Log.info("Npc", "%s agreed to court the player" % id)
+	return true
+
+
+## Proposes marriage to [param npc].
+##
+## A successful proposal is more than a number: the villager moves to the farm,
+## swaps to their spouse schedule and gains spouse dialogue. All three are applied
+## here so a save taken a second later agrees with the scene the player is looking
+## at — [method _apply_marriage_state] is the single place that does it and is also
+## called on day rollover and on load.
+func propose(npc: Npc, actor: Node) -> bool:
+	var id := _id_of(npc)
+	if npc == null:
+		EventBus.npc_propose_failed.emit(id, &"no_npc")
+		return false
+	if npc.friendship == null:
+		EventBus.npc_propose_failed.emit(id, &"no_friendship")
+		return false
+	if npc.data == null or not npc.data.romanceable:
+		EventBus.npc_propose_failed.emit(id, &"not_romanceable")
+		return false
+	var reason := npc.friendship.propose_refusal()
+	if not reason.is_empty():
+		EventBus.npc_propose_failed.emit(id, reason)
+		return false
+	npc.friendship.propose()
+	_npc_turns_to(npc, actor)
+	_apply_marriage_state(npc)
+	EventBus.npc_married.emit(id)
+	Log.info("Npc", "%s married the player and moved to the farm" % id)
+	return true
+
+
+## Applies every world consequence of the current marriage stage to one villager.
+##
+## Idempotent: called on proposal, on each day rollover and after a save load, so a
+## spouse restored from disk is standing at the farm with their spouse day before
+## the first tick rather than walking out of their old cottage. A villager who is
+## not romanceable can never be a spouse even if a hand-edited save says so — the
+## content is the casting decision.
+func _apply_marriage_state(npc: Npc) -> void:
+	if npc == null or npc.data == null or npc.friendship == null:
+		return
+	var married := npc.friendship.is_married() and npc.data.romanceable
+	if married:
+		var place := LocationRegistry.get_location(MARRIAGE_HOME)
+		if place == null:
+			Log.warn("Npc", "marriage home '%s' has no location; spouse stays put" % MARRIAGE_HOME)
+			npc.clear_home_override()
+		else:
+			npc.set_home_override(place.position, place.id)
+	else:
+		npc.clear_home_override()
+	_equip(npc)
+
+
+## Turns a villager to a speaker and holds their attention, shared by the two
+## romance transactions so the player is not talking to a turning back.
+func _npc_turns_to(npc: Npc, actor: Node) -> void:
+	npc.attending = true
+	_attend_timers[_id_of(npc)] = attend_seconds
+	if actor is Node3D:
+		npc.face_towards((actor as Node3D).global_position, 0.2)
+
+
 ## The whole cast's saveable state, as one dictionary.
 ##
 ## Keyed by villager id rather than an array, because the next group will add villagers
@@ -397,6 +513,10 @@ func from_dict(data: Dictionary) -> void:
 			Log.info("Npc", "save mentions %s, who is not in the content" % id)
 			continue
 		npc.from_dict({"friendship": data[id]})
+		# Marriage is a relationship, but its consequences are in the world: restore
+		# the farm home and the spouse day now, before the first tick can send a
+		# restored spouse walking out of their old cottage.
+		_apply_marriage_state(npc)
 	_log_summary()
 
 
@@ -441,15 +561,12 @@ func _start_schedules() -> void:
 		Log.warn("Npc", "no walkability grid; villagers will take direct lines")
 		_navigation = null
 
-func _ensure_clock() -> void:
-	if _clock != null:
+	_ensure_clock()
+	if _clock == null:
+		Log.warn("Npc", "no TimeService in the tree; schedules will not run")
+		apply_schedules = false
+		_navigation = null
 		return
-	if get_tree() == null:
-		return
-	_clock = TimeService.find(get_tree().get_root())
-
-
-
 	if not EventBus.time_minute_changed.is_connected(_on_minute_ticked):
 		EventBus.time_minute_changed.connect(_on_minute_ticked)
 
@@ -464,20 +581,37 @@ func _ensure_clock() -> void:
 	])
 
 
+## Finds the clock once, the first time a schedule needs it.
+##
+## Called from [method _start_schedules] rather than inline so a villager married
+## before the first tick (a save loaded with a spouse) still has a clock to resolve
+## their new day against.
+func _ensure_clock() -> void:
+	if _clock != null:
+		return
+	if get_tree() == null:
+		return
+	_clock = TimeService.find(get_tree().get_root())
+
+
 ## Gives [param npc] the grid and their own day, if schedules are on.
+##
+## A married villager uses an authored `<id>_spouse` schedule when one exists and
+## falls back to their ordinary day when it does not: a spouse with no written day
+## still has the one they had before the wedding, which is better than standing
+## still at the farm all morning.
 func _equip(npc: Npc) -> void:
-	if not apply_schedules:
+	if not apply_schedules or npc == null or npc.data == null:
 		return
 	npc.set_navigation(_navigation)
-		var key := npc.data.id
-		# choose schedule key
-		if npc.friendship != null and npc.friendship.is_married():
-			key = StringName("%s_spouse" % npc.data.id)
-		if not _schedules.has(key):
-			_schedules[key] = ScheduleRegistry.schedule_for(key)
-			if _schedules[key] == null and key != npc.data.id:
-				_schedules[key] = ScheduleRegistry.schedule_for(npc.data.id)
-		npc.set_schedule(_schedules.get(key) as NpcSchedule)
+	var key := npc.data.id
+	if npc.friendship != null and npc.friendship.is_married():
+		var spouse_key := StringName("%s_spouse" % npc.data.id)
+		if ScheduleRegistry.has_schedule(spouse_key):
+			key = spouse_key
+	if not _schedules.has(key):
+		_schedules[key] = ScheduleRegistry.schedule_for(key)
+	npc.set_schedule(_schedules.get(key) as NpcSchedule)
 
 
 func _on_minute_ticked(_minute_of_day: int) -> void:
@@ -553,11 +687,4 @@ static func ground_position(home: Vector2) -> Vector3:
 	var x := home.x
 	var z := home.y
 	return Vector3(x, WorldBuilder.terrain_height(x, z), z)
-
-func _ensure_clock() -> void:
-	if _clock != null:
-		return
-	if get_tree() == null:
-		return
-	_clock = TimeService.find(get_tree().get_root())
 

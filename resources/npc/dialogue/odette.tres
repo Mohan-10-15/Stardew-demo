@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueTree" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_d7djv"]
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_7vc7b"]
@@ -118,7 +118,19 @@ once = true
 hearts = 1
 set_flags = Array[StringName]([&"odette_wrong_water"])
 
+[sub_resource type="Resource" id="Resource_wp46h"]
+script = ExtResource("1_d7djv")
+id = &"dating"
+text = "The water told me something this morning. I decided not to write it down. Some of it is only for us."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_4smgr"]
+script = ExtResource("1_d7djv")
+id = &"married"
+text = "I read the weather for a living and I still didn't see you coming. That's the one forecast I don't mind getting wrong."
+min_romance = 2
+
 [resource]
 script = ExtResource("3_t6k78")
 npc_id = &"odette"
-entries = Array[ExtResource("1_d7djv")]([SubResource("Resource_7m181"), SubResource("Resource_55qsj"), SubResource("Resource_tc124"), SubResource("Resource_0ei3h"), SubResource("Resource_hm4st"), SubResource("Resource_y81x1"), SubResource("Resource_xy7rr"), SubResource("Resource_olqgq"), SubResource("Resource_yhfud"), SubResource("Resource_0ukf2"), SubResource("Resource_770ht"), SubResource("Resource_jdhsf"), SubResource("Resource_r17b1"), SubResource("Resource_3dohl"), SubResource("Resource_n5cbb"), SubResource("Resource_bn5bd")])
+entries = Array[ExtResource("1_d7djv")]([SubResource("Resource_7m181"), SubResource("Resource_55qsj"), SubResource("Resource_tc124"), SubResource("Resource_0ei3h"), SubResource("Resource_hm4st"), SubResource("Resource_y81x1"), SubResource("Resource_xy7rr"), SubResource("Resource_olqgq"), SubResource("Resource_yhfud"), SubResource("Resource_0ukf2"), SubResource("Resource_770ht"), SubResource("Resource_jdhsf"), SubResource("Resource_r17b1"), SubResource("Resource_3dohl"), SubResource("Resource_n5cbb"), SubResource("Resource_bn5bd"), SubResource("Resource_wp46h"), SubResource("Resource_4smgr")])

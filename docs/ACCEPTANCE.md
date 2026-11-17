@@ -165,16 +165,19 @@ which is milestone M16 and does not exist yet.
 
 ### Relationships
 
-- [ ] Gifting an item the NPC likes raises the relationship
-- [ ] Gifting a disliked item lowers it
-- [ ] A relationship value exists, is readable in-game, and survives save and reload
-- [ ] Friendship gates something the player wants (dialogue, gifts, quests)
-- [ ] Romance and marriage work as a relationship path
-- [ ] A spouse appears in the world and follows a schedule
+- [x] Gifting an item the NPC likes raises the relationship
+- [x] Gifting a disliked item lowers it
+- [x] A relationship value exists, is readable in-game, and survives save and reload
+- [x] Friendship gates something the player wants (dialogue, gifts, quests)
+- [x] Romance and marriage work as a relationship path
+- [x] A spouse appears in the world and follows a schedule
 
-Gift tastes are already authored on `NpcData`; nothing reads them yet. This
-milestone is **half** done and must not be reported as complete on the strength
-of the quest list above.
+Verified in `tests/suites/test_friendship.gd` (27 cases), the strengthened
+schedule and quest content checks, and `tools/playtest_friendship.gd` (real
+window, real keys, six screenshots). The panel shows every tier and heart count;
+a proposal moves the villager to the authored `farm_home` and switches them to
+their `<id>_spouse` day, and both survive save → reload. **M6 is complete.**
+M5 remains open on population: it wants twelve villagers, not six.
 
 ---
 

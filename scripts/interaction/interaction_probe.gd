@@ -33,6 +33,13 @@ signal interacted(target: Interactable, actor: Node)
 var _focus: Interactable = null
 var _hold_elapsed: float = 0.0
 var _hold_target: Interactable = null
+## An instant action fires once per *press*, not once per focus. Focus can flicker
+## while the key is down — a villager turns to face the player and their aim volume
+## swings out of the ray for a frame — and `_set_focus` clears `_hold_target` on any
+## change, which used to fire the same key a second time on the frame focus came
+## back. Found by `tools/playtest_friendship.gd`: courting Mira also opened a
+## conversation and paused the game because the second fire hit "Talk to Mira".
+var _instant_fired: bool = false
 var _last_ray_length: float = 0.0
 
 ## Whatever stood between the camera and the target on the last probe, when it was
@@ -229,16 +236,19 @@ func _process_action(delta: float) -> void:
 	if not Input.is_action_pressed(interact_action):
 		_hold_elapsed = 0.0
 		_hold_target = null
+		_instant_fired = false
 		return
 	if _focus == null:
 		return
 
 	var required := _focus.hold_seconds
 	if required <= 0.0:
-		# Instant action: fire once on the press, then wait for a release.
-		if _hold_target != _focus:
-			_hold_target = _focus
-			_hold_elapsed = 0.0
+		# Instant action: fire once on the press, then wait for a release. The latch
+		# is the key, not the focus: `_set_focus` clears `_hold_target` on every
+		# change, so using the target as the latch let one press fire twice when a
+		# turning villager's aim volume left the ray for a frame.
+		if not _instant_fired:
+			_instant_fired = true
 			try_interact()
 		return
 

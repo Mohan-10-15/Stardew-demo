@@ -107,7 +107,11 @@ func condition_count() -> int:
 	if min_hearts >= 0 or max_hearts >= 0:
 		n += 1
 	if min_romance != NO_ROMANCE:
-		n += 1
+		# Weighted by the stage, not just counted: a married villager also satisfies
+		# a dating line, and an unweighted tie would let the less specific line win
+		# on authored order. "We are married" is a more telling fact than "we are
+		# at least dating", so it scores higher.
+		n += min_romance
 	if not requires_flag.is_empty():
 		n += 1
 	if not excludes_flag.is_empty():

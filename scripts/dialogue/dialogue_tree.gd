@@ -133,6 +133,13 @@ func _validate_conditions(e: DialogueEntry) -> String:
 		return "entry '%s' requires %d hearts, more than exist" % [e.id, e.min_hearts]
 	if e.max_hearts > 10:
 		return "entry '%s' caps at %d hearts, more than exist" % [e.id, e.max_hearts]
+	# 1 and 2 are Friendship.STAGE_DATING / STAGE_MARRIED. A line gating on a stage
+	# that does not exist would silently never be selectable, which is the same
+	# content bug as a heart threshold past the cap.
+	if e.min_romance != DialogueEntry.NO_ROMANCE and (e.min_romance < 1 or e.min_romance > 2):
+		return "entry '%s' requires romance stage %d, which does not exist" % [
+			e.id, e.min_romance,
+		]
 	return ""
 
 

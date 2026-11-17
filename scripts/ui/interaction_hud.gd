@@ -21,6 +21,12 @@ extends CanvasLayer
 ## [signal EventBus.hotbar_selection_changed], [signal EventBus.inventory_changed] and
 ## [signal EventBus.npc_friendship_changed] signals. One label, a handful of cheap string
 ## builds, and the promise on screen is the promise the key will keep.
+##
+## [signal EventBus.romance_started] and [signal EventBus.npc_married] are in the same
+## set. A courtship moves no hearts, so `npc_friendship_changed` does not fire: without
+## these two the crosshair kept saying "Talk to Mira" after she had agreed to date,
+## and again after the wedding, until the player happened to look away. The component
+## already knew — the label was simply stale. Found by `tools/playtest_friendship.gd`.
 
 @onready var _crosshair: Control = get_node_or_null(^"Crosshair")
 @onready var _prompt: Label = get_node_or_null(^"PromptContainer/PromptLabel")
@@ -174,10 +180,14 @@ func _watch_state(value: bool) -> void:
 		EventBus.hotbar_selection_changed.connect(_on_hotbar_selection_changed)
 		EventBus.inventory_changed.connect(_refresh_prompt)
 		EventBus.npc_friendship_changed.connect(_on_friendship_changed)
+		EventBus.romance_started.connect(_on_romance_changed)
+		EventBus.npc_married.connect(_on_romance_changed)
 	else:
 		EventBus.hotbar_selection_changed.disconnect(_on_hotbar_selection_changed)
 		EventBus.inventory_changed.disconnect(_refresh_prompt)
 		EventBus.npc_friendship_changed.disconnect(_on_friendship_changed)
+		EventBus.romance_started.disconnect(_on_romance_changed)
+		EventBus.npc_married.disconnect(_on_romance_changed)
 
 
 ## The selected slot changed, so the prompt may now describe a different item.
@@ -194,6 +204,11 @@ func _on_hotbar_selection_changed(_slot: int) -> void:
 
 ## A villager's standing moved, so whether they can take a present may have moved with it.
 func _on_friendship_changed(_npc_id: StringName, _hearts: int, _tier_name: String) -> void:
+	_refresh_prompt()
+
+
+## A courtship or a wedding changed what this key does, without moving any hearts.
+func _on_romance_changed(_npc_id: StringName) -> void:
 	_refresh_prompt()
 
 

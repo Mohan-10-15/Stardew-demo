@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_u5faa"]
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_2ynr2"]
@@ -112,7 +112,19 @@ once = true
 hearts = 1
 set_flags = Array[StringName]([&"fen_old_camp"])
 
+[sub_resource type="Resource" id="Resource_48x6r"]
+script = ExtResource("1_u5faa")
+id = &"dating"
+text = "There's a place up past the tree line I never showed anyone. I was saving it. I suppose I was saving it for you."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_x8ej2"]
+script = ExtResource("1_u5faa")
+id = &"married"
+text = "You know where I'll be before I'm there. That's a strange feeling. I don't mind it."
+min_romance = 2
+
 [resource]
 script = ExtResource("3_67qnl")
 npc_id = &"fen"
-entries = Array[ExtResource("1_u5faa")]([SubResource("Resource_4j4d7"), SubResource("Resource_a5upa"), SubResource("Resource_68a8m"), SubResource("Resource_64kii"), SubResource("Resource_cdcfo"), SubResource("Resource_xdynp"), SubResource("Resource_t5i83"), SubResource("Resource_ubffj"), SubResource("Resource_1jaov"), SubResource("Resource_h80vf"), SubResource("Resource_os2xu"), SubResource("Resource_g60ks"), SubResource("Resource_chk8g"), SubResource("Resource_irmia"), SubResource("Resource_l76q0")])
+entries = Array[ExtResource("1_u5faa")]([SubResource("Resource_4j4d7"), SubResource("Resource_a5upa"), SubResource("Resource_68a8m"), SubResource("Resource_64kii"), SubResource("Resource_cdcfo"), SubResource("Resource_xdynp"), SubResource("Resource_t5i83"), SubResource("Resource_ubffj"), SubResource("Resource_1jaov"), SubResource("Resource_h80vf"), SubResource("Resource_os2xu"), SubResource("Resource_g60ks"), SubResource("Resource_chk8g"), SubResource("Resource_irmia"), SubResource("Resource_l76q0"), SubResource("Resource_48x6r"), SubResource("Resource_x8ej2")])

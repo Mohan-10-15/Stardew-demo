@@ -529,11 +529,12 @@ func gift_preview(item_id: StringName) -> Dictionary:
 ##
 ## The caller removes the item. Doing it in that order means an item that fails to
 ## leave the bag never scores — see [NpcManager.give_gift], which removes first for
-## exactly that reason.
-func award_gift(reaction: StringName) -> int:
+## exactly that reason. [param birthday] is decided at the transaction, where the
+## clock is, and only ever doubles a positive reaction.
+func award_gift(reaction: StringName, birthday: bool = false) -> int:
 	if friendship == null:
 		friendship = Friendship.new()
-	return friendship.award(reaction)
+	return friendship.award(reaction, birthday)
 
 
 func _preview(ok: bool, reason: StringName, reaction: StringName) -> Dictionary:

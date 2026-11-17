@@ -112,8 +112,25 @@ func next_offer_from(npc_id: StringName) -> StringName:
 			if progress.can_be_offered(data.repeats):
 				return data.id
 			continue
+		# Friendship gates the *offer*, never the acceptance: a job the player was
+		# somehow handed must still be turnable-in, so the rule lives here rather
+		# than in `accept`. A villager below the authored threshold simply has no
+		# work to give a stranger yet.
+		if data.gates_on_hearts() and _hearts_of(npc_id) < data.min_hearts:
+			continue
 		return data.id
 	return &""
+
+
+## Hearts [param npc_id] has with the player, for the offer gate.
+##
+## Zero with no village: a quest service stood up in a content test has no cast and
+## a gated job must not suddenly become offerable because nobody was home to ask.
+func _hearts_of(npc_id: StringName) -> int:
+	var manager := _manager()
+	if manager == null:
+		return 0
+	return manager.hearts_of(npc_id)
 
 
 ## The first finished job [param npc_id] could be paid out for, or an empty [StringName].

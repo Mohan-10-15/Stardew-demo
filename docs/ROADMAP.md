@@ -18,7 +18,7 @@ reasoning.
 | M3 | Farming | **COMPLETE** |
 | M4 | Inventory, tools, economy | **COMPLETE** |
 | M5 | NPCs, dialogue | dialogue **COMPLETE**; six villagers open |
-| M6 | Quests, relationships | quests **COMPLETE**; relationships open |
+| M6 | Quests, relationships | **COMPLETE** |
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
 | M9 | Weather and seasons | |
@@ -151,7 +151,7 @@ TASK-008 respectively — the panel, the service, six trees and 32 cases in
 `tests/suites/test_dialogue.gd`); the missing six villagers are not. Population
 is the whole of what is left.
 
-### M6 — Quests, relationships — quests COMPLETE, relationships open
+### M6 — Quests, relationships — COMPLETE
 Acceptance, tracked objectives, completion, rewards, persistence — and the
 relationship layer: gifts that like and dislike differently, friendship that
 rises and falls, romance and marriage.
@@ -164,15 +164,16 @@ with live `current/required` and a `ready` mark; quest work in the existing vill
 interaction chain; gold, item and friendship rewards; distinct success and failure
 events for both accepting and handing in; and per-service save/restore.
 
-What does not yet exist, and is deliberately not stubbed: a quest journal page with
-turned-in history, `!` / `?` markers over villagers with work, the aggregate
-save file that would carry quest state between sessions (M16), and the whole
-relationships half — gift tastes are authored on `NpcData` but nothing reads
-them, friendship has no value, and romance has no path.
+The relationships half landed as group 17 (TASK-007). Gift tastes are read at the
+transaction, birthdays double a positive gift, a relationship panel shows all six
+tiers and heart counts, friendship opens gated dialogue and one job, and a
+proposal moves a spouse to the farm with their own authored day. All six M6 rows
+in `docs/ACCEPTANCE.md` are ticked and the milestone is **complete**.
 
-Because the milestone covers both halves, **M6 is not complete when the quest
-list above is** — it is complete when the M6 rows in `docs/ACCEPTANCE.md` are
-all ticked.
+What still does not exist: a quest journal page with turned-in history, `!` / `?`
+markers over villagers with work, and the aggregate save file that would carry
+quest and relationship state between sessions (M16). Service-level round-trips
+are proven, but there is no central save yet.
 
 ### M7 — Fishing, animals, crafting, cooking
 Four interlocking systems: the timed minigame, husbandry with feed cycles, timed

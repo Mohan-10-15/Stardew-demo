@@ -64,6 +64,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# and 0.71 m from the middle of the well.
 		"home": Vector2(29.7, -1.8), "wander_radius": 7.0, "walk_speed": 1.7,
 		"birthday_season": 1, "birthday_day": 12,
+		"romanceable": true,
 		"loved": [&"wild_berry", &"parsnip"], "liked": [&"spring_onion", &"potato"],
 		"disliked": [&"stone"],
 	},
@@ -74,6 +75,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# House 2's front step. Was (45.5, 1.5): inside the house.
 		"home": Vector2(44.4, -3.8), "wander_radius": 5.0, "walk_speed": 1.5,
 		"birthday_season": 2, "birthday_day": 28,
+		"romanceable": true,
 		"loved": [&"iron_ore", &"copper_ore"], "liked": [&"wood", &"stone"],
 		"disliked": [&"spring_onion"],
 	},
@@ -84,6 +86,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# House 3's front step. Was (49.5, 14.5): inside the house.
 		"home": Vector2(47.3, 9.3), "wander_radius": 8.0, "walk_speed": 1.6,
 		"birthday_season": 3, "birthday_day": 5,
+		"romanceable": true,
 		"loved": [&"cauliflower", &"melon"], "liked": [&"yam", &"tomato"],
 		"disliked": [&"wood"],
 	},
@@ -94,6 +97,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# House 4's front step. Was (35.5, 17.5): inside the house.
 		"home": Vector2(34.2, 12.2), "wander_radius": 11.0, "walk_speed": 2.1,
 		"birthday_season": 1, "birthday_day": 24,
+		"romanceable": true,
 		"loved": [&"wild_horseradish", &"wild_berry"], "liked": [&"corn", &"pumpkin"],
 		"disliked": [&"iron_ore"],
 	},
@@ -106,6 +110,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# where a villager standing in the centre of everything is nowhere in particular.
 		"home": Vector2(31.0, 9.6), "wander_radius": 6.5, "walk_speed": 1.75,
 		"birthday_season": 2, "birthday_day": 9,
+		"romanceable": true,
 		"loved": [&"pumpkin", &"corn"], "liked": [&"cauliflower", &"wood"],
 		"disliked": [&"wild_berry"],
 	},
@@ -118,6 +123,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# The other square resident, on the far side of the well from Halda.
 		"home": Vector2(27.6, 8.6), "wander_radius": 9.0, "walk_speed": 1.65,
 		"birthday_season": 3, "birthday_day": 19,
+		"romanceable": true,
 		"loved": [&"parsnip", &"potato"], "liked": [&"copper_ore", &"wood"],
 		"disliked": [&"melon"],
 	},
@@ -151,6 +157,7 @@ func _initialize() -> void:
 		npc.walk_speed = spec["walk_speed"]
 		npc.birthday_season = spec["birthday_season"]
 		npc.birthday_day = spec["birthday_day"]
+		npc.romanceable = bool(spec.get("romanceable", false))
 		for id_in: StringName in spec["loved"]:
 			npc.loved_gifts.append(id_in)
 		for id_in: StringName in spec["liked"]:

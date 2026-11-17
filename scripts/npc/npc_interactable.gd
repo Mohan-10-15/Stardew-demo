@@ -192,6 +192,14 @@ func preview(actor: Node) -> Dictionary:
 	if not quest.is_empty():
 		return quest
 
+	# Romance takes the same key once there is no work to hand out. The prompt says
+	# which step the press would take, so "Court Mira" is never a surprise: a
+	# villager who cannot be courted, or who is not yet at the right number of
+	# hearts, simply leaves the key saying "Talk to Mira" and stays approachable.
+	var romance := _romance_decision()
+	if not romance.is_empty():
+		return romance
+
 	if item_id.is_empty():
 		return _decision(&"talk", "Talk to %s" % _npc.data.display_name, true, &"", &"", reaction)
 	# Holding something that will not be given. Talk is still on the table, and the
@@ -256,6 +264,15 @@ func interact(actor: Node) -> bool:
 	if action == &"offer" or action == &"turn_in":
 		return _do_quest(action, StringName(decision.get("quest_id", &"")), actor)
 
+	if action == &"court" or action == &"propose":
+		# The manager publishes both halves of the transaction itself: one press
+		# must not produce two failures for one refusal.
+		var ok := bool(manager.call(String(action), _npc, actor))
+		if ok:
+			_npc.attending = true
+			interacted.emit(actor)
+		return ok
+
 	# A press that falls back from a present to a hello still publishes the refusal it
 	# fell back from. Otherwise "villagers never refuse anything" is literally true in a
 	# real game: the only way to reach `give_gift` is to already hold a present the villager
@@ -319,6 +336,27 @@ func _quest_decision(actor: Node) -> Dictionary:
 	var offer_title: String = String(quests.call("title_of", offered))
 	return _decision(&"offer", "Ask %s about '%s'" % [_npc.data.display_name, offer_title],
 		true, &"", &"", &"", &"", offered)
+
+
+## The romance step the press would take, or empty when this is just a greeting.
+##
+## Both gates come from [Friendship], the same object the manager asks before it
+## changes anything, so the prompt cannot promise a courtship the press refuses.
+## A married villager has no further step — they are back to being someone you can
+## talk to — and neither has a villager the content did not mark romanceable.
+func _romance_decision() -> Dictionary:
+	if _npc == null or _npc.data == null or not _npc.data.romanceable:
+		return {}
+	var friendship: Friendship = _npc.friendship
+	if friendship == null or friendship.is_married():
+		return {}
+	if friendship.is_dating():
+		if friendship.hearts() >= Friendship.PROPOSE_HEARTS:
+			return _decision(&"propose", "Propose to %s" % _npc.data.display_name, true, &"")
+		return {}
+	if friendship.hearts() >= Friendship.COURT_HEARTS:
+		return _decision(&"court", "Court %s" % _npc.data.display_name, true, &"")
+	return {}
 
 
 ## The [QuestService], found by group from the tree root.

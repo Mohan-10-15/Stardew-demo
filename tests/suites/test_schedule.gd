@@ -32,6 +32,7 @@ func get_cases() -> Array[StringName]:
 		&"every_schedule_is_valid",
 		&"schedule_ids_are_unique",
 		&"every_schedule_belongs_to_a_villager_in_the_content",
+		&"every_romanceable_villager_has_a_spouse_day",
 		&"every_schedule_only_names_real_locations",
 		&"every_schedule_resolves_all_day_in_every_season",
 		&"a_villager_with_no_schedule_has_none",
@@ -64,8 +65,23 @@ func _run(case: StringName) -> Dictionary:
 		&"every_schedule_belongs_to_a_villager_in_the_content":
 			var bad: Array[String] = []
 			for schedule: NpcSchedule in ScheduleRegistry.all_schedules():
-				if NpcRegistry.get_npc(schedule.npc_id) == null:
+				var villager := NpcRegistry.get_npc(_villager_id(schedule.npc_id))
+				if villager == null:
 					bad.append(String(schedule.npc_id))
+				elif String(schedule.npc_id).ends_with("_spouse") and not villager.romanceable:
+					bad.append("%s has a spouse day but cannot be married" % schedule.npc_id)
+			return check_equals(case, bad, [] as Array[String])
+		&"every_romanceable_villager_has_a_spouse_day":
+			var bad: Array[String] = []
+			for data: NpcData in NpcRegistry.all_npcs():
+				if not data.romanceable:
+					continue
+				var id := StringName("%s_spouse" % data.id)
+				var schedule := ScheduleRegistry.schedule_for(id)
+				if schedule == null:
+					bad.append("%s can be married but has no spouse day" % data.id)
+				elif not schedule.is_valid():
+					bad.append("%s spouse day is invalid: %s" % [data.id, schedule.describe()])
 			return check_equals(case, bad, [] as Array[String])
 		&"every_schedule_only_names_real_locations":
 			# A block naming a place with no [LocationData] behind it is not a bug the
@@ -151,7 +167,7 @@ func _check_resolves_everywhere(case: StringName) -> Dictionary:
 		weathers.append(weather)
 
 	for schedule: NpcSchedule in ScheduleRegistry.all_schedules():
-		var home_id := StringName("%s_cottage" % schedule.npc_id)
+		var home_id := StringName("%s_cottage" % _villager_id(schedule.npc_id))
 		for season: int in seasons:
 			for weather: int in weathers:
 				for hour: int in hours:
@@ -208,6 +224,16 @@ func _check_halda(case: StringName) -> Dictionary:
 	return succeeded(case)
 
 
+## The villager a schedule belongs to. A spouse day is stored under its own
+## schedule id (`mira_spouse`) but belongs to Mira — the suffix is a registry key,
+## not a second person, and every content check has to see through it.
+static func _villager_id(schedule_id: StringName) -> StringName:
+	var text := String(schedule_id)
+	if text.ends_with("_spouse"):
+		return StringName(text.substr(0, text.length() - "_spouse".length()))
+	return schedule_id
+
+
 func _block(from: int, to: int, where: StringName) -> NpcScheduleEntry:
 	var entry := NpcScheduleEntry.new()
 	entry.from_minute = from
@@ -240,10 +266,10 @@ func _check_reachable(case: StringName) -> Dictionary:
 	var seconds_per_minute := _seconds_per_in_game_minute()
 	var failures: Array[String] = []
 	for schedule: NpcSchedule in ScheduleRegistry.all_schedules():
-		var data := NpcRegistry.get_npc(schedule.npc_id)
+		var data := NpcRegistry.get_npc(_villager_id(schedule.npc_id))
 		if data == null or data.walk_speed <= 0.0:
 			continue
-		var home_id := StringName("%s_cottage" % schedule.npc_id)
+		var home_id := StringName("%s_cottage" % _villager_id(schedule.npc_id))
 		for index: int in schedule.entries.size():
 			var entry := schedule.entries[index]
 			if entry.location.is_empty():

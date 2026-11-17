@@ -15,6 +15,7 @@ wander_radius = 8.0
 walk_speed = 1.6
 birthday_season = 3
 birthday_day = 5
+romanceable = true
 loved_gifts = Array[StringName]([&"cauliflower", &"melon"])
 liked_gifts = Array[StringName]([&"yam", &"tomato"])
 disliked_gifts = Array[StringName]([&"wood"])

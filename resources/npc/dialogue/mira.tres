@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_w4m7g"]
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_643od"]
@@ -112,7 +112,19 @@ once = true
 hearts = 1
 set_flags = Array[StringName]([&"mira_field_secret"])
 
+[sub_resource type="Resource" id="Resource_fpwae"]
+script = ExtResource("1_w4m7g")
+id = &"dating"
+text = "I used to tell you what the soil was saying. Now I find myself telling you what I'm thinking, which is much harder to read."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_76sus"]
+script = ExtResource("1_w4m7g")
+id = &"married"
+text = "The garden's still here, and so are you. I'd call that a better harvest than anything we planted."
+min_romance = 2
+
 [resource]
 script = ExtResource("3_gt5es")
 npc_id = &"mira"
-entries = Array[ExtResource("1_w4m7g")]([SubResource("Resource_iknuh"), SubResource("Resource_nj64q"), SubResource("Resource_7i5am"), SubResource("Resource_xuhjd"), SubResource("Resource_wj1mv"), SubResource("Resource_ewr8d"), SubResource("Resource_d2qge"), SubResource("Resource_a8kv7"), SubResource("Resource_8j2vg"), SubResource("Resource_1bwjj"), SubResource("Resource_plbj4"), SubResource("Resource_rbluk"), SubResource("Resource_wyx0l"), SubResource("Resource_2bvqf"), SubResource("Resource_v0vbe")])
+entries = Array[ExtResource("1_w4m7g")]([SubResource("Resource_iknuh"), SubResource("Resource_nj64q"), SubResource("Resource_7i5am"), SubResource("Resource_xuhjd"), SubResource("Resource_wj1mv"), SubResource("Resource_ewr8d"), SubResource("Resource_d2qge"), SubResource("Resource_a8kv7"), SubResource("Resource_8j2vg"), SubResource("Resource_1bwjj"), SubResource("Resource_plbj4"), SubResource("Resource_rbluk"), SubResource("Resource_wyx0l"), SubResource("Resource_2bvqf"), SubResource("Resource_v0vbe"), SubResource("Resource_fpwae"), SubResource("Resource_76sus")])

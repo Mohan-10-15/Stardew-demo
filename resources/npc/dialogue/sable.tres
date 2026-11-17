@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueTree" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_t00dr"]
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_6upa5"]
@@ -112,7 +112,19 @@ once = true
 hearts = 1
 set_flags = Array[StringName]([&"sable_old_door"])
 
+[sub_resource type="Resource" id="Resource_hvmmu"]
+script = ExtResource("1_t00dr")
+id = &"dating"
+text = "There was a door I meant to mend for years. Now I want it mended before you come over. That's a new kind of deadline."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_1qhio"]
+script = ExtResource("1_t00dr")
+id = &"married"
+text = "Everything in this house was broken when I got here. It isn't now. You have that effect on things."
+min_romance = 2
+
 [resource]
 script = ExtResource("3_hxghk")
 npc_id = &"sable"
-entries = Array[ExtResource("1_t00dr")]([SubResource("Resource_qmkqk"), SubResource("Resource_jf1sk"), SubResource("Resource_a3a7v"), SubResource("Resource_a70v5"), SubResource("Resource_4rq38"), SubResource("Resource_4vlp2"), SubResource("Resource_caox4"), SubResource("Resource_meq33"), SubResource("Resource_2np50"), SubResource("Resource_afwh4"), SubResource("Resource_sss36"), SubResource("Resource_n4at4"), SubResource("Resource_k5hkm"), SubResource("Resource_u1ms1"), SubResource("Resource_a5ihh")])
+entries = Array[ExtResource("1_t00dr")]([SubResource("Resource_qmkqk"), SubResource("Resource_jf1sk"), SubResource("Resource_a3a7v"), SubResource("Resource_a70v5"), SubResource("Resource_4rq38"), SubResource("Resource_4vlp2"), SubResource("Resource_caox4"), SubResource("Resource_meq33"), SubResource("Resource_2np50"), SubResource("Resource_afwh4"), SubResource("Resource_sss36"), SubResource("Resource_n4at4"), SubResource("Resource_k5hkm"), SubResource("Resource_u1ms1"), SubResource("Resource_a5ihh"), SubResource("Resource_hvmmu"), SubResource("Resource_1qhio")])

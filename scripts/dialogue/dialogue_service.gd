@@ -226,6 +226,9 @@ func build_context(npc_id: StringName) -> Dictionary:
 		"weather": WorldTime.Weather.SUN,
 		"hour": 12,
 		"hearts": 0,
+		# A line written for a dating or married villager must not match when the
+		# stage is unknown: -999 fails closed the same way a missing weather does.
+		"romance": -999,
 		"flags": _flags.duplicate(),
 	}
 	var clock := TimeService.find_in_tree()
@@ -236,6 +239,9 @@ func build_context(npc_id: StringName) -> Dictionary:
 	var hearts := _hearts_of(npc_id)
 	if hearts >= 0:
 		ctx["hearts"] = hearts
+	var stage := _romance_of(npc_id)
+	if stage >= 0:
+		ctx["romance"] = stage
 	return ctx
 
 
@@ -412,6 +418,23 @@ func _hearts_of(npc_id: StringName) -> int:
 	if friendship == null:
 		return 0
 	return int(friendship.call("hearts"))
+
+
+## Romance stage with [param npc_id], or -1 when there is no cast to ask — the
+## same bargain [method _hearts_of] makes. Lines gated on [member
+## DialogueEntry.min_romance] therefore fail closed without a manager rather than
+## accidentally reading as "single" and showing a stranger wedding dialogue.
+func _romance_of(npc_id: StringName) -> int:
+	var manager := _find_by_group(NPC_SERVICE_GROUP)
+	if manager == null:
+		return -1
+	var npc: Variant = manager.call("get_npc", npc_id)
+	if npc == null:
+		return -1
+	var friendship: Variant = (npc as Object).get("friendship")
+	if friendship == null:
+		return -1
+	return int(friendship.get("romance"))
 
 
 func _find_by_group(group: StringName) -> Node:

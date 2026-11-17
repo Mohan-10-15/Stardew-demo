@@ -41,6 +41,54 @@ extends SceneTree
 
 const OUTPUT_DIR := "res://resources/npc/dialogue/"
 
+## Two lines per villager that only exist once the relationship changes kind.
+##
+## Appended rather than written into each tree above because every villager gets
+## the same two *conditions* and the only thing that differs is the words — the
+## shape of a heart event is a rule, and the personality is content. `min_romance`
+## is a separate condition from `min_hearts`: "we are courting" is not the same
+## claim as "you gave me a parsnip recently", and the two can be true together.
+## The numbers are [Friendship.STAGE_DATING] and [Friendship.STAGE_MARRIED] written
+## as literals because this generator runs before autoloads exist.
+const ROMANCE_LINES: Dictionary = {
+	&"mira": {
+		"dating": "I used to tell you what the soil was saying. Now I find myself " +
+			"telling you what I'm thinking, which is much harder to read.",
+		"married": "The garden's still here, and so are you. I'd call that a better " +
+			"harvest than anything we planted.",
+	},
+	&"bram": {
+		"dating": "I built a shelf yesterday and you looked at it for a long time. " +
+			"I don't think it was the shelf you were looking at.",
+		"married": "You said you'd help me finish things. I'm holding you to that " +
+			"for the rest of the season. And the one after.",
+	},
+	&"odette": {
+		"dating": "The water told me something this morning. I decided not to " +
+			"write it down. Some of it is only for us.",
+		"married": "I read the weather for a living and I still didn't see you " +
+			"coming. That's the one forecast I don't mind getting wrong.",
+	},
+	&"fen": {
+		"dating": "There's a place up past the tree line I never showed anyone. " +
+			"I was saving it. I suppose I was saving it for you.",
+		"married": "You know where I'll be before I'm there. That's a strange " +
+			"feeling. I don't mind it.",
+	},
+	&"halda": {
+		"dating": "I grow one thing remarkably well. Turns out I can't keep a " +
+			"single secret about you nearly as well.",
+		"married": "Everyone's going to want a cutting from my garden now that " +
+			"you live here. Let them. We'll still have the best of it.",
+	},
+	&"sable": {
+		"dating": "There was a door I meant to mend for years. Now I want it " +
+			"mended before you come over. That's a new kind of deadline.",
+		"married": "Everything in this house was broken when I got here. It isn't " +
+			"now. You have that effect on things.",
+	},
+}
+
 ## One tree per villager: `npc` names the file and the content, `entries` is
 ## authored order (the final tie-break in selection).
 ##
@@ -586,6 +634,14 @@ func _build(spec: Dictionary) -> DialogueTree:
 	tree.npc_id = spec["npc"]
 	for entry_spec: Dictionary in spec["entries"]:
 		tree.entries.append(_build_entry(tree.npc_id, entry_spec))
+	if ROMANCE_LINES.has(spec["npc"]):
+		var lines: Dictionary = ROMANCE_LINES[spec["npc"]]
+		tree.entries.append(_build_entry(tree.npc_id, {
+			"id": &"dating", "romance": 1, "text": String(lines["dating"]),
+		}))
+		tree.entries.append(_build_entry(tree.npc_id, {
+			"id": &"married", "romance": 2, "text": String(lines["married"]),
+		}))
 	return tree
 
 
@@ -605,6 +661,8 @@ func _build_entry(npc_id: StringName, spec: Dictionary) -> DialogueEntry:
 		e.min_hearts = int(spec["min_hearts"])
 	if spec.has("max_hearts"):
 		e.max_hearts = int(spec["max_hearts"])
+	if spec.has("romance"):
+		e.min_romance = int(spec["romance"])
 	if spec.has("needs"):
 		e.requires_flag = spec["needs"]
 	if spec.has("without"):
@@ -631,8 +689,8 @@ func _build_entry(npc_id: StringName, spec: Dictionary) -> DialogueEntry:
 		e.choices.append(choice)
 	_check_unknown_keys(npc_id, spec, [
 		"id", "text", "season", "weather", "from", "to", "min_hearts",
-		"max_hearts", "needs", "without", "once", "hearts", "flags", "next",
-		"choices",
+		"max_hearts", "romance", "needs", "without", "once", "hearts", "flags",
+		"next", "choices",
 	])
 	return e
 

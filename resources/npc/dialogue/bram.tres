@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueTree" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_61hs3"]
 [ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_1bj84"]
@@ -118,7 +118,19 @@ once = true
 hearts = 1
 set_flags = Array[StringName]([&"bram_bridge_truth"])
 
+[sub_resource type="Resource" id="Resource_n4kwm"]
+script = ExtResource("1_61hs3")
+id = &"dating"
+text = "I built a shelf yesterday and you looked at it for a long time. I don't think it was the shelf you were looking at."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_hsfv6"]
+script = ExtResource("1_61hs3")
+id = &"married"
+text = "You said you'd help me finish things. I'm holding you to that for the rest of the season. And the one after."
+min_romance = 2
+
 [resource]
 script = ExtResource("3_mbygo")
 npc_id = &"bram"
-entries = Array[ExtResource("1_61hs3")]([SubResource("Resource_ag3y2"), SubResource("Resource_dy7kf"), SubResource("Resource_ncy8k"), SubResource("Resource_ngk5k"), SubResource("Resource_n2rwg"), SubResource("Resource_hxumc"), SubResource("Resource_ji5gl"), SubResource("Resource_iaplq"), SubResource("Resource_cii5f"), SubResource("Resource_7emuw"), SubResource("Resource_rmn0e"), SubResource("Resource_j4v6o"), SubResource("Resource_mrthq"), SubResource("Resource_wqw54"), SubResource("Resource_tlsyg"), SubResource("Resource_pp0t2")])
+entries = Array[ExtResource("1_61hs3")]([SubResource("Resource_ag3y2"), SubResource("Resource_dy7kf"), SubResource("Resource_ncy8k"), SubResource("Resource_ngk5k"), SubResource("Resource_n2rwg"), SubResource("Resource_hxumc"), SubResource("Resource_ji5gl"), SubResource("Resource_iaplq"), SubResource("Resource_cii5f"), SubResource("Resource_7emuw"), SubResource("Resource_rmn0e"), SubResource("Resource_j4v6o"), SubResource("Resource_mrthq"), SubResource("Resource_wqw54"), SubResource("Resource_tlsyg"), SubResource("Resource_pp0t2"), SubResource("Resource_n4kwm"), SubResource("Resource_hsfv6")])

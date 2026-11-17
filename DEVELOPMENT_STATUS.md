@@ -5,15 +5,160 @@ GDScript by default with one measured system in C# (see
 `docs/MULTI_LANGUAGE_ARCHITECTURE.md`). Dual first-person / third-person
 cameras, switchable at runtime.
 
-Progress: **Groups 0–16 and 25 complete, plus TASK-008 (the dialogue system,
-M5's conversation half).** Group 17 (Friendship / TASK-007) is next.
+Progress: **Groups 0–17 and 25 complete, plus TASK-008 (the dialogue system).**
+TASK-007 (Friendship) closes M6 with this group. M5 is still open on population:
+the other six of the twelve villagers `prompt.md` §16 asks for are not authored.
 
-Current baseline: **509/509 tests**, C# build clean, import clean, boot clean,
+Current baseline: **536/536 tests**, C# build clean, import clean, boot clean,
 zero script errors.
 
 ---
 
 ## Last completed group
+
+```
+GROUP:  17
+NAME:   Friendship, gifting and relationships (TASK-007 / M6)
+STATUS: COMPLETE
+LANE:   People & Interface (npc, ui, dialogue) + core (event bus, quests, generators)
+```
+
+Six relationships now have a number the player can read, liked and disliked gifts
+move it in opposite directions, a birthday is worth going out of your way for,
+and friendship opens both dialogue and one job. A courtship is earned and a
+proposal moves a villager into the farmhouse with a different day to keep. Every
+one of those was played in a real window, which found two defects that all the
+tests had missed.
+
+### IMPLEMENTED
+
+- **`Friendship` gained the third piece of the relationship** — `romance` as a
+  saved int (`STAGE_NONE` / `STAGE_DATING` / `STAGE_MARRIED`), `court_refusal()` /
+  `propose_refusal()` as the single rule the prompt, the press and the tests all
+  ask, and a birthday that doubles a *positive* reaction only. A hand-edited save
+  with stage 9 is clamped rather than opening a marriage no code understands.
+- **`NpcManager.court()` / `propose()`** publish four new signals with six
+  distinct machine-readable refusals: `romance_started(_failed)` and
+  `npc_married` / `npc_propose_failed`. Success and failure never share a reason,
+  and a failed transaction changes nothing. `hearts_of()` is the read side used
+  by gates and the HUD.
+- **Marriage changes the world, not just the save.** `_apply_marriage_state()`
+  moves a spouse to the authored `farm_home` location, swaps them to their
+  `<id>_spouse` day and is re-run on proposal, on every day rollover and after a
+  save load. There are six spouse days, generated from one shape; a spouse still
+  goes into the village, so a wedding does not delete a person.
+- **Gifts read the clock** for the birthday at the transaction, where the tree
+  is; the friendship resource stays saveable data with no tree access.
+- **Friendship gates something wanted.** `QuestData.min_hearts` is applied by
+  `QuestService.next_offer_from` (never by `accept`, so an id handed out by a
+  cutscene can still be finished); Odette's *First Frost* opens at two hearts.
+  `DialogueEntry.min_romance` is a separate condition from hearts, so dating and
+  married villagers say things a stranger never hears.
+- **The relationship panel** (`scenes/ui/friendship_hud.tscn`, generated) shows
+  all six tiers, heart counts and stages, repainting on the relationship signals.
+  It reads the manager; it never keeps a second tally.
+
+### TESTS
+
+- **`tests/suites/test_friendship.gd` — 27 cases**: content (all six can be
+  courted, the farm address is inside the fence and outside the plot, every
+  candidate has a spouse day, the gate is reachable), the score (stages, opposite
+  reactions, both gates, birthday arithmetic, clamped save), both transactions
+  and every refusal reason, the spouse's address and day across save → reload,
+  the birthday gift through a real clock, dialogue selection by stage, the
+  generated panel's real labels, and the courtship/proposal prompt through the
+  real interact key.
+- **Existing suites strengthened, not weakened**: spouse schedules are now
+  included in the membership, resolution and reachability checks of
+  `test_schedule.gd` (their `_spouse` key is a registry id, not a seventh
+  villager), and `test_quest.gd` asserts a gated job is hidden from a stranger
+  *and* offered at the authored hearts.
+- **Full pipeline: 536/536**, `CHECK_EXIT=0`, zero `SCRIPT ERROR`.
+
+### PLAYED — `tools/playtest_friendship.gd`
+
+Boots the shipped `scenes/core/main.tscn` in a real window (`--rendering-driver
+opengl3`, not `--headless`) and **PASSes, exit 0**. It reads the real relationship
+panel and prompt labels and presses the real interact key. What it saw:
+
+1. New game: six `Stranger 0/10` rows in the corner panel.
+2. A stone handed over with the key: reaction `disliked`, points `250 -> 230`.
+3. At six hearts the key says `[E] Court Mira`; one press publishes
+   `romance_started` and the row becomes `Mira Confidant 6/10 dating`.
+4. At ten hearts the key says `[E] Propose to Mira`; one press publishes
+   `npc_married`, sets `home=farm_home` and swaps to `mira_spouse`.
+5. After `sleep_until_morning`, Mira is 1.6 m from the farmhouse — a spouse at
+   her new address, not a teleport into the cabbages.
+
+Six screenshots at 1280x720 (`art_review_friendship_*.png`, git-ignored). The
+panel was visually reviewed in the first and fourth frames; the courtship close-up
+is framed on Mira's dress because the harness walks to point-blank range, which
+is a playtest framing artefact, not a game defect.
+
+### BUGS FOUND AND FIXED
+
+Two real game defects, both found only by playing, both invisible to 536 cases:
+
+1. **The prompt went stale after a courtship.** `InteractionHUD` repainted on
+   `npc_friendship_changed`, but a courtship moves no hearts, so after Mira agreed
+   to date, the crosshair still said `[E] Talk to Mira` while the component already
+   said `Propose to Mira`. At ten hearts the same staleness hid the proposal
+   entirely. Fixed by connecting `romance_started` and `npc_married` to the same
+   repaint. Regression: `the_prompt_label_follows_a_courtship`.
+2. **One press could fire twice.** `InteractionProbe` latches an instant action
+   on the focused target; Mira turns to face the player on a courtship, her aim
+   volume leaves the ray for a frame, `_set_focus` clears the latch, and the same
+   held key fired again on "Talk to Mira" — opening a paused conversation on top
+   of the courtship and eating the proposal press. Fixed by latching on the *key*
+   for instant actions (`_instant_fired`), cleared only on release. The same
+   regression case asserts one press published zero greetings.
+
+And the harness mistakes a player would not have cared about:
+
+3. The playtest first met a job offer where it expected a courtship; a job on
+   this key outranks romance by design, so the harness now takes the job first,
+   exactly as `tools/playtest_dialogue.gd` does.
+4. Setting hearts with a bare `add_hearts` in the playtest left the HUD stale for
+   a harness reason; the harness now moves hearts through
+   `NpcManager.grant_hearts`, as rewards do in the real game.
+5. Five early returns in the new suite left test-only `Npc` bodies unparented,
+   surfacing as four leaked `GodotBody3D` RIDs at exit and failing the pipeline;
+   the fixtures now parent them to the rig so teardown frees them.
+
+### ARCHITECTURE NOTES
+
+- **Romance is a stage, not a bigger number.** Hearts answer "how much do they
+  like you"; `romance` answers "what are you to each other". Keeping them as
+  separate conditions is why a dating line can still have a heart gate and a
+  married line can be said at any heart count. Stage-gated dialogue is weighted
+  by stage in `condition_count()`, so a married villager does not lose to the
+  less specific dating line on authored order.
+- **The gate is on the offer, never on the acceptance.** A job the player was
+  handed anyway must still be finishable; a gate that refused `accept` would
+  make a cutscene-granted id a dead end with no visible reason.
+- **Marriage is idempotent.** Courtship changes a number; marriage changes a
+  home, a day and a set of lines. All three consequences are applied from one
+  method called on proposal, rollover and load, so a restored save cannot show a
+  married villager walking out of their old cottage.
+
+### KNOWN GAPS
+
+- **No wedding, no heart events, no jealousy.** A proposal is one prompt and one
+  event; `docs/CUTSCENE_GUIDE.md` exists but nothing drives a ceremony from it.
+- **One spouse, no divorce.** There is no path to end a romance, and dating more
+  than one villager is prevented only by each relationship's own stage — the
+  manager does not check that the player is free to court somebody else.
+- **The birthdays are only read by the gift transaction.** Nothing in dialogue,
+  a calendar UI or a celebration notices the day; the doubled gift is the whole
+  observance.
+- **The six screenshots have been measured and two of them eyeballed.** The
+  others are artefacts of the run, not a substitute for looking at them.
+- **M6 is now complete, M5 is not.** Population (twelve villagers, not six)
+  remains the open half of M5; relationships being done does not close it.
+
+---
+
+## Previously completed group: 16
 
 ```
 GROUP:  16

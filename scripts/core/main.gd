@@ -16,6 +16,7 @@ const ClockHudScene := "res://scenes/ui/clock_hud.tscn"
 const StatusHudScene := "res://scenes/ui/player_status_hud.tscn"
 const HotbarHudScene := "res://scenes/ui/hotbar_hud.tscn"
 const QuestTrackerScene := "res://scenes/ui/quest_tracker.tscn"
+const FriendshipHudScene := "res://scenes/ui/friendship_hud.tscn"
 const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
@@ -27,6 +28,7 @@ const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 @export var status_hud_scene_path: String = StatusHudScene
 @export var hotbar_hud_scene_path: String = HotbarHudScene
 @export var quest_tracker_scene_path: String = QuestTrackerScene
+@export var friendship_hud_scene_path: String = FriendshipHudScene
 @export var shop_ui_scene_path: String = ShopUiScene
 @export var log_panel_scene_path: String = LogPanelScene
 @export var dialogue_ui_scene_path: String = DialogueUiScene
@@ -41,6 +43,7 @@ const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 @export var load_status_hud: bool = true
 @export var load_hotbar_hud: bool = true
 @export var load_quest_tracker: bool = true
+@export var load_friendship_hud: bool = true
 @export var load_shop_ui: bool = true
 @export var load_dialogue_ui: bool = true
 @export var load_log_panel: bool = true
@@ -53,6 +56,7 @@ var clock_hud: CanvasLayer = null
 var status_hud: CanvasLayer = null
 var hotbar_hud: CanvasLayer = null
 var quest_tracker: CanvasLayer = null
+var friendship_hud: CanvasLayer = null
 var shop_ui: CanvasLayer = null
 var player_state: PlayerStateService = null
 var farm_service: FarmService = null
@@ -122,6 +126,10 @@ func _boot() -> void:
 	# signals, so an acceptance the player already made is not missed either way.
 	if load_quest_tracker:
 		_spawn_quest_tracker()
+	# After the manager for the same reason as the tracker: the readout walks the
+	# tree for the cast, and a panel spawned first would paint an empty corner.
+	if load_friendship_hud:
+		_spawn_friendship_hud()
 	# Listens on `EventBus.shop_opened`, so it is order-independent: a counter the
 	# player opened before this existed would be missed, and it walks the tree for
 	# a shop to open if so.
@@ -236,6 +244,10 @@ func _spawn_hotbar_hud() -> void:
 
 func _spawn_quest_tracker() -> void:
 	_spawn_overlay(quest_tracker_scene_path, "quest tracker", "quest_tracker")
+
+
+func _spawn_friendship_hud() -> void:
+	_spawn_overlay(friendship_hud_scene_path, "friendship HUD", "friendship_hud")
 
 
 func _spawn_shop_ui() -> void:

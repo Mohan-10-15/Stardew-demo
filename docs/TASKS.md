@@ -9,9 +9,9 @@ with what was implemented, what was tested, and every bug found along the way.
 
 ## In flight
 
-**None.** Groups 0–16 and 25 are complete, and TASK-008 (the dialogue system,
-M5) closed with them. The next task to be picked up is **TASK-007,
-Friendship** (group 17 / M6), spec'd below.
+**None.** Groups 0–17 and 25 are complete. TASK-007 (Friendship, group 17 / M6)
+closed with this batch and **M6 is complete**; TASK-008 (the dialogue system, M5)
+was already done. The next work item is picked from the queue below.
 
 M5 is *not* closed: it still wants the other six of the twelve villagers
 `prompt.md` §16 asks for. See TASK-008 below for what that means.
@@ -19,6 +19,19 @@ M5 is *not* closed: it still wants the other six of the twelve villagers
 ---
 
 ## Recently completed
+
+### TASK-007 — Friendship, gifting and relationships (M6) — COMPLETE
+
+Gifts now mean different things, the relationship is readable in-game and
+survives a save, friendship opens gated dialogue and one job, and a courtship
+leads to a proposal that moves a spouse into the farmhouse with their own day.
+Added romance stages and gates to `Friendship`, four distinct success/failure
+signals to `EventBus`, `court()`/`propose()` and marriage-state application to
+`NpcManager`, a generated relationship HUD, six spouse days and a `farm_home`
+location, and 27 cases in `tests/suites/test_friendship.gd`. Two game defects
+found only by `tools/playtest_friendship.gd` and fixed there: a stale interact
+prompt after a courtship, and one held key firing twice when a turning villager
+made focus flicker. Full detail in `DEVELOPMENT_STATUS.md`.
 
 ### TASK-008 — Dialogue system (M5) — COMPLETE
 
@@ -181,7 +194,7 @@ specification when it is picked up, not now.
 
 | # | Milestone | Notes |
 |---|---|---|
-| TASK-007 | Friendship and gifting | Group 17 / M6. Spec'd above. Next up |
+| TASK-007 | Friendship and gifting | Group 17 / M6. **Complete** — see Recently completed above |
 | TASK-008 | Dialogue system | M5. **Complete** — see Recently completed above |
 | TASK-009 | Save system, versioned | M1/M16. `SAVE_VERSION` from the start |
 | TASK-010 | New-game menu and title screen | M1. Needed before save/load is reachable |
