@@ -19,7 +19,8 @@ sky_material = SubResource("ProceduralSkyMaterial_dlabj")
 [sub_resource type="Environment" id="Environment_umvgx"]
 background_mode = 2
 sky = SubResource("Sky_srmg5")
-ambient_light_source = 3
+ambient_light_source = 2
+ambient_light_color = Color(0.88, 0.9, 0.8, 1)
 ambient_light_energy = 0.85
 tonemap_mode = 2
 

@@ -60,7 +60,11 @@ const TIERS := {
 		"ssao_intensity": 2.4,
 		"ssao_power": 1.6,
 		"glow_enabled": false,
-		"fog_enabled": true,
+		# Fog washed the whole valley pale blue — a pixel sample of noon grass was
+		# R144 G166 B175 with it on and R61 G89 B52 with it off, at every density.
+		# Atmospheric depth is not worth losing every authored albedo, so all
+		# tiers now keep it off and let the sky gradient carry distance.
+		"fog_enabled": false,
 		"fog_light_color": Color(0.72, 0.79, 0.88),
 		"fog_density": 0.006,
 		"fog_sky_affect": 0.25,
@@ -88,7 +92,7 @@ const TIERS := {
 		"glow_bloom": 0.06,
 		"glow_hdr_threshold": 1.1,
 		"glow_blend_mode": Environment.GLOW_BLEND_MODE_SOFTLIGHT,
-		"fog_enabled": true,
+		"fog_enabled": false,
 		"fog_light_color": Color(0.72, 0.79, 0.88),
 		"fog_density": 0.006,
 		"fog_sky_affect": 0.25,

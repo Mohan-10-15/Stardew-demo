@@ -417,7 +417,7 @@ func _t_tier_lowers_effects() -> Dictionary:
 		return fail(c, "low left fog on")
 	config.settings.graphics_quality = previous
 	quality.apply()
-	return succeeded(c, "high had SSAO+glow+fog, low had none of the three")
+	return succeeded(c, "high had SSAO and glow, low had neither and no fog")
 
 
 ## A config file is a text file a person can edit. A typo'd 7 must not resolve

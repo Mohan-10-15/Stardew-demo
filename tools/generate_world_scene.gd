@@ -35,7 +35,12 @@ func _initialize() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = Sky.new()
 	env.sky.sky_material = sky_material
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	# Ambient from the *sky* washed every surface pale blue: the grass albedo is
+	# green, but a sky-lit noon ground sampled R144 G166 B175 in the review shot.
+	# A neutral, slightly warm colour lets the authored albedos show through while
+	# `DayNightCycle` still dims the energy from dawn to midnight.
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.88, 0.90, 0.80)
 	env.ambient_light_energy = 0.85
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	sky.environment = env

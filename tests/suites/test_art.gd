@@ -29,6 +29,7 @@ func get_cases() -> Array[StringName]:
 		&"the_cottages_are_cc0_buildings",
 		&"building_colliders_match_their_art",
 		&"the_landmarks_are_present_and_reserved",
+		&"the_valley_keeps_its_colours",
 	]
 
 
@@ -54,6 +55,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_colliders()
 		&"the_landmarks_are_present_and_reserved":
 			return await _t_landmarks()
+		&"the_valley_keeps_its_colours":
+			return await _t_colours()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -158,6 +161,31 @@ func _t_landmarks() -> Dictionary:
 		if not WorldBuilder.is_reserved(centre):
 			return fail(c, "landmark at %s is not reserved" % str(centre))
 	return succeeded(c, "windmill, water tower and coop stand on reserved ground")
+
+
+## Fog used to wash every albedo pale blue: a noon ground pixel read R144 G166
+## B175 with it on and R61 G89 B52 with it off. The quality tiers now keep it
+## disabled, so the authored greens, reds and blues survive to the screen.
+func _t_colours() -> Dictionary:
+	var c := &"the_valley_keeps_its_colours"
+	var world := await _build_world()
+	if world == null:
+		return fail(c, "no world")
+	var we := _find_named(world, "Environment") as WorldEnvironment
+	if we == null or we.environment == null:
+		return fail(c, "the world has no environment")
+	if we.environment.fog_enabled:
+		return fail(c, "fog is washing the valley out again")
+	var ground := _find_named(world, "GroundMesh") as MeshInstance3D
+	if ground == null:
+		return fail(c, "the ground mesh is missing")
+	var mat := ground.material_override as StandardMaterial3D
+	if mat == null:
+		return fail(c, "the ground has no material")
+	var albedo := mat.albedo_color
+	if albedo.g <= albedo.r or albedo.g <= albedo.b:
+		return fail(c, "grass albedo is %s, not green" % str(albedo))
+	return succeeded(c, "fog is off and grass albedo is %s" % str(albedo))
 
 
 # --- Fixtures -----------------------------------------------------------------

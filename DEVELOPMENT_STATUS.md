@@ -47,21 +47,28 @@ answered with assets already in the repo — no new pack, no new licence entry.
   the held item sits in the hand rather than on the ground.
 - **Surface polish:** a deeper grass albedo, a stronger (22%) shared detail
   texture, and higher saturation at every graphics tier.
+- **The pale-ground wash is fixed.** The cause was *fog*, not albedo or ambient
+  light: a noon grass pixel read R144 G166 B175 with fog on and R61 G89 B52 with
+  it off, and changing `fog_density` did nothing at any value. All quality tiers
+  now leave fog off; the sky gradient carries distance. Ambient light was also
+  changed from sky-derived (blue) to a neutral warm colour in the regenerated
+  world scene, so authored albedos are no longer tinted by the sky.
 
 ### TESTS AND PLAY
 
-**`tests/suites/test_art.gd` — 6 cases**: every signature prop exists and is
+**`tests/suites/test_art.gd` — 7 cases**: every signature prop exists and is
 unique, gear attaches to the right bone on a live villager, the cottages carry
-real model instances, building colliders are sized to their art, and the three
-landmarks are present and reserved. **Full pipeline: 542/542**, import clean,
-boot clean, zero script errors.
+real model instances, building colliders are sized to their art, the three
+landmarks are present and reserved, and fog stays off with a green grass albedo.
+**Full pipeline: 543/543**, import clean, boot clean, zero script errors.
 
 `tools/playtest_art.gd` boots the real game in a window and photographs a six-
 person character sheet plus wide village/farm shots: **`art_review_cast_*.png`,
-`art_review_world_*.png` (gitignored), PASS**. The character sheet was reviewed:
-six distinct faces, colours and props, arms at rest, detailed red barns behind
-them. The ground still reads pale in the wide shot — the next art step is a
-richer terrain material or stronger directional shadows, not more models.
+`art_review_world_*.png` (gitignored), PASS**. Both were reviewed after the fog
+fix: vivid green grass, a clear blue sky, detailed red barns, the windmill and
+water tower on the horizon, and six distinct faces, colours, props and resting
+arms. The diagnostics behind the fog finding are kept in
+`tools/probe_light_experiment.gd` and `tools/probe_render_settings.gd`.
 
 ### BUGS FOUND AND FIXED
 
