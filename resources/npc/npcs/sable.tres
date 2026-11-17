@@ -14,6 +14,7 @@ wander_radius = 9.0
 walk_speed = 1.65
 birthday_season = 3
 birthday_day = 19
+signature_prop = "res://assets/models/kaykit/Addons/shield_round.fbx"
 romanceable = true
 loved_gifts = Array[StringName]([&"parsnip", &"potato"])
 liked_gifts = Array[StringName]([&"copper_ore", &"wood"])

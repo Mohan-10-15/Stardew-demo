@@ -48,6 +48,17 @@ const REGION_VILLAGE := Vector2(38, 8)
 const REGION_FOREST := Vector2(-42, 26)
 const REGION_POND := WorldTerrain.REGION_POND
 
+## The CC0 farm buildings that now stand in for the old box-and-prism houses.
+## Measured with `tools/probe_art_assets.gd`: a SmallBarn is 6.1 x 5.0 x 6.3 m
+## and a Barn 7.7 x 6.0 x 8.2 m, both pivoted on the ground, so a collider sized
+## from the model's own bounds fits the thing the player actually sees.
+const BUILDING_DIR := "res://assets/models/quaternius/FarmBuildings/"
+const COTTAGE_MODEL := BUILDING_DIR + "SmallBarn.fbx"
+const FARMHOUSE_MODEL := BUILDING_DIR + "Barn.fbx"
+const WINDMILL_MODEL := BUILDING_DIR + "Windmill.fbx"
+const WATER_TOWER_MODEL := BUILDING_DIR + "WaterTower.fbx"
+const CHICKEN_COOP_MODEL := BUILDING_DIR + "ChickenCoop.fbx"
+
 
 ## Builds the whole scene and returns the populated root node.
 static func build(root: Node3D, seed_value: int = 12345) -> void:
@@ -445,61 +456,95 @@ static func _build_village(root: Node3D, rng: RandomNumberGenerator) -> void:
 		_add_house(root, houses[i], 5.0 + rng.randf_range(-0.6, 0.6), 4.5 + rng.randf_range(-0.5, 0.5))
 
 	# The player's own house, a little larger and clearly the home base.
-	_add_house(root, REGION_VILLAGE + Vector2(-16, 2), 7.0, 6.0)
+	_add_house(root, REGION_VILLAGE + Vector2(-16, 2), 7.0, 6.0, FARMHOUSE_MODEL)
+
+	# CC0 landmarks. All three sit south of the farm fence, away from the road
+	# and the spawn, and are added to `is_reserved` so no tree or bush is scattered
+	# through them. They are the valley's silhouette, not new gameplay.
+	_add_landmark(root, "Windmill", WINDMILL_MODEL, Vector3(10, 0, -34), 0.4)
+	_add_landmark(root, "WaterTower", WATER_TOWER_MODEL, Vector3(-14, 0, -30))
+	_add_landmark(root, "ChickenCoop", CHICKEN_COOP_MODEL, Vector3(4, 0, -31), -0.3)
 
 
-static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float) -> void:
+## Where the CC0 landmarks stand. Shared with `is_reserved` so the scatter keeps
+## clear of them; a windmill with a bush growing through its blades is the sort
+## of defect a content test cannot see and a player notices immediately.
+const LANDMARK_CENTRES: Array[Vector2] = [
+	Vector2(10, -34), Vector2(-14, -30), Vector2(4, -31),
+]
+
+
+static func _add_house(root: Node3D, centre: Vector2, width: float, depth: float,
+		model_path: String = COTTAGE_MODEL) -> void:
+	# The size arguments are retained for spawn/reserved-area arithmetic and as a
+	# fallback collider; the visible building and its real collider come from the
+	# CC0 model, so what stops the player matches what they see.
 	var body := StaticBody3D.new()
-	body.name = "House"
+	# Unique names, not five nodes all called "House": Godot silently renames the
+	# duplicates to `@StaticBody3D@13`, which makes the scene unreadable in the
+	# inspector and the buildings impossible to find by name in a test.
+	body.name = "House_%d_%d" % [int(centre.x), int(centre.y)]
 	body.collision_layer = 1
 	body.position = Vector3(centre.x, 0, centre.y)
 	body.rotation.y = rng_rotate(centre)
 
-	var height := 3.0
-	var walls := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(width, height, depth)
-	walls.mesh = box
-	walls.position = Vector3(0, height * 0.5, 0)
-	walls.material_override = WorldMaterials.surface(&"wall")
-	body.add_child(walls)
-
+	var model := ModelArt.instantiate(model_path)
+	if model == null:
+		Log.warn("World", "no building at %s; house at %s is invisible" % [
+			model_path, str(centre),
+		])
+		return
+	# The cottage doorsteps in `NpcData` were authored against the old 5x4.5 m
+	# boxes. A full-size barn is a metre wider on each side and swallowed them,
+	# leaving villagers standing inside a wall with nowhere to wander. Scaling the
+	# CC0 building to the old footprint keeps the authored doorstep clear while
+	# keeping the real modelled art.
+	var factor := 0.78 if model_path == COTTAGE_MODEL else 0.9
+	model.scale *= factor
+	body.add_child(model)
+	var box := ModelArt.body_aabb(model_path)
+	box.position *= factor
+	box.size *= factor
+	if box.size == Vector3.ZERO:
+		box = AABB(
+			Vector3(-width * 0.5, 0, -depth * 0.5),
+			Vector3(width, 3.0, depth)
+		)
 	var shape := CollisionShape3D.new()
 	shape.name = "CollisionShape3D"
 	var col := BoxShape3D.new()
 	col.size = box.size
 	shape.shape = col
-	shape.position = walls.position
+	shape.position = box.position + box.size * 0.5
 	body.add_child(shape)
-
-	# Simple hipped roof from a scaled cone: readable silhouette, no custom mesh.
-	var roof := MeshInstance3D.new()
-	var prism := PrismMesh.new()
-	prism.size = Vector3(width * 1.18, 1.6, depth * 1.18)
-	roof.mesh = prism
-	roof.position = Vector3(0, height + 0.8, 0)
-	roof.material_override = WorldMaterials.surface(&"roof")
-	body.add_child(roof)
-
-	# Door and windows, purely visual but they make the village feel inhabited.
-	var door := MeshInstance3D.new()
-	var door_box := BoxMesh.new()
-	door_box.size = Vector3(1.0, 1.9, 0.12)
-	door.mesh = door_box
-	door.position = Vector3(0, 0.95, -depth * 0.5 - 0.06)
-	door.material_override = WorldMaterials.surface(&"door")
-	body.add_child(door)
-
-	for side: float in [-1.0, 1.0]:
-		var window := MeshInstance3D.new()
-		var win_box := BoxMesh.new()
-		win_box.size = Vector3(0.1, 0.9, 0.9)
-		window.mesh = win_box
-		window.position = Vector3(side * (width * 0.5 + 0.05), 1.7, 0)
-		window.material_override = WorldMaterials.surface(&"glass")
-		body.add_child(window)
-
 	_finish(body, root)
+
+
+## A decorative CC0 landmark with a collider sized from its own art. Landmarks
+## give the village a silhouette beyond a row of identical cottages: a windmill
+## on the ridge, a water tower by the road and a coop behind the farm.
+static func _add_landmark(root: Node3D, name: String, model_path: String,
+		position: Vector3, yaw: float = 0.0) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.name = name
+	body.collision_layer = 1
+	body.position = position
+	body.rotation.y = yaw
+	var model := ModelArt.instantiate(model_path)
+	if model == null:
+		return null
+	body.add_child(model)
+	var box := ModelArt.body_aabb(model_path)
+	if box.size != Vector3.ZERO:
+		var shape := CollisionShape3D.new()
+		shape.name = "CollisionShape3D"
+		var col := BoxShape3D.new()
+		col.size = box.size
+		shape.shape = col
+		shape.position = box.position + box.size * 0.5
+		body.add_child(shape)
+	_finish(body, root)
+	return body
 
 
 static func rng_rotate(centre: Vector2) -> float:
@@ -588,6 +633,10 @@ static func is_reserved(pos: Vector2) -> bool:
 	# The farm plot and its fence line.
 	if pos.distance_to(REGION_FARM) < 15.0:
 		return true
+	# The CC0 landmarks south of the farm.
+	for centre: Vector2 in LANDMARK_CENTRES:
+		if pos.distance_to(centre) < 6.0:
+			return true
 	# The village, including the player's house on its west side.
 	if pos.distance_to(REGION_VILLAGE) < 17.0:
 		return true

@@ -14,6 +14,67 @@ zero script errors.
 
 ---
 
+## Art workstream — CC0 buildings and signature villagers (group 18 groundwork)
+
+```
+WORKSTREAM: art pass (world, npc, core)
+STATUS: IMPLEMENTED AND VERIFIED
+LANE:   World & Engine + People & Interface + core
+```
+
+The user asked for two things after group 17: "perfectly detailed" graphics and
+villagers that read as characters rather than five shared bodies. Both were
+answered with assets already in the repo — no new pack, no new licence entry.
+
+### IMPLEMENTED
+
+- **The five houses are now CC0 models.** `WorldBuilder._add_house` instantiates
+  `SmallBarn.fbx` (cottages) and `Barn.fbx` (farmhouse) from the Quaternius Farm
+  Buildings pack, scaled to the old 5x4.5 m footprints so the authored doorsteps
+  stay clear, with box colliders derived from each model's measured bounds rather
+  than typed by hand. Found by playing: a full-size barn swallowed Bram's
+  doorstep and he never left home.
+- **Three CC0 landmarks** — windmill, water tower, chicken coop — stand south of
+  the farm on reserved ground, so the scatter cannot grow a bush through them.
+- **Signature gear for all six villagers**, from KayKit's Addons: Mira's mug,
+  Bram's axe, Odette's staff, Fen's crossbow, Halda's sword, Sable's shield.
+  `NpcData.signature_prop` is content, `ModelArt.attach_held_prop` attaches to
+  the shared `handslot.r` bone with a small per-prop offset, and the generator
+  refuses a prop that will not load. Props keep the pack's own textures rather
+  than the villager's tint.
+- **The imported T-pose is gone.** `Npc._pose_idle_arms` drops both upper arms
+  72° using the rig's probed local axes; a villager now stands like a person and
+  the held item sits in the hand rather than on the ground.
+- **Surface polish:** a deeper grass albedo, a stronger (22%) shared detail
+  texture, and higher saturation at every graphics tier.
+
+### TESTS AND PLAY
+
+**`tests/suites/test_art.gd` — 6 cases**: every signature prop exists and is
+unique, gear attaches to the right bone on a live villager, the cottages carry
+real model instances, building colliders are sized to their art, and the three
+landmarks are present and reserved. **Full pipeline: 542/542**, import clean,
+boot clean, zero script errors.
+
+`tools/playtest_art.gd` boots the real game in a window and photographs a six-
+person character sheet plus wide village/farm shots: **`art_review_cast_*.png`,
+`art_review_world_*.png` (gitignored), PASS**. The character sheet was reviewed:
+six distinct faces, colours and props, arms at rest, detailed red barns behind
+them. The ground still reads pale in the wide shot — the next art step is a
+richer terrain material or stronger directional shadows, not more models.
+
+### BUGS FOUND AND FIXED
+
+1. Full-size barns covered the authored cottage doorsteps; scaling to the old
+   footprints restored the wander test and the players' sense of place.
+2. Godot silently renamed five identically named `House` bodies to
+   `@StaticBody3D@13`; they now have unique `House_x_y` names so the scene is
+   inspectable and the art suite can find them.
+3. Props hung below the hand because their mesh origins are centred rather than
+   at the grip; a per-prop offset table lifts them into place.
+
+---
+
 ## Last completed group
 
 ```

@@ -14,6 +14,11 @@ extends SceneTree
 
 const OUTPUT_DIR := "res://resources/npc/npcs/"
 const MODEL_DIR := "res://assets/models/kaykit/Characters/"
+## Signature gear, from the same CC0 pack. Six distinct silhouettes so a cast
+## sharing five bodies reads as six people at a glance: a gardener's mug, a
+## builder's axe, a weather-reader's staff, a forager's crossbow, a harvest
+## guard's sword and the mender's repaired shield.
+const PROP_DIR := "res://assets/models/kaykit/Addons/"
 
 ## One entry per villager. The keys map one-to-one onto [NpcData]'s fields.
 ##
@@ -58,6 +63,7 @@ const MODEL_DIR := "res://assets/models/kaykit/Characters/"
 const VILLAGERS: Array[Dictionary] = [
 	{
 		"id": &"mira", "display_name": "Mira", "model": "Knight.fbx",
+		"prop": "mug_full.fbx",
 		"description": "Keeps the kitchen garden behind the shop. Will trade advice for a parsnip.",
 		"tint": Color(0.82, 0.36, 0.32, 1.0), "target_height": 1.78,
 		# House 1's front step, on the door normal. Was (30.5, 3.5): inside the house,
@@ -70,6 +76,7 @@ const VILLAGERS: Array[Dictionary] = [
 	},
 	{
 		"id": &"bram", "display_name": "Bram", "model": "Barbarian.fbx",
+		"prop": "axe_2handed.fbx",
 		"description": "Big, quiet, and always building something that will not fall down.",
 		"tint": Color(0.55, 0.38, 0.24, 1.0), "target_height": 1.92,
 		# House 2's front step. Was (45.5, 1.5): inside the house.
@@ -81,6 +88,7 @@ const VILLAGERS: Array[Dictionary] = [
 	},
 	{
 		"id": &"odette", "display_name": "Odette", "model": "Mage.fbx",
+		"prop": "staff.fbx",
 		"description": "Reads the weather off the water and is right more often than is comfortable.",
 		"tint": Color(0.44, 0.36, 0.72, 1.0), "target_height": 1.74,
 		# House 3's front step. Was (49.5, 14.5): inside the house.
@@ -92,6 +100,7 @@ const VILLAGERS: Array[Dictionary] = [
 	},
 	{
 		"id": &"fen", "display_name": "Fen", "model": "Rogue.fbx",
+		"prop": "crossbow_1handed.fbx",
 		"description": "Comes and goes. Knows where the good berries are and will not say.",
 		"tint": Color(0.35, 0.62, 0.45, 1.0), "target_height": 1.7,
 		# House 4's front step. Was (35.5, 17.5): inside the house.
@@ -103,6 +112,7 @@ const VILLAGERS: Array[Dictionary] = [
 	},
 	{
 		"id": &"halda", "display_name": "Halda", "model": "RogueHooded.fbx",
+		"prop": "sword_1handed.fbx",
 		"description": "Grows one thing, remarkably well, and guards the rest of the valley from it.",
 		"tint": Color(0.72, 0.6, 0.3, 1.0), "target_height": 1.76,
 		# There are five houses and six villagers, so two of them live on the square
@@ -118,6 +128,7 @@ const VILLAGERS: Array[Dictionary] = [
 		# The deliberate duplicate body: a Knight again, recoloured. If a content test
 		# ever complains about it, the answer is in `count_per_appearance`.
 		"id": &"sable", "display_name": "Sable", "model": "Knight.fbx",
+		"prop": "shield_round.fbx",
 		"description": "Mends things. Was asked to mend the fence, and did, eventually.",
 		"tint": Color(0.3, 0.32, 0.4, 1.0), "target_height": 1.8,
 		# The other square resident, on the far side of the well from Halda.
@@ -158,6 +169,7 @@ func _initialize() -> void:
 		npc.birthday_season = spec["birthday_season"]
 		npc.birthday_day = spec["birthday_day"]
 		npc.romanceable = bool(spec.get("romanceable", false))
+		npc.signature_prop = PROP_DIR + String(spec.get("prop", ""))
 		for id_in: StringName in spec["loved"]:
 			npc.loved_gifts.append(id_in)
 		for id_in: StringName in spec["liked"]:
@@ -182,6 +194,12 @@ func _initialize() -> void:
 		# place, so the model is checked here rather than at boot.
 		if not ModelArt.can_load(npc.model):
 			printerr("[generate_npc_data] %s cannot load %s" % [npc.id, npc.model])
+			exit_code = 1
+			continue
+		# A prop that will not load is an empty hand in the game, not a crash, so
+		# the generator has to refuse the content before it reaches a save file.
+		if not npc.signature_prop.is_empty() and not ModelArt.can_load(npc.signature_prop):
+			printerr("[generate_npc_data] %s cannot load prop %s" % [npc.id, npc.signature_prop])
 			exit_code = 1
 			continue
 

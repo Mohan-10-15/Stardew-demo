@@ -72,8 +72,12 @@ remain available from the source URL above if a variant is ever needed.
   frame with the instance parented under `root`. Also note that `AABB` is a value
   type in GDScript: passing one into a recursive walk and assigning to it
   discards the result silently.
-- No material or lighting setup exists yet. Terrain is still procedural; the
-  Nature Pack models are the first CC0 assets actually referenced by a scene.
+- Materials, lighting and post-processing now exist (`WorldMaterials`,
+  `DayNightCycle`, `GraphicsQuality`). The terrain and paths are procedural; the
+  Nature Pack trees/crops and **all five farmhouses**, the windmill, the water
+  tower and the chicken coop are CC0 models referenced directly by
+  `WorldBuilder` and `ModelArt`. Villagers and the player use the KayKit
+  characters with one signature KayKit addon each, attached to `handslot.r`.
 
 ## Audio
 

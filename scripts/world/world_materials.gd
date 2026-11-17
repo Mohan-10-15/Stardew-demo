@@ -35,7 +35,7 @@ const DETAIL_SIZE := 256
 ## `uv_tiles` is in texture repeats per *world metre*, converted per material below by
 ## the scale each surface's UVs are authored in.
 const SURFACES := {
-	&"grass": [Color(0.36, 0.62, 0.31), 0.95, 0.0, 0.15, 0.35],
+	&"grass": [Color(0.30, 0.56, 0.25), 0.95, 0.0, 0.15, 0.35],
 	&"dirt": [Color(0.45, 0.33, 0.22), 0.95, 0.0, 0.15, 0.55],
 	&"path": [Color(0.62, 0.55, 0.42), 0.90, 0.0, 0.18, 0.70],
 	&"water": [Color(0.24, 0.48, 0.66, 0.75), 0.08, 0.0, 0.55, 0.22],
@@ -81,7 +81,10 @@ static func detail_texture() -> NoiseTexture2D:
 		texture.seamless = true
 		texture.noise = noise
 		var ramp := Gradient.new()
-		ramp.set_color(0, Color(0.86, 0.86, 0.86))
+		# A 22% dip rather than the old 14%: at a glance across forty metres the
+		# softer range read as a flat field, and the valleys in the noise are what
+		# give the ground its texture without turning it into camouflage.
+		ramp.set_color(0, Color(0.78, 0.78, 0.78))
 		ramp.set_color(1, Color(1.0, 1.0, 1.0))
 		texture.color_ramp = ramp
 		_detail = texture

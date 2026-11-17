@@ -15,6 +15,7 @@ wander_radius = 7.0
 walk_speed = 1.7
 birthday_season = 1
 birthday_day = 12
+signature_prop = "res://assets/models/kaykit/Addons/mug_full.fbx"
 romanceable = true
 loved_gifts = Array[StringName]([&"wild_berry", &"parsnip"])
 liked_gifts = Array[StringName]([&"spring_onion", &"potato"])

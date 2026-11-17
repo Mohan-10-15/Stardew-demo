@@ -63,6 +63,12 @@ extends Resource
 @export_range(0, 3, 1) var birthday_season: int = 0
 @export_range(1, 28, 1) var birthday_day: int = 1
 
+## A CC0 prop this villager carries in their right hand, so six people sharing
+## five bodies still read as six characters. Content rather than a `match` over
+## ids: adding or swapping a signature item is a table edit, and a missing model
+## is refused by the generator instead of showing an empty hand.
+@export var signature_prop: String = ""
+
 @export_group("Romance")
 ## Whether this villager can be courted and married.
 ##

@@ -174,12 +174,47 @@ func _build_model() -> void:
 		Log.info("Npc", "%s: dropped %d held props from %s" % [data.id, carried, data.model.get_file()])
 	if not ModelArt.is_white(data.model_tint):
 		ModelArt.apply_tint(_model, data.model_tint)
+	# Signature gear goes on *after* the tint so it keeps the pack's own textures.
+	# A missing prop leaves an empty hand rather than taking the villager out of
+	# the world; the generator refuses a bad path before it can reach this line.
+	if not data.signature_prop.is_empty():
+		if ModelArt.attach_held_prop(_model, data.signature_prop) == null:
+			Log.warn("Npc", "%s has no hand for '%s'" % [data.id, data.signature_prop.get_file()])
+	_pose_idle_arms(_model)
 	# The character pack's pivots sit at the feet, but a pack that changes its mind
 	# should stand on the ground rather than hover or sink, so the measured box
 	# decides — the same correction `ResourceNode` makes.
 	if _box.size != Vector3.ZERO:
 		_model.position.y = -_box.position.y * _model.scale.y
 	add_child(_model)
+
+
+## Lets the arms hang instead of sticking out in the imported T-pose.
+##
+## Probed from all five rigs in `tools/probe_character_props.gd`: `upperarm.l`
+## points along +X and `upperarm.r` along -X, and each bone's local X is its
+## world Z. A -72° turn about local X drops both arms to the sides, which is
+## where a villager standing still actually holds them — and it lifts a held
+## prop out of the ground and into the hand where it belongs.
+static func _pose_idle_arms(model: Node3D) -> void:
+	var skeleton := _find_skeleton(model)
+	if skeleton == null:
+		return
+	var droop := Quaternion(Vector3.RIGHT, deg_to_rad(-72.0))
+	for bone_name: String in ["upperarm.l", "upperarm.r"]:
+		var index := skeleton.find_bone(bone_name)
+		if index >= 0:
+			skeleton.set_bone_pose_rotation(index, droop)
+
+
+static func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node as Skeleton3D
+	for child: Node in node.get_children():
+		var found := _find_skeleton(child)
+		if found != null:
+			return found
+	return null
 
 
 func _physics_process(delta: float) -> void:

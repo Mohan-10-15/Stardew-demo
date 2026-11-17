@@ -94,6 +94,11 @@ static var _bounds: AABB = AABB()
 ## Kept here, in the one place that knows how models turn into nodes, rather than in a
 ## per-content-type script: [Npc] and [PlayerAvatar] both need it, and two copies of this
 ## list is how one of them ends up filtering and the other not.
+## The bone every KayKit rig exposes for a held item. Probed from all five
+## characters in `tools/probe_art_assets.gd`; they share a 41-bone skeleton, so
+## one attachment rule covers the whole cast rather than one per archetype.
+const HAND_BONE := &"handslot.r"
+
 const ATTACHMENT_MESH_NAMES: Array[String] = [
 	"1H_Axe", "1H_Axe_Offhand", "2H_Axe",
 	"1H_Crossbow", "2H_Crossbow",
@@ -430,6 +435,54 @@ static func apply_tint(root: Node, tint: Color) -> void:
 			if source is StandardMaterial3D:
 				geometry.material_override = _tinted(source as StandardMaterial3D, tint)
 		apply_tint(child, tint)
+
+
+## Small per-prop corrections, in the pack's metres, applied to the prop inside
+## the hand bone. The standalone addons share the rig's hand slot but their mesh
+## origins are not all at the grip — a staff is centred on its shaft, a mug on
+## its body — so a long item otherwise hangs below the hand like a dropped tool.
+const PROP_OFFSETS: Dictionary = {
+	"axe_2handed.fbx": Vector3(0.0, 0.28, 0.0),
+	"crossbow_1handed.fbx": Vector3(0.0, 0.08, 0.0),
+	"mug_full.fbx": Vector3(0.0, 0.10, 0.0),
+	"shield_round.fbx": Vector3(0.0, 0.14, 0.16),
+	"staff.fbx": Vector3(0.0, 0.34, 0.0),
+	"sword_1handed.fbx": Vector3(0.0, 0.20, 0.0),
+}
+
+
+## Attaches [param prop_path] to the right hand of [param character] and returns
+## the new [BoneAttachment3D], or null when either the model or its hand is
+## missing.
+##
+## The standalone addons are the same meshes KayKit parents inside the character
+## files, authored in the same metres, so inheriting the character's root scale
+## is what keeps a mug a mug whether the villager is 1.7 m or 1.92 m tall. The prop
+## is deliberately *not* tinted with the villager's colour: its texture is the
+## pack's own, and six recoloured mugs would read as a rendering bug.
+static func attach_held_prop(character: Node3D, prop_path: String) -> BoneAttachment3D:
+	if character == null or prop_path.is_empty():
+		return null
+	var prop := instantiate(prop_path)
+	if prop == null:
+		return null
+	var skeleton := _find_skeleton(character)
+	var bone: int = -1
+	if skeleton != null:
+		bone = skeleton.find_bone(HAND_BONE)
+	if bone < 0:
+		prop.free()
+		return null
+	var hand := BoneAttachment3D.new()
+	hand.name = "SignatureProp"
+	hand.bone_name = HAND_BONE
+	character.add_child(hand)
+	prop.name = "Prop"
+	var offset: Vector3 = PROP_OFFSETS.get(prop_path.get_file(), Vector3.ZERO)
+	if offset != Vector3.ZERO:
+		prop.position = offset
+	hand.add_child(prop)
+	return hand
 
 
 ## The tinted counterpart of [param source], shared between every instance that
