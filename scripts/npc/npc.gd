@@ -187,6 +187,11 @@ func _build_model() -> void:
 			Log.warn("Npc", "%s has no hand for '%s'" % [data.id, data.signature_prop.get_file()])
 	_pose_idle_arms(_model)
 	_skeleton = _find_skeleton(_model)
+	# Cel-shade the pack textures, then draw the original anime face over the
+	# painted one. The face plane is unshaded and follows the head bone, so it
+	# cannot be lit or left behind when a villager turns to speak.
+	AnimeStyle.apply_to(_model)
+	_attach_anime_face(_model, data.id)
 	# The character pack's pivots sit at the feet, but a pack that changes its mind
 	# should stand on the ground rather than hover or sink, so the measured box
 	# decides — the same correction `ResourceNode` makes.
@@ -211,6 +216,40 @@ static func _pose_idle_arms(model: Node3D) -> void:
 		var index := skeleton.find_bone(bone_name)
 		if index >= 0:
 			skeleton.set_bone_pose_rotation(index, droop)
+
+
+## Places the original anime face just in front of the rig's painted face.
+##
+## Probed from all five KayKit rigs: the head bone sits at y=1.241 with an
+## identity-ish basis, the head mesh's front surface is about 0.5 units along
+## local -Z, and the character's visual forward is -Z. The quad therefore faces
+## -Z, is parented to the head bone, and is deliberately a touch smaller than the
+## painted face so the hair and helmet still frame it.
+static func _attach_anime_face(model: Node3D, npc_id: StringName = &"") -> void:
+	var skeleton := _find_skeleton(model)
+	if skeleton == null:
+		return
+	var head := skeleton.find_bone(&"head")
+	if head < 0:
+		return
+	var holder := BoneAttachment3D.new()
+	holder.name = "AnimeFace"
+	holder.bone_name = &"head"
+	model.add_child(holder)
+	var quad := MeshInstance3D.new()
+	quad.name = "FacePlane"
+	var plane := QuadMesh.new()
+	plane.size = Vector2(0.50, 0.54)
+	quad.mesh = plane
+	quad.position = Vector3(0.0, 0.01, -0.54)
+	quad.rotation.y = PI
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = AnimeFace.texture_for(npc_id)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.render_priority = 2
+	quad.material_override = mat
+	holder.add_child(quad)
 
 
 static func _find_skeleton(node: Node) -> Skeleton3D:

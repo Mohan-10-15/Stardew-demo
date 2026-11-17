@@ -2778,3 +2778,20 @@ func _run(case: StringName) -> Dictionary:
 godot --headless --path . --script res://tools/rebuild_input_map.gd   # writes project.godot
 godot --headless --path . --script res://tools/generate_main_scene.gd # writes main.tscn
 ```
+
+### Anime character treatment (art workstream, continued)
+
+The villagers now read as bright-shonen anime characters without replacing the
+CC0 rigs. `AnimeFace` draws an original large-eyed, inked face per villager onto
+a transparent texture parented to the shared `head` bone; `AnimeStyle` switches
+character materials to Godot's toon diffuse mode with a dark inked rim; and the
+six tints were retuned to a saturated palette. No new pack or licence — see
+`DECISIONS.md` D16.
+
+`tests/suites/test_anime.gd` — 3 cases: every villager has a face on the head
+bone, the six drawn textures are non-blank and pairwise distinct, and character
+materials (excluding the deliberately unshaded face plane) are toon-shaded.
+**Full pipeline: 547/547**, import clean, boot clean, zero script errors.
+`tools/playtest_art.gd` and `tools/playtest_friendship.gd` both pass in a real
+window; reviewed portraits show the anime faces with the gear and idle pose
+intact.

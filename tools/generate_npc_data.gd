@@ -65,7 +65,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"mira", "display_name": "Mira", "model": "Knight.fbx",
 		"prop": "mug_full.fbx",
 		"description": "Keeps the kitchen garden behind the shop. Will trade advice for a parsnip.",
-		"tint": Color(0.82, 0.36, 0.32, 1.0), "target_height": 1.78,
+		"tint": Color(0.90, 0.40, 0.34, 1.0), "target_height": 1.78,
 		# House 1's front step, on the door normal. Was (30.5, 3.5): inside the house,
 		# and 0.71 m from the middle of the well.
 		"home": Vector2(29.7, -1.8), "wander_radius": 7.0, "walk_speed": 1.7,
@@ -78,7 +78,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"bram", "display_name": "Bram", "model": "Barbarian.fbx",
 		"prop": "axe_2handed.fbx",
 		"description": "Big, quiet, and always building something that will not fall down.",
-		"tint": Color(0.55, 0.38, 0.24, 1.0), "target_height": 1.92,
+		"tint": Color(0.82, 0.54, 0.24, 1.0), "target_height": 1.92,
 		# House 2's front step. Was (45.5, 1.5): inside the house.
 		"home": Vector2(44.4, -3.8), "wander_radius": 5.0, "walk_speed": 1.5,
 		"birthday_season": 2, "birthday_day": 28,
@@ -90,7 +90,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"odette", "display_name": "Odette", "model": "Mage.fbx",
 		"prop": "staff.fbx",
 		"description": "Reads the weather off the water and is right more often than is comfortable.",
-		"tint": Color(0.44, 0.36, 0.72, 1.0), "target_height": 1.74,
+		"tint": Color(0.56, 0.34, 0.84, 1.0), "target_height": 1.74,
 		# House 3's front step. Was (49.5, 14.5): inside the house.
 		"home": Vector2(47.3, 9.3), "wander_radius": 8.0, "walk_speed": 1.6,
 		"birthday_season": 3, "birthday_day": 5,
@@ -102,7 +102,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"fen", "display_name": "Fen", "model": "Rogue.fbx",
 		"prop": "crossbow_1handed.fbx",
 		"description": "Comes and goes. Knows where the good berries are and will not say.",
-		"tint": Color(0.35, 0.62, 0.45, 1.0), "target_height": 1.7,
+		"tint": Color(0.26, 0.72, 0.48, 1.0), "target_height": 1.7,
 		# House 4's front step. Was (35.5, 17.5): inside the house.
 		"home": Vector2(34.2, 12.2), "wander_radius": 11.0, "walk_speed": 2.1,
 		"birthday_season": 1, "birthday_day": 24,
@@ -114,7 +114,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"halda", "display_name": "Halda", "model": "RogueHooded.fbx",
 		"prop": "sword_1handed.fbx",
 		"description": "Grows one thing, remarkably well, and guards the rest of the valley from it.",
-		"tint": Color(0.72, 0.6, 0.3, 1.0), "target_height": 1.76,
+		"tint": Color(0.88, 0.74, 0.26, 1.0), "target_height": 1.76,
 		# There are five houses and six villagers, so two of them live on the square
 		# rather than in a cottage. Moved off the exact middle of the village disc,
 		# where a villager standing in the centre of everything is nowhere in particular.
@@ -130,7 +130,7 @@ const VILLAGERS: Array[Dictionary] = [
 		"id": &"sable", "display_name": "Sable", "model": "Knight.fbx",
 		"prop": "shield_round.fbx",
 		"description": "Mends things. Was asked to mend the fence, and did, eventually.",
-		"tint": Color(0.3, 0.32, 0.4, 1.0), "target_height": 1.8,
+		"tint": Color(0.36, 0.54, 0.80, 1.0), "target_height": 1.8,
 		# The other square resident, on the far side of the well from Halda.
 		"home": Vector2(27.6, 8.6), "wander_radius": 9.0, "walk_speed": 1.65,
 		"birthday_season": 3, "birthday_day": 19,

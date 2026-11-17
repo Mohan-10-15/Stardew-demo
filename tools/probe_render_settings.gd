@@ -11,6 +11,20 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var probe_mat := StandardMaterial3D.new()
+	var keys: Array[String] = []
+	for prop: Dictionary in probe_mat.get_property_list():
+		var key := String(prop["name"])
+		if key.contains("diffuse") or key.contains("toon") or key.contains("rim") \
+				or key.contains("shading") or key.contains("specular"):
+			keys.append(key)
+	keys.sort()
+	print("MATERIAL keys: %s" % str(keys))
+	for value: int in [0, 1, 2, 3, 4]:
+		probe_mat.set("diffuse_mode", value)
+		print("  diffuse_mode %d -> %s" % [value, str(probe_mat.get("diffuse_mode"))])
+	probe_mat.set("specular_mode", 0)
+	print("  specular_mode 0 -> %s" % str(probe_mat.get("specular_mode")))
 	print("AMBIENT_SOURCE enum: COLOR=%d SKY=%d" % [
 		Environment.AMBIENT_SOURCE_COLOR,
 		Environment.AMBIENT_SOURCE_SKY,

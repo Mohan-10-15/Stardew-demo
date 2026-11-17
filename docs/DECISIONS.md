@@ -400,3 +400,25 @@ of their done halves — six villagers exist of the twelve §16 requires, and gi
 tastes are authored on `NpcData` with nothing reading them. If a future edit
 makes `prompt.md` §31 and §32 disagree again, §32 wins again, and both documents
 get changed together rather than one being left to drift.
+---
+
+## D16 — Anime villagers are original overlays on the CC0 rigs, not a new pack
+
+`AGENTS.md` §4 and `docs/ASSET_LICENSES.md` restrict art to KayKit and
+Quaternius, with a decision entry required for anything else. When the cast was
+asked to read as bright-shonen anime characters, no CC0 anime pack could be
+sourced in this environment (web search and art sites were both blocked), and
+downloading one would have added a licence and a provenance question.
+
+**What was decided.** The rigs, gear and textures stay KayKit. The anime look is
+added on top with original art generated in code: `AnimeFace` draws large-eyed,
+inked faces into a transparent texture per villager, attached to the shared
+`head` bone; `AnimeStyle` switches the character materials to Godot's toon
+diffuse mode with a dark rim for an inked edge; and the `NpcData` tints were
+retuned to a saturated shonen palette. No new pack, no third-party licence, no
+change to geometry, colliders or gameplay.
+
+**Consequence:** the faces are deliberately simple — a drawn overlay rather
+than new geometry — and will read as flat up close. If a CC0 anime pack ever
+becomes available, it should replace the rigs wholesale with a new decision
+entry, not be mixed into this treatment.

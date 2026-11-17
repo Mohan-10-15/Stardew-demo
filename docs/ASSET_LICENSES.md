@@ -103,3 +103,10 @@ Everything the game currently renders — terrain, props, characters, the player
 is generated at runtime by `scripts/world/world_builder.gd` from primitives and
 noise. That work is original and carries no third-party licence. It is the
 fallback, and the reference for what the CC0 packs must beat.
+
+### Original anime character treatment
+
+The bright-shonen face textures in `scripts/core/anime_face.gd` and the toon
+material settings in `scripts/core/anime_style.gd` are original art authored in
+this repo. No additional pack or licence was introduced; they overlay the CC0
+KayKit rigs and keep those packs' textures underneath. See `DECISIONS.md` D16.
