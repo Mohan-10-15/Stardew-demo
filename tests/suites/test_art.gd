@@ -30,6 +30,7 @@ func get_cases() -> Array[StringName]:
 		&"building_colliders_match_their_art",
 		&"the_landmarks_are_present_and_reserved",
 		&"the_valley_keeps_its_colours",
+		&"villagers_have_a_living_idle",
 	]
 
 
@@ -57,6 +58,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return await _t_landmarks()
 		&"the_valley_keeps_its_colours":
 			return await _t_colours()
+		&"villagers_have_a_living_idle":
+			return await _t_idle_animation()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -186,6 +189,48 @@ func _t_colours() -> Dictionary:
 	if albedo.g <= albedo.r or albedo.g <= albedo.b:
 		return fail(c, "grass albedo is %s, not green" % str(albedo))
 	return succeeded(c, "fog is off and grass albedo is %s" % str(albedo))
+
+
+## A living village is not a row of T-poses. Villagers breathe on the spot and
+## swing their arms when they walk; the clock and bone pose both have to move,
+## and neither may move the body — the walk tests assert the position still.
+func _t_idle_animation() -> Dictionary:
+	var c := &"villagers_have_a_living_idle"
+	var built := await _build_cast()
+	if built.is_empty():
+		return fail(c, "could not stand up the cast")
+	var npc: Npc = built["manager"].call("get_npc", &"mira")
+	if npc == null:
+		return fail(c, "no Mira in the cast")
+	var skeleton := _find_skeleton_of(npc)
+	if skeleton == null:
+		return fail(c, "Mira's model has no rig")
+	var chest := skeleton.find_bone(&"chest")
+	if chest < 0:
+		return fail(c, "the rig has no chest bone")
+	var before := npc.animation_phase()
+	var pose_before := skeleton.get_bone_pose_rotation(chest)
+	await _step(20)
+	if npc.animation_phase() <= before:
+		return fail(c, "the animation clock did not advance")
+	var pose_after := skeleton.get_bone_pose_rotation(chest)
+	if pose_before.is_equal_approx(pose_after):
+		return fail(c, "the chest never moved while Mira was standing still")
+	return succeeded(c, "the idle clock advanced and the chest pose changed")
+
+
+func _find_skeleton_of(npc: Npc) -> Skeleton3D:
+	var model := npc.get_node_or_null(^"Model")
+	if model == null:
+		return null
+	var stack: Array[Node] = [model]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node is Skeleton3D:
+			return node as Skeleton3D
+		for child: Node in node.get_children():
+			stack.append(child)
+	return null
 
 
 # --- Fixtures -----------------------------------------------------------------

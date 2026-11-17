@@ -75,6 +75,11 @@ var wandering: bool = true
 var attending: bool = false
 
 var _model: Node3D = null
+## Cached rig and animation clock. The animation never moves the body — it only
+## poses bones — so a test that drives `_advance` directly still measures the
+## same walk, and a paused conversation can hold a villager still.
+var _skeleton: Skeleton3D = null
+var _anim_time: float = 0.0
 
 ## The attachment-stripping notice is per-archetype, not per-villager, and saying it six
 ## times is how a real warning gets read past.
@@ -181,6 +186,7 @@ func _build_model() -> void:
 		if ModelArt.attach_held_prop(_model, data.signature_prop) == null:
 			Log.warn("Npc", "%s has no hand for '%s'" % [data.id, data.signature_prop.get_file()])
 	_pose_idle_arms(_model)
+	_skeleton = _find_skeleton(_model)
 	# The character pack's pivots sit at the feet, but a pack that changes its mind
 	# should stand on the ground rather than hover or sink, so the measured box
 	# decides — the same correction `ResourceNode` makes.
@@ -217,6 +223,50 @@ static func _find_skeleton(node: Node) -> Skeleton3D:
 	return null
 
 
+## A small procedural idle and walk cycle, keyed off this villager's own clock.
+##
+## Only the upper body moves: the legs would need foot planting to avoid skating,
+## and a village of sliding feet reads worse than still ones. A breathing chest,
+## a slow head turn and opposing arm swings are enough to make a standing person
+## look alive. Probed bone axes: spine/chest/head are world-aligned, and each
+## upper arm's local X is its world Z, so the resting droop is about local X and
+## the forward swing about local Z.
+func _animate(delta: float) -> void:
+	if _skeleton == null or data == null:
+		return
+	_anim_time += delta
+	var speed := Vector2(velocity.x, velocity.z).length()
+	var walking := speed > 0.15
+	var amp := clampf(speed / maxf(data.walk_speed, 0.01), 0.0, 1.0)
+	var phase := _anim_time * (7.0 if walking else 1.8) \
+		+ float(abs(hash(String(data.id))) % 1000) * 0.01
+
+	var chest := _skeleton.find_bone(&"chest")
+	if chest >= 0:
+		_skeleton.set_bone_pose_rotation(chest,
+			Quaternion(Vector3.RIGHT, sin(phase) * deg_to_rad(2.0)))
+	var head := _skeleton.find_bone(&"head")
+	if head >= 0:
+		_skeleton.set_bone_pose_rotation(head,
+			Quaternion(Vector3.UP, sin(phase * 0.5) * deg_to_rad(4.0)))
+
+	var droop := Quaternion(Vector3.RIGHT, deg_to_rad(-72.0))
+	var left := _skeleton.find_bone(&"upperarm.l")
+	var right := _skeleton.find_bone(&"upperarm.r")
+	if left >= 0:
+		_skeleton.set_bone_pose_rotation(left, droop * Quaternion(
+			Vector3.FORWARD, sin(phase) * deg_to_rad(18.0) * amp))
+	if right >= 0:
+		_skeleton.set_bone_pose_rotation(right, droop * Quaternion(
+			Vector3.FORWARD, -sin(phase) * deg_to_rad(18.0) * amp))
+
+
+## The animation clock, exposed so a test can prove the cycle advances without
+## trying to read a bone pose out of a headless rig.
+func animation_phase() -> float:
+	return _anim_time
+
+
 func _physics_process(delta: float) -> void:
 	if data == null:
 		return
@@ -226,6 +276,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 	_advance(delta)
 	move_and_slide()
+	_animate(delta)
 
 
 ## Steers towards the current scheduled waypoint, or the current wander target.

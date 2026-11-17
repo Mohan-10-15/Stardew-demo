@@ -39,7 +39,7 @@ func _run() -> void:
 		_find_attachment_meshes(node, "")
 		var skeleton := _find_skeleton(node)
 		if skeleton != null:
-			for bone_name: String in ["upperarm.l", "upperarm.r", "handslot.r"]:
+			for bone_name: String in ["spine", "chest", "head", "upperarm.l", "upperarm.r", "handslot.r"]:
 				var idx := skeleton.find_bone(bone_name)
 				if idx < 0:
 					continue

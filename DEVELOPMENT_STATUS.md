@@ -45,6 +45,10 @@ answered with assets already in the repo — no new pack, no new licence entry.
 - **The imported T-pose is gone.** `Npc._pose_idle_arms` drops both upper arms
   72° using the rig's probed local axes; a villager now stands like a person and
   the held item sits in the hand rather than on the ground.
+- **A small procedural idle/walk cycle** (`Npc._animate`) breathes the chest,
+  turns the head slowly and swings the arms in opposition when moving. It poses
+  bones only, so the walk tests that drive `_advance` directly still measure the
+  same body motion, and a paused conversation holds the villager still.
 - **Surface polish:** a deeper grass albedo, a stronger (22%) shared detail
   texture, and higher saturation at every graphics tier.
 - **The pale-ground wash is fixed.** The cause was *fog*, not albedo or ambient
@@ -56,11 +60,12 @@ answered with assets already in the repo — no new pack, no new licence entry.
 
 ### TESTS AND PLAY
 
-**`tests/suites/test_art.gd` — 7 cases**: every signature prop exists and is
+**`tests/suites/test_art.gd` — 8 cases**: every signature prop exists and is
 unique, gear attaches to the right bone on a live villager, the cottages carry
 real model instances, building colliders are sized to their art, the three
-landmarks are present and reserved, and fog stays off with a green grass albedo.
-**Full pipeline: 543/543**, import clean, boot clean, zero script errors.
+landmarks are present and reserved, fog stays off with a green grass albedo, and
+a standing villager's animation clock and chest pose both advance. **Full
+pipeline: 544/544**, import clean, boot clean, zero script errors.
 
 `tools/playtest_art.gd` boots the real game in a window and photographs a six-
 person character sheet plus wide village/farm shots: **`art_review_cast_*.png`,
