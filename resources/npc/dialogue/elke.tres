@@ -36,6 +36,7 @@ id = &"night"
 text = "Elke should be asleep. Elke is not."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_mfy27"]
 script = ExtResource("1_ik4tw")
@@ -78,12 +79,14 @@ script = ExtResource("1_ik4tw")
 id = &"friend_2"
 text = "Elke would say you are growing on them, but not in the garden."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_ti1cv"]
 script = ExtResource("1_ik4tw")
 id = &"friend_4"
 text = "Elke says you are the rare sort who stays for the dull parts."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_agmud"]
 script = ExtResource("2_cw1v3")
@@ -107,6 +110,7 @@ choices = Array[ExtResource("2_cw1v3")]([SubResource("Resource_agmud"), SubResou
 script = ExtResource("1_ik4tw")
 id = &"story_2"
 text = "One. I drew the pond a metre too far east. I have never lived it down."
+mood = &"happy"
 requires_flag = &"met_elke"
 once = true
 hearts = 1
@@ -117,12 +121,14 @@ script = ExtResource("1_ik4tw")
 id = &"dating"
 text = "I drew a map of where we walk together. It is the only one I have never wanted to correct."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_p0k1b"]
 script = ExtResource("1_ik4tw")
 id = &"married"
 text = "Every road on my map ends here now. I suppose that is what home means."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_c3adk")

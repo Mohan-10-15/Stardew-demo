@@ -2839,3 +2839,18 @@ before asserting the walk resumed. `tools/playtest_art.gd` lines all twelve up
 on the open farm approach and photographs each portrait. **Full pipeline:
 549/549**, both real-window playtests pass. `docs/ACCEPTANCE.md` M5 is ticked
 in full.
+
+### More alive: dialogue moods, leg swing and eye glints
+
+- `DialogueEntry.mood` is content: a line can ask for a face without the
+  dialogue service knowing what a face is. It forwards the word to the manager,
+  which puts it on the villager. The generator writes `happy` on the heart-paying
+  and romance beats, `sad` on the small-hours line.
+- `Npc._animate` now swings the upper and lower legs in opposition to the arms,
+  bending the knee only on the forward half of the stride. A new test asserts
+  the face mood a written line produces.
+- Two tiny unshaded eye glints and a tapered ahoge lock add a few millimetres of
+  real parallax geometry over the drawn face.
+
+`tests/suites/test_anime.gd` — 6 cases. **Full pipeline: 550/550**, all stages
+green, both real-window playtests pass.

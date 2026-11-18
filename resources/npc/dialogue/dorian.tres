@@ -36,6 +36,7 @@ id = &"night"
 text = "Dorian should be asleep. Dorian is not."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_poe88"]
 script = ExtResource("1_r78et")
@@ -78,12 +79,14 @@ script = ExtResource("1_r78et")
 id = &"friend_2"
 text = "Dorian would say you are growing on them, but not in the garden."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_n0m85"]
 script = ExtResource("1_r78et")
 id = &"friend_4"
 text = "Dorian says you are the rare sort who stays for the dull parts."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_1jkaw"]
 script = ExtResource("2_y5lih")
@@ -107,6 +110,7 @@ choices = Array[ExtResource("2_y5lih")]([SubResource("Resource_1jkaw"), SubResou
 script = ExtResource("1_r78et")
 id = &"story_2"
 text = "Because I put the support beams in myself. Nobody is going in after it while I am here."
+mood = &"happy"
 requires_flag = &"met_dorian"
 once = true
 hearts = 1
@@ -117,12 +121,14 @@ script = ExtResource("1_r78et")
 id = &"dating"
 text = "Stone does not change. I thought I was the same. Then you started coming around."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_x6am3"]
 script = ExtResource("1_r78et")
 id = &"married"
 text = "I built a shelf for your things. Properly. It will outlast us both."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_q67wp")

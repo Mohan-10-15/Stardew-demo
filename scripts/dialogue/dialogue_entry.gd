@@ -67,6 +67,11 @@ const NO_ROMANCE := -1
 ## what you *are* to them, and "you gave me a parsnip yesterday" and "we are engaged"
 ## can both be true at any heart count.
 @export var min_romance: int = NO_ROMANCE
+
+## Optional anime face mood to show while this line is on screen. Empty means
+## the face keeps whatever it was doing; a story beat can ask for a smile
+## without the dialogue service knowing what a face is.
+@export var mood: StringName = &""
 ## Only said while this story flag is set. Empty means no requirement.
 @export var requires_flag: StringName = &""
 ## Only said while this story flag is *not* set — the "before they told me"

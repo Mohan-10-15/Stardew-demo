@@ -199,6 +199,7 @@ func _build_model() -> void:
 	# cannot be lit or left behind when a villager turns to speak.
 	AnimeStyle.apply_to(_model)
 	_attach_anime_face(_model, data.id)
+	_attach_anime_details(_model, data.model_tint)
 	# The character pack's pivots sit at the feet, but a pack that changes its mind
 	# should stand on the ground rather than hover or sink, so the measured box
 	# decides — the same correction `ResourceNode` makes.
@@ -260,6 +261,54 @@ func _attach_anime_face(model: Node3D, npc_id: StringName = &"") -> void:
 	_face_quad = quad
 
 
+## A few millimetres of real geometry in front of the drawn face: two tiny
+## unshaded glints that move with parallax as the head turns, and a small
+## ahoge/side-lock silhouette in the villager's own tint. Kept deliberately
+## small — the readable face is still the drawn one; this is only depth.
+func _attach_anime_details(model: Node3D, tint: Color) -> void:
+	var skeleton := _find_skeleton(model)
+	if skeleton == null or skeleton.find_bone(&"head") < 0:
+		return
+	var holder := BoneAttachment3D.new()
+	holder.name = "AnimeDetails"
+	holder.bone_name = &"head"
+	model.add_child(holder)
+
+	var glint := StandardMaterial3D.new()
+	glint.albedo_color = Color(1, 1, 1, 1)
+	glint.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var sparkle := SphereMesh.new()
+	sparkle.radius = 0.018
+	for side: String in ["L", "R"]:
+		var x := -0.13 if side == "L" else 0.13
+		var dot := MeshInstance3D.new()
+		dot.name = "EyeGlint_%s" % side
+		dot.mesh = sparkle
+		dot.position = Vector3(x, 0.06, -0.565)
+		dot.material_override = glint
+		holder.add_child(dot)
+
+	var hair := StandardMaterial3D.new()
+	hair.albedo_color = tint
+	hair.diffuse_mode = AnimeStyle.TOON_DIFFUSE
+	hair.rim_enabled = true
+	hair.rim = 0.4
+	hair.rim_tint = 0.0
+	# The ahoge: one tapered lock leaning forward over the forehead.
+	# Godot 4 has no ConeMesh; a cylinder tapered to a point is the same shape.
+	var tuft := CylinderMesh.new()
+	tuft.top_radius = 0.0
+	tuft.bottom_radius = 0.045
+	tuft.height = 0.30
+	var lock := MeshInstance3D.new()
+	lock.name = "Ahoge"
+	lock.mesh = tuft
+	lock.position = Vector3(0.05, 0.62, -0.12)
+	lock.rotation_degrees = Vector3(-24, 0, -14)
+	lock.material_override = hair
+	holder.add_child(lock)
+
+
 static func _find_skeleton(node: Node) -> Skeleton3D:
 	if node is Skeleton3D:
 		return node as Skeleton3D
@@ -306,6 +355,26 @@ func _animate(delta: float) -> void:
 	if right >= 0:
 		_skeleton.set_bone_pose_rotation(right, droop * Quaternion(
 			Vector3.FORWARD, -sin(phase) * deg_to_rad(18.0) * amp))
+	# Legs swing in the world YZ plane about their local X, in opposition to
+	# the arms. The knee bends only on the forward half of the stride; bending
+	# it on the back half would make the foot skate backwards through the ground.
+	var stride := sin(phase)
+	var left_thigh := _skeleton.find_bone(&"upperleg.l")
+	var right_thigh := _skeleton.find_bone(&"upperleg.r")
+	var left_shin := _skeleton.find_bone(&"lowerleg.l")
+	var right_shin := _skeleton.find_bone(&"lowerleg.r")
+	if left_thigh >= 0:
+		_skeleton.set_bone_pose_rotation(left_thigh,
+			Quaternion(Vector3.RIGHT, -stride * deg_to_rad(22.0) * amp))
+	if right_thigh >= 0:
+		_skeleton.set_bone_pose_rotation(right_thigh,
+			Quaternion(Vector3.RIGHT, stride * deg_to_rad(22.0) * amp))
+	if left_shin >= 0:
+		_skeleton.set_bone_pose_rotation(left_shin,
+			Quaternion(Vector3.RIGHT, maxf(0.0, stride) * deg_to_rad(28.0) * amp))
+	if right_shin >= 0:
+		_skeleton.set_bone_pose_rotation(right_shin,
+			Quaternion(Vector3.RIGHT, maxf(0.0, -stride) * deg_to_rad(28.0) * amp))
 	_update_face(delta)
 
 

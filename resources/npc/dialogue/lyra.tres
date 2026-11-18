@@ -36,6 +36,7 @@ id = &"night"
 text = "Lyra should be asleep. Lyra is not."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_jhj0y"]
 script = ExtResource("1_38d8u")
@@ -78,12 +79,14 @@ script = ExtResource("1_38d8u")
 id = &"friend_2"
 text = "Lyra would say you are growing on them, but not in the garden."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_5iqap"]
 script = ExtResource("1_38d8u")
 id = &"friend_4"
 text = "Lyra says you are the rare sort who stays for the dull parts."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_4r63t"]
 script = ExtResource("2_nsytc")
@@ -107,6 +110,7 @@ choices = Array[ExtResource("2_nsytc")]([SubResource("Resource_4r63t"), SubResou
 script = ExtResource("1_38d8u")
 id = &"story_2"
 text = "It held. Then Sable came past and said 'almost'. Next spring I will show her."
+mood = &"happy"
 requires_flag = &"met_lyra"
 once = true
 hearts = 1
@@ -117,12 +121,14 @@ script = ExtResource("1_38d8u")
 id = &"dating"
 text = "I have checked and rechecked, and there is no proper way to say this except plainly. I like you."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_wkbai"]
 script = ExtResource("1_38d8u")
 id = &"married"
 text = "I fixed everything in this house that was wrong. Then I stopped, because there was nothing left to improve."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_5hfho")

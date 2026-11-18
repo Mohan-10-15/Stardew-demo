@@ -23,6 +23,7 @@ func get_cases() -> Array[StringName]:
 		&"characters_are_cel_shaded",
 		&"mood_textures_are_drawn_and_distinct",
 		&"the_face_reacts_and_blinks",
+		&"dialogue_lines_drive_the_face",
 	]
 
 
@@ -46,6 +47,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return _t_moods()
 		&"the_face_reacts_and_blinks":
 			return await _t_reactions()
+		&"dialogue_lines_drive_the_face":
+			return await _t_dialogue_mood()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -112,7 +115,8 @@ func _t_toon() -> Dictionary:
 		for mesh: Node in _meshes(model):
 			# The face keeps its drawn ink and the outlines are deliberately
 			# unshaded black; both are asserted elsewhere.
-			if mesh.name == "FacePlane" or mesh.name.begins_with("Outline_"):
+			if mesh.name == "FacePlane" or mesh.name.begins_with("Outline_") \
+					or mesh.name.begins_with("EyeGlint") or mesh.name == "Ahoge":
 				if mesh.name.begins_with("Outline_"):
 					outlines += 1
 				continue
@@ -184,6 +188,40 @@ func _t_reactions() -> Dictionary:
 	if not blinked:
 		return fail(c, "the villager never blinked")
 	return succeeded(c, "the face smiled, recovered and blinked on its own")
+
+
+## A written mood reaches the face through the dialogue service, with the
+## service knowing nothing about faces — it only forwards the word to the cast.
+func _t_dialogue_mood() -> Dictionary:
+	var c := &"dialogue_lines_drive_the_face"
+	var built := await _build_cast()
+	if built.is_empty():
+		return fail(c, "could not stand up the cast")
+	var script := load("res://scripts/dialogue/dialogue_service.gd") as GDScript
+	if script == null:
+		return fail(c, "no dialogue service script")
+	var service: Node = script.new()
+	service.name = "DialogueService"
+	_rig.add_child(service)
+	var manager: NpcManager = built["manager"]
+	var npc: Npc = manager.call("get_npc", &"mira")
+	manager.grant_hearts(&"mira", 2)
+	# The unseen introduction outranks everything once; spend it, then the
+	# two-heart line is the most specific match.
+	for _i: int in range(2):
+		service.call("open", &"mira")
+		service.call("cancel")
+	if not bool(service.call("open", &"mira")):
+		return fail(c, "no line opened at two hearts")
+	var entry: DialogueEntry = service.call("current_entry")
+	if entry == null or entry.mood != &"happy":
+		return fail(c, "the selected line has mood '%s'" % (
+			str(entry.mood) if entry != null else "<none>"
+		))
+	if _face_texture(npc) != AnimeFace.texture_for(&"mira", &"happy"):
+		return fail(c, "the written mood did not reach the face")
+	service.call("cancel")
+	return succeeded(c, "'%s' put a smile on Mira's face" % entry.id)
 
 
 func _face_texture(npc: Npc) -> Texture2D:

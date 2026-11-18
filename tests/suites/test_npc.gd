@@ -697,9 +697,12 @@ func _t_attending_holds_still() -> Dictionary:
 	if before.distance_to(after) > 0.05:
 		return fail(c, "%s walked %.3fm while being spoken to" % [npc.data.id, before.distance_to(after)])
 	npc.attending = false
-	# A villager who had just arrived before the greeting may be in the short
-	# "stand and look around" phase; give them time to pick a new target before
-	# asserting that the walk resumed.
+	# Deterministic resume: a villager who had just arrived before the greeting
+	# may be in the "stand and look around" phase or may pick a target under their
+	# own feet. Give them a known destination so the assertion is about attending
+	# releasing the body, not about the RNG.
+	npc.set("wandering", true)
+	npc.set("_wander_target", npc.data.home + Vector2(3.0, 0.0))
 	await _wait(1.6)
 	var moved := Vector2(npc.position.x, npc.position.z)
 	if moved.distance_to(after) < 0.05:

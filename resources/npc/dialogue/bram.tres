@@ -36,6 +36,7 @@ id = &"night"
 text = "Still up. A joint won't dry any faster for being watched."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_hxumc"]
 script = ExtResource("1_61hs3")
@@ -84,12 +85,14 @@ script = ExtResource("1_61hs3")
 id = &"friend_2"
 text = "You hold the other end well. That's more than most manage."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_wqw54"]
 script = ExtResource("1_61hs3")
 id = &"friend_4"
 text = "Valley needs people who finish things. You finish things."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_ff2nc"]
 script = ExtResource("2_1bj84")
@@ -113,6 +116,7 @@ choices = Array[ExtResource("2_1bj84")]([SubResource("Resource_ff2nc"), SubResou
 script = ExtResource("1_61hs3")
 id = &"story_2"
 text = "Nobody broke it. It was built wrong. I don't say that about work — I'm saying it about mine."
+mood = &"happy"
 requires_flag = &"met_bram"
 once = true
 hearts = 1
@@ -123,12 +127,14 @@ script = ExtResource("1_61hs3")
 id = &"dating"
 text = "I built a shelf yesterday and you looked at it for a long time. I don't think it was the shelf you were looking at."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_hsfv6"]
 script = ExtResource("1_61hs3")
 id = &"married"
 text = "You said you'd help me finish things. I'm holding you to that for the rest of the season. And the one after."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_mbygo")

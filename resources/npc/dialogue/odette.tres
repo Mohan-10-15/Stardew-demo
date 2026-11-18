@@ -36,6 +36,7 @@ id = &"night"
 text = "The water's black at night and honest about nothing. I look anyway."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_y81x1"]
 script = ExtResource("1_d7djv")
@@ -84,12 +85,14 @@ script = ExtResource("1_d7djv")
 id = &"friend_2"
 text = "Most people look at water to see themselves. You look at the water."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_3dohl"]
 script = ExtResource("1_d7djv")
 id = &"friend_4"
 text = "I don't say this to many. You'd have made a fine reader of water."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_h4qmc"]
 script = ExtResource("2_7vc7b")
@@ -113,6 +116,7 @@ choices = Array[ExtResource("2_7vc7b")]([SubResource("Resource_h4qmc"), SubResou
 script = ExtResource("1_d7djv")
 id = &"story_2"
 text = "Upstream. Against the slope. Nobody's ever explained it, and I've stopped going there after dusk."
+mood = &"happy"
 requires_flag = &"met_odette"
 once = true
 hearts = 1
@@ -123,12 +127,14 @@ script = ExtResource("1_d7djv")
 id = &"dating"
 text = "The water told me something this morning. I decided not to write it down. Some of it is only for us."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_4smgr"]
 script = ExtResource("1_d7djv")
 id = &"married"
 text = "I read the weather for a living and I still didn't see you coming. That's the one forecast I don't mind getting wrong."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_t6k78")

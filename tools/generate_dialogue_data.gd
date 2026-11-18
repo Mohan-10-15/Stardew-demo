@@ -779,6 +779,16 @@ func _build(spec: Dictionary) -> DialogueTree:
 		tree.entries.append(_build_entry(tree.npc_id, {
 			"id": &"married", "romance": 2, "text": String(lines["married"]),
 		}))
+	# One rule for the whole cast: the beats that pay a heart or a promise are
+	# happy, and the small-hours line is wistful. Content can still override a
+	# mood on any individual entry by setting the key by hand.
+	for entry: DialogueEntry in tree.entries:
+		if entry.id == &"friend_2" or entry.id == &"friend_4" \
+				or entry.id == &"story_2" or entry.id == &"dating" \
+				or entry.id == &"married":
+			entry.mood = &"happy"
+		elif entry.id == &"night":
+			entry.mood = &"sad"
 	return tree
 
 
@@ -800,6 +810,8 @@ func _build_entry(npc_id: StringName, spec: Dictionary) -> DialogueEntry:
 		e.max_hearts = int(spec["max_hearts"])
 	if spec.has("romance"):
 		e.min_romance = int(spec["romance"])
+	if spec.has("mood"):
+		e.mood = spec["mood"]
 	if spec.has("needs"):
 		e.requires_flag = spec["needs"]
 	if spec.has("without"):
@@ -826,8 +838,8 @@ func _build_entry(npc_id: StringName, spec: Dictionary) -> DialogueEntry:
 		e.choices.append(choice)
 	_check_unknown_keys(npc_id, spec, [
 		"id", "text", "season", "weather", "from", "to", "min_hearts",
-		"max_hearts", "romance", "needs", "without", "once", "hearts", "flags",
-		"next", "choices",
+		"max_hearts", "romance", "mood", "needs", "without", "once", "hearts",
+		"flags", "next", "choices",
 	])
 	return e
 

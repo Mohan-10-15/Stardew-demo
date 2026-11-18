@@ -36,6 +36,7 @@ id = &"night"
 text = "If you're sleepwalking toward my patch, wake up."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_vibbi"]
 script = ExtResource("1_ahk6f")
@@ -84,12 +85,14 @@ script = ExtResource("1_ahk6f")
 id = &"friend_2"
 text = "You water on time. That already puts you ahead of most."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_dygwo"]
 script = ExtResource("1_ahk6f")
 id = &"friend_4"
 text = "This valley has trouble coming — it does, every year. You look like the kind who faces it."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_40f1e"]
 script = ExtResource("2_1hhb7")
@@ -113,6 +116,7 @@ choices = Array[ExtResource("2_1hhb7")]([SubResource("Resource_40f1e"), SubResou
 script = ExtResource("1_ahk6f")
 id = &"story_2"
 text = "Seed line. Saved it twenty years running. It remembers what the ground did wrong."
+mood = &"happy"
 requires_flag = &"met_halda"
 once = true
 hearts = 1
@@ -123,12 +127,14 @@ script = ExtResource("1_ahk6f")
 id = &"dating"
 text = "I grow one thing remarkably well. Turns out I can't keep a single secret about you nearly as well."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_l30nh"]
 script = ExtResource("1_ahk6f")
 id = &"married"
 text = "Everyone's going to want a cutting from my garden now that you live here. Let them. We'll still have the best of it."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_0g0a4")

@@ -360,6 +360,21 @@ func _present(npc_id: StringName, entry: DialogueEntry, first: bool = false) -> 
 		EventBus.dialogue_started.emit(npc_id, entry.id)
 	else:
 		EventBus.dialogue_line_changed.emit(npc_id, entry.id)
+	_apply_mood(npc_id, entry)
+
+
+## Asks the cast to put the written mood on this villager's face. The dialogue
+## service never touches a face or knows what an anime look is; it only forwards
+## a content-owned word to the manager, which owns the villager.
+func _apply_mood(npc_id: StringName, entry: DialogueEntry) -> void:
+	if entry == null or String(entry.mood).is_empty():
+		return
+	var manager := _find_by_group(NPC_SERVICE_GROUP)
+	if manager == null:
+		return
+	var npc: Variant = manager.call("get_npc", npc_id)
+	if npc != null:
+		npc.call("set_expression", entry.mood, 2.5)
 
 
 func _finish() -> void:

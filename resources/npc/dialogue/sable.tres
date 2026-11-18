@@ -36,6 +36,7 @@ id = &"night"
 text = "Insomnia's just mending without thread."
 hour_from = 23
 hour_to = 5
+mood = &"sad"
 
 [sub_resource type="Resource" id="Resource_4vlp2"]
 script = ExtResource("1_t00dr")
@@ -78,12 +79,14 @@ script = ExtResource("1_t00dr")
 id = &"friend_2"
 text = "You don't rush me. That's rarer than you'd think."
 min_hearts = 2
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_k5hkm"]
 script = ExtResource("1_t00dr")
 id = &"friend_4"
 text = "You're the one who says thank you and means the wait was worth it."
 min_hearts = 4
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_4j7g5"]
 script = ExtResource("2_6upa5")
@@ -107,6 +110,7 @@ choices = Array[ExtResource("2_6upa5")]([SubResource("Resource_4j7g5"), SubResou
 script = ExtResource("1_t00dr")
 id = &"story_2"
 text = "A door out past the lake. It doesn't open. It never needed mending. I still think about it."
+mood = &"happy"
 requires_flag = &"met_sable"
 once = true
 hearts = 1
@@ -117,12 +121,14 @@ script = ExtResource("1_t00dr")
 id = &"dating"
 text = "There was a door I meant to mend for years. Now I want it mended before you come over. That's a new kind of deadline."
 min_romance = 1
+mood = &"happy"
 
 [sub_resource type="Resource" id="Resource_1qhio"]
 script = ExtResource("1_t00dr")
 id = &"married"
 text = "Everything in this house was broken when I got here. It isn't now. You have that effect on things."
 min_romance = 2
+mood = &"happy"
 
 [resource]
 script = ExtResource("3_hxghk")
