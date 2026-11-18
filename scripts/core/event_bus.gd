@@ -49,6 +49,14 @@ signal mine_cleared()
 signal mine_boss_spawned()
 signal mine_floor_changed(floor: int)
 
+# --- Festivals ---------------------------------------------------------------
+## A festival began or ended for the day. Attending and skipping are separate
+## outcomes so a player can be rewarded for showing up and told what they missed.
+signal festival_started(festival_id: StringName)
+signal festival_attended(festival_id: StringName, reward_gold: int)
+signal festival_skipped(festival_id: StringName)
+signal festival_ended(festival_id: StringName)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

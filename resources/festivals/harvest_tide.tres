@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_k3ihu"]
+
+[resource]
+script = ExtResource("1_k3ihu")
+id = &"harvest_tide"
+display_name = "Harvest Tide"
+season = 2
+day_of_month = 14
+description = "Lanterns on the fences, the whole square full of tables, and Odette still reading the water."
+reward_gold = 320
+reward_item = &"pumpkin"
+heart_reward = 2

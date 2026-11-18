@@ -24,7 +24,7 @@ reasoning.
 | M9 | Weather and seasons | |
 | M10 | Cutscene system | **COMPLETE** |
 | M11 | Buildings and farm upgrades | |
-| M12 | Festivals | |
+| M12 | Festivals | **COMPLETE** |
 | M13 | Story progression | **COMPLETE** |
 | M14 | Audio | **COMPLETE** |
 | M15 | UI and accessibility | |

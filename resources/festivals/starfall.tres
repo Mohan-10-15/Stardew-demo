@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_34i5d"]
+
+[resource]
+script = ExtResource("1_34i5d")
+id = &"starfall"
+display_name = "Starfall"
+season = 1
+day_of_month = 21
+description = "The orchard stays open past midnight and nobody pretends to be asleep."
+reward_gold = 280
+reward_item = &"melon"

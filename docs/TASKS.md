@@ -206,7 +206,7 @@ specification when it is picked up, not now.
 | TASK-016 | Combat and boss | M8. **Complete** — attacks, death, Warden |
 | TASK-017 | Weather | Group 23 / M9 |
 | TASK-018 | Seasons and visuals | Group 24 / M9 |
-| TASK-019 | Festivals | M12 |
+| TASK-019 | Festivals | M12. **Complete** — four dated events with schedule deferral |
 | TASK-020 | Story progression | M13. **Complete** — six chapters and an ending |
 | TASK-021 | Audio manager and music | Group 27 / M14. **Complete** — 52 synthesised sounds |
 | TASK-022 | Cutscene system | M10. **Complete** — data cutscenes with safe skip |

@@ -74,6 +74,9 @@ const MARRIAGE_HOME := &"farm_home"
 ## the tree - which is the same rule [member spawn_on_ready] has always had. The world
 ## sets it; the fixture in `tests/suites/test_npc.gd` deliberately leaves it off.
 @export var apply_schedules: bool = false
+## A festival defers every villager's authored day to the shared gathering
+## schedule. Set by FestivalService, never by a villager.
+var festival_active: bool = false
 
 ## Seconds a villager holds still after being spoken to before resuming their patrol.
 ## Long enough to read a line, short enough that nobody gets stuck behind a conversational
@@ -623,7 +626,12 @@ func _equip(npc: Npc) -> void:
 		return
 	npc.set_navigation(_navigation)
 	var key := npc.data.id
-	if npc.friendship != null and npc.friendship.is_married():
+	# A festival outranks even marriage: the whole cast gathers in the square.
+	if festival_active:
+		var festival_key := StringName("%s_festival" % npc.data.id)
+		if ScheduleRegistry.has_schedule(festival_key):
+			key = festival_key
+	if npc.friendship != null and npc.friendship.is_married() and not festival_active:
 		var spouse_key := StringName("%s_spouse" % npc.data.id)
 		if ScheduleRegistry.has_schedule(spouse_key):
 			key = spouse_key

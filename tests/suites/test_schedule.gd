@@ -70,6 +70,9 @@ func _run(case: StringName) -> Dictionary:
 					bad.append(String(schedule.npc_id))
 				elif String(schedule.npc_id).ends_with("_spouse") and not villager.romanceable:
 					bad.append("%s has a spouse day but cannot be married" % schedule.npc_id)
+				elif String(schedule.npc_id).ends_with("_festival") \
+						and ScheduleRegistry.schedule_for(StringName("%s_festival" % villager.id)) == null:
+					bad.append("%s has no gathering day" % villager.id)
 			return check_equals(case, bad, [] as Array[String])
 		&"every_romanceable_villager_has_a_spouse_day":
 			var bad: Array[String] = []
@@ -231,6 +234,8 @@ static func _villager_id(schedule_id: StringName) -> StringName:
 	var text := String(schedule_id)
 	if text.ends_with("_spouse"):
 		return StringName(text.substr(0, text.length() - "_spouse".length()))
+	if text.ends_with("_festival"):
+		return StringName(text.substr(0, text.length() - "_festival".length()))
 	return schedule_id
 
 

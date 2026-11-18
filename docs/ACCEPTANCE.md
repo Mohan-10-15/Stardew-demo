@@ -246,9 +246,16 @@ plays the intro in a real window and skips it with a real E key.
 
 ## M12 — Festivals
 
-- [ ] A festival happens in the physical 3D world, not a separate scene
-- [ ] Attending or skipping a festival has consequences
-- [ ] A schedule defers to a festival day instead of running normally
+- [x] A festival happens in the physical 3D world, not a separate scene
+- [x] Attending or skipping a festival has consequences
+- [x] A schedule defers to a festival day instead of running normally
+
+Four dated festivals are data. On the day, `FestivalService` lights lanterns in
+the real square and switches all twelve villagers to generated `<id>_festival`
+days; attendance inside the square pays gold, an item and friendship exactly
+once, while never turning up publishes `festival_skipped`. `test_festival.gd`
+covers content, deferral, attendance and skipping; `tools/playtest_festival.gd`
+reviews Bloom Day in a real window.
 
 ---
 

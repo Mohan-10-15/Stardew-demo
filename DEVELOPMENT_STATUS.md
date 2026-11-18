@@ -2989,3 +2989,21 @@ walking up to `project.godot`, starts the bundled portable Godot with
 `--path` and `--rendering-driver opengl3`, and shows a readable error if the
 engine is missing. Double-clicking `Hollowbrook.exe` runs the game; no terminal
 needed. The launcher is excluded from the Godot C# assembly in `Hollowbrook.csproj`.
+
+### M12 festivals
+
+Four dated festivals are authored under `resources/festivals/`, plus a generated
+`<id>_festival` gathering day for every one of the twelve villagers. On the day,
+`FestivalService` lights coloured lanterns in the real village square and flips
+`NpcManager.festival_active`, so authored days (and even spouse days) defer to
+the gathering. Entering the square pays gold, an item and a friendship point
+exactly once; never turning up publishes `festival_skipped` when the date moves
+on. A generated HUD names the event and whether it was attended.
+
+`tests/suites/test_festival.gd` — 4 cases — and `tools/playtest_festival.gd`
+pass in a real window. **Full pipeline: 579/579**, all stages green, zero script
+errors. Four content/harness bugs were found and fixed while building it:
+schedule-membership tests did not recognise the new `_festival` key, attendance
+events double-counted through stale test lambdas, decorations were left behind
+because `queue_free` is deferred, and a parentless test player logged a
+transform error on every case.

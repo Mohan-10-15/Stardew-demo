@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_fsvgr"]
+
+[resource]
+script = ExtResource("1_fsvgr")
+id = &"frost_lantern"
+display_name = "Frost Lantern"
+season = 3
+day_of_month = 12
+description = "Everyone brings one warm thing to the coldest night of the year."
+reward_gold = 260
+reward_item = &"wood"
