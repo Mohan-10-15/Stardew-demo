@@ -42,6 +42,7 @@ func _run() -> void:
 		return
 	bus.game_ready.connect(func() -> void: _ready = true)
 	_main = packed.instantiate()
+	_main.set("show_title_on_boot", false)
 	root.add_child(_main)
 	var deadline := Time.get_ticks_msec() + 30000
 	while not _ready and Time.get_ticks_msec() < deadline:
@@ -68,6 +69,9 @@ func _run() -> void:
 	# The road east of the farm, clear of the five house colliders.
 	await _look_from(player, Vector3(20, 0.2, 2), Vector3(38, 2.0, 8))
 	await _shot(WORLD_PREFIX + "02_village_wide.png")
+	# The pond from its southern shore, close enough to see the moving ripples.
+	await _look_from(player, Vector3(-14, 0.4, 66), Vector3(-14, -0.6, 44))
+	await _shot(WORLD_PREFIX + "03_pond.png")
 
 	# --- The character sheet ------------------------------------------------------
 	# Park the cast in a line. Their own AI is frozen for this photograph only;

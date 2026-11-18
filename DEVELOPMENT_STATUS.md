@@ -2950,3 +2950,17 @@ Two content bugs found while building it: the generator initially wrote empty
 `Array[StringName]` export through `set()`, and the service auto-fired the intro
 cutscene on creation, which both replayed it spuriously and leaked timers in
 tests. Both are fixed and covered.
+
+### World graphics pass (continued)
+
+The pond is no longer a flat blue plane: `resources/shaders/pond_water.gdshader`
+animates two crossed sine waves with a moving normal and a soft fresnel-ish
+highlight, generated from a resource so the look is content. Sun shadows now
+use a smaller bias plus a normal offset so they stay attached to feet and
+buildings instead of floating. The one material-library exception is the pond,
+which uses a ShaderMaterial; `test_world` exempts exactly that node.
+
+Two review bugs were fixed: the cutscene overlay's "E — skip" hint was visible
+over ordinary play (now shown only while a cutscene runs), and the first water
+tuning read like a swimming pool (tuned down). `tools/playtest_art.gd` now also
+photographs the pond; all stages green at 571/571.

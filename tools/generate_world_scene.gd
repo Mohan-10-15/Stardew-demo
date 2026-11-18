@@ -20,6 +20,10 @@ func _initialize() -> void:
 	sun.light_energy = 0.55
 	sun.light_color = Color(1.0, 0.82, 0.66)
 	sun.shadow_enabled = true
+	# A smaller bias with a normal offset keeps contact shadows attached to the
+	# feet of villagers and buildings instead of floating a metre behind them.
+	sun.shadow_bias = 0.015
+	sun.shadow_normal_bias = 0.5
 	root.add_child(sun)
 
 	# Sky and ambient. The day/night cycle lerps the sky colours and the ambient

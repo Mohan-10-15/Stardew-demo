@@ -82,6 +82,8 @@ func play(id: StringName) -> bool:
 	_context.capture(get_tree().get_root(), id)
 	_skipping = false
 	_running = true
+	if _overlay != null:
+		_overlay.visible = true
 	_lock_player(true)
 	var bus := _bus()
 	if bus != null:
@@ -171,6 +173,8 @@ func _finish(was_interrupted: bool) -> void:
 	_set_text("")
 	_set_fade(0.0)
 	_show_letterbox(false)
+	if _overlay != null:
+		_overlay.visible = false
 	if _context != null:
 		applied_flags = _context.flags.duplicate()
 		_context.restore(get_tree().get_root())
@@ -220,7 +224,9 @@ func _ensure_overlay() -> void:
 	_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	# Owned by the director, not the tree root, so freeing the director also
 	# frees its overlay — a test fixture that frees the rig must leave no leaked
-	# Canvas/RID behind.
+	# Canvas/RID behind. Hidden until playback actually starts: the skip hint
+	# must never sit over ordinary play.
+	_overlay.visible = false
 	add_child(_overlay)
 
 

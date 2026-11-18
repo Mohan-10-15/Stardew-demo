@@ -49,7 +49,8 @@ const TIERS := {
 		"directional_shadow_mode": DirectionalLight3D.SHADOW_ORTHOGONAL,
 		"directional_shadow_max_distance": 45.0,
 		"directional_shadow_blend_splits": false,
-		"shadow_bias": 0.06,
+		"shadow_bias": 0.03,
+		"shadow_normal_bias": 0.5,
 		"msaa": Viewport.MSAA_DISABLED,
 	},
 	Tier.MEDIUM: {
@@ -74,7 +75,8 @@ const TIERS := {
 		"directional_shadow_mode": DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS,
 		"directional_shadow_max_distance": 70.0,
 		"directional_shadow_blend_splits": true,
-		"shadow_bias": 0.04,
+		"shadow_bias": 0.02,
+		"shadow_normal_bias": 0.5,
 		"msaa": Viewport.MSAA_2X,
 	},
 	Tier.HIGH: {
@@ -103,7 +105,8 @@ const TIERS := {
 		"directional_shadow_mode": DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS,
 		"directional_shadow_max_distance": 90.0,
 		"directional_shadow_blend_splits": true,
-		"shadow_bias": 0.03,
+		"shadow_bias": 0.015,
+		"shadow_normal_bias": 0.5,
 		"msaa": Viewport.MSAA_4X,
 	},
 }

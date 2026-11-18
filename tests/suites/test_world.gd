@@ -694,6 +694,11 @@ func _t_world_uses_the_library() -> Dictionary:
 		checked += 1
 		var standard := material as StandardMaterial3D
 		if standard == null:
+			# The pond is the one primitive with a hand-written animated shader;
+			# it cannot carry the library's albedo texture. Every other primitive
+			# must still use the shared library material.
+			if mesh.name == "Pond" and material is ShaderMaterial:
+				continue
 			bare.append(mesh.name)
 		elif standard.albedo_texture != shared:
 			bare.append(mesh.name)

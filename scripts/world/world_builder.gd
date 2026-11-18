@@ -234,9 +234,16 @@ static func _build_water(root: Node3D) -> void:
 	plane.size = Vector2(POND_WATER_RADIUS * 2.0, POND_WATER_RADIUS * 2.0)
 	mesh.mesh = plane
 	mesh.position = Vector3(REGION_POND.x, WATER_LEVEL, REGION_POND.y)
-	var m := WorldMaterials.surface(&"water")
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mesh.material_override = m
+	# An animated two-wave shader rather than the old flat blue plane. The
+	# material is generated from a `.gdshader` resource, so the look is content
+	# (a file) and can be retuned without touching the builder.
+	var shader := load("res://resources/shaders/pond_water.gdshader") as Shader
+	if shader != null:
+		var material := ShaderMaterial.new()
+		material.shader = shader
+		mesh.material_override = material
+	else:
+		mesh.material_override = WorldMaterials.surface(&"water")
 	_finish(mesh, root)
 
 	# A shallow invisible slab below the basin floor so nothing can fall through
