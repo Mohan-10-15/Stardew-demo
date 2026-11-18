@@ -21,6 +21,8 @@ func get_cases() -> Array[StringName]:
 		&"every_villager_has_an_anime_face",
 		&"each_face_is_drawn_and_distinct",
 		&"characters_are_cel_shaded",
+		&"mood_textures_are_drawn_and_distinct",
+		&"the_face_reacts_and_blinks",
 	]
 
 
@@ -40,6 +42,10 @@ func _run_async(case: StringName) -> Dictionary:
 			return _t_faces_distinct()
 		&"characters_are_cel_shaded":
 			return await _t_toon()
+		&"mood_textures_are_drawn_and_distinct":
+			return _t_moods()
+		&"the_face_reacts_and_blinks":
+			return await _t_reactions()
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -120,6 +126,70 @@ func _t_toon() -> Dictionary:
 	if checked < 6:
 		return fail(c, "only %d character materials were checked" % checked)
 	return check_equals(c, bad, [] as Array[String])
+
+
+## Five moods, five drawn faces. A shared texture would mean a sad gift and a
+## happy one look identical, which is the exact failure AGENTS.md forbids for
+## every other interact-style action.
+func _t_moods() -> Dictionary:
+	var c := &"mood_textures_are_drawn_and_distinct"
+	var seen: Dictionary = {}
+	var bad: Array[String] = []
+	for mood: StringName in AnimeFace.MOODS:
+		var texture := AnimeFace.texture_for(&"mira", mood)
+		var image := texture.get_image()
+		var painted := 0
+		for y: int in range(0, image.get_height(), 4):
+			for x: int in range(0, image.get_width(), 4):
+				if image.get_pixel(x, y).a > 0.5:
+					painted += 1
+		if painted < 20:
+			bad.append("%s mood is blank" % mood)
+		var bytes := image.get_data()
+		for other: StringName in seen:
+			if seen[other] == bytes:
+				bad.append("%s and %s share a texture" % [mood, other])
+		seen[mood] = bytes
+	return check_equals(c, bad, [] as Array[String])
+
+
+## A gift reaction changes the drawn face and then wears off; a villager also
+## blinks on her own without any event at all.
+func _t_reactions() -> Dictionary:
+	var c := &"the_face_reacts_and_blinks"
+	var built := await _build_cast()
+	if built.is_empty():
+		return fail(c, "could not stand up the cast")
+	var npc: Npc = built["manager"].call("get_npc", &"mira")
+	if npc == null:
+		return fail(c, "no Mira in the cast")
+	npc.set_expression(&"happy", 0.4)
+	if _face_texture(npc) != AnimeFace.texture_for(&"mira", &"happy"):
+		return fail(c, "a happy expression did not reach the face plane")
+	for _i: int in range(5):
+		npc.call("_update_face", 0.1)
+	if _face_texture(npc) != AnimeFace.texture_for(&"mira", &"neutral"):
+		return fail(c, "the expression never returned to neutral")
+	var blinked := false
+	for _i: int in range(40):
+		npc.call("_update_face", 0.1)
+		if _face_texture(npc) == AnimeFace.texture_for(&"mira", &"blink"):
+			blinked = true
+			break
+	if not blinked:
+		return fail(c, "the villager never blinked")
+	return succeeded(c, "the face smiled, recovered and blinked on its own")
+
+
+func _face_texture(npc: Npc) -> Texture2D:
+	var holder := _find_named(npc, "AnimeFace")
+	if holder == null:
+		return null
+	var quad := holder.get_node_or_null(^"FacePlane") as MeshInstance3D
+	if quad == null:
+		return null
+	var mat := quad.material_override as StandardMaterial3D
+	return mat.albedo_texture if mat != null else null
 
 
 # --- Fixtures -----------------------------------------------------------------

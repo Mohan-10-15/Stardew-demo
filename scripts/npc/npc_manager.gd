@@ -348,6 +348,12 @@ func give_gift(npc: Npc, item_id: StringName, actor: Node) -> bool:
 	var delta := npc.award_gift(reaction, birthday)
 	if npc.friendship != null and npc.friendship.tier_name() != tier_before:
 		EventBus.npc_friendship_changed.emit(id, npc.friendship.hearts(), npc.friendship.tier_name())
+	# The face answers the gift the same way the event does: a liked present
+	# makes them smile, a disliked one falls, and a neutral one says nothing.
+	if reaction == NpcData.REACTION_LOVED or reaction == NpcData.REACTION_LIKED:
+		npc.set_expression(&"happy", 2.0)
+	elif reaction == NpcData.REACTION_DISLIKED:
+		npc.set_expression(&"sad", 2.0)
 	EventBus.npc_gifted.emit(id, item_id, reaction)
 	Log.info("Npc", "Gave %s to %s (%s, +%d)" % [
 		item_id, id, reaction, delta,
@@ -417,6 +423,7 @@ func court(npc: Npc, actor: Node) -> bool:
 		return false
 	npc.friendship.court()
 	_npc_turns_to(npc, actor)
+	npc.set_expression(&"happy", 3.0)
 	EventBus.romance_started.emit(id)
 	Log.info("Npc", "%s agreed to court the player" % id)
 	return true
@@ -447,6 +454,7 @@ func propose(npc: Npc, actor: Node) -> bool:
 	npc.friendship.propose()
 	_npc_turns_to(npc, actor)
 	_apply_marriage_state(npc)
+	npc.set_expression(&"happy", 4.0)
 	EventBus.npc_married.emit(id)
 	Log.info("Npc", "%s married the player and moved to the farm" % id)
 	return true

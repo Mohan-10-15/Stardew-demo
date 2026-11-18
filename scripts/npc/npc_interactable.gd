@@ -281,6 +281,7 @@ func interact(actor: Node) -> bool:
 	var downgrade := StringName(decision.get("downgrade_reason", &""))
 	if downgrade in FULL_REASONS:
 		EventBus.npc_gift_failed.emit(npc_id, StringName(decision.get("item_id", &"")), downgrade)
+		_npc.set_expression(&"angry", 1.5)
 
 	var ok := bool(manager.call("talk", _npc, actor))
 	if ok:

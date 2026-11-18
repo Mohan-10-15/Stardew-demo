@@ -80,6 +80,13 @@ var _model: Node3D = null
 ## same walk, and a paused conversation can hold a villager still.
 var _skeleton: Skeleton3D = null
 var _anim_time: float = 0.0
+## The face plane and its mood clock. Blinking and expressions swap the drawn
+## texture, never the mesh, so nothing about the rig or the gear is disturbed.
+var _face_quad: MeshInstance3D = null
+var _face_mood: StringName = AnimeFace.MOOD_NEUTRAL
+var _expression_left: float = 0.0
+var _blink_in: float = 3.0
+var _blink_left: float = 0.0
 
 ## The attachment-stripping notice is per-archetype, not per-villager, and saying it six
 ## times is how a real warning gets read past.
@@ -225,7 +232,7 @@ static func _pose_idle_arms(model: Node3D) -> void:
 ## local -Z, and the character's visual forward is -Z. The quad therefore faces
 ## -Z, is parented to the head bone, and is deliberately a touch smaller than the
 ## painted face so the hair and helmet still frame it.
-static func _attach_anime_face(model: Node3D, npc_id: StringName = &"") -> void:
+func _attach_anime_face(model: Node3D, npc_id: StringName = &"") -> void:
 	var skeleton := _find_skeleton(model)
 	if skeleton == null:
 		return
@@ -244,12 +251,13 @@ static func _attach_anime_face(model: Node3D, npc_id: StringName = &"") -> void:
 	quad.position = Vector3(0.0, 0.01, -0.54)
 	quad.rotation.y = PI
 	var mat := StandardMaterial3D.new()
-	mat.albedo_texture = AnimeFace.texture_for(npc_id)
+	mat.albedo_texture = AnimeFace.texture_for(npc_id, AnimeFace.MOOD_NEUTRAL)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.render_priority = 2
 	quad.material_override = mat
 	holder.add_child(quad)
+	_face_quad = quad
 
 
 static func _find_skeleton(node: Node) -> Skeleton3D:
@@ -298,6 +306,54 @@ func _animate(delta: float) -> void:
 	if right >= 0:
 		_skeleton.set_bone_pose_rotation(right, droop * Quaternion(
 			Vector3.FORWARD, -sin(phase) * deg_to_rad(18.0) * amp))
+	_update_face(delta)
+
+
+## Sets a temporary expression. The face returns to neutral on its own after
+## [param seconds], so a gift reaction does not freeze a villager in a grin for
+## the rest of the day. Distinct reactions publish distinct moods, which is the
+## same bargain the EventBus makes for the words and sounds.
+func set_expression(mood: StringName, seconds: float = 2.0) -> void:
+	_face_mood = mood if AnimeFace.MOODS.has(mood) else AnimeFace.MOOD_NEUTRAL
+	_expression_left = maxf(seconds, 0.0)
+	_apply_face_texture()
+
+
+func _update_face(delta: float) -> void:
+	if _face_quad == null or data == null:
+		return
+	var mood := _face_mood
+	if _expression_left > 0.0:
+		_expression_left -= delta
+		if _expression_left <= 0.0:
+			_face_mood = AnimeFace.MOOD_NEUTRAL
+			mood = AnimeFace.MOOD_NEUTRAL
+	# A short blink every few seconds, with a deterministic per-villager offset
+	# so six people standing together do not blink in unison.
+	if _blink_left > 0.0:
+		_blink_left -= delta
+		mood = AnimeFace.MOOD_BLINK
+	else:
+		_blink_in -= delta
+		if _blink_in <= 0.0:
+			_blink_left = 0.12
+			_blink_in = 3.0 + float(abs(hash(String(data.id))) % 40) * 0.1
+			mood = AnimeFace.MOOD_BLINK
+	var mat := _face_quad.material_override as StandardMaterial3D
+	if mat == null:
+		return
+	var wanted := AnimeFace.texture_for(data.id, mood)
+	if mat.albedo_texture != wanted:
+		mat.albedo_texture = wanted
+		_face_mood = mood
+
+
+func _apply_face_texture() -> void:
+	if _face_quad == null or data == null:
+		return
+	var mat := _face_quad.material_override as StandardMaterial3D
+	if mat != null:
+		mat.albedo_texture = AnimeFace.texture_for(data.id, _face_mood)
 
 
 ## The animation clock, exposed so a test can prove the cycle advances without

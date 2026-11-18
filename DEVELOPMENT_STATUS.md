@@ -2795,3 +2795,19 @@ materials (excluding the deliberately unshaded face plane) are toon-shaded.
 `tools/playtest_art.gd` and `tools/playtest_friendship.gd` both pass in a real
 window; reviewed portraits show the anime faces with the gear and idle pose
 intact.
+
+### Expressive anime faces (art workstream, continued)
+
+The anime faces now blink and react. `AnimeFace` draws five moods per villager
+(neutral, happy, sad, angry, blink) with lashes, two-tone irises, catchlights,
+blush and mood-shaped mouths; `Npc` swaps the face texture on a timer and on
+`set_expression()`. Gifting routes the reaction through the same rule the
+EventBus publishes: a liked present makes the villager smile, a disliked one
+falls, a refused present angers her, and a courtship or proposal makes her smile.
+A deterministic per-villager blink offset keeps six people from blinking in
+unison. All of it swaps textures only — the rig, gear and walk are untouched.
+
+`tests/suites/test_anime.gd` grew to 5 cases (mood textures drawn and distinct,
+face reacts and blinks). **Full pipeline: 549/549**, all stages green, zero
+script errors. `tools/playtest_art.gd` and `tools/playtest_friendship.gd` pass in
+a real window; portraits show the richer eyes and brows.
