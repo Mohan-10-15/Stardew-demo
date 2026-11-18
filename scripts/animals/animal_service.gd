@@ -7,6 +7,9 @@ const SERVICE_GROUP := &"animal_service"
 const DIR := "res://resources/animals/"
 
 var _states: Dictionary = {}
+## Animals available on the farm. The hen comes with the farm; the goat must be
+## bought from the general store and is unlocked by its purchase event.
+var purchased: Dictionary = {"hen": true}
 
 
 static func find(start: Node) -> AnimalService:
@@ -26,6 +29,7 @@ func _ready() -> void:
 	var bus := _bus()
 	if bus != null:
 		bus.day_started.connect(_on_day_started)
+		bus.item_purchased.connect(_on_item_purchased)
 	_load_animals()
 
 
@@ -33,6 +37,8 @@ func _exit_tree() -> void:
 	var bus := _bus()
 	if bus != null and bus.day_started.is_connected(_on_day_started):
 		bus.day_started.disconnect(_on_day_started)
+	if bus != null and bus.item_purchased.is_connected(_on_item_purchased):
+		bus.item_purchased.disconnect(_on_item_purchased)
 
 
 func _load_animals() -> void:
@@ -64,6 +70,9 @@ func feed(animal_id: StringName) -> bool:
 	if not _states.has(animal_id):
 		_fail_feed(animal_id, &"no_animal")
 		return false
+	if not owns(animal_id):
+		_fail_feed(animal_id, &"not_owned")
+		return false
 	var state: Dictionary = _states[animal_id]
 	if bool(state["fed_today"]):
 		_fail_feed(animal_id, &"already_fed_today")
@@ -88,6 +97,9 @@ func feed(animal_id: StringName) -> bool:
 func collect(animal_id: StringName) -> bool:
 	if not _states.has(animal_id):
 		_fail_collect(animal_id, &"no_animal")
+		return false
+	if not owns(animal_id):
+		_fail_collect(animal_id, &"not_owned")
 		return false
 	var state: Dictionary = _states[animal_id]
 	var stored := int(state["stored"])
@@ -133,22 +145,45 @@ func to_dict() -> Dictionary:
 			"fed_today": state["fed_today"], "days_left": state["days_left"],
 			"stored": state["stored"],
 		}
-	return out
+	return {"animals": out, "purchased": purchased.duplicate()}
 
 
 func from_dict(data: Dictionary) -> void:
+	var saved_purchased: Variant = data.get("purchased", {})
+	if saved_purchased is Dictionary:
+		for key: Variant in (saved_purchased as Dictionary):
+			if bool((saved_purchased as Dictionary)[key]):
+				purchased[StringName(String(key))] = true
 	if _states.is_empty():
 		_load_animals()
-	for key: Variant in data:
+	var sections: Dictionary = data.get("animals", data)
+	if not sections is Dictionary:
+		return
+	for key: Variant in (sections as Dictionary):
 		var id := StringName(str(key))
-		if not _states.has(id) or not (data[key] is Dictionary):
+		var value: Variant = (sections as Dictionary)[key]
+		if not _states.has(id) or not (value is Dictionary):
 			continue
 		var state: Dictionary = _states[id]
-		var saved: Dictionary = data[key]
+		var saved: Dictionary = value
 		state["fed_today"] = bool(saved.get("fed_today", false))
 		state["days_left"] = maxi(int(saved.get("days_left", 1)), 1)
 		state["stored"] = maxi(int(saved.get("stored", 0)), 0)
 		_states[id] = state
+
+
+func _on_item_purchased(item_id: StringName, _amount: int, total: int) -> void:
+	if not String(item_id).begins_with("animal_"):
+		return
+	var id := StringName(String(item_id).substr(7))
+	purchased[id] = true
+	var bus := _bus()
+	if bus != null:
+		bus.animal_purchased.emit(id, total)
+
+
+func owns(id: StringName) -> bool:
+	return bool(purchased.get(id, false))
 
 
 func _bag() -> Object:

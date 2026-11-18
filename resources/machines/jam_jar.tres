@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MachineData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/machines/machine_data.gd" id="1_18p6b"]
+
+[resource]
+script = ExtResource("1_18p6b")
+id = &"jam_jar"
+display_name = "Berry Press"
+input_id = &"wild_berry"
+output_id = &"fish_trout"
+price = 180
+tint = Color(0.78, 0.36, 0.58, 1)

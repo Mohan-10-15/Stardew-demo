@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CookingRecipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/cooking/cooking_recipe.gd" id="1_16tem"]
+
+[resource]
+script = ExtResource("1_16tem")
+id = &"milk_tea"
+display_name = "Milk Tea"
+ingredients = {
+&"milk": 1,
+&"wild_berry": 1
+}
+output_id = &"milk"

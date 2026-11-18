@@ -3013,3 +3013,9 @@ transform error on every case.
 Six fish are authored with season/weather/hour gates and real item drops. The fishing service runs cast, wait, bite and land or escape — four distinct EventBus outcomes with four distinct generated sounds. Six recipes are data, crafted from a generated C-key panel with number keys; missing ingredients and unknown recipes refuse with separate reasons. Two animals live in a CC0 coop: feed them, advance a day, collect eggs or milk, with distinct feed/collect/refusal events. All three systems persist in the aggregate save where they hold state.
 
 `tests/suites/test_fishing.gd` (4), `test_crafting.gd` (4) and `test_animals.gd` (4) pass; real-window `playtest_fishing.gd` and `playtest_homestead.gd` both PASS. **Full pipeline: 591/591**, all stages green. M7 stays partially open: buying/placing animals, placeable machines and cooking stations are not implemented, so those acceptance rows remain unticked.
+
+### M7 complete
+
+The last four acceptance rows are now implemented. Three machines are bought from a generated B-key panel, placed on six fixed farm pads (so nothing can be dropped inside a wall), loaded from the bag, advanced by real day rollovers, and collected at the machine itself. Four dishes are cooked at a physical farmhouse stove; the hen comes with the farm and the goat is bought from the general store and unlocked by its purchase event. All outcomes publish separate EventBus events with separate generated sounds; the audio registry's distinctness test polices the 69-sound map.
+
+New `test_machines.gd` (4) and `test_cooking.gd` (3) join the fishing/crafting/animal suites; `tools/playtest_machines.gd` places a furnace, waits two days, collects iron, cooks a dish and buys a goat in a real window. **Full pipeline: 598/598**, all stages green, zero script errors. One content bug was found and fixed: the stove was first authored inside the farmhouse collider and had no reachable approach.

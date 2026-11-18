@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MachineData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/machines/machine_data.gd" id="1_mqmam"]
+
+[resource]
+script = ExtResource("1_mqmam")
+id = &"furnace"
+display_name = "Ore Furnace"
+input_id = &"copper_ore"
+output_id = &"iron_ore"
+process_days = 2
+price = 350
+tint = Color(0.72, 0.36, 0.26, 1)

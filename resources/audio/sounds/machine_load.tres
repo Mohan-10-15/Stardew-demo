@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_wyjd3"]
+
+[resource]
+script = ExtResource("1_wyjd3")
+id = &"machine_load"
+wave = 1
+frequency = 340.0
+duration = 0.18
+decay = 7.0
+level = 0.22
+frequency_end = 460.0

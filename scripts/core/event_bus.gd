@@ -74,6 +74,19 @@ signal animal_fed(animal_id: StringName, item_id: StringName)
 signal animal_feed_failed(animal_id: StringName, reason: StringName)
 signal animal_product_collected(animal_id: StringName, item_id: StringName, amount: int)
 signal animal_collect_failed(animal_id: StringName, reason: StringName)
+signal animal_purchased(animal_id: StringName, cost: int)
+signal animal_purchase_failed(animal_id: StringName, reason: StringName)
+
+# --- Machines ----------------------------------------------------------------
+signal machine_placed(machine_id: StringName, slot: int)
+signal machine_loaded(machine_id: StringName, slot: int, item_id: StringName)
+signal machine_load_failed(machine_id: StringName, slot: int, reason: StringName)
+signal machine_collected(machine_id: StringName, slot: int, item_id: StringName, amount: int)
+signal machine_collect_failed(machine_id: StringName, slot: int, reason: StringName)
+
+# --- Cooking -----------------------------------------------------------------
+signal dish_cooked(recipe_id: StringName, output_id: StringName)
+signal cook_failed(recipe_id: StringName, reason: StringName)
 
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)

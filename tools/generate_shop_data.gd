@@ -38,7 +38,7 @@ const SHOPS: Array[Dictionary] = [
 		# Every seed packet and every tool, cheapest first so the shelf reads like a
 		# shop rather than a database dump. Both selectors, because the gathering
 		# tools are the upgrades the rest of the game's balance is measured against.
-		"select": [&"all_seeds", &"all_buyable_tools"],
+		"select": [&"all_seeds", &"all_buyable_tools", &"all_animals"],
 		"sort": &"buy_price",
 		"buys_from_player": true,
 	},
@@ -128,6 +128,10 @@ func _matches_one(item: ItemDefinition, select: StringName) -> bool:
 			# A seed is defined by the crop it plants, not by its category, so a
 			# packet whose category was mislabelled still reaches the shelf.
 			return not item.seed_id.is_empty() and item.buy_price > 0
+		&"all_animals":
+			# Animals are bought as item ids with a price, then unlocked by the
+			# AnimalService when the purchase event arrives.
+			return String(item.id).begins_with("animal_") and item.buy_price > 0
 		&"all_buyable_tools":
 			# Anything with a `tool_action` and a price. Not a hard-coded id list, and
 			# not the category: a scythe has no action yet (it is bought for a later

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_56l7u"]
+
+[resource]
+script = ExtResource("1_56l7u")
+id = &"machine_done"
+wave = 5
+frequency = 520.0
+duration = 0.28
+decay = 6.0
+level = 0.26
+frequency_end = 780.0

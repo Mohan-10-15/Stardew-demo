@@ -53,6 +53,14 @@ const SOUND_FOR_SIGNAL: Dictionary = {
 	&"animal_fed": &"animal_feed",
 	&"animal_product_collected": &"animal_product",
 	&"animal_feed_failed": &"animal_refused",
+	&"animal_purchased": &"animal_bought",
+	&"machine_placed": &"machine_placed",
+	&"machine_loaded": &"machine_load",
+	&"machine_load_failed": &"machine_refused",
+	&"machine_collected": &"machine_done",
+	&"machine_collect_failed": &"machine_empty",
+	&"dish_cooked": &"cook_done",
+	&"cook_failed": &"cook_refused",
 }
 
 const POOL_SIZE := 12

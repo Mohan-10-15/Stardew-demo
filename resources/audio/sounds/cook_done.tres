@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_fjiho"]
+
+[resource]
+script = ExtResource("1_fjiho")
+id = &"cook_done"
+wave = 5
+frequency = 600.0
+duration = 0.34
+decay = 5.0
+level = 0.26
+frequency_end = 900.0

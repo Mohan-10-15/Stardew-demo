@@ -14,6 +14,8 @@ const ANIMALS: Array[Dictionary] = [
 const ITEMS: Array[Dictionary] = [
 	{"id": &"egg", "name": "Egg", "price": 55},
 	{"id": &"milk", "name": "Milk", "price": 90},
+	{"id": &"animal_hen", "name": "A Hen", "price": 400},
+	{"id": &"animal_goat", "name": "A Goat", "price": 700},
 ]
 
 func _initialize() -> void:
@@ -43,8 +45,10 @@ func _initialize() -> void:
 		var item: Object = item_script.new()
 		item.set("id", spec["id"])
 		item.set("display_name", spec["name"])
-		item.set("category", 3)
-		item.set("sell_price", int(spec["price"]))
+		var animal_item := String(spec["id"]).begins_with("animal_")
+		item.set("category", 4 if animal_item else 3)  # MATERIAL vs FOOD
+		item.set("sell_price", 0 if animal_item else int(spec["price"]))
+		item.set("buy_price", int(spec["price"]) if animal_item else 0)
 		item.set("icon_color", Color(0.95, 0.90, 0.78))
 		if ResourceSaver.save(item, "%s%s.tres" % [ITEM_DIR, spec["id"]]) != OK:
 			errors += 1

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MachineData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/machines/machine_data.gd" id="1_1p7q4"]
+
+[resource]
+script = ExtResource("1_1p7q4")
+id = &"smoker"
+display_name = "Fish Smoker"
+input_id = &"fish_smilte"
+output_id = &"fish_trout"
+output_amount = 2
+price = 260
+tint = Color(0.48, 0.4, 0.3, 1)

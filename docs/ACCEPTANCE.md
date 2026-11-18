@@ -188,15 +188,20 @@ M5 remains open on population: it wants twelve villagers, not six.
 ## M7 — Fishing, animals, machines, cooking
 
 - [x] Fishing works: cast, wait for a bite, hook, land a fish
-- [ ] An animal works: buy, place, feed, and collect its product
-- [ ] A machine works: place, load input, wait, collect output
-- [ ] Cooking works: combine ingredients at a station, get a dish
-- [ ] Every one of the above has distinct success and failure feedback
+- [x] An animal works: buy, place, feed, and collect its product
+- [x] A machine works: place, load input, wait, collect output
+- [x] Cooking works: combine ingredients at a station, get a dish
+- [x] Every one of the above has distinct success and failure feedback
 
-Partial: six season/weather/hour-gated fish can be cast, hooked and landed, and
-the coop can be fed and collected on a daily cycle with distinct events.
-Buying/placing animals, placeable machines and cooking stations are still open —
-a crafting panel exists but is not a placed station, so those rows stay unticked.
+Six season/weather/hour-gated fish are cast and landed at the pond. Two animals
+live in the CC0 coop: the hen comes with the farm, the goat is bought from the
+general store, both are fed and collected on a daily cycle. Three machines are
+bought from the B-key build panel, placed on farm pads, loaded from the bag,
+advanced by days and collected at the machine. Four dishes are cooked at the
+farmhouse stove. Every outcome publishes its own EventBus event with its own
+generated sound. `test_fishing.gd`, `test_animals.gd`, `test_machines.gd`,
+`test_cooking.gd` and `test_crafting.gd` cover the loops; three real-window
+playtests review them.
 
 ---
 

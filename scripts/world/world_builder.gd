@@ -76,6 +76,7 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_add_mine_entrance(root)
 	_add_fishing_spot(root)
 	_add_coop(root)
+	_add_stove(root)
 
 
 ## Height of the terrain at a world XZ position.
@@ -691,6 +692,28 @@ static func _add_coop(root: Node3D) -> void:
 	var component := Node.new()
 	component.name = "Interactable"
 	component.set_script(load("res://scripts/animals/coop_interactable.gd"))
+	body.add_child(component)
+	_finish(body, root)
+
+
+static func _add_stove(root: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "KitchenStove"
+	body.collision_layer = PhysicsLayers.INTERACTABLE
+	body.collision_mask = 0
+	# Just outside the farmhouse's south wall: the house collider fills the
+	# space around (22, 10), which would make a stove there impossible to reach.
+	body.position = Vector3(22, 0, 15)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.6, 1.2, 1.2)
+	shape.shape = box
+	shape.position = Vector3(0, 0.6, 0)
+	body.add_child(shape)
+	var component := Node.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/cooking/stove_interactable.gd"))
 	body.add_child(component)
 	_finish(body, root)
 

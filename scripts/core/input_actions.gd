@@ -44,6 +44,7 @@ const LOAD_GAME := &"load_game"
 ## feels like an action rather than a menu.
 const ATTACK := &"attack"
 const CRAFT := &"craft"
+const BUILD := &"build"
 
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"
