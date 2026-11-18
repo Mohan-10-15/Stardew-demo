@@ -2854,3 +2854,16 @@ in full.
 
 `tests/suites/test_anime.gd` — 6 cases. **Full pipeline: 550/550**, all stages
 green, both real-window playtests pass.
+
+### Quest markers over villagers
+
+A floating yellow `!` (work on offer) or `?` (job ready to hand in) now appears
+above the villagers who have one, closing a long-standing quest known-gap.
+`scripts/ui/quest_marker.gd` is a pure listener on the quest signals and reads
+`next_offer_from` / `ready_to_turn_in_from`, so the marker owns no quest state.
+Because `main.gd` spawns the cast before the quest service, a new
+`EventBus.quest_service_ready` signal gives the markers their first paint.
+`tests/suites/test_markers.gd` — 2 cases: every villager has a marker above their
+head, and Mira's cycles offer → hidden → hand-in → hidden with two distinct
+glyphs. **Full pipeline: 552/552**, all stages green; the reviewed lineup shows
+five yellow marks over the five villagers with jobs.

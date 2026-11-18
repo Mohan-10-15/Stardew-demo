@@ -166,6 +166,16 @@ func spawn_npc(data: NpcData) -> Npc:
 	if not _order.has(data.id):
 		_order.append(data.id)
 	_add_interaction(npc)
+	# A work marker above the head, driven entirely by the quest service's own
+	# queries. It is a pure listener, so removing the quest service removes the
+	# marker's answers without this manager knowing quests exist.
+	var marker := Sprite3D.new()
+	marker.name = "QuestMarker"
+	marker.set_script(load("res://scripts/ui/quest_marker.gd"))
+	marker.position = Vector3(0.0, npc.body_height() + 0.8, 0.0)
+	marker.pixel_size = 0.02
+	npc.add_child(marker)
+	marker.call("bind", data.id)
 	# Equipped here as well as from [method _start_schedules], so a villager spawned
 	# after the grid was built gets it and one spawned before does not miss it - the
 	# order the two happen in is the caller's business, not the cast's.

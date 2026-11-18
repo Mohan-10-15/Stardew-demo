@@ -61,6 +61,7 @@ func _ready() -> void:
 	EventBus.item_purchased.connect(_on_item_purchased)
 	EventBus.npc_talked.connect(_on_npc_talked)
 	EventBus.day_started.connect(_on_day_started)
+	EventBus.quest_service_ready.emit()
 	Log.info("Quest", "Quest service ready")
 
 

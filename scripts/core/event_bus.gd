@@ -224,6 +224,12 @@ signal npc_married(npc_id: StringName)
 signal npc_propose_failed(npc_id: StringName, reason: StringName)
 
 # --- Quests ----------------------------------------------------------------
+## The quest service just registered itself. Listeners that only ask the service
+## questions — a marker over a villager's head, for instance — need one event to
+## paint their initial state, because booting them before the service exists is
+## the normal order in `main.gd`.
+signal quest_service_ready()
+
 ## The player took a job on. Carries the quest and the villager who offered it, so a
 ## journal can say who to go back to without loading the definition itself.
 signal quest_accepted(quest_id: StringName, giver_id: StringName)
