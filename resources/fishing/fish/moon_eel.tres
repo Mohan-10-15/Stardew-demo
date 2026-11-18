@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_flsax"]
+
+[resource]
+script = ExtResource("1_flsax")
+id = &"moon_eel"
+display_name = "Moon Eel"
+item_id = &"fish_eel"
+seasons = Array[int]([0, 1, 2, 3])
+weathers = Array[int]([0, 1, 2, 3, 4])
+hour_from = 20
+hour_to = 2
+wait_min = 2.4
+wait_max = 4.8

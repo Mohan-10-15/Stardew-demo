@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_pr15g"]
+
+[resource]
+script = ExtResource("1_pr15g")
+id = &"ice_pike"
+display_name = "Ice Pike"
+item_id = &"fish_pike"
+seasons = Array[int]([3])
+weathers = Array[int]([4])
+hour_from = 6
+hour_to = 18
+wait_min = 2.6
+wait_max = 5.0

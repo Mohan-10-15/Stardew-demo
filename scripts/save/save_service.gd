@@ -28,6 +28,8 @@ var cutscene_director: Node = null
 var story_service: Node = null
 var combat_service: Node = null
 var festival_service: Node = null
+var fishing_service: Node = null
+var animal_service: Node = null
 ## The player body, saved separately from `player_state` (which owns the bag,
 ## purse and stamina but deliberately not a world coordinate).
 var player: Node3D = null
@@ -90,6 +92,10 @@ func to_dict() -> Dictionary:
 	if player != null:
 		var p := player.global_position
 		data["player_position"] = {"x": p.x, "y": p.y, "z": p.z}
+	if animal_service != null and animal_service.has_method("to_dict"):
+		data["animals"] = animal_service.call("to_dict")
+	if fishing_service != null and fishing_service.has_method("to_dict"):
+		data["fishing"] = fishing_service.call("to_dict")
 	if festival_service != null and festival_service.has_method("to_dict"):
 		data["festival"] = festival_service.call("to_dict")
 	if combat_service != null and combat_service.has_method("to_dict"):
@@ -125,6 +131,12 @@ func from_dict(data: Dictionary) -> void:
 	if npc_manager != null and npc_manager.has_method("from_dict") \
 			and payload.get("npcs") is Dictionary:
 		npc_manager.call("from_dict", _stringify_keys(payload["npcs"]))
+	if animal_service != null and animal_service.has_method("from_dict") \
+			and payload.get("animals") is Dictionary:
+		animal_service.call("from_dict", payload["animals"])
+	if fishing_service != null and fishing_service.has_method("from_dict") \
+			and payload.get("fishing") is Dictionary:
+		fishing_service.call("from_dict", payload["fishing"])
 	if festival_service != null and festival_service.has_method("from_dict") \
 			and payload.get("festival") is Dictionary:
 		festival_service.call("from_dict", payload["festival"])

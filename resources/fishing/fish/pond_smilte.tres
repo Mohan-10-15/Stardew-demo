@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_5grwl"]
+
+[resource]
+script = ExtResource("1_5grwl")
+id = &"pond_smilte"
+display_name = "Pond Smilte"
+item_id = &"fish_smilte"
+seasons = Array[int]([0, 1, 2])
+weathers = Array[int]([0, 1, 2])
+hour_from = 6
+hour_to = 20
+wait_min = 1.4
+wait_max = 3.0

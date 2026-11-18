@@ -187,11 +187,16 @@ M5 remains open on population: it wants twelve villagers, not six.
 
 ## M7 — Fishing, animals, machines, cooking
 
-- [ ] Fishing works: cast, wait for a bite, hook, land a fish
+- [x] Fishing works: cast, wait for a bite, hook, land a fish
 - [ ] An animal works: buy, place, feed, and collect its product
 - [ ] A machine works: place, load input, wait, collect output
 - [ ] Cooking works: combine ingredients at a station, get a dish
 - [ ] Every one of the above has distinct success and failure feedback
+
+Partial: six season/weather/hour-gated fish can be cast, hooked and landed, and
+the coop can be fed and collected on a daily cycle with distinct events.
+Buying/placing animals, placeable machines and cooking stations are still open —
+a crafting panel exists but is not a placed station, so those rows stay unticked.
 
 ---
 

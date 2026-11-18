@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_xxjmu"]
+
+[resource]
+script = ExtResource("1_xxjmu")
+id = &"fish_escaped"
+wave = 2
+frequency = 240.0
+duration = 0.24
+decay = 6.0
+level = 0.24
+frequency_end = 130.0

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_wiwga"]
+
+[resource]
+script = ExtResource("1_wiwga")
+id = &"fish_caught"
+wave = 5
+frequency = 660.0
+duration = 0.42
+level = 0.3
+frequency_end = 1320.0

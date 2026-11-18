@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_lv02c"]
+
+[resource]
+script = ExtResource("1_lv02c")
+id = &"animal_feed"
+wave = 1
+frequency = 420.0
+duration = 0.16
+decay = 7.0
+level = 0.2
+frequency_end = 560.0

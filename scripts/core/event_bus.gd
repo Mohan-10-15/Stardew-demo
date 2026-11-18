@@ -57,6 +57,24 @@ signal festival_attended(festival_id: StringName, reward_gold: int)
 signal festival_skipped(festival_id: StringName)
 signal festival_ended(festival_id: StringName)
 
+# --- Fishing ----------------------------------------------------------------
+## A cast, a bite, a landed fish and an escaped one are four separate outcomes;
+## success and failure must never look or sound the same.
+signal fishing_cast()
+signal fish_bite(fish_id: StringName)
+signal fish_caught(fish_id: StringName, item_id: StringName)
+signal fish_escaped(fish_id: StringName, reason: StringName)
+
+# --- Crafting ---------------------------------------------------------------
+signal craft_succeeded(recipe_id: StringName, output_id: StringName, count: int)
+signal craft_failed(recipe_id: StringName, reason: StringName)
+
+# --- Animals ----------------------------------------------------------------
+signal animal_fed(animal_id: StringName, item_id: StringName)
+signal animal_feed_failed(animal_id: StringName, reason: StringName)
+signal animal_product_collected(animal_id: StringName, item_id: StringName, amount: int)
+signal animal_collect_failed(animal_id: StringName, reason: StringName)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

@@ -44,6 +44,15 @@ const SOUND_FOR_SIGNAL: Dictionary = {
 	&"stamina_exhausted": &"stamina_empty",
 	&"hotbar_selection_changed": &"ui_move",
 	&"shop_opened": &"ui_open",
+	&"fishing_cast": &"fish_cast",
+	&"fish_bite": &"fish_bite",
+	&"fish_caught": &"fish_caught",
+	&"fish_escaped": &"fish_escaped",
+	&"craft_succeeded": &"craft_ok",
+	&"craft_failed": &"craft_fail",
+	&"animal_fed": &"animal_feed",
+	&"animal_product_collected": &"animal_product",
+	&"animal_feed_failed": &"animal_refused",
 }
 
 const POOL_SIZE := 12

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_1a0in"]
+
+[resource]
+script = ExtResource("1_1a0in")
+id = &"fish_trout"
+display_name = "Brook Trout"
+category = 3
+sell_price = 85
+icon_color = Color(0.35, 0.72, 0.85, 1)

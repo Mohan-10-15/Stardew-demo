@@ -19,7 +19,7 @@ reasoning.
 | M4 | Inventory, tools, economy | **COMPLETE** |
 | M5 | NPCs, dialogue | **COMPLETE** — twelve villagers |
 | M6 | Quests, relationships | **COMPLETE** |
-| M7 | Fishing, animals, crafting, cooking | |
+| M7 | Fishing, animals, crafting, cooking | fishing + coop + crafting panel; machines/cooking open |
 | M8 | Mines and combat | **COMPLETE** |
 | M9 | Weather and seasons | |
 | M10 | Cutscene system | **COMPLETE** |

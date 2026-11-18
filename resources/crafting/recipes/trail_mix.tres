@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Recipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/crafting/recipe.gd" id="1_67hrd"]
+
+[resource]
+script = ExtResource("1_67hrd")
+id = &"trail_mix"
+display_name = "Trail Mix"
+ingredients = {
+&"wild_berry": 2,
+&"wood": 1
+}
+output_id = &"wild_horseradish"

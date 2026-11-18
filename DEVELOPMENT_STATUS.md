@@ -3007,3 +3007,9 @@ schedule-membership tests did not recognise the new `_festival` key, attendance
 events double-counted through stale test lambdas, decorations were left behind
 because `queue_free` is deferred, and a parentless test player logged a
 transform error on every case.
+
+### M7 partial: fishing, coop and crafting
+
+Six fish are authored with season/weather/hour gates and real item drops. The fishing service runs cast, wait, bite and land or escape — four distinct EventBus outcomes with four distinct generated sounds. Six recipes are data, crafted from a generated C-key panel with number keys; missing ingredients and unknown recipes refuse with separate reasons. Two animals live in a CC0 coop: feed them, advance a day, collect eggs or milk, with distinct feed/collect/refusal events. All three systems persist in the aggregate save where they hold state.
+
+`tests/suites/test_fishing.gd` (4), `test_crafting.gd` (4) and `test_animals.gd` (4) pass; real-window `playtest_fishing.gd` and `playtest_homestead.gd` both PASS. **Full pipeline: 591/591**, all stages green. M7 stays partially open: buying/placing animals, placeable machines and cooking stations are not implemented, so those acceptance rows remain unticked.

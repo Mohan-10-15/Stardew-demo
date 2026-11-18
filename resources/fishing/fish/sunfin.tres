@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_6ijle"]
+
+[resource]
+script = ExtResource("1_6ijle")
+id = &"sunfin"
+display_name = "Sunfin"
+item_id = &"fish_sunfin"
+seasons = Array[int]([1])
+weathers = Array[int]([0])
+hour_from = 8
+hour_to = 16
+wait_min = 1.8
+wait_max = 3.6

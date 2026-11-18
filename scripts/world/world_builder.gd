@@ -74,6 +74,8 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_build_resources(root, rng)
 	_build_interactables(root)
 	_add_mine_entrance(root)
+	_add_fishing_spot(root)
+	_add_coop(root)
 
 
 ## Height of the terrain at a world XZ position.
@@ -645,6 +647,50 @@ static func _add_mine_entrance(root: Node3D) -> void:
 	var component := Node.new()
 	component.name = "Interactable"
 	component.set_script(load("res://scripts/combat/mine_entrance.gd"))
+	body.add_child(component)
+	_finish(body, root)
+
+
+static func _add_fishing_spot(root: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "FishingSpot"
+	body.collision_layer = PhysicsLayers.INTERACTABLE
+	body.collision_mask = 0
+	body.position = Vector3(REGION_POND.x + 12, 0, REGION_POND.y + 12)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.0, 1.4, 2.0)
+	shape.shape = box
+	shape.position = Vector3(0, 0.7, 0)
+	body.add_child(shape)
+	var component := Node.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/fishing/fishing_spot.gd"))
+	body.add_child(component)
+	_finish(body, root)
+
+
+static func _add_coop(root: Node3D) -> void:
+	var coop_model := ModelArt.instantiate(
+		"res://assets/models/quaternius/FarmBuildings/ChickenCoop.fbx")
+	if coop_model == null:
+		return
+	var body := StaticBody3D.new()
+	body.name = "ChickenCoop"
+	body.collision_layer = 1
+	body.position = Vector3(7, 0, -24)
+	body.add_child(coop_model)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.6, 2.0, 2.4)
+	shape.shape = box
+	shape.position = Vector3(0, 1.0, 0)
+	body.add_child(shape)
+	var component := Node.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/animals/coop_interactable.gd"))
 	body.add_child(component)
 	_finish(body, root)
 

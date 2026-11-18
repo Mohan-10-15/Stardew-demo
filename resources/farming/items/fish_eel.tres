@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_5x51n"]
+
+[resource]
+script = ExtResource("1_5x51n")
+id = &"fish_eel"
+display_name = "Moon Eel"
+category = 3
+sell_price = 85
+icon_color = Color(0.35, 0.72, 0.85, 1)

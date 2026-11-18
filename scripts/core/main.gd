@@ -24,6 +24,7 @@ const TitleScreenScene := "res://scenes/ui/title_screen.tscn"
 const StoryTrackerScene := "res://scenes/ui/story_tracker.tscn"
 const CombatHudScene := "res://scenes/ui/combat_hud.tscn"
 const FestivalHudScene := "res://scenes/ui/festival_hud.tscn"
+const CraftingPanelScene := "res://scenes/ui/crafting_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -66,6 +67,11 @@ const FestivalHudScene := "res://scenes/ui/festival_hud.tscn"
 @export var load_combat: bool = true
 @export var combat_hud_scene_path: String = CombatHudScene
 @export var load_combat_hud: bool = true
+@export var crafting_panel_scene_path: String = CraftingPanelScene
+@export var load_crafting_panel: bool = true
+@export var load_animals: bool = true
+@export var load_crafting: bool = true
+@export var load_fishing: bool = true
 @export var load_festivals: bool = true
 @export var festival_hud_scene_path: String = FestivalHudScene
 @export var load_festival_hud: bool = true
@@ -96,6 +102,10 @@ var story_service: StoryService = null
 var story_tracker: CanvasLayer = null
 var combat_service: CombatService = null
 var combat_hud: CanvasLayer = null
+var animal_service: AnimalService = null
+var crafting_service: CraftingService = null
+var crafting_panel: CanvasLayer = null
+var fishing_service: FishingService = null
 var festival_service: FestivalService = null
 var festival_hud: CanvasLayer = null
 var _time_service: TimeService = null
@@ -144,6 +154,12 @@ func _boot() -> void:
 		_spawn_dialogue_service()
 	if load_combat:
 		_spawn_combat_service()
+	if load_animals:
+		_spawn_animal_service()
+	if load_crafting:
+		_spawn_crafting_service()
+	if load_fishing:
+		_spawn_fishing_service()
 	if load_festivals:
 		_spawn_festival_service()
 	if load_story:
@@ -190,6 +206,8 @@ func _boot() -> void:
 	# everything it might report on.
 	if load_log_panel:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
+	if load_crafting_panel:
+		_spawn_overlay(crafting_panel_scene_path, "crafting panel", "crafting_panel")
 	if load_festival_hud:
 		_spawn_overlay(festival_hud_scene_path, "festival HUD", "festival_hud")
 	if load_combat_hud:
@@ -281,6 +299,27 @@ func _spawn_audio_manager() -> void:
 
 ## The aggregate save is wired only after every service exists, so its
 ## `to_dict` can ask each one for its own state without knowing their fields.
+func _spawn_animal_service() -> void:
+	animal_service = AnimalService.new()
+	animal_service.name = "AnimalService"
+	add_child(animal_service)
+	Log.info("Animals", "Animal service ready")
+
+
+func _spawn_crafting_service() -> void:
+	crafting_service = CraftingService.new()
+	crafting_service.name = "CraftingService"
+	add_child(crafting_service)
+	Log.info("Craft", "Crafting service ready")
+
+
+func _spawn_fishing_service() -> void:
+	fishing_service = FishingService.new()
+	fishing_service.name = "FishingService"
+	add_child(fishing_service)
+	Log.info("Fishing", "Fishing service ready")
+
+
 func _spawn_festival_service() -> void:
 	festival_service = FestivalService.new()
 	festival_service.name = "FestivalService"
@@ -315,6 +354,8 @@ func _spawn_save_service() -> void:
 	save_service.story_service = story_service
 	save_service.combat_service = combat_service
 	save_service.festival_service = festival_service
+	save_service.fishing_service = fishing_service
+	save_service.animal_service = animal_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 

@@ -43,6 +43,7 @@ const LOAD_GAME := &"load_game"
 ## Mining and combat. Bound to a key and the left mouse button so fighting
 ## feels like an action rather than a menu.
 const ATTACK := &"attack"
+const CRAFT := &"craft"
 
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"

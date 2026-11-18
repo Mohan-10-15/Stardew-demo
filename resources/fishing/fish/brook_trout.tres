@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_8pg5r"]
+
+[resource]
+script = ExtResource("1_8pg5r")
+id = &"brook_trout"
+display_name = "Brook Trout"
+item_id = &"fish_trout"
+seasons = Array[int]([0, 2])
+weathers = Array[int]([0, 2])
+hour_from = 6
+hour_to = 18
+wait_min = 2.0
+wait_max = 4.5

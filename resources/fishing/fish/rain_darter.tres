@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FishData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/fishing/fish_data.gd" id="1_k7j4r"]
+
+[resource]
+script = ExtResource("1_k7j4r")
+id = &"rain_darter"
+display_name = "Rain Darter"
+item_id = &"fish_darter"
+seasons = Array[int]([0, 1, 2, 3])
+weathers = Array[int]([2, 3])
+wait_min = 1.0
+wait_max = 2.4

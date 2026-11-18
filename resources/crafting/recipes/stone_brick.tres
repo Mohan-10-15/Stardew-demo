@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Recipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/crafting/recipe.gd" id="1_v87a0"]
+
+[resource]
+script = ExtResource("1_v87a0")
+id = &"stone_brick"
+display_name = "Stone Bricks"
+ingredients = {
+&"stone": 3
+}
+output_id = &"stone"
+output_count = 2

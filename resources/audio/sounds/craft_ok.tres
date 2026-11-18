@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_4i581"]
+
+[resource]
+script = ExtResource("1_4i581")
+id = &"craft_ok"
+wave = 5
+frequency = 520.0
+duration = 0.3
+decay = 5.0
+level = 0.28
+frequency_end = 1040.0
