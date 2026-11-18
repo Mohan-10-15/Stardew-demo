@@ -45,6 +45,7 @@ const LOAD_GAME := &"load_game"
 const ATTACK := &"attack"
 const CRAFT := &"craft"
 const BUILD := &"build"
+const BUILDINGS := &"buildings"
 
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"

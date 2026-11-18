@@ -23,7 +23,7 @@ reasoning.
 | M8 | Mines and combat | **COMPLETE** |
 | M9 | Weather and seasons | **COMPLETE** |
 | M10 | Cutscene system | **COMPLETE** |
-| M11 | Buildings and farm upgrades | |
+| M11 | Buildings and farm upgrades | **COMPLETE** |
 | M12 | Festivals | **COMPLETE** |
 | M13 | Story progression | **COMPLETE** |
 | M14 | Audio | **COMPLETE** |

@@ -26,6 +26,7 @@ const CombatHudScene := "res://scenes/ui/combat_hud.tscn"
 const FestivalHudScene := "res://scenes/ui/festival_hud.tscn"
 const CraftingPanelScene := "res://scenes/ui/crafting_panel.tscn"
 const MachinePanelScene := "res://scenes/ui/machine_panel.tscn"
+const BuildingPanelScene := "res://scenes/ui/building_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -70,6 +71,9 @@ const MachinePanelScene := "res://scenes/ui/machine_panel.tscn"
 @export var load_combat_hud: bool = true
 @export var crafting_panel_scene_path: String = CraftingPanelScene
 @export var load_crafting_panel: bool = true
+@export var building_panel_scene_path: String = BuildingPanelScene
+@export var load_building_panel: bool = true
+@export var load_buildings: bool = true
 @export var machine_panel_scene_path: String = MachinePanelScene
 @export var load_machine_panel: bool = true
 @export var load_machines: bool = true
@@ -108,6 +112,8 @@ var story_service: StoryService = null
 var story_tracker: CanvasLayer = null
 var combat_service: CombatService = null
 var combat_hud: CanvasLayer = null
+var building_service: BuildingService = null
+var building_panel: CanvasLayer = null
 var machine_service: MachineService = null
 var machine_panel: CanvasLayer = null
 var cooking_service: CookingService = null
@@ -166,6 +172,8 @@ func _boot() -> void:
 		_spawn_combat_service()
 	if load_season_visuals:
 		_spawn_season_visuals()
+	if load_buildings:
+		_spawn_building_service()
 	if load_machines:
 		_spawn_machine_service()
 	if load_cooking:
@@ -222,6 +230,8 @@ func _boot() -> void:
 	# everything it might report on.
 	if load_log_panel:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
+	if load_building_panel:
+		_spawn_overlay(building_panel_scene_path, "building panel", "building_panel")
 	if load_machine_panel:
 		_spawn_overlay(machine_panel_scene_path, "machine panel", "machine_panel")
 	if load_crafting_panel:
@@ -324,6 +334,13 @@ func _spawn_season_visuals() -> void:
 	Log.info("World", "Season visuals ready")
 
 
+func _spawn_building_service() -> void:
+	building_service = BuildingService.new()
+	building_service.name = "BuildingService"
+	add_child(building_service)
+	Log.info("Buildings", "Building service ready")
+
+
 func _spawn_machine_service() -> void:
 	machine_service = MachineService.new()
 	machine_service.name = "MachineService"
@@ -396,6 +413,7 @@ func _spawn_save_service() -> void:
 	save_service.fishing_service = fishing_service
 	save_service.animal_service = animal_service
 	save_service.machine_service = machine_service
+	save_service.building_service = building_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 

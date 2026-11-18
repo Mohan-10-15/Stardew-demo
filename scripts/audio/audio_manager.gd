@@ -61,6 +61,9 @@ const SOUND_FOR_SIGNAL: Dictionary = {
 	&"machine_collect_failed": &"machine_empty",
 	&"dish_cooked": &"cook_done",
 	&"cook_failed": &"cook_refused",
+	&"building_placed": &"building_placed",
+	&"building_upgraded": &"building_upgraded",
+	&"building_failed": &"building_refused",
 }
 
 const POOL_SIZE := 12

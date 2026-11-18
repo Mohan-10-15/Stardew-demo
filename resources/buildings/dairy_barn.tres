@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/buildings/building_data.gd" id="1_x360r"]
+
+[resource]
+script = ExtResource("1_x360r")
+id = &"dairy_barn"
+display_name = "Dairy Barn"
+price = 800
+upgrade_price = 550
+effect_value = 2
+tint = Color(0.72, 0.42, 0.32, 1)

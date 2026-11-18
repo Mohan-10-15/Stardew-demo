@@ -88,6 +88,11 @@ signal machine_collect_failed(machine_id: StringName, slot: int, reason: StringN
 signal dish_cooked(recipe_id: StringName, output_id: StringName)
 signal cook_failed(recipe_id: StringName, reason: StringName)
 
+# --- Buildings ----------------------------------------------------------------
+signal building_placed(building_id: StringName, slot: int)
+signal building_upgraded(building_id: StringName, slot: int, level: int)
+signal building_failed(building_id: StringName, reason: StringName)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

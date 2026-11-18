@@ -75,6 +75,9 @@ const SOUNDS: Array[Dictionary] = [
 	{"id": &"cook_refused", "bus": SFX, "wave": 2, "frequency": 230, "duration": 0.16, "decay": 7, "level": 0.22},
 	{"id": &"machine_empty", "bus": SFX, "wave": 2, "frequency": 280, "duration": 0.14, "decay": 8, "level": 0.20},
 	{"id": &"animal_bought", "bus": SFX, "wave": 5, "frequency": 480, "frequency_end": 720, "duration": 0.3, "decay": 5, "level": 0.26},
+	{"id": &"building_placed", "bus": SFX, "wave": 6, "frequency": 200, "frequency_end": 320, "duration": 0.34, "decay": 6, "level": 0.30},
+	{"id": &"building_upgraded", "bus": SFX, "wave": 5, "frequency": 520, "frequency_end": 1040, "duration": 0.4, "decay": 5, "level": 0.28},
+	{"id": &"building_refused", "bus": SFX, "wave": 2, "frequency": 150, "duration": 0.2, "decay": 7, "level": 0.22},
 	{"id": &"level_up", "bus": MUSIC, "wave": 5, "frequency": 784, "frequency_end": 1568, "duration": 0.8, "decay": 3, "level": 0.34},
 
 	{"id": &"shop_buy", "bus": SFX, "wave": 5, "frequency": 740, "frequency_end": 1120, "duration": 0.18, "decay": 7, "level": 0.26},

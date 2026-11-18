@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/buildings/building_data.gd" id="1_karc2"]
+
+[resource]
+script = ExtResource("1_karc2")
+id = &"hen_coop"
+display_name = "Hen Coop"
+price = 500
+upgrade_price = 350
+tint = Color(0.82, 0.58, 0.34, 1)

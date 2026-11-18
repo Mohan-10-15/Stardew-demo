@@ -111,12 +111,15 @@ func collect(animal_id: StringName) -> bool:
 		_fail_collect(animal_id, &"no_player_state")
 		return false
 	var data: AnimalData = state["data"]
-	bag.call("add", data.product_item, stored)
+	var buildings := BuildingService.find(get_tree().get_root())
+	var bonus := buildings.effect(&"product") if buildings != null else 0
+	var amount := stored + bonus * stored
+	bag.call("add", data.product_item, amount)
 	state["stored"] = 0
 	_states[animal_id] = state
 	var bus := _bus()
 	if bus != null:
-		bus.animal_product_collected.emit(animal_id, data.product_item, stored)
+		bus.animal_product_collected.emit(animal_id, data.product_item, amount)
 	return true
 
 

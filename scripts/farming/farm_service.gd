@@ -433,6 +433,19 @@ func _on_day_started(day: int) -> void:
 	_season_seen = season
 	for tile: SoilTile in grid.get_tiles():
 		tile.on_new_day()
+	# A placed farm well waters part of the plot for free every day. Upgrading it
+	# waters twice as much — the upgrade has a real, measurable effect.
+	var buildings := BuildingService.find(get_tree().get_root())
+	var watered := buildings.effect(&"water") if buildings != null else 0
+	if watered > 0:
+		var count := 0
+		for tile: SoilTile in grid.get_tiles():
+			if count >= watered:
+				break
+			if tile.is_tilled and tile.water():
+				count += 1
+		if count > 0:
+			EventBus.soil_watered.emit(Vector2i(-1, -1), count)
 	Log.info("Farm", "Day %d: %d tiles advanced" % [day, grid.tile_count()])
 
 

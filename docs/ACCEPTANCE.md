@@ -256,9 +256,20 @@ plays the intro in a real window and skips it with a real E key.
 
 ## M11 — Buildings and farm upgrades
 
-- [ ] Buildings can be bought and placed
-- [ ] A placed building is usable, not decorative
-- [ ] Upgrades have a real effect
+- [x] Buildings can be bought and placed
+- [x] A placed building is usable, not decorative
+- [x] Upgrades have a real effect
+
+Three data-authored buildings (hen coop, dairy barn, farm well) are bought and
+placed from the N-key panel on four fixed farm slots. They are *usable*: the
+animal service adds the placed `product` effect to every collected product and
+the farm service adds the `water` effect as free daily watering. An upgrade
+doubles a building's effect — a level-2 coop turns one stored egg into three.
+Every placement, upgrade and refusal publishes its own EventBus event with its
+own generated sound. `tests/suites/test_buildings.gd` (6 cases) covers the full
+loop including the animal integration and a save round-trip, and
+`tools/playtest_buildings.gd` buys, places and upgrades a building in a real
+window.")}
 
 ---
 

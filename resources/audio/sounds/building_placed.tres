@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_3xv4y"]
+
+[resource]
+script = ExtResource("1_3xv4y")
+id = &"building_placed"
+wave = 6
+frequency = 200.0
+duration = 0.34
+decay = 6.0
+level = 0.3
+frequency_end = 320.0

@@ -3025,3 +3025,11 @@ New `test_machines.gd` (4) and `test_cooking.gd` (3) join the fishing/crafting/a
 Rain watering and weather/forecast persistence were already in place; this pass closed the two gaps. The rollover into winter now withers every crop that cannot grow in winter, publishing one `crop_withered` event per tile and clearing the soil. `SeasonVisuals` listens to `season_changed` and retints the shared grass material, the ground mesh's vertex colours and the procedural sky for each of the four seasons.
 
 New `tests/suites/test_weather.gd` (2 cases) and `tools/playtest_seasons.gd` pass. **Full pipeline: 600/600**, all stages green. Honest note: the seasonal repaint is verified at the resource/state level (material albedo, vertex colours, sky colour all change) but the rendered difference is subtle in the current lighting, so a human eye is still the final judge.
+
+### M11 complete
+
+Three data-authored buildings — hen coop, dairy barn, farm well — are bought and placed from a generated N-key panel on four fixed farm slots, so nothing can be dropped inside a wall. They are usable rather than decorative: `AnimalService.collect()` adds the placed `product` effect to each collected product, and `FarmService._on_day_started()` uses the `water` effect for free daily watering. Upgrading doubles a building's effect (a level-2 coop turns one stored egg into three). Placements, upgrades and refusals publish separate EventBus events with three new generated sounds; the audio distinctness test polices them.
+
+New `tests/suites/test_buildings.gd` (6 cases) covers buying, placement, the upgrade doubling, the real animal-product integration, distinct refusals and a save round-trip. `tools/playtest_buildings.gd` opens the panel with a real N key, buys with 1, upgrades with 7 and confirms the effect doubles in a real window. **Full pipeline: 606/606**, all stages green, zero script errors.
+
+Two bugs were found and fixed along the way: the `^()" % int` NodePath-literal expression did not compile (switched to the `NodePath()` constructor), and a first playtest assumed key 1 bought the coop when the alphabetical sort puts the dairy barn first (the playtest now checks the effect value rather than a hard-coded building).
