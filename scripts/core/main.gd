@@ -76,6 +76,7 @@ const MachinePanelScene := "res://scenes/ui/machine_panel.tscn"
 @export var load_cooking: bool = true
 @export var load_animals: bool = true
 @export var load_crafting: bool = true
+@export var load_season_visuals: bool = true
 @export var load_fishing: bool = true
 @export var load_festivals: bool = true
 @export var festival_hud_scene_path: String = FestivalHudScene
@@ -110,6 +111,7 @@ var combat_hud: CanvasLayer = null
 var machine_service: MachineService = null
 var machine_panel: CanvasLayer = null
 var cooking_service: CookingService = null
+var season_visuals: SeasonVisuals = null
 var animal_service: AnimalService = null
 var crafting_service: CraftingService = null
 var crafting_panel: CanvasLayer = null
@@ -162,6 +164,8 @@ func _boot() -> void:
 		_spawn_dialogue_service()
 	if load_combat:
 		_spawn_combat_service()
+	if load_season_visuals:
+		_spawn_season_visuals()
 	if load_machines:
 		_spawn_machine_service()
 	if load_cooking:
@@ -313,6 +317,13 @@ func _spawn_audio_manager() -> void:
 
 ## The aggregate save is wired only after every service exists, so its
 ## `to_dict` can ask each one for its own state without knowing their fields.
+func _spawn_season_visuals() -> void:
+	season_visuals = SeasonVisuals.new()
+	season_visuals.name = "SeasonVisuals"
+	add_child(season_visuals)
+	Log.info("World", "Season visuals ready")
+
+
 func _spawn_machine_service() -> void:
 	machine_service = MachineService.new()
 	machine_service.name = "MachineService"

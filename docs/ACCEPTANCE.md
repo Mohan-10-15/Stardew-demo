@@ -225,10 +225,18 @@ the mine in a real window.
 
 ## M9 — Weather and seasons
 
-- [ ] Weather affects gameplay, not just visuals (rain waters crops, winter kills them)
-- [ ] The season changes visuals, available crops and weather weights
-- [ ] Weather and the forecast survive a day rollover
-- [ ] A weather change is announced, not silent
+- [x] Weather affects gameplay, not just visuals (rain waters crops, winter kills them)
+- [x] The season changes visuals, available crops and weather weights
+- [x] Weather and the forecast survive a day rollover
+- [x] A weather change is announced, not silent
+
+Rain and storms water the whole plot; the rollover into winter withers every
+crop that cannot grow in winter, with one `crop_withered` event per tile. Crops
+refuse out-of-season planting, weather weights vary by season, and
+`SeasonVisuals` retints the ground and sky on `season_changed`. Weather,
+forecast and the announcement were already covered in `test_time.gd`; the new
+`test_weather.gd` covers withering and the seasonal repaint, with a real-window
+`tools/playtest_seasons.gd`.
 
 ---
 

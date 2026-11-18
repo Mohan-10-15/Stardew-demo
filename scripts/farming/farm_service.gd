@@ -421,12 +421,38 @@ func _spend_durability(action: StringName) -> void:
 ## The bag relay that used to live here has moved to [PlayerStateService], which
 ## owns the bag now. What is left is one subscription, one direction: the service
 ## learns that a day began from the clock and never asks the clock anything.
+var _season_seen: int = -1
+
+
 func _on_day_started(day: int) -> void:
 	if grid == null:
 		return
+	var season := _current_season()
+	if season == WorldTime.Season.WINTER and _season_seen != WorldTime.Season.WINTER:
+		_winter_wither()
+	_season_seen = season
 	for tile: SoilTile in grid.get_tiles():
 		tile.on_new_day()
 	Log.info("Farm", "Day %d: %d tiles advanced" % [day, grid.tile_count()])
+
+
+## Winter does not pause the farm — it ends the season's crop. Anything that
+## cannot grow in winter is lost at the rollover into winter, with one distinct
+## event per tile so a player can see what died.
+func _winter_wither() -> void:
+	var lost := 0
+	for tile: SoilTile in grid.get_tiles():
+		if tile.crop_id.is_empty():
+			continue
+		var crop := CropRegistry.get_crop(tile.crop_id)
+		if crop != null and crop.grows_in(WorldTime.Season.WINTER):
+			continue
+		var id := tile.crop_id
+		tile.reset()
+		EventBus.crop_withered.emit(tile.tile_index, id)
+		lost += 1
+	if lost > 0:
+		Log.info("Farm", "Winter withered %d crop(s)" % lost)
 
 
 ## Rain waters the whole plot for free.

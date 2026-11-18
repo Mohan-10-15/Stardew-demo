@@ -108,6 +108,8 @@ signal soil_tilled(tile_index: Vector2i)
 ## A whole plot was wetted at once (rain). `tile_index.x` is -1 and `y` is the
 ## count, because rain has no single tile to point at.
 signal soil_watered(tile_index: Vector2i, count: int)
+## A crop died because winter arrived. Distinct from a failed plant or harvest.
+signal crop_withered(tile_index: Vector2i, crop_id: StringName)
 signal crop_planted(tile_index: Vector2i, crop_id: StringName)
 signal crop_harvested(tile_index: Vector2i, crop_id: StringName, amount: int)
 signal crop_grew(tile_index: Vector2i)

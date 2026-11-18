@@ -21,7 +21,7 @@ reasoning.
 | M6 | Quests, relationships | **COMPLETE** |
 | M7 | Fishing, animals, crafting, cooking | **COMPLETE** |
 | M8 | Mines and combat | **COMPLETE** |
-| M9 | Weather and seasons | |
+| M9 | Weather and seasons | **COMPLETE** |
 | M10 | Cutscene system | **COMPLETE** |
 | M11 | Buildings and farm upgrades | |
 | M12 | Festivals | **COMPLETE** |

@@ -3019,3 +3019,9 @@ Six fish are authored with season/weather/hour gates and real item drops. The fi
 The last four acceptance rows are now implemented. Three machines are bought from a generated B-key panel, placed on six fixed farm pads (so nothing can be dropped inside a wall), loaded from the bag, advanced by real day rollovers, and collected at the machine itself. Four dishes are cooked at a physical farmhouse stove; the hen comes with the farm and the goat is bought from the general store and unlocked by its purchase event. All outcomes publish separate EventBus events with separate generated sounds; the audio registry's distinctness test polices the 69-sound map.
 
 New `test_machines.gd` (4) and `test_cooking.gd` (3) join the fishing/crafting/animal suites; `tools/playtest_machines.gd` places a furnace, waits two days, collects iron, cooks a dish and buys a goat in a real window. **Full pipeline: 598/598**, all stages green, zero script errors. One content bug was found and fixed: the stove was first authored inside the farmhouse collider and had no reachable approach.
+
+### M9 complete
+
+Rain watering and weather/forecast persistence were already in place; this pass closed the two gaps. The rollover into winter now withers every crop that cannot grow in winter, publishing one `crop_withered` event per tile and clearing the soil. `SeasonVisuals` listens to `season_changed` and retints the shared grass material, the ground mesh's vertex colours and the procedural sky for each of the four seasons.
+
+New `tests/suites/test_weather.gd` (2 cases) and `tools/playtest_seasons.gd` pass. **Full pipeline: 600/600**, all stages green. Honest note: the seasonal repaint is verified at the resource/state level (material albedo, vertex colours, sky colour all change) but the rendered difference is subtle in the current lighting, so a human eye is still the final judge.

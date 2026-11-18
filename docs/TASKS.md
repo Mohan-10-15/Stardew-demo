@@ -204,8 +204,8 @@ specification when it is picked up, not now.
 | TASK-014 | Animals | M7. **Complete** — buy, feed, collect |
 | TASK-015 | Mining | Group 22 / M8. **Complete** — three-floor mine |
 | TASK-016 | Combat and boss | M8. **Complete** — attacks, death, Warden |
-| TASK-017 | Weather | Group 23 / M9 |
-| TASK-018 | Seasons and visuals | Group 24 / M9 |
+| TASK-017 | Weather | Group 23 / M9. **Complete** |
+| TASK-018 | Seasons and visuals | Group 24 / M9. **Complete** |
 | TASK-019 | Festivals | M12. **Complete** — four dated events with schedule deferral |
 | TASK-020 | Story progression | M13. **Complete** — six chapters and an ending |
 | TASK-021 | Audio manager and music | Group 27 / M14. **Complete** — 52 synthesised sounds |
