@@ -103,15 +103,18 @@ func _t_toon() -> Dictionary:
 	if built.is_empty():
 		return fail(c, "could not stand up the cast")
 	var checked := 0
+	var outlines := 0
 	var bad: Array[String] = []
 	for npc: Npc in built["manager"].call("npcs"):
 		var model := npc.get_node_or_null(^"Model")
 		if model == null:
 			continue
 		for mesh: Node in _meshes(model):
-			# The anime face is deliberately unshaded so the drawn eyes keep
-			# their ink; it is asserted in the face cases instead.
-			if mesh.name == "FacePlane":
+			# The face keeps its drawn ink and the outlines are deliberately
+			# unshaded black; both are asserted elsewhere.
+			if mesh.name == "FacePlane" or mesh.name.begins_with("Outline_"):
+				if mesh.name.begins_with("Outline_"):
+					outlines += 1
 				continue
 			var mat := (mesh as MeshInstance3D).material_override as StandardMaterial3D
 			if mat == null:
@@ -125,6 +128,8 @@ func _t_toon() -> Dictionary:
 				bad.append("%s/%s has no inked rim" % [npc.data.id, mesh.name])
 	if checked < 6:
 		return fail(c, "only %d character materials were checked" % checked)
+	if outlines < 6:
+		return fail(c, "only %d inverted-hull outlines were added" % outlines)
 	return check_equals(c, bad, [] as Array[String])
 
 

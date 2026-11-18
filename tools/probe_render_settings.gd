@@ -16,7 +16,8 @@ func _run() -> void:
 	for prop: Dictionary in probe_mat.get_property_list():
 		var key := String(prop["name"])
 		if key.contains("diffuse") or key.contains("toon") or key.contains("rim") \
-				or key.contains("shading") or key.contains("specular"):
+				or key.contains("shading") or key.contains("specular") \
+				or key.contains("grow") or key.contains("cull") or key.contains("outline"):
 			keys.append(key)
 	keys.sort()
 	print("MATERIAL keys: %s" % str(keys))

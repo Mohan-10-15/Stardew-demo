@@ -2811,3 +2811,14 @@ unison. All of it swaps textures only — the rig, gear and walk are untouched.
 face reacts and blinks). **Full pipeline: 549/549**, all stages green, zero
 script errors. `tools/playtest_art.gd` and `tools/playtest_friendship.gd` pass in
 a real window; portraits show the richer eyes and brows.
+
+### Inked silhouettes (art workstream, continued)
+
+The cel-shaded look now has real outlines. `AnimeStyle._add_outline` gives every
+character mesh a second pass that is black, unshaded, grown along its normals and
+front-face culled — the inverted-hull technique Godot's own docs recommend. The
+copy keeps the original `skin`, so outlines follow the walk and arm-swing
+rather than freezing in a T-pose. The drawn face keeps its own ink and is
+excluded. `test_anime` now asserts outlines exist as well as the toon materials.
+**Full pipeline: 549/549**, both real-window playtests pass; the reviewed
+lineup shows clean black edges around every villager, hat, cape and prop.

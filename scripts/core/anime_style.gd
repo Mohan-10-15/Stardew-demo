@@ -11,6 +11,11 @@ extends RefCounted
 
 const TOON_DIFFUSE := 3
 
+## Inked outlines via the classic inverted hull: a second copy of each mesh,
+## grown along its normals, drawn only on its back faces, in near-black.
+const OUTLINE_PREFIX := "Outline_"
+const OUTLINE_GROW := 0.012
+
 
 ## Applies the toon look to every mesh under [param root].
 ##
@@ -39,5 +44,34 @@ static func apply_to(root: Node3D) -> void:
 				mat.rim_tint = 0.0
 				mat.metallic_specular = 0.12
 				mat.roughness = 0.85
+				_add_outline(mesh)
 		for child: Node in node.get_children():
 			stack.append(child)
+
+
+## Adds the inked silhouette copy beside [param mesh].
+##
+## The copy keeps the original `skin`, so a skinned limb keeps following the
+## same bones; without it the outline would stay in a T-pose while the body
+## walked. The face plane is excluded — its ink is already drawn — and so are
+## outlines made by an earlier application, which keeps this idempotent.
+static func _add_outline(mesh: MeshInstance3D) -> void:
+	if mesh.name == "FacePlane" or mesh.name.begins_with(OUTLINE_PREFIX):
+		return
+	if mesh.mesh == null or mesh.get_parent() == null:
+		return
+	if mesh.get_parent().get_node_or_null(OUTLINE_PREFIX + mesh.name) != null:
+		return
+	var outline := MeshInstance3D.new()
+	outline.name = OUTLINE_PREFIX + mesh.name
+	outline.mesh = mesh.mesh
+	outline.skin = mesh.skin
+	outline.transform = mesh.transform
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.035, 0.028, 0.055, 1.0)
+	mat.cull_mode = BaseMaterial3D.CULL_FRONT
+	mat.grow = 1
+	mat.grow_amount = OUTLINE_GROW
+	outline.material_override = mat
+	mesh.get_parent().add_child(outline)
