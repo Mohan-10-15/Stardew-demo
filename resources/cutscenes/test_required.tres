@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_4mkhb"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_30427"]
+
+[sub_resource type="Resource" id="Resource_lmm10"]
+script = ExtResource("1_4mkhb")
+skip_mode = 1
+seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_3cret"]
+script = ExtResource("1_4mkhb")
+kind = &"flag"
+params = {
+&"name": &"required_flag",
+&"value": true
+}
+skip_mode = 2
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_nw6xt"]
+script = ExtResource("1_4mkhb")
+skip_mode = 1
+seconds = 0.05
+
+[resource]
+script = ExtResource("2_30427")
+id = &"test_required"
+events = Array[ExtResource("1_4mkhb")]([SubResource("Resource_lmm10"), SubResource("Resource_3cret"), SubResource("Resource_nw6xt")])
+title = "Test: required beat"

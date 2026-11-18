@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_mf85f"]
+
+[resource]
+script = ExtResource("1_mf85f")
+id = &"water_pour"
+wave = 3
+frequency = 1600.0
+duration = 0.32
+decay = 3.0
+level = 0.16

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_31ly1"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_remkx"]
+
+[sub_resource type="Resource" id="Resource_4rxun"]
+script = ExtResource("1_31ly1")
+kind = &"flag"
+params = {
+&"name": &"test_flag",
+&"value": true
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_2jq7h"]
+script = ExtResource("1_31ly1")
+skip_mode = 1
+seconds = 0.05
+
+[sub_resource type="Resource" id="Resource_tnvxu"]
+script = ExtResource("1_31ly1")
+skip_mode = 1
+seconds = 0.05
+
+[resource]
+script = ExtResource("2_remkx")
+id = &"test_short"
+events = Array[ExtResource("1_31ly1")]([SubResource("Resource_4rxun"), SubResource("Resource_2jq7h"), SubResource("Resource_tnvxu")])
+title = "Test: skip and restore"

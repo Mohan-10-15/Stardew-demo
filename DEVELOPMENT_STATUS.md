@@ -2867,3 +2867,30 @@ Because `main.gd` spawns the cast before the quest service, a new
 head, and Mira's cycles offer → hidden → hand-in → hidden with two distinct
 glyphs. **Full pipeline: 552/552**, all stages green; the reviewed lineup shows
 five yellow marks over the five villagers with jobs.
+
+### M14 audio and M10 cutscenes
+
+Both milestones now have a real core system, built against their existing
+design documents.
+
+**Audio** (`scripts/audio/`, 52 generated `.tres` sounds): `AudioDefinition`,
+`AudioRegistry`, `AudioSynth` and `AudioManager`. The manager owns five buses,
+a player pool, a two-player music/ambience crossfade, and a one-place map from
+distinct EventBus outcomes to distinct sounds — including surface-specific
+footsteps emitted by the player. Success and failure never share a sound. All
+volume settings (master, music, SFX, ambient, UI, mute) persist through `Config`,
+and pause mutes the buses. A missing sound or bus is one warning and silence.
+12 looping cues satisfy the guide's music target.
+
+**Cutscenes** (`scripts/cutscenes/`, four authored `.tres`): data-authored
+events, a context snapshot of camera/pause/phase, unconditional restoration,
+re-entrant-safe lock and skip modes with flag catch-up. `test_cutscene.gd`
+covers playback/restore, skip with catch-up, and `SKIP_REQUIRED` beats;
+`test_audio.gd` covers content, distinctness, synthesis, settings and defensive
+boot. `tools/playtest_cutscene_audio.gd` plays the intro in a real window,
+skips it with E and reviews both frames. **Full pipeline: 561/561**, all stages
+green, zero script errors.
+
+Honest scope: the music state machine is reduced to weather/night ambience and
+unused regional cues; cutscenes implement eight of the guide's event kinds,
+not the full actor/branch/nested vocabulary.

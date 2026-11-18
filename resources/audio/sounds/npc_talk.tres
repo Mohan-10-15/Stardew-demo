@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_4syip"]
+
+[resource]
+script = ExtResource("1_4syip")
+id = &"npc_talk"
+wave = 1
+frequency = 520.0
+duration = 0.1
+decay = 8.0
+level = 0.16
+pitch_max = 1.25
+frequency_end = 610.0

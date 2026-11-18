@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_w8p2w"]
+
+[resource]
+script = ExtResource("1_w8p2w")
+id = &"ui_error"
+bus = 3
+wave = 2
+frequency = 180.0
+duration = 0.18
+decay = 5.0
+level = 0.22

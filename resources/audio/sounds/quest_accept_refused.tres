@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_6m168"]
+
+[resource]
+script = ExtResource("1_6m168")
+id = &"quest_accept_refused"
+wave = 2
+frequency = 160.0
+decay = 6.0
+level = 0.24

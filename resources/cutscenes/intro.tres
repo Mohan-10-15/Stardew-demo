@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_5qwf0"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_pxlm4"]
+
+[sub_resource type="Resource" id="Resource_f8bh7"]
+script = ExtResource("1_5qwf0")
+kind = &"letterbox"
+params = {
+&"show": true
+}
+skip_mode = 1
+seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_eaik5"]
+script = ExtResource("1_5qwf0")
+kind = &"fade"
+params = {
+&"alpha": 1.0
+}
+skip_mode = 1
+seconds = 0.3
+
+[sub_resource type="Resource" id="Resource_n06v1"]
+script = ExtResource("1_5qwf0")
+skip_mode = 1
+seconds = 0.2
+
+[sub_resource type="Resource" id="Resource_kxjoe"]
+script = ExtResource("1_5qwf0")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 1
+seconds = 0.3
+
+[sub_resource type="Resource" id="Resource_qtpjj"]
+script = ExtResource("1_5qwf0")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "The cart left you at the edge of the valley at dawn."
+
+[sub_resource type="Resource" id="Resource_tgw2t"]
+script = ExtResource("1_5qwf0")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.8
+text = "An old farm, a locked gate, and a village that has not yet learned your name."
+
+[sub_resource type="Resource" id="Resource_x3eb2"]
+script = ExtResource("1_5qwf0")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.4
+text = "Someone in the square is already offering you work."
+
+[sub_resource type="Resource" id="Resource_ne047"]
+script = ExtResource("1_5qwf0")
+kind = &"flag"
+params = {
+&"name": &"intro_seen",
+&"value": true
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_t3vij"]
+script = ExtResource("1_5qwf0")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 1
+seconds = 0.6
+
+[sub_resource type="Resource" id="Resource_vjdw1"]
+script = ExtResource("1_5qwf0")
+kind = &"letterbox"
+params = {
+&"show": false
+}
+skip_mode = 1
+seconds = 0.1
+
+[resource]
+script = ExtResource("2_pxlm4")
+id = &"intro"
+events = Array[ExtResource("1_5qwf0")]([SubResource("Resource_f8bh7"), SubResource("Resource_eaik5"), SubResource("Resource_n06v1"), SubResource("Resource_kxjoe"), SubResource("Resource_qtpjj"), SubResource("Resource_tgw2t"), SubResource("Resource_x3eb2"), SubResource("Resource_ne047"), SubResource("Resource_t3vij"), SubResource("Resource_vjdw1")])
+title = "Arrival at Hollowbrook"

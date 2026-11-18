@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_fm21i"]
+
+[resource]
+script = ExtResource("1_fm21i")
+id = &"gift_refused"
+wave = 2
+frequency = 140.0
+duration = 0.16
+decay = 7.0
+level = 0.24

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_yrsvi"]
+
+[resource]
+script = ExtResource("1_yrsvi")
+id = &"marriage"
+bus = 0
+wave = 5
+frequency = 523.0
+duration = 1.2
+decay = 2.0
+level = 0.36
+frequency_end = 1046.0

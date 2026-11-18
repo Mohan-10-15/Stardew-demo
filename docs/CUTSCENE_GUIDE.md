@@ -2,10 +2,15 @@
 
 How the cinematic system is meant to work, and the rules a cutscene must obey.
 
-**Status: not implemented.** No cutscene system exists yet. This document is the
-contract that `CutsceneDirector` will be built against, written now so the design
-is fixed before implementation starts forcing decisions on it. See
-`docs/ACCEPTANCE.md` M10 for the criteria it has to satisfy.
+**Status: core system implemented.** `scripts/cutscenes/` owns the director,
+the two data resources, the context snapshot and the registry; four cutscenes
+are authored under `resources/cutscenes/` and the overlay scene is generated.
+Playback locks the player, restores camera/pause state unconditionally, and
+skipping applies `SKIP_APPLY` flags while respecting `SKIP_REQUIRED` beats.
+The event vocabulary implemented is `wait`, `dialogue`, `fade`, `letterbox`,
+`flag`, `camera_move`, `play_sound` and `play_music`; the wider actor/branch/
+nested-cutscene vocabulary in §3 remains a future extension. M10's acceptance
+rows are met.
 
 Nothing in this document is a stub or a placeholder — it is a specification. The
 first milestone that touches cutscenes implements it; before that, there is

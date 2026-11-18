@@ -212,10 +212,15 @@ M5 remains open on population: it wants twelve villagers, not six.
 
 ## M10 — Cutscene / cinematic system
 
-- [ ] A cutscene plays in the 3D world
-- [ ] The player can skip it
-- [ ] Camera, input and player control all restore correctly afterwards
-- [ ] Skipping mid-cutscene does not leave the world in a broken state
+- [x] A cutscene plays in the 3D world
+- [x] The player can skip it
+- [x] Camera, input and player control all restore correctly afterwards
+- [x] Skipping mid-cutscene does not leave the world in a broken state
+
+Delivered as data-authored `.tres` cutscenes with a generated letterbox overlay;
+`tests/suites/test_cutscene.gd` covers playback, restoration, skipping with flag
+catch-up and uncancellable required beats. `tools/playtest_cutscene_audio.gd`
+plays the intro in a real window and skips it with a real E key.
 
 ---
 
@@ -244,10 +249,17 @@ M5 remains open on population: it wants twelve villagers, not six.
 
 ## M14 — Audio
 
-- [ ] Every major action has audio: footsteps, tools, impacts, UI, ambience
-- [ ] Music and ambience change with time of day and weather
-- [ ] Volume settings work and persist
-- [ ] Audio is muted correctly on pause
+- [x] Every major action has audio: footsteps, tools, impacts, UI, ambience
+- [x] Music and ambience change with time of day and weather
+- [x] Volume settings work and persist
+- [x] Audio is muted correctly on pause
+
+52 original synthesised sounds under `resources/audio/sounds/`, including 12
+loops. `AudioManager` maps distinct EventBus outcomes to distinct sounds,
+crossfades music, switches ambience on weather and night, persists all five
+volume settings plus mute, and silences the buses on pause. Tests cover the
+registry, the signal map's distinctness, non-empty distinct PCM, settings
+round-trip and a headless boot with no audio device.
 
 ---
 

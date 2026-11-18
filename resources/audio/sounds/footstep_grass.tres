@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_oaih3"]
+
+[resource]
+script = ExtResource("1_oaih3")
+id = &"footstep_grass"
+wave = 3
+frequency = 900.0
+duration = 0.09
+decay = 9.0
+level = 0.14
+pitch_max = 1.3

@@ -38,6 +38,9 @@ func load_config() -> void:
 	settings.master_volume = float(cfg.get_value("audio", "master_volume", settings.master_volume))
 	settings.music_volume = float(cfg.get_value("audio", "music_volume", settings.music_volume))
 	settings.sfx_volume = float(cfg.get_value("audio", "sfx_volume", settings.sfx_volume))
+	settings.ambient_volume = float(cfg.get_value("audio", "ambient_volume", settings.ambient_volume))
+	settings.ui_volume = float(cfg.get_value("audio", "ui_volume", settings.ui_volume))
+	settings.muted = bool(cfg.get_value("audio", "muted", settings.muted))
 	settings.camera_switch_key_action = StringName(cfg.get_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action)))
 	settings.show_debug_overlay = bool(cfg.get_value("gameplay", "show_debug_overlay", settings.show_debug_overlay))
 	settings.graphics_quality = clampi(
@@ -58,6 +61,9 @@ func save_config() -> void:
 	cfg.set_value("audio", "master_volume", settings.master_volume)
 	cfg.set_value("audio", "music_volume", settings.music_volume)
 	cfg.set_value("audio", "sfx_volume", settings.sfx_volume)
+	cfg.set_value("audio", "ambient_volume", settings.ambient_volume)
+	cfg.set_value("audio", "ui_volume", settings.ui_volume)
+	cfg.set_value("audio", "muted", settings.muted)
 	cfg.set_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action))
 	cfg.set_value("gameplay", "show_debug_overlay", settings.show_debug_overlay)
 	cfg.set_value("graphics", "graphics_quality", settings.graphics_quality)
@@ -117,6 +123,12 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.music_volume = value
 				"sfx_volume":
 					settings.sfx_volume = value
+				"ambient_volume":
+					settings.ambient_volume = value
+				"ui_volume":
+					settings.ui_volume = value
+				"muted":
+					settings.muted = value
 		&"gameplay":
 			match key:
 				"camera_switch_key_action":

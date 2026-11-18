@@ -47,6 +47,11 @@ const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 @export var load_shop_ui: bool = true
 @export var load_dialogue_ui: bool = true
 @export var load_log_panel: bool = true
+@export var load_audio: bool = true
+@export var load_cutscenes: bool = true
+## Off by default: a cutscene that pauses the world on boot would change every
+## existing boot assertion. The playtest enables it explicitly.
+@export var play_intro_cutscene: bool = false
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -66,6 +71,8 @@ var npc_manager: NpcManager = null
 var quest_service: QuestService = null
 var dialogue_service: DialogueService = null
 var dialogue_ui: CanvasLayer = null
+var audio_manager: AudioManager = null
+var cutscene_director: CutsceneDirector = null
 var _time_service: TimeService = null
 
 
@@ -93,6 +100,10 @@ func _boot() -> void:
 	# stamina through it. It needs no world and no player, so it goes first of the
 	# three.
 	_spawn_player_state()
+	if load_audio:
+		_spawn_audio_manager()
+	if load_cutscenes:
+		_spawn_cutscene_director()
 	# Between world and player: it needs the world's grid to attach, and the
 	# player to exist before it hands out a starting loadout.
 	if load_world:
@@ -156,6 +167,8 @@ func _boot() -> void:
 
 	GameState.set_phase(GameState.Phase.PLAYING)
 	EventBus.game_ready.emit()
+	if play_intro_cutscene and cutscene_director != null:
+		EventBus.cutscene_requested.emit(&"intro")
 	Log.info("Main", "Boot sequence complete")
 
 
@@ -169,6 +182,23 @@ func _spawn_player_state() -> void:
 	player_state.name = "PlayerState"
 	add_child(player_state)
 	Log.info("Main", "Spawned player state")
+
+
+## Sound is a listener: it needs no gameplay service, only the EventBus and the
+## Config autoload, so it is spawned just after the bag and before everything
+## that will publish an event worth hearing.
+func _spawn_audio_manager() -> void:
+	audio_manager = AudioManager.new()
+	audio_manager.name = "AudioManager"
+	add_child(audio_manager)
+	Log.info("Main", "Spawned audio manager")
+
+
+func _spawn_cutscene_director() -> void:
+	cutscene_director = CutsceneDirector.new()
+	cutscene_director.name = "CutsceneDirector"
+	add_child(cutscene_director)
+	Log.info("Main", "Spawned cutscene director")
 
 
 ## The HUD needs the player to exist first: it locates the interaction probe at

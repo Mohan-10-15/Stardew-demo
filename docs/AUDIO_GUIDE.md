@@ -2,11 +2,15 @@
 
 How sound is meant to work, and the rules an audio system must obey.
 
-**Status: not implemented.** `assets/audio/` is empty, no `AudioManager` exists,
-and `scripts/audio/` does not exist as a folder. This document is the contract
-that `AudioManager` will be built against, written now so the design is fixed
-before implementation starts forcing decisions on it. See `docs/ACCEPTANCE.md`
-M14 for the criteria it has to satisfy.
+**Status: core system implemented.** `scripts/audio/` owns `AudioDefinition`,
+`AudioRegistry`, `AudioSynth` and the `AudioManager`; 52 original synthesised
+sounds are authored as `.tres` under `resources/audio/sounds/`, including 12
+looping music/ambience cues. The manager listens to `EventBus`, creates the five
+buses, crossfades music, mutes on pause and persists volume settings. What is
+*not* implemented: the region/weather music state machine is reduced to
+weather-driven ambience and a night cue, and there are no positional
+`AudioStreamPlayer3D` sources yet. M14's acceptance rows are met; the full
+twelve-cue state machine still has unused cues available for later milestones.
 
 Nothing in this document is a stub or a placeholder — it is a specification. The
 first milestone that touches audio (M14) implements it; before that, there is

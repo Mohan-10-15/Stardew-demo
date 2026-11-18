@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_12tmd"]
+
+[resource]
+script = ExtResource("1_12tmd")
+id = &"tool_broken"
+wave = 3
+frequency = 1100.0
+duration = 0.3
+decay = 5.0
+level = 0.3

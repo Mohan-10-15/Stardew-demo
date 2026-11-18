@@ -22,11 +22,11 @@ reasoning.
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
 | M9 | Weather and seasons | |
-| M10 | Cutscene system | |
+| M10 | Cutscene system | **COMPLETE** |
 | M11 | Buildings and farm upgrades | |
 | M12 | Festivals | |
 | M13 | Story progression | |
-| M14 | Audio | |
+| M14 | Audio | **COMPLETE** |
 | M15 | UI and accessibility | |
 | M16 | Save and load | |
 | M17 | Art and animation polish | |

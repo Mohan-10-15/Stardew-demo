@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_3q5d8"]
+
+[resource]
+script = ExtResource("1_3q5d8")
+id = &"crop_harvest"
+wave = 5
+frequency = 720.0
+duration = 0.22
+decay = 6.0
+level = 0.28
+frequency_end = 1080.0

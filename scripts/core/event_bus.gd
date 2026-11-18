@@ -9,6 +9,14 @@ extends Node
 
 # --- Core lifecycle -------------------------------------------------------
 signal game_ready()
+
+# --- Cutscenes --------------------------------------------------------------
+## A data-authored cutscene was requested, started, ended naturally or skipped.
+## The director listens to `cutscene_requested`; gameplay never calls `play`.
+signal cutscene_requested(cutscene_id: StringName)
+signal cutscene_started(cutscene_id: StringName)
+signal cutscene_finished(cutscene_id: StringName)
+signal cutscene_skipped(cutscene_id: StringName)
 signal game_paused(paused: bool)
 signal game_quitting()
 
@@ -54,6 +62,9 @@ signal tool_broken(item_id: StringName)
 signal interactable_focused(target: Node)
 signal interactable_unfocused(target: Node)
 signal interaction_performed(target: Node)
+## A player foot landed. `surface` is a content id (grass, wood, stone) so the
+## audio manager can pick a distinct footstep instead of one repeated blip.
+signal footstep(surface: StringName)
 
 # --- Economy --------------------------------------------------------------
 signal currency_changed(new_amount: int)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_t6ge8"]
+
+[resource]
+script = ExtResource("1_t6ge8")
+id = &"propose_refused"
+wave = 2
+frequency = 260.0
+duration = 0.26
+decay = 6.0
+level = 0.26
+frequency_end = 130.0

@@ -96,6 +96,12 @@ func _process(delta: float) -> void:
 	_handle_gamepad_look(delta)
 
 
+## Distance walked since the last footfall. A step every ~1.6 m at walking
+## speed is close enough to a real cadence, and the pitch range on the sound
+## definition keeps repeated steps from machine-gunning.
+var _step_distance: float = 0.0
+
+
 func _physics_process(delta: float) -> void:
 	if get_multiplayer_authority() != 1:
 		return
@@ -141,8 +147,31 @@ func _physics_process(delta: float) -> void:
 		Input.is_action_pressed(InputActions.JUMP)
 	)
 
+	var before_step := global_position
 	move_and_slide()
+	_tick_footsteps(before_step)
 	_handle_floor_transitions()
+
+
+func _tick_footsteps(before: Vector3) -> void:
+	if not is_on_floor():
+		return
+	var travelled := Vector2(
+		global_position.x - before.x, global_position.z - before.z
+	).length()
+	if travelled < 0.0001:
+		return
+	_step_distance += travelled
+	if _step_distance < 1.6:
+		return
+	_step_distance = 0.0
+	var surface: StringName = &"grass"
+	var flat := Vector2(global_position.x, global_position.z)
+	if flat.distance_to(Vector2(14.5, -18.4)) < 5.0:
+		surface = &"wood"
+	elif flat.distance_to(Vector2(38.0, 8.0)) < 6.0:
+		surface = &"stone"
+	EventBus.footstep.emit(surface)
 
 
 func _resolve_move_mode(is_moving: bool) -> PlayerMotion.MoveMode:

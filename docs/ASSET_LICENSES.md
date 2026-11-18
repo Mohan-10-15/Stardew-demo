@@ -110,3 +110,9 @@ The bright-shonen face textures in `scripts/core/anime_face.gd` and the toon
 material settings in `scripts/core/anime_style.gd` are original art authored in
 this repo. No additional pack or licence was introduced; they overlay the CC0
 KayKit rigs and keep those packs' textures underneath. See `DECISIONS.md` D16.
+
+### Generated audio
+
+All 52 sounds under `resources/audio/sounds/` are original synthesised waveforms,
+produced from `AudioDefinition` data by `scripts/audio/audio_synth.gd`. No third-party
+audio file, source URL or licence applies. See `docs/AUDIO_GUIDE.md`.

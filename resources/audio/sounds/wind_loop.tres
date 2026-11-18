@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_8egrl"]
+
+[resource]
+script = ExtResource("1_8egrl")
+id = &"wind_loop"
+bus = 2
+wave = 3
+frequency = 400.0
+duration = 2.0
+decay = 0.0
+level = 0.08
+loop = true

@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_7tuyj"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_5pgkr"]
+
+[sub_resource type="Resource" id="Resource_ufvo6"]
+script = ExtResource("1_7tuyj")
+kind = &"letterbox"
+params = {
+&"show": true
+}
+skip_mode = 1
+seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_4ke7l"]
+script = ExtResource("1_7tuyj")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "The square wakes in pieces: a shouted greeting, a door, a kettle."
+
+[sub_resource type="Resource" id="Resource_mniu0"]
+script = ExtResource("1_7tuyj")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "Six people glance up, then go back to what they were doing."
+
+[sub_resource type="Resource" id="Resource_gdh0k"]
+script = ExtResource("1_7tuyj")
+kind = &"flag"
+params = {
+&"name": &"village_introduced",
+&"value": true
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_8xn6k"]
+script = ExtResource("1_7tuyj")
+kind = &"letterbox"
+params = {
+&"show": false
+}
+skip_mode = 1
+seconds = 0.1
+
+[resource]
+script = ExtResource("2_5pgkr")
+id = &"first_village"
+events = Array[ExtResource("1_7tuyj")]([SubResource("Resource_ufvo6"), SubResource("Resource_4ke7l"), SubResource("Resource_mniu0"), SubResource("Resource_gdh0k"), SubResource("Resource_8xn6k")])
+title = "The Square"

@@ -208,8 +208,8 @@ specification when it is picked up, not now.
 | TASK-018 | Seasons and visuals | Group 24 / M9 |
 | TASK-019 | Festivals | M12 |
 | TASK-020 | Story progression | M13 |
-| TASK-021 | Audio manager and music | Group 27 / M14. Blocked on `docs/AUDIO_GUIDE.md` |
-| TASK-022 | Cutscene system | M10. Spec in `docs/CUTSCENE_GUIDE.md` |
+| TASK-021 | Audio manager and music | Group 27 / M14. **Complete** — 52 synthesised sounds |
+| TASK-022 | Cutscene system | M10. **Complete** — data cutscenes with safe skip |
 | TASK-023 | Performance | Group 29 / M18 |
 | TASK-024 | Release integration | Group 31–32 / M20 |
 

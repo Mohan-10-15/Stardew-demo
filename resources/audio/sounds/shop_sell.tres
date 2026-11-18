@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_j24tr"]
+
+[resource]
+script = ExtResource("1_j24tr")
+id = &"shop_sell"
+wave = 5
+frequency = 620.0
+duration = 0.18
+decay = 7.0
+level = 0.26
+frequency_end = 930.0

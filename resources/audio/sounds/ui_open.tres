@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_o2vhl"]
+
+[resource]
+script = ExtResource("1_o2vhl")
+id = &"ui_open"
+bus = 3
+wave = 1
+frequency = 380.0
+duration = 0.12
+decay = 6.0
+level = 0.22
+frequency_end = 560.0

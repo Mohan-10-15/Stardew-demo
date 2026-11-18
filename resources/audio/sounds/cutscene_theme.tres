@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_bghlo"]
+
+[resource]
+script = ExtResource("1_bghlo")
+id = &"cutscene_theme"
+bus = 0
+wave = 5
+frequency = 262.0
+duration = 4.0
+decay = 0.0
+level = 0.14
+frequency_end = 523.0
+loop = true

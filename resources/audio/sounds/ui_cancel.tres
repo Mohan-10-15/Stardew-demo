@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_2w0um"]
+
+[resource]
+script = ExtResource("1_2w0um")
+id = &"ui_cancel"
+bus = 3
+wave = 5
+duration = 0.14
+decay = 7.0
+level = 0.24
+frequency_end = 260.0

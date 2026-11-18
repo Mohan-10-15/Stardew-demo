@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_5d572"]
+
+[resource]
+script = ExtResource("1_5d572")
+id = &"pickaxe_hit"
+wave = 2
+frequency = 240.0
+duration = 0.16
+decay = 12.0
+level = 0.3
+pitch_max = 1.18

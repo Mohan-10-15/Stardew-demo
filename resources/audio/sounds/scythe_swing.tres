@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_65yq5"]
+
+[resource]
+script = ExtResource("1_65yq5")
+id = &"scythe_swing"
+wave = 4
+frequency = 900.0
+duration = 0.18
+decay = 6.0
+level = 0.2
+frequency_end = 300.0

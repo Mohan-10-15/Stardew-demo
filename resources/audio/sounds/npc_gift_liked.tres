@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_fb220"]
+
+[resource]
+script = ExtResource("1_fb220")
+id = &"npc_gift_liked"
+wave = 5
+frequency = 660.0
+duration = 0.28
+decay = 5.0
+level = 0.3
+frequency_end = 990.0

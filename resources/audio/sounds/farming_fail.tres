@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_fvlw7"]
+
+[resource]
+script = ExtResource("1_fvlw7")
+id = &"farming_fail"
+wave = 2
+frequency = 130.0
+duration = 0.16
+decay = 6.0
+level = 0.24
+frequency_end = 90.0

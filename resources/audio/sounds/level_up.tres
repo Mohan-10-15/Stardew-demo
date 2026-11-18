@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_am6ts"]
+
+[resource]
+script = ExtResource("1_am6ts")
+id = &"level_up"
+bus = 0
+wave = 5
+frequency = 784.0
+duration = 0.8
+decay = 3.0
+level = 0.34
+frequency_end = 1568.0

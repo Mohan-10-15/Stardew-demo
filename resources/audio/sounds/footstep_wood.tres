@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_uwedm"]
+
+[resource]
+script = ExtResource("1_uwedm")
+id = &"footstep_wood"
+wave = 6
+frequency = 220.0
+duration = 0.1
+decay = 11.0
+level = 0.2
+pitch_max = 1.25

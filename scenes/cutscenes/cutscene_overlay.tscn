@@ -1,0 +1,57 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t3bnr"]
+
+[node name="CutsceneOverlay" type="CanvasLayer"]
+layer = 20
+
+[node name="Fade" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_t3bnr")
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Text" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Hint" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "E — skip"
+horizontal_alignment = 1
+
+[node name="Bars" type="VBoxContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Top" type="ColorRect" parent="Bars"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Spacer" type="Control" parent="Bars"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bottom" type="ColorRect" parent="Bars"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+color = Color(0, 0, 0, 1)
