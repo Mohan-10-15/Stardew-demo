@@ -34,6 +34,12 @@ const PAUSE := &"pause"
 ## have to unpause, navigate a menu and close again to read is a log nobody reads.
 const TOGGLE_LOG_PANEL := &"toggle_log_panel"
 
+## Aggregate save/load. Deliberately plain keys rather than a menu: the menu
+## comes with its own milestone, and these make the versioned save reachable
+## and testable through real input today.
+const SAVE_GAME := &"save_game"
+const LOAD_GAME := &"load_game"
+
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"
 const HOTBAR_3 := &"hotbar_3"

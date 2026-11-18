@@ -2894,3 +2894,21 @@ green, zero script errors.
 Honest scope: the music state machine is reduced to weather/night ambience and
 unused regional cues; cutscenes implement eight of the guide's event kinds,
 not the full actor/branch/nested vocabulary.
+
+### M16 aggregate save
+
+`scripts/save/save_service.gd` owns one versioned file (`user://hollowbrook.save`,
+`SAVE_VERSION = 3`) and carries time/weather, the player's bag/purse/stamina,
+the farm grid, all twelve relationships and romance stages, the quest log,
+dialogue memory and cutscene flags. Each service is asked for its own
+`to_dict`/`from_dict`, so the save format never reaches into a service's fields.
+Writes are atomic (temp file then rename); JSON-incompatible values are
+normalised and id-keyed sections are restored to StringName keys. Older saves
+migrate forward and future versions are refused; corruption publishes
+`game_load_failed` with a reason and leaves live state untouched.
+
+F5 and F9 are bound to save and load through the `InputActions` registry and
+`tools/rebuild_input_map.gd`. `tests/suites/test_save.gd` — 4 cases — and
+`tools/playtest_save.gd` both pass; the real-window run writes gold 875, changes
+it to 12, and F9 restores 875. **Full pipeline: 565/565**, all stages green,
+zero script errors.

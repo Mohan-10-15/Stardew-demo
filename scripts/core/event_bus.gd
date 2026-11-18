@@ -20,6 +20,14 @@ signal cutscene_skipped(cutscene_id: StringName)
 signal game_paused(paused: bool)
 signal game_quitting()
 
+# --- Saves ------------------------------------------------------------------
+## The aggregate save was written or loaded, or failed with a machine-readable
+## reason. Distinct success and failure halves for the same transaction.
+signal game_saved(path: String)
+signal game_save_failed(reason: StringName)
+signal game_loaded(path: String)
+signal game_load_failed(reason: StringName)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

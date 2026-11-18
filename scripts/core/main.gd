@@ -52,6 +52,7 @@ const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 ## Off by default: a cutscene that pauses the world on boot would change every
 ## existing boot assertion. The playtest enables it explicitly.
 @export var play_intro_cutscene: bool = false
+@export var load_save_service: bool = true
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -73,6 +74,7 @@ var dialogue_service: DialogueService = null
 var dialogue_ui: CanvasLayer = null
 var audio_manager: AudioManager = null
 var cutscene_director: CutsceneDirector = null
+var save_service: SaveService = null
 var _time_service: TimeService = null
 
 
@@ -117,6 +119,8 @@ func _boot() -> void:
 		# failing, so the order is a courtesy — but it is the order the real game
 		# runs in, and the one a boot should exercise.
 		_spawn_dialogue_service()
+	if load_save_service:
+		_spawn_save_service()
 	if load_player:
 		_spawn_player()
 	if load_hud:
@@ -192,6 +196,22 @@ func _spawn_audio_manager() -> void:
 	audio_manager.name = "AudioManager"
 	add_child(audio_manager)
 	Log.info("Main", "Spawned audio manager")
+
+
+## The aggregate save is wired only after every service exists, so its
+## `to_dict` can ask each one for its own state without knowing their fields.
+func _spawn_save_service() -> void:
+	save_service = SaveService.new()
+	save_service.name = "SaveService"
+	save_service.time_service = TimeService.find(get_tree().get_root())
+	save_service.player_state = player_state
+	save_service.farm_service = farm_service
+	save_service.npc_manager = npc_manager
+	save_service.quest_service = quest_service
+	save_service.dialogue_service = dialogue_service
+	save_service.cutscene_director = cutscene_director
+	add_child(save_service)
+	Log.info("Main", "Spawned aggregate save service")
 
 
 func _spawn_cutscene_director() -> void:
@@ -446,6 +466,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Camera switching is owned solely by [CameraRig]. Handling it here as well
 	# raced the rig for the same action and could consume the press without
 	# toggling anything.
+	if event.is_action_pressed(InputActions.SAVE_GAME):
+		if save_service != null:
+			save_service.save_game()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(InputActions.LOAD_GAME):
+		if save_service != null:
+			save_service.load_game()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(InputActions.PAUSE):
 		GameState.toggle_pause()
 		# Releasing the cursor on pause lets the player reach the menu.

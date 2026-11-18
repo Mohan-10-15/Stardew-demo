@@ -218,7 +218,10 @@ func _ensure_overlay() -> void:
 	_overlay = packed.instantiate() as CanvasLayer
 	_overlay.name = "CutsceneOverlay"
 	_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
-	get_tree().get_root().add_child(_overlay)
+	# Owned by the director, not the tree root, so freeing the director also
+	# frees its overlay — a test fixture that frees the rig must leave no leaked
+	# Canvas/RID behind.
+	add_child(_overlay)
 
 
 func _set_text(value: String) -> void:

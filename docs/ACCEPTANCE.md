@@ -275,10 +275,16 @@ round-trip and a headless boot with no audio device.
 
 ## M16 — Save and load
 
-- [ ] Save/reload preserves the complete state: world, farm grid, inventory,
+- [x] Save/reload preserves the complete state: world, farm grid, inventory,
       time, relationships, quests, unlocks
-- [ ] Saves from a previous `SAVE_VERSION` migrate forward
-- [ ] A corrupt save fails loudly rather than silently discarding progress
+- [x] Saves from a previous `SAVE_VERSION` migrate forward
+- [x] A corrupt save fails loudly rather than silently discarding progress
+
+`SaveService` owns one versioned JSON file (`SAVE_VERSION = 3`) and asks each
+service for its own state. Writes are atomic; JSON-incompatible values are
+normalised on the way out and id keys restored on the way in. `test_save.gd`
+covers the section set, a full round-trip, version migration and corruption;
+`tools/playtest_save.gd` writes with F5 and restores with F9 in a real window.
 
 ---
 

@@ -28,7 +28,7 @@ reasoning.
 | M13 | Story progression | |
 | M14 | Audio | **COMPLETE** |
 | M15 | UI and accessibility | |
-| M16 | Save and load | |
+| M16 | Save and load | **COMPLETE** |
 | M17 | Art and animation polish | |
 | M18 | Performance | |
 | M19 | Testing, bot simulation, balance | |
