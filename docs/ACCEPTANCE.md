@@ -246,8 +246,16 @@ plays the intro in a real window and skips it with a real E key.
 
 ## M13 — Story progression
 
-- [ ] Main progression reaches its ending
-- [ ] The ending completes, and free play continues afterwards
+- [x] Main progression reaches its ending
+- [x] The ending completes, and free play continues afterwards
+
+Six data-authored chapters open on real gameplay outcomes — the intro and
+village cutscenes, the first harvest, two quest turn-ins, a friendship and a
+marriage. `StoryService` advances one chapter per satisfied requirement set,
+publishes `story_ending_reached` exactly once, and never pauses or locks the
+game. `tests/suites/test_story.gd` covers the content, ordered progression, the
+ending and save round-trip; `tools/playtest_story.gd` reviews all three states
+in a real window.
 
 ---
 

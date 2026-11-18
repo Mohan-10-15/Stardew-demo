@@ -21,6 +21,7 @@ const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 const TitleScreenScene := "res://scenes/ui/title_screen.tscn"
+const StoryTrackerScene := "res://scenes/ui/story_tracker.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -54,9 +55,12 @@ const TitleScreenScene := "res://scenes/ui/title_screen.tscn"
 ## existing boot assertion. The playtest enables it explicitly.
 @export var play_intro_cutscene: bool = false
 @export var load_save_service: bool = true
+@export var load_story: bool = true
 @export var title_scene_path: String = TitleScreenScene
 @export var load_title_screen: bool = true
 @export var show_title_on_boot: bool = true
+@export var story_tracker_scene_path: String = StoryTrackerScene
+@export var load_story_tracker: bool = true
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -80,6 +84,8 @@ var audio_manager: AudioManager = null
 var cutscene_director: CutsceneDirector = null
 var save_service: SaveService = null
 var title_screen: CanvasLayer = null
+var story_service: StoryService = null
+var story_tracker: CanvasLayer = null
 var _time_service: TimeService = null
 
 
@@ -124,6 +130,8 @@ func _boot() -> void:
 		# failing, so the order is a courtesy — but it is the order the real game
 		# runs in, and the one a boot should exercise.
 		_spawn_dialogue_service()
+	if load_story:
+		_spawn_story_service()
 	if load_save_service:
 		_spawn_save_service()
 	if load_player:
@@ -166,8 +174,14 @@ func _boot() -> void:
 	# everything it might report on.
 	if load_log_panel:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
+	if load_story_tracker:
+		_spawn_overlay(story_tracker_scene_path, "story tracker", "story_tracker")
 	if load_title_screen:
 		_spawn_overlay(title_scene_path, "title screen", "title_screen")
+		# Hidden until `_enter_title` decides the game should actually open on
+		# the menu; otherwise a boot that skips it still shows its dark backdrop.
+		if title_screen != null:
+			title_screen.visible = false
 
 	# The player is up and their state exists, so the opening tool is ready for the
 	# first click rather than a frame later.
@@ -247,6 +261,13 @@ func _spawn_audio_manager() -> void:
 
 ## The aggregate save is wired only after every service exists, so its
 ## `to_dict` can ask each one for its own state without knowing their fields.
+func _spawn_story_service() -> void:
+	story_service = StoryService.new()
+	story_service.name = "StoryService"
+	add_child(story_service)
+	Log.info("Main", "Spawned story service at %s" % str(story_service.current_stage))
+
+
 func _spawn_save_service() -> void:
 	save_service = SaveService.new()
 	save_service.name = "SaveService"
@@ -257,6 +278,7 @@ func _spawn_save_service() -> void:
 	save_service.quest_service = quest_service
 	save_service.dialogue_service = dialogue_service
 	save_service.cutscene_director = cutscene_director
+	save_service.story_service = story_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 

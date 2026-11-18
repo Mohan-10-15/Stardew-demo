@@ -25,7 +25,7 @@ reasoning.
 | M10 | Cutscene system | **COMPLETE** |
 | M11 | Buildings and farm upgrades | |
 | M12 | Festivals | |
-| M13 | Story progression | |
+| M13 | Story progression | **COMPLETE** |
 | M14 | Audio | **COMPLETE** |
 | M15 | UI and accessibility | |
 | M16 | Save and load | **COMPLETE** |

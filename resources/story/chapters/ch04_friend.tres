@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_8k87s"]
+
+[resource]
+script = ExtResource("1_8k87s")
+id = &"ch04_friend"
+title = "A Name Worth Knowing"
+description = "You finish Mira's job and somebody in the valley is glad you stayed."
+requires = Array[StringName]([&"quest_q_mira_first_harvest_done", &"first_friend"])
+reward_gold = 220

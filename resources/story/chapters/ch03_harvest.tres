@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_c8rwf"]
+
+[resource]
+script = ExtResource("1_c8rwf")
+id = &"ch03_harvest"
+title = "Something Grows"
+description = "Your first harvest goes into the bag, and Mira's question has an answer."
+requires = Array[StringName]([&"first_village_seen", &"first_harvest"])
+reward_gold = 120

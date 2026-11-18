@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/story_tracker.gd" id="1_32k8f"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d2x4k"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.1, 0.14, 0.5)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="StoryTracker" type="CanvasLayer"]
+script = ExtResource("1_32k8f")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 120.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_d2x4k")
+
+[node name="Chapter" type="Label" parent="Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+horizontal_alignment = 1

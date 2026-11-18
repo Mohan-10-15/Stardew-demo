@@ -2928,3 +2928,25 @@ world state and inventory intact" row is literally true.
 which presses F5 to enable Continue and clicks it with a real mouse: PASS.
 **Full pipeline: 567/567**, all stages green, zero script errors. Boot now
 reports `phase=TITLE`, which is the intended front door.
+
+### M13 main story
+
+`resources/story/chapters/` holds six data-authored chapters with numeric-prefixed
+ids so registry order is play order. `StoryService` is a manager: it listens to
+custom EventBus outcomes (cutscene finished, harvest, quest turn-in, friendship,
+marriage), sets flags, and opens the next chapter only when all its requirements
+are met — one chapter per event burst, so no beat can be skipped by accident.
+The ending publishes `story_ending_reached` once and never locks the game; the
+player begins in chapter one without any chapter firing on service creation.
+
+A generated story tracker names the current chapter in the HUD, and the
+aggregate save carries the stage, flags and ending state. `tests/suites/test_story.gd`
+— 4 cases — and `tools/playtest_story.gd` pass; the real-window run walks from
+"A Cart at Dawn" through "The Valley Remembers" with free play still running.
+**Full pipeline: 571/571**, all stages green, zero script errors.
+
+Two content bugs found while building it: the generator initially wrote empty
+`requires` arrays because a plain array literal cannot be assigned to a typed
+`Array[StringName]` export through `set()`, and the service auto-fired the intro
+cutscene on creation, which both replayed it spuriously and leaked timers in
+tests. Both are fixed and covered.

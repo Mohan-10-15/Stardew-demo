@@ -28,6 +28,12 @@ signal game_save_failed(reason: StringName)
 signal game_loaded(path: String)
 signal game_load_failed(reason: StringName)
 
+# --- Story ------------------------------------------------------------------
+## The main progression moved to a new chapter, or reached its ending. The
+## ending is a moment, not a lock: free play continues afterwards.
+signal story_stage_changed(previous: StringName, current: StringName)
+signal story_ending_reached(stage: StringName)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

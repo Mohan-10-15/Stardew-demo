@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_yj7ap"]
+
+[resource]
+script = ExtResource("1_yj7ap")
+id = &"ch02_village"
+title = "The Square Wakes"
+description = "The village notices you. Somebody has work, and somebody has advice."
+requires = Array[StringName]([&"intro_seen"])
+cutscene_id = &"first_village"
+reward_gold = 50

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_l122u"]
+
+[resource]
+script = ExtResource("1_l122u")
+id = &"ch01_arrival"
+title = "A Cart at Dawn"
+description = "You arrive at the old farm with a bill in your pocket and a valley you have never seen."
+cutscene_id = &"intro"

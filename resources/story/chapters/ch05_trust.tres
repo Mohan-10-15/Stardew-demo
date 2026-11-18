@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_6spq0"]
+
+[resource]
+script = ExtResource("1_6spq0")
+id = &"ch05_trust"
+title = "The Quiet Between Jobs"
+description = "Odette trusts you with the frost dispute. The valley stops feeling like a map."
+requires = Array[StringName]([&"quest_q_odette_first_frost_done"])
+reward_gold = 320

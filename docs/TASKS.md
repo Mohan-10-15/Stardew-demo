@@ -207,7 +207,7 @@ specification when it is picked up, not now.
 | TASK-017 | Weather | Group 23 / M9 |
 | TASK-018 | Seasons and visuals | Group 24 / M9 |
 | TASK-019 | Festivals | M12 |
-| TASK-020 | Story progression | M13 |
+| TASK-020 | Story progression | M13. **Complete** — six chapters and an ending |
 | TASK-021 | Audio manager and music | Group 27 / M14. **Complete** — 52 synthesised sounds |
 | TASK-022 | Cutscene system | M10. **Complete** — data cutscenes with safe skip |
 | TASK-023 | Performance | Group 29 / M18 |
