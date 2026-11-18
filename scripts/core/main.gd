@@ -22,6 +22,7 @@ const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 const TitleScreenScene := "res://scenes/ui/title_screen.tscn"
 const StoryTrackerScene := "res://scenes/ui/story_tracker.tscn"
+const CombatHudScene := "res://scenes/ui/combat_hud.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -61,6 +62,9 @@ const StoryTrackerScene := "res://scenes/ui/story_tracker.tscn"
 @export var show_title_on_boot: bool = true
 @export var story_tracker_scene_path: String = StoryTrackerScene
 @export var load_story_tracker: bool = true
+@export var load_combat: bool = true
+@export var combat_hud_scene_path: String = CombatHudScene
+@export var load_combat_hud: bool = true
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -86,6 +90,8 @@ var save_service: SaveService = null
 var title_screen: CanvasLayer = null
 var story_service: StoryService = null
 var story_tracker: CanvasLayer = null
+var combat_service: CombatService = null
+var combat_hud: CanvasLayer = null
 var _time_service: TimeService = null
 
 
@@ -130,6 +136,8 @@ func _boot() -> void:
 		# failing, so the order is a courtesy — but it is the order the real game
 		# runs in, and the one a boot should exercise.
 		_spawn_dialogue_service()
+	if load_combat:
+		_spawn_combat_service()
 	if load_story:
 		_spawn_story_service()
 	if load_save_service:
@@ -174,6 +182,8 @@ func _boot() -> void:
 	# everything it might report on.
 	if load_log_panel:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
+	if load_combat_hud:
+		_spawn_overlay(combat_hud_scene_path, "combat HUD", "combat_hud")
 	if load_story_tracker:
 		_spawn_overlay(story_tracker_scene_path, "story tracker", "story_tracker")
 	if load_title_screen:
@@ -261,6 +271,13 @@ func _spawn_audio_manager() -> void:
 
 ## The aggregate save is wired only after every service exists, so its
 ## `to_dict` can ask each one for its own state without knowing their fields.
+func _spawn_combat_service() -> void:
+	combat_service = CombatService.new()
+	combat_service.name = "CombatService"
+	add_child(combat_service)
+	Log.info("Combat", "Combat service ready")
+
+
 func _spawn_story_service() -> void:
 	story_service = StoryService.new()
 	story_service.name = "StoryService"
@@ -279,6 +296,7 @@ func _spawn_save_service() -> void:
 	save_service.dialogue_service = dialogue_service
 	save_service.cutscene_director = cutscene_director
 	save_service.story_service = story_service
+	save_service.combat_service = combat_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 
@@ -532,6 +550,8 @@ func _spawn_player() -> void:
 	# needs the reference to persist (and restore) a world position.
 	if save_service != null:
 		save_service.player = player
+	if combat_service != null:
+		combat_service.player = player
 	Log.info("Main", "Spawned player at %s" % player.global_position)
 
 

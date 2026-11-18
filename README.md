@@ -4,8 +4,31 @@ A stylized 3D farming / life-simulation game in the spirit of Stardew Valley —
 original world, cast and story. Restore the Heartstone by completing the Valley
 Collections: crops, fish, minerals, recipes, critters and friendships.
 
-Built with **Godot 4.5** and plain **GDScript**. No addons, no C#, nothing
-installed system-wide.
+Built with **Godot 4.5** and **GDScript**. No addons and nothing installed
+system-wide. One measured C# system (`scripts/sim/BalanceSweep.cs`) and a small
+Windows launcher use .NET; see `docs/MULTI_LANGUAGE_ARCHITECTURE.md`.
+
+## Running the game
+
+Double-click **`Hollowbrook.exe`** in this folder. It starts the bundled portable
+Godot with the right arguments — no terminal, no install.
+
+From a terminal (PowerShell):
+
+```powershell
+cd "C:\mohan\Game\Stardew dmeo"
+& ".\tools\Godot_v4.5-stable_win64_console.exe" --path . --rendering-driver opengl3
+```
+
+Do not pass `--headless` when you want a window; that flag is only for the
+automated pipeline:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\check.ps1
+```
+
+Controls: WASD move, mouse look, Space jump, E interact, K / left-click attack,
+V camera, F5 save, F9 load, Esc pause, F3 log.
 
 Both a **first-person** and a **third-person** camera, switchable in-game at any
 time with `V`.

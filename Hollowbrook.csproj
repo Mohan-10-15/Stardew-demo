@@ -10,4 +10,9 @@
     <WarningLevel>4</WarningLevel>
     <GodotBin Condition="'$(GodotBin)' == ''">$(MSBuildThisFileDirectory)tools/Godot_v4.5-stable_mono_win64.exe</GodotBin>
   </PropertyGroup>
+  <!-- The clickable Windows launcher is a separate .NET project. It must not be
+       compiled into the Godot game assembly. -->
+  <ItemGroup>
+    <Compile Remove="launcher/**/*.cs" />
+  </ItemGroup>
 </Project>

@@ -26,6 +26,7 @@ var quest_service: Node = null
 var dialogue_service: Node = null
 var cutscene_director: Node = null
 var story_service: Node = null
+var combat_service: Node = null
 ## The player body, saved separately from `player_state` (which owns the bag,
 ## purse and stamina but deliberately not a world coordinate).
 var player: Node3D = null
@@ -88,6 +89,8 @@ func to_dict() -> Dictionary:
 	if player != null:
 		var p := player.global_position
 		data["player_position"] = {"x": p.x, "y": p.y, "z": p.z}
+	if combat_service != null and combat_service.has_method("to_dict"):
+		data["combat"] = combat_service.call("to_dict")
 	if story_service != null and story_service.has_method("to_dict"):
 		data["story"] = story_service.call("to_dict")
 	if cutscene_director != null:
@@ -119,6 +122,9 @@ func from_dict(data: Dictionary) -> void:
 	if npc_manager != null and npc_manager.has_method("from_dict") \
 			and payload.get("npcs") is Dictionary:
 		npc_manager.call("from_dict", _stringify_keys(payload["npcs"]))
+	if combat_service != null and combat_service.has_method("from_dict") \
+			and payload.get("combat") is Dictionary:
+		combat_service.call("from_dict", payload["combat"])
 	if story_service != null and story_service.has_method("from_dict") \
 			and payload.get("story") is Dictionary:
 		story_service.call("from_dict", _stringify_keys(payload["story"]))

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/enemy_data.gd" id="1_fc131"]
+
+[resource]
+script = ExtResource("1_fc131")
+id = &"cave_brute"
+display_name = "Cave Brute"
+model = "res://assets/models/kaykit/Characters/Barbarian.fbx"
+tint = Color(0.34, 0.2, 0.18, 1)
+max_health = 95
+damage = 12
+speed = 1.7
+attack_range = 2.0
+attack_cooldown = 1.8
+gold_reward = 30

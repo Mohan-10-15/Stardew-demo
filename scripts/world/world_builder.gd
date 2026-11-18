@@ -73,6 +73,7 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_build_village(root, rng)
 	_build_resources(root, rng)
 	_build_interactables(root)
+	_add_mine_entrance(root)
 
 
 ## Height of the terrain at a world XZ position.
@@ -624,6 +625,30 @@ static func _scatter(data: ResourceNodeData, field: ResourceField, rng: RandomNu
 		])
 
 
+## The mine door and its fighting clearing, kept clear of the scatter.
+const MINE_CENTRE_XZ := Vector2(-30, -6)
+
+
+static func _add_mine_entrance(root: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "MineEntrance"
+	body.collision_layer = PhysicsLayers.INTERACTABLE
+	body.collision_mask = 0
+	body.position = Vector3(MINE_CENTRE_XZ.x, 0, MINE_CENTRE_XZ.y + 6)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.4, 2.8, 1.0)
+	shape.shape = box
+	shape.position = Vector3(0, 1.4, 0)
+	body.add_child(shape)
+	var component := Node.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/combat/mine_entrance.gd"))
+	body.add_child(component)
+	_finish(body, root)
+
+
 ## Whether [param pos] is somewhere a gatherable must not stand.
 ##
 ## One list of rules rather than a rule per builder, so "the path stays walkable" is
@@ -639,6 +664,9 @@ static func is_reserved(pos: Vector2) -> bool:
 		return true
 	# The farm plot and its fence line.
 	if pos.distance_to(REGION_FARM) < 15.0:
+		return true
+	# The mine door and its fighting clearing.
+	if pos.distance_to(MINE_CENTRE_XZ) < 11.0:
 		return true
 	# The CC0 landmarks south of the farm.
 	for centre: Vector2 in LANDMARK_CENTRES:

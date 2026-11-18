@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/enemy_data.gd" id="1_xv81o"]
+
+[resource]
+script = ExtResource("1_xv81o")
+id = &"cave_shade"
+display_name = "Cave Shade"
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+tint = Color(0.28, 0.22, 0.42, 1)
+max_health = 55
+damage = 7
+speed = 2.4
+attack_cooldown = 1.3
+gold_reward = 18
+ore_reward = &"copper_ore"

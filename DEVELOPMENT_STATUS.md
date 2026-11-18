@@ -2964,3 +2964,28 @@ Two review bugs were fixed: the cutscene overlay's "E — skip" hint was visible
 over ordinary play (now shown only while a cutscene runs), and the first water
 tuning read like a swimming pool (tuned down). `tools/playtest_art.gd` now also
 photographs the pond; all stages green at 571/571.
+
+### M8 mines and combat
+
+Four data-authored enemies under `resources/combat/enemies/` reuse the CC0 KayKit
+rigs tinted as cave shades. `CombatService` opens the mine from a real E
+interaction, spawns a wave, and descends through three floors — each with tougher
+enemies — before the Warden appears. K or the left mouse button attacks; hit,
+miss, kill, boss spawn, clear, damage, death and respawn are all distinct
+EventBus outcomes with distinct sounds from the generated library. A generated
+combat HUD shows health and mine state. Death respawns at the farm with health
+restored and deliberately never writes the aggregate save.
+
+`tests/suites/test_combat.gd` — 4 cases — and `tools/playtest_combat.gd` pass;
+the real-window run enters, lands an attack, descends, kills the Warden and
+reviews four frames. **Full pipeline: 575/575**, all stages green.
+
+### Double-clickable launcher
+
+No Godot export templates are installed and they cannot be downloaded here, so
+a standalone exported game is impossible offline. `launcher/` is a small .NET 8
+project published as `Hollowbrook.exe` at the repo root: it locates the repo by
+walking up to `project.godot`, starts the bundled portable Godot with
+`--path` and `--rendering-driver opengl3`, and shows a readable error if the
+engine is missing. Double-clicking `Hollowbrook.exe` runs the game; no terminal
+needed. The launcher is excluded from the Godot C# assembly in `Hollowbrook.csproj`.

@@ -34,6 +34,21 @@ signal game_load_failed(reason: StringName)
 signal story_stage_changed(previous: StringName, current: StringName)
 signal story_ending_reached(stage: StringName)
 
+# --- Combat -----------------------------------------------------------------
+## Distinct halves: an attack that lands and one that misses; a death and the
+## respawn that follows; a mine entered and the same mine cleared.
+signal attack_landed(enemy_id: StringName, damage: int)
+signal attack_missed()
+signal enemy_defeated(enemy_id: StringName)
+signal boss_defeated(enemy_id: StringName)
+signal player_damaged(amount: int, remaining: int)
+signal player_died()
+signal player_respawned()
+signal mine_entered()
+signal mine_cleared()
+signal mine_boss_spawned()
+signal mine_floor_changed(floor: int)
+
 # --- Presentation / settings ---------------------------------------------
 signal config_changed(section: StringName)
 signal camera_mode_changed(mode: int)

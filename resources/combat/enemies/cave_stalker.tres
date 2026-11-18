@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/combat/enemy_data.gd" id="1_4gnrv"]
+
+[resource]
+script = ExtResource("1_4gnrv")
+id = &"cave_stalker"
+display_name = "Cave Stalker"
+model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
+tint = Color(0.18, 0.3, 0.26, 1)
+max_health = 45
+damage = 9
+speed = 3.0
+attack_range = 1.6
+attack_cooldown = 1.0
+gold_reward = 22
+ore_reward = &"stone"

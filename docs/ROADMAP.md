@@ -20,7 +20,7 @@ reasoning.
 | M5 | NPCs, dialogue | **COMPLETE** — twelve villagers |
 | M6 | Quests, relationships | **COMPLETE** |
 | M7 | Fishing, animals, crafting, cooking | |
-| M8 | Mines and combat | |
+| M8 | Mines and combat | **COMPLETE** |
 | M9 | Weather and seasons | |
 | M10 | Cutscene system | **COMPLETE** |
 | M11 | Buildings and farm upgrades | |

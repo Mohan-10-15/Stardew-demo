@@ -40,6 +40,10 @@ const TOGGLE_LOG_PANEL := &"toggle_log_panel"
 const SAVE_GAME := &"save_game"
 const LOAD_GAME := &"load_game"
 
+## Mining and combat. Bound to a key and the left mouse button so fighting
+## feels like an action rather than a menu.
+const ATTACK := &"attack"
+
 const HOTBAR_1 := &"hotbar_1"
 const HOTBAR_2 := &"hotbar_2"
 const HOTBAR_3 := &"hotbar_3"

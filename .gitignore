@@ -9,6 +9,12 @@ build/
 bin/
 *.tmp
 
+# Launcher build intermediates. The published `Hollowbrook.exe` at the repo root
+# is kept: it is the double-clickable way to play without a terminal.
+launcher/publish/
+launcher/bin/
+launcher/obj/
+
 # Portable Godot editor binaries (ship in the repo, git-ignored)
 tools/*.exe
 tools/*.zip

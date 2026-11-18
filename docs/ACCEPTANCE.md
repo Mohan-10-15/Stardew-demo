@@ -197,11 +197,19 @@ M5 remains open on population: it wants twelve villagers, not six.
 
 ## M8 — Mines and combat
 
-- [ ] A mine can be entered and descended
-- [ ] Combat works: attack, damage, defeat an enemy
-- [ ] A boss can be fought and defeated
-- [ ] Combat success and failure sound and look distinct
-- [ ] The player can die and respawn without losing save integrity
+- [x] A mine can be entered and descended
+- [x] Combat works: attack, damage, defeat an enemy
+- [x] A boss can be fought and defeated
+- [x] Combat success and failure sound and look distinct
+- [x] The player can die and respawn without losing save integrity
+
+`CombatService` opens the mine from a real E interaction, then descends through
+three floors of data-authored enemies before the Warden appears. K or left-click
+attacks; hits, misses, kills, the boss and the clear each publish their own
+EventBus event and their own synthesised cue from the 52-sound library. Death
+respawns at the farm with health restored and never writes a save —
+`tests/suites/test_combat.gd` covers that, and `tools/playtest_combat.gd` clears
+the mine in a real window.
 
 ---
 
