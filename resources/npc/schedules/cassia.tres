@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_occ2j"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_cuc7t"]
+
+[sub_resource type="Resource" id="Resource_p0rau"]
+script = ExtResource("1_occ2j")
+to_minute = 900
+location = &"cassia_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_rlvth"]
+script = ExtResource("1_occ2j")
+from_minute = 900
+to_minute = 1200
+location = &"kitchen_garden"
+weathers = Array[int]([0, 4])
+activity = &"reading the beds"
+
+[sub_resource type="Resource" id="Resource_pjhe7"]
+script = ExtResource("1_occ2j")
+from_minute = 900
+to_minute = 1200
+location = &"village_square"
+weathers = Array[int]([1, 2, 3])
+activity = &"sheltering"
+
+[sub_resource type="Resource" id="Resource_pqnja"]
+script = ExtResource("1_occ2j")
+from_minute = 1200
+to_minute = 1700
+location = &"pond_shore"
+activity = &"reading the water"
+
+[sub_resource type="Resource" id="Resource_g0fdw"]
+script = ExtResource("1_occ2j")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"buying ink"
+
+[sub_resource type="Resource" id="Resource_la1ec"]
+script = ExtResource("1_occ2j")
+from_minute = 2100
+location = &"cassia_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_cuc7t")
+npc_id = &"cassia"
+entries = Array[ExtResource("1_occ2j")]([SubResource("Resource_p0rau"), SubResource("Resource_rlvth"), SubResource("Resource_pjhe7"), SubResource("Resource_pqnja"), SubResource("Resource_g0fdw"), SubResource("Resource_la1ec")])

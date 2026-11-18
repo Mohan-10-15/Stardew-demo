@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_eqjh0"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_kw0n6"]
+
+[sub_resource type="Resource" id="Resource_o55xe"]
+script = ExtResource("1_eqjh0")
+to_minute = 800
+location = &"elke_cottage"
+activity = &"drawing a map"
+
+[sub_resource type="Resource" id="Resource_hevqk"]
+script = ExtResource("1_eqjh0")
+from_minute = 800
+to_minute = 1200
+location = &"village_orchard"
+activity = &"checking the landmarks"
+
+[sub_resource type="Resource" id="Resource_rsf5r"]
+script = ExtResource("1_eqjh0")
+from_minute = 1200
+to_minute = 1700
+location = &"village_square"
+activity = &"selling directions"
+
+[sub_resource type="Resource" id="Resource_ppj5c"]
+script = ExtResource("1_eqjh0")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"buying parchment"
+
+[sub_resource type="Resource" id="Resource_n20o7"]
+script = ExtResource("1_eqjh0")
+from_minute = 2100
+location = &"elke_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_kw0n6")
+npc_id = &"elke"
+entries = Array[ExtResource("1_eqjh0")]([SubResource("Resource_o55xe"), SubResource("Resource_hevqk"), SubResource("Resource_rsf5r"), SubResource("Resource_ppj5c"), SubResource("Resource_n20o7")])

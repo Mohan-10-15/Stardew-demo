@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/location_data.gd" id="1_ayas6"]
+
+[resource]
+script = ExtResource("1_ayas6")
+id = &"garrick_cottage"
+display_name = "Garrick's Cottage"
+position = Vector2(52, 4)
+kind = &"home"
+facing = inf

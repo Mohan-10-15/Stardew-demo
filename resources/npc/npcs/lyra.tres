@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_vnvub"]
+
+[resource]
+script = ExtResource("1_vnvub")
+id = &"lyra"
+display_name = "Lyra"
+description = "The valley's one true firm believer in doing things properly."
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+model_tint = Color(0.54, 0.4, 0.84, 1)
+target_height = 1.76
+home = Vector2(36, 20)
+wander_radius = 7.0
+walk_speed = 1.75
+birthday_season = 3
+birthday_day = 3
+signature_prop = "res://assets/models/kaykit/Addons/shield_square.fbx"
+romanceable = true
+loved_gifts = Array[StringName]([&"copper_ore", &"wild_berry"])
+liked_gifts = Array[StringName]([&"cauliflower", &"yam"])
+disliked_gifts = Array[StringName]([&"melon"])

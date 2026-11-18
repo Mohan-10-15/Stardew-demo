@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_2odeb"]
+
+[resource]
+script = ExtResource("1_2odeb")
+id = &"dorian"
+display_name = "Dorian"
+description = "Quarryman. Speaks in short sentences and long silences."
+model = "res://assets/models/kaykit/Characters/Barbarian.fbx"
+model_tint = Color(0.7, 0.34, 0.2, 1)
+target_height = 1.94
+home = Vector2(40, 2)
+wander_radius = 5.5
+walk_speed = 1.55
+birthday_season = 3
+birthday_day = 11
+signature_prop = "res://assets/models/kaykit/Addons/sword_2handed.fbx"
+romanceable = true
+loved_gifts = Array[StringName]([&"iron_ore", &"stone"])
+liked_gifts = Array[StringName]([&"wood", &"copper_ore"])
+disliked_gifts = Array[StringName]([&"cauliflower"])

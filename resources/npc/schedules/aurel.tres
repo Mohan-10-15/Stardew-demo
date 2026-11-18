@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_uthqs"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_iqkqq"]
+
+[sub_resource type="Resource" id="Resource_whvq7"]
+script = ExtResource("1_uthqs")
+to_minute = 900
+location = &"aurel_cottage"
+activity = &"balancing the books"
+
+[sub_resource type="Resource" id="Resource_t3r3a"]
+script = ExtResource("1_uthqs")
+from_minute = 900
+to_minute = 1200
+location = &"general_store"
+activity = &"checking the ledger"
+
+[sub_resource type="Resource" id="Resource_cyrut"]
+script = ExtResource("1_uthqs")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"counting the coins"
+
+[sub_resource type="Resource" id="Resource_63x28"]
+script = ExtResource("1_uthqs")
+from_minute = 1700
+to_minute = 2100
+location = &"village_square"
+activity = &"collecting debts"
+
+[sub_resource type="Resource" id="Resource_p5tth"]
+script = ExtResource("1_uthqs")
+from_minute = 2100
+location = &"aurel_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_iqkqq")
+npc_id = &"aurel"
+entries = Array[ExtResource("1_uthqs")]([SubResource("Resource_whvq7"), SubResource("Resource_t3r3a"), SubResource("Resource_cyrut"), SubResource("Resource_63x28"), SubResource("Resource_p5tth")])

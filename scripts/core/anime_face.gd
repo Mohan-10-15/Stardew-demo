@@ -40,6 +40,12 @@ const EYE_COLORS: Dictionary = {
 	&"fen": Color(0.22, 0.86, 0.62),
 	&"halda": Color(0.98, 0.82, 0.24),
 	&"sable": Color(0.38, 0.68, 0.98),
+	&"aurel": Color(0.98, 0.84, 0.28),
+	&"cassia": Color(0.28, 0.92, 0.84),
+	&"dorian": Color(0.96, 0.52, 0.28),
+	&"elke": Color(0.96, 0.46, 0.82),
+	&"garrick": Color(0.66, 0.86, 0.34),
+	&"lyra": Color(0.70, 0.52, 0.98),
 }
 
 static var _cache: Dictionary = {}

@@ -5,11 +5,12 @@ GDScript by default with one measured system in C# (see
 `docs/MULTI_LANGUAGE_ARCHITECTURE.md`). Dual first-person / third-person
 cameras, switchable at runtime.
 
-Progress: **Groups 0–17 and 25 complete, plus TASK-008 (the dialogue system).**
-TASK-007 (Friendship) closes M6 with this group. M5 is still open on population:
-the other six of the twelve villagers `prompt.md` §16 asks for are not authored.
+Progress: **Groups 0–17 and 25 complete, plus TASK-007 and TASK-008.** The cast
+is now the twelve villagers `prompt.md` §16 asks for, so **M5 and M6 are both
+complete**. The current workstream is art and presentation polish on top of that
+finished content.
 
-Current baseline: **536/536 tests**, C# build clean, import clean, boot clean,
+Current baseline: **549/549 tests**, C# build clean, import clean, boot clean,
 zero script errors.
 
 ---
@@ -2822,3 +2823,19 @@ rather than freezing in a T-pose. The drawn face keeps its own ink and is
 excluded. `test_anime` now asserts outlines exist as well as the toon materials.
 **Full pipeline: 549/549**, both real-window playtests pass; the reviewed
 lineup shows clean black edges around every villager, hat, cape and prop.
+
+### Twelve villagers (art workstream, continued)
+
+M5's population gap is closed. `tools/generate_npc_data.gd` now authors twelve
+villagers: the original six plus Aurel, Cassia, Dorian, Elke, Garrick and Lyra.
+Each has a distinct tint, signature KayKit addon, shipped day, spouse day,
+dialogue tree, birthdays, gift lists and an original anime face with its own eye
+colour. The generators wrote 12 definitions, 12 days, 12 spouse days, 20
+locations and 12 dialogue trees; every content test runs over all twelve.
+
+One test fixture had assumed the first villager in id order was always walking;
+it now picks an actively walking villager and waits through the arrived-pause
+before asserting the walk resumed. `tools/playtest_art.gd` lines all twelve up
+on the open farm approach and photographs each portrait. **Full pipeline:
+549/549**, both real-window playtests pass. `docs/ACCEPTANCE.md` M5 is ticked
+in full.

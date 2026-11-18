@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_qsfkx"]
+
+[resource]
+script = ExtResource("1_qsfkx")
+id = &"cassia"
+display_name = "Cassia"
+description = "Reads the weather twice, just in case the first reading was honest."
+model = "res://assets/models/kaykit/Characters/Mage.fbx"
+model_tint = Color(0.28, 0.78, 0.72, 1)
+target_height = 1.72
+home = Vector2(26, 14)
+wander_radius = 7.0
+walk_speed = 1.65
+birthday_season = 2
+birthday_day = 14
+signature_prop = "res://assets/models/kaykit/Addons/spellbook_open.fbx"
+romanceable = true
+loved_gifts = Array[StringName]([&"yam", &"tomato"])
+liked_gifts = Array[StringName]([&"spring_onion", &"parsnip"])
+disliked_gifts = Array[StringName]([&"iron_ore"])

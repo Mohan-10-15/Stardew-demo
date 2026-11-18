@@ -138,6 +138,70 @@ const VILLAGERS: Array[Dictionary] = [
 		"loved": [&"parsnip", &"potato"], "liked": [&"copper_ore", &"wood"],
 		"disliked": [&"melon"],
 	},
+	# --- The second six, completing the twelve prompt.md §16 asks for ------------
+	# All six reuse the five CC0 bodies with distinct tints, signature addons and
+	# authored days. Homes are inside the village's clear disc and away from the
+	# five house colliders, so a cottage doorstep is never inside a wall.
+	{
+		"id": &"aurel", "display_name": "Aurel", "model": "Knight.fbx",
+		"description": "Keeps the valley's accounts and never loses a coin. Or says he hasn't.",
+		"tint": Color(0.84, 0.70, 0.28, 1.0), "target_height": 1.79,
+		"home": Vector2(24.0, 4.0), "wander_radius": 6.0, "walk_speed": 1.6,
+		"birthday_season": 1, "birthday_day": 7,
+		"romanceable": true, "prop": "wand.fbx",
+		"loved": [&"melon", &"wood"], "liked": [&"potato", &"copper_ore"],
+		"disliked": [&"wild_berry"],
+	},
+	{
+		"id": &"cassia", "display_name": "Cassia", "model": "Mage.fbx",
+		"description": "Reads the weather twice, just in case the first reading was honest.",
+		"tint": Color(0.28, 0.78, 0.72, 1.0), "target_height": 1.72,
+		"home": Vector2(26.0, 14.0), "wander_radius": 7.0, "walk_speed": 1.65,
+		"birthday_season": 2, "birthday_day": 14,
+		"romanceable": true, "prop": "spellbook_open.fbx",
+		"loved": [&"yam", &"tomato"], "liked": [&"spring_onion", &"parsnip"],
+		"disliked": [&"iron_ore"],
+	},
+	{
+		"id": &"dorian", "display_name": "Dorian", "model": "Barbarian.fbx",
+		"description": "Quarryman. Speaks in short sentences and long silences.",
+		"tint": Color(0.70, 0.34, 0.20, 1.0), "target_height": 1.94,
+		"home": Vector2(40.0, 2.0), "wander_radius": 5.5, "walk_speed": 1.55,
+		"birthday_season": 3, "birthday_day": 11,
+		"romanceable": true, "prop": "sword_2handed.fbx",
+		"loved": [&"iron_ore", &"stone"], "liked": [&"wood", &"copper_ore"],
+		"disliked": [&"cauliflower"],
+	},
+	{
+		"id": &"elke", "display_name": "Elke", "model": "Rogue.fbx",
+		"description": "Sells maps she drew herself. Most of them are almost right.",
+		"tint": Color(0.84, 0.40, 0.76, 1.0), "target_height": 1.71,
+		"home": Vector2(42.0, 16.0), "wander_radius": 8.0, "walk_speed": 2.0,
+		"birthday_season": 1, "birthday_day": 19,
+		"romanceable": true, "prop": "arrow_bundle.fbx",
+		"loved": [&"wild_horseradish", &"spring_onion"],
+		"liked": [&"wild_berry", &"corn"], "disliked": [&"potato"],
+	},
+	{
+		"id": &"garrick", "display_name": "Garrick", "model": "RogueHooded.fbx",
+		"description": "Grows pumpkins the size of a wheelbarrow and enters them in nothing.",
+		"tint": Color(0.44, 0.50, 0.30, 1.0), "target_height": 1.77,
+		"home": Vector2(52.0, 4.0), "wander_radius": 6.5, "walk_speed": 1.7,
+		"birthday_season": 2, "birthday_day": 23,
+		"romanceable": true, "prop": "mug_empty.fbx",
+		"loved": [&"pumpkin", &"parsnip"], "liked": [&"melon", &"wood"],
+		"disliked": [&"stone"],
+	},
+	{
+		"id": &"lyra", "display_name": "Lyra", "model": "Knight.fbx",
+		"description": "The valley's one true firm believer in doing things properly.",
+		"tint": Color(0.54, 0.40, 0.84, 1.0), "target_height": 1.76,
+		"home": Vector2(36.0, 20.0), "wander_radius": 7.0, "walk_speed": 1.75,
+		"birthday_season": 3, "birthday_day": 3,
+		"romanceable": true, "prop": "shield_square.fbx",
+		"loved": [&"copper_ore", &"wild_berry"],
+		"liked": [&"cauliflower", &"yam"], "disliked": [&"melon"],
+	},
 ]
 
 

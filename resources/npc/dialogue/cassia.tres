@@ -1,0 +1,130 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_l7an1"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_p1kt0"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_0hfub"]
+
+[sub_resource type="Resource" id="Resource_s5a0k"]
+script = ExtResource("1_l7an1")
+id = &"intro"
+text = "Cassia. I read the water twice. The second reading is for the fish."
+once = true
+set_flags = Array[StringName]([&"met_cassia"])
+
+[sub_resource type="Resource" id="Resource_68bfp"]
+script = ExtResource("1_l7an1")
+id = &"greeting"
+text = "The brook is saying something. I am trying very hard to be patient with it."
+
+[sub_resource type="Resource" id="Resource_80g27"]
+script = ExtResource("1_l7an1")
+id = &"morning"
+text = "Cassia is up before the shop and has opinions about it."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_0w7ml"]
+script = ExtResource("1_l7an1")
+id = &"evening"
+text = "Cassia looks at the light and decides the day was mostly fine."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_2a2j3"]
+script = ExtResource("1_l7an1")
+id = &"night"
+text = "Cassia should be asleep. Cassia is not."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_nbror"]
+script = ExtResource("1_l7an1")
+id = &"rain"
+text = "Cassia says the rain has excellent timing and means the opposite."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_qi87t"]
+script = ExtResource("1_l7an1")
+id = &"snow"
+text = "Cassia thinks the whole valley looks better under a clean sheet."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_lfl0h"]
+script = ExtResource("1_l7an1")
+id = &"spring"
+text = "Cassia has a list for spring and has already lost it."
+season = 0
+
+[sub_resource type="Resource" id="Resource_62dqn"]
+script = ExtResource("1_l7an1")
+id = &"summer"
+text = "Cassia says the heat makes everything honest, including people."
+season = 1
+
+[sub_resource type="Resource" id="Resource_s5vfy"]
+script = ExtResource("1_l7an1")
+id = &"fall"
+text = "Cassia says the valley gets itself ready and someone has to check."
+season = 2
+
+[sub_resource type="Resource" id="Resource_8mhfb"]
+script = ExtResource("1_l7an1")
+id = &"winter"
+text = "Cassia plans to do everything next year, at length, indoors."
+season = 3
+
+[sub_resource type="Resource" id="Resource_itpm2"]
+script = ExtResource("1_l7an1")
+id = &"friend_2"
+text = "Cassia would say you are growing on them, but not in the garden."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_y3ysq"]
+script = ExtResource("1_l7an1")
+id = &"friend_4"
+text = "Cassia says you are the rare sort who stays for the dull parts."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_hafmv"]
+script = ExtResource("2_p1kt0")
+text = "Did anyone believe you?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_cg38m"]
+script = ExtResource("2_p1kt0")
+text = "I am sure it was very important."
+set_flags = Array[StringName]([&"cassia_dodged"])
+
+[sub_resource type="Resource" id="Resource_gkw68"]
+script = ExtResource("1_l7an1")
+id = &"story_1"
+text = "I predicted last spring's late frost to the minute."
+requires_flag = &"met_cassia"
+once = true
+choices = Array[ExtResource("2_p1kt0")]([SubResource("Resource_hafmv"), SubResource("Resource_cg38m")])
+
+[sub_resource type="Resource" id="Resource_1d0a3"]
+script = ExtResource("1_l7an1")
+id = &"story_2"
+text = "Nobody did. The cabbages believed me, and they were the ones who mattered."
+requires_flag = &"met_cassia"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"cassia_beat"])
+
+[sub_resource type="Resource" id="Resource_tvce1"]
+script = ExtResource("1_l7an1")
+id = &"dating"
+text = "I read the water this morning and it said something I decided not to write down. It was about you."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_lpvq8"]
+script = ExtResource("1_l7an1")
+id = &"married"
+text = "I predicted rain for our wedding day. I was right, and I have never been so pleased to be proven right."
+min_romance = 2
+
+[resource]
+script = ExtResource("3_0hfub")
+npc_id = &"cassia"
+entries = Array[ExtResource("1_l7an1")]([SubResource("Resource_s5a0k"), SubResource("Resource_68bfp"), SubResource("Resource_80g27"), SubResource("Resource_0w7ml"), SubResource("Resource_2a2j3"), SubResource("Resource_nbror"), SubResource("Resource_qi87t"), SubResource("Resource_lfl0h"), SubResource("Resource_62dqn"), SubResource("Resource_s5vfy"), SubResource("Resource_8mhfb"), SubResource("Resource_itpm2"), SubResource("Resource_y3ysq"), SubResource("Resource_gkw68"), SubResource("Resource_1d0a3"), SubResource("Resource_tvce1"), SubResource("Resource_lpvq8")])

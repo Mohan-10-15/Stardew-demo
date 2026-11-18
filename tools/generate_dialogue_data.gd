@@ -50,6 +50,61 @@ const OUTPUT_DIR := "res://resources/npc/dialogue/"
 ## claim as "you gave me a parsnip recently", and the two can be true together.
 ## The numbers are [Friendship.STAGE_DATING] and [Friendship.STAGE_MARRIED] written
 ## as literals because this generator runs before autoloads exist.
+## The second six villagers get the same fifteen-line shape, generated from a
+## small table of their own words. The day/weather/season slots are templated
+## with the name so no two trees repeat a line — a content test checks that —
+## while their voice lives in the intro, greeting and two-beat story.
+const EXTRA_LINES: Dictionary = {
+	&"aurel": {
+		"intro": "Aurel. I keep the accounts. If a number looks wrong, it is probably yours.",
+		"greeting": "Everything has a price. Most things have a receipt, if you look hard enough.",
+		"story_1": "I once balanced the whole valley's ledger in a single afternoon.",
+		"ask": "And what did it say?",
+		"dodge": "That sounds like work.",
+		"story_2": "It said we were all poorer than we thought, and happier than we had any right to be.",
+	},
+	&"cassia": {
+		"intro": "Cassia. I read the water twice. The second reading is for the fish.",
+		"greeting": "The brook is saying something. I am trying very hard to be patient with it.",
+		"story_1": "I predicted last spring's late frost to the minute.",
+		"ask": "Did anyone believe you?",
+		"dodge": "I am sure it was very important.",
+		"story_2": "Nobody did. The cabbages believed me, and they were the ones who mattered.",
+	},
+	&"dorian": {
+		"intro": "Dorian. Stone. I break it. Then it is smaller.",
+		"greeting": "Good stone does not complain when you hit it. People are harder.",
+		"story_1": "There is a seam of iron under the old quarry nobody has touched.",
+		"ask": "Why not?",
+		"dodge": "I will let the stone keep its secret.",
+		"story_2": "Because I put the support beams in myself. Nobody is going in after it while I am here.",
+	},
+	&"elke": {
+		"intro": "Elke. Maps. Mine are mostly right, which is more than you will get elsewhere.",
+		"greeting": "If you are lost, you are probably standing on a road I drew last week.",
+		"story_1": "I mapped the whole valley in a night, by starlight and stubbornness.",
+		"ask": "Any mistakes?",
+		"dodge": "I do not want to know.",
+		"story_2": "One. I drew the pond a metre too far east. I have never lived it down.",
+	},
+	&"garrick": {
+		"intro": "Garrick. Pumpkins. The big ones, if you are asking.",
+		"greeting": "A good pumpkin takes all season and no advice whatsoever.",
+		"story_1": "I grew a pumpkin that took two people and a cart to move.",
+		"ask": "Where is it now?",
+		"dodge": "That is a long story.",
+		"story_2": "It is in the field, where it belongs. I am not going to eat a landmark.",
+	},
+	&"lyra": {
+		"intro": "Lyra. Things work better when they are done properly. I will show you.",
+		"greeting": "There is a right way to mend a gate, and about nine ways that hold until Tuesday.",
+		"story_1": "I rebuilt the north fence in a day, properly, with proper posts.",
+		"ask": "Did it hold?",
+		"dodge": "I am sure you did your best.",
+		"story_2": "It held. Then Sable came past and said 'almost'. Next spring I will show her.",
+	},
+}
+
 const ROMANCE_LINES: Dictionary = {
 	&"mira": {
 		"dating": "I used to tell you what the soil was saying. Now I find myself " +
@@ -86,6 +141,41 @@ const ROMANCE_LINES: Dictionary = {
 			"mended before you come over. That's a new kind of deadline.",
 		"married": "Everything in this house was broken when I got here. It isn't " +
 			"now. You have that effect on things.",
+	},
+	&"aurel": {
+		"dating": "I audited my feelings last night. Every line balanced, and " +
+			"every one of them said your name.",
+		"married": "The ledger is closed, the accounts are settled, and the only " +
+			"thing left on the books is us.",
+	},
+	&"cassia": {
+		"dating": "I read the water this morning and it said something I decided " +
+			"not to write down. It was about you.",
+		"married": "I predicted rain for our wedding day. I was right, and I " +
+			"have never been so pleased to be proven right.",
+	},
+	&"dorian": {
+		"dating": "Stone does not change. I thought I was the same. Then you " +
+			"started coming around.",
+		"married": "I built a shelf for your things. Properly. It will outlast us both.",
+	},
+	&"elke": {
+		"dating": "I drew a map of where we walk together. It is the only one " +
+			"I have never wanted to correct.",
+		"married": "Every road on my map ends here now. I suppose that is what " +
+			"home means.",
+	},
+	&"garrick": {
+		"dating": "I entered my biggest pumpkin in a contest this year. It came " +
+			"second. You came first, which surprised me more.",
+		"married": "We planted a row together this spring. I already know which " +
+			"one is ours.",
+	},
+	&"lyra": {
+		"dating": "I have checked and rechecked, and there is no proper way to " +
+			"say this except plainly. I like you.",
+		"married": "I fixed everything in this house that was wrong. Then I " +
+			"stopped, because there was nothing left to improve.",
 	},
 }
 
@@ -588,6 +678,50 @@ const TREES: Array[Dictionary] = [
 ]
 
 
+## Fills the standard fifteen slots for a later villager from their own handful
+## of lines. The name is written into the templated slots so two trees never
+## repeat a line; the hand-authored story is what gives each one a voice.
+static func _extra_tree(npc_id: StringName, lines: Dictionary) -> Dictionary:
+	var who := String(npc_id).capitalize()
+	var met := StringName("met_%s" % npc_id)
+	var beat := StringName("%s_beat" % npc_id)
+	var entries: Array[Dictionary] = [
+		{"id": &"intro", "once": true, "flags": [met], "text": String(lines["intro"])},
+		{"id": &"greeting", "text": String(lines["greeting"])},
+		{"id": &"morning", "from": 6, "to": 10,
+			"text": "%s is up before the shop and has opinions about it." % who},
+		{"id": &"evening", "from": 17, "to": 22,
+			"text": "%s looks at the light and decides the day was mostly fine." % who},
+		{"id": &"night", "from": 23, "to": 5,
+			"text": "%s should be asleep. %s is not." % [who, who]},
+		{"id": &"rain", "weather": WorldTime.Weather.RAIN,
+			"text": "%s says the rain has excellent timing and means the opposite." % who},
+		{"id": &"snow", "weather": WorldTime.Weather.SNOW,
+			"text": "%s thinks the whole valley looks better under a clean sheet." % who},
+		{"id": &"spring", "season": WorldTime.Season.SPRING,
+			"text": "%s has a list for spring and has already lost it." % who},
+		{"id": &"summer", "season": WorldTime.Season.SUMMER,
+			"text": "%s says the heat makes everything honest, including people." % who},
+		{"id": &"fall", "season": WorldTime.Season.FALL,
+			"text": "%s says the valley gets itself ready and someone has to check." % who},
+		{"id": &"winter", "season": WorldTime.Season.WINTER,
+			"text": "%s plans to do everything next year, at length, indoors." % who},
+		{"id": &"friend_2", "min_hearts": 2,
+			"text": "%s would say you are growing on them, but not in the garden." % who},
+		{"id": &"friend_4", "min_hearts": 4,
+			"text": "%s says you are the rare sort who stays for the dull parts." % who},
+		{"id": &"story_1", "once": true, "needs": met,
+			"text": String(lines["story_1"]),
+			"choices": [
+				{"text": String(lines["ask"]), "next": &"story_2"},
+				{"text": String(lines["dodge"]), "flags": [StringName("%s_dodged" % npc_id)]},
+			]},
+		{"id": &"story_2", "once": true, "needs": met, "hearts": 1, "flags": [beat],
+			"text": String(lines["story_2"])},
+	]
+	return {"npc": npc_id, "entries": entries}
+
+
 func _initialize() -> void:
 	if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(OUTPUT_DIR)):
 		var err := DirAccess.make_dir_recursive_absolute(
@@ -602,7 +736,10 @@ func _initialize() -> void:
 	var exit_code := 0
 	var total_entries := 0
 
-	for spec: Dictionary in TREES:
+	var specs: Array[Dictionary] = TREES.duplicate()
+	for npc_id: StringName in EXTRA_LINES:
+		specs.append(_extra_tree(npc_id, EXTRA_LINES[npc_id]))
+	for spec: Dictionary in specs:
 		var tree := _build(spec)
 		total_entries += tree.entries.size()
 		var problem := tree.is_valid()

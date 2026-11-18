@@ -1,0 +1,130 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_wn15h"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_r7dk0"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_lyvbf"]
+
+[sub_resource type="Resource" id="Resource_bcu7i"]
+script = ExtResource("1_wn15h")
+id = &"intro"
+text = "Aurel. I keep the accounts. If a number looks wrong, it is probably yours."
+once = true
+set_flags = Array[StringName]([&"met_aurel"])
+
+[sub_resource type="Resource" id="Resource_kxrug"]
+script = ExtResource("1_wn15h")
+id = &"greeting"
+text = "Everything has a price. Most things have a receipt, if you look hard enough."
+
+[sub_resource type="Resource" id="Resource_fxwt1"]
+script = ExtResource("1_wn15h")
+id = &"morning"
+text = "Aurel is up before the shop and has opinions about it."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_yutpd"]
+script = ExtResource("1_wn15h")
+id = &"evening"
+text = "Aurel looks at the light and decides the day was mostly fine."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_8a4di"]
+script = ExtResource("1_wn15h")
+id = &"night"
+text = "Aurel should be asleep. Aurel is not."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_8jhgy"]
+script = ExtResource("1_wn15h")
+id = &"rain"
+text = "Aurel says the rain has excellent timing and means the opposite."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_mu3tl"]
+script = ExtResource("1_wn15h")
+id = &"snow"
+text = "Aurel thinks the whole valley looks better under a clean sheet."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_golho"]
+script = ExtResource("1_wn15h")
+id = &"spring"
+text = "Aurel has a list for spring and has already lost it."
+season = 0
+
+[sub_resource type="Resource" id="Resource_txu0t"]
+script = ExtResource("1_wn15h")
+id = &"summer"
+text = "Aurel says the heat makes everything honest, including people."
+season = 1
+
+[sub_resource type="Resource" id="Resource_bme4d"]
+script = ExtResource("1_wn15h")
+id = &"fall"
+text = "Aurel says the valley gets itself ready and someone has to check."
+season = 2
+
+[sub_resource type="Resource" id="Resource_kruq3"]
+script = ExtResource("1_wn15h")
+id = &"winter"
+text = "Aurel plans to do everything next year, at length, indoors."
+season = 3
+
+[sub_resource type="Resource" id="Resource_uiujq"]
+script = ExtResource("1_wn15h")
+id = &"friend_2"
+text = "Aurel would say you are growing on them, but not in the garden."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_gmn75"]
+script = ExtResource("1_wn15h")
+id = &"friend_4"
+text = "Aurel says you are the rare sort who stays for the dull parts."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_lveme"]
+script = ExtResource("2_r7dk0")
+text = "And what did it say?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_0h1bx"]
+script = ExtResource("2_r7dk0")
+text = "That sounds like work."
+set_flags = Array[StringName]([&"aurel_dodged"])
+
+[sub_resource type="Resource" id="Resource_kdyga"]
+script = ExtResource("1_wn15h")
+id = &"story_1"
+text = "I once balanced the whole valley's ledger in a single afternoon."
+requires_flag = &"met_aurel"
+once = true
+choices = Array[ExtResource("2_r7dk0")]([SubResource("Resource_lveme"), SubResource("Resource_0h1bx")])
+
+[sub_resource type="Resource" id="Resource_xbr6c"]
+script = ExtResource("1_wn15h")
+id = &"story_2"
+text = "It said we were all poorer than we thought, and happier than we had any right to be."
+requires_flag = &"met_aurel"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"aurel_beat"])
+
+[sub_resource type="Resource" id="Resource_75o6g"]
+script = ExtResource("1_wn15h")
+id = &"dating"
+text = "I audited my feelings last night. Every line balanced, and every one of them said your name."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_tfoup"]
+script = ExtResource("1_wn15h")
+id = &"married"
+text = "The ledger is closed, the accounts are settled, and the only thing left on the books is us."
+min_romance = 2
+
+[resource]
+script = ExtResource("3_lyvbf")
+npc_id = &"aurel"
+entries = Array[ExtResource("1_wn15h")]([SubResource("Resource_bcu7i"), SubResource("Resource_kxrug"), SubResource("Resource_fxwt1"), SubResource("Resource_yutpd"), SubResource("Resource_8a4di"), SubResource("Resource_8jhgy"), SubResource("Resource_mu3tl"), SubResource("Resource_golho"), SubResource("Resource_txu0t"), SubResource("Resource_bme4d"), SubResource("Resource_kruq3"), SubResource("Resource_uiujq"), SubResource("Resource_gmn75"), SubResource("Resource_kdyga"), SubResource("Resource_xbr6c"), SubResource("Resource_75o6g"), SubResource("Resource_tfoup")])

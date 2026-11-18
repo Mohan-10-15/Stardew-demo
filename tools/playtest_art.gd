@@ -75,9 +75,11 @@ func _run() -> void:
 	var cast: Array[Node3D] = []
 	for npc: Node3D in manager.call("npcs"):
 		cast.append(npc)
-	var start_x := 35.0
-	var step_x := 1.5
-	var line_z := 8.0
+	# The open farm approach, clear of the five house colliders, so all twelve
+	# fit in one frame with the barns and windmill as a backdrop.
+	var start_x := -11.0
+	var step_x := 2.0
+	var line_z := -8.0
 	for i: int in cast.size():
 		var npc: Node3D = cast[i]
 		npc.set("wandering", false)
@@ -91,7 +93,7 @@ func _run() -> void:
 	await _settle(6)
 
 	var middle := start_x + (cast.size() - 1) * step_x * 0.5
-	await _look_from(player, Vector3(middle, 0.2, line_z + 6.0), Vector3(middle, 1.2, line_z))
+	await _look_from(player, Vector3(middle, 0.2, line_z + 15.0), Vector3(middle, 1.2, line_z))
 	await _settle(4)
 	await _shot(SHOT_PREFIX + "01_lineup.png")
 

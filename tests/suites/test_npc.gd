@@ -679,6 +679,13 @@ func _t_attending_holds_still() -> Dictionary:
 	var player: Node3D = built["player"]
 	# Far enough that the villager is definitely mid-patrol when the conversation starts.
 	await _wait(0.5)
+	# Cast order is content, not a promise that the first villager is walking:
+	# a villager in the "arrived, wait a moment" phase would fail the resume
+	# assertion for a reason that has nothing to do with attendance.
+	for candidate: Npc in manager.call("npcs"):
+		if Vector2(candidate.velocity.x, candidate.velocity.z).length() > 0.2:
+			npc = candidate
+			break
 	npc.attending = true
 	# The sample starts after the stop, not at it: `attending` decelerates rather than
 	# teleports, so measuring from the instant it is set measures the braking distance
@@ -690,7 +697,10 @@ func _t_attending_holds_still() -> Dictionary:
 	if before.distance_to(after) > 0.05:
 		return fail(c, "%s walked %.3fm while being spoken to" % [npc.data.id, before.distance_to(after)])
 	npc.attending = false
-	await _wait(0.8)
+	# A villager who had just arrived before the greeting may be in the short
+	# "stand and look around" phase; give them time to pick a new target before
+	# asserting that the walk resumed.
+	await _wait(1.6)
 	var moved := Vector2(npc.position.x, npc.position.z)
 	if moved.distance_to(after) < 0.05:
 		return fail(c, "%s stood like a stone once the conversation ended" % npc.data.id)

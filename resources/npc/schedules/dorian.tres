@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_c8kkt"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_020uv"]
+
+[sub_resource type="Resource" id="Resource_x7juf"]
+script = ExtResource("1_c8kkt")
+to_minute = 800
+location = &"dorian_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_bmhla"]
+script = ExtResource("1_c8kkt")
+from_minute = 800
+to_minute = 1200
+location = &"forest_edge"
+activity = &"splitting stone"
+
+[sub_resource type="Resource" id="Resource_n6qj1"]
+script = ExtResource("1_c8kkt")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"washing the dust off"
+
+[sub_resource type="Resource" id="Resource_dehrq"]
+script = ExtResource("1_c8kkt")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"buying blasting powder"
+
+[sub_resource type="Resource" id="Resource_ynyr2"]
+script = ExtResource("1_c8kkt")
+from_minute = 2100
+location = &"dorian_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_020uv")
+npc_id = &"dorian"
+entries = Array[ExtResource("1_c8kkt")]([SubResource("Resource_x7juf"), SubResource("Resource_bmhla"), SubResource("Resource_n6qj1"), SubResource("Resource_dehrq"), SubResource("Resource_ynyr2")])

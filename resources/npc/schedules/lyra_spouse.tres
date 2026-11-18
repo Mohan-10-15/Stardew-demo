@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_fj4px"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_hmmm7"]
+
+[sub_resource type="Resource" id="Resource_5b53l"]
+script = ExtResource("1_fj4px")
+to_minute = 900
+location = &"farm_home"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_4ytj2"]
+script = ExtResource("1_fj4px")
+from_minute = 900
+to_minute = 1200
+location = &"kitchen_garden"
+activity = &"working the beds"
+
+[sub_resource type="Resource" id="Resource_rq48x"]
+script = ExtResource("1_fj4px")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"seeing neighbours"
+
+[sub_resource type="Resource" id="Resource_ggdp1"]
+script = ExtResource("1_fj4px")
+from_minute = 1700
+to_minute = 2100
+location = &"general_store"
+activity = &"errands"
+
+[sub_resource type="Resource" id="Resource_wrijb"]
+script = ExtResource("1_fj4px")
+from_minute = 2100
+location = &"farm_home"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_hmmm7")
+npc_id = &"lyra_spouse"
+entries = Array[ExtResource("1_fj4px")]([SubResource("Resource_5b53l"), SubResource("Resource_4ytj2"), SubResource("Resource_rq48x"), SubResource("Resource_ggdp1"), SubResource("Resource_wrijb")])

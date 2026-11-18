@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_sbs0c"]
+
+[resource]
+script = ExtResource("1_sbs0c")
+id = &"elke"
+display_name = "Elke"
+description = "Sells maps she drew herself. Most of them are almost right."
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+model_tint = Color(0.84, 0.4, 0.76, 1)
+target_height = 1.71
+home = Vector2(42, 16)
+wander_radius = 8.0
+walk_speed = 2.0
+birthday_season = 1
+birthday_day = 19
+signature_prop = "res://assets/models/kaykit/Addons/arrow_bundle.fbx"
+romanceable = true
+loved_gifts = Array[StringName]([&"wild_horseradish", &"spring_onion"])
+liked_gifts = Array[StringName]([&"wild_berry", &"corn"])
+disliked_gifts = Array[StringName]([&"potato"])

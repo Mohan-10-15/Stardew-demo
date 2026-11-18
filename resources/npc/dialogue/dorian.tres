@@ -1,0 +1,130 @@
+[gd_resource type="Resource" script_class="DialogueTree" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_entry.gd" id="1_r78et"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_choice.gd" id="2_y5lih"]
+[ext_resource type="Script" path="res://scripts/dialogue/dialogue_tree.gd" id="3_q67wp"]
+
+[sub_resource type="Resource" id="Resource_1xh21"]
+script = ExtResource("1_r78et")
+id = &"intro"
+text = "Dorian. Stone. I break it. Then it is smaller."
+once = true
+set_flags = Array[StringName]([&"met_dorian"])
+
+[sub_resource type="Resource" id="Resource_dnxqk"]
+script = ExtResource("1_r78et")
+id = &"greeting"
+text = "Good stone does not complain when you hit it. People are harder."
+
+[sub_resource type="Resource" id="Resource_nni6x"]
+script = ExtResource("1_r78et")
+id = &"morning"
+text = "Dorian is up before the shop and has opinions about it."
+hour_from = 6
+hour_to = 10
+
+[sub_resource type="Resource" id="Resource_3sxgq"]
+script = ExtResource("1_r78et")
+id = &"evening"
+text = "Dorian looks at the light and decides the day was mostly fine."
+hour_from = 17
+hour_to = 22
+
+[sub_resource type="Resource" id="Resource_a838c"]
+script = ExtResource("1_r78et")
+id = &"night"
+text = "Dorian should be asleep. Dorian is not."
+hour_from = 23
+hour_to = 5
+
+[sub_resource type="Resource" id="Resource_poe88"]
+script = ExtResource("1_r78et")
+id = &"rain"
+text = "Dorian says the rain has excellent timing and means the opposite."
+weather = 1
+
+[sub_resource type="Resource" id="Resource_t8dwj"]
+script = ExtResource("1_r78et")
+id = &"snow"
+text = "Dorian thinks the whole valley looks better under a clean sheet."
+weather = 3
+
+[sub_resource type="Resource" id="Resource_8u85v"]
+script = ExtResource("1_r78et")
+id = &"spring"
+text = "Dorian has a list for spring and has already lost it."
+season = 0
+
+[sub_resource type="Resource" id="Resource_eyqly"]
+script = ExtResource("1_r78et")
+id = &"summer"
+text = "Dorian says the heat makes everything honest, including people."
+season = 1
+
+[sub_resource type="Resource" id="Resource_ejq11"]
+script = ExtResource("1_r78et")
+id = &"fall"
+text = "Dorian says the valley gets itself ready and someone has to check."
+season = 2
+
+[sub_resource type="Resource" id="Resource_1i6pf"]
+script = ExtResource("1_r78et")
+id = &"winter"
+text = "Dorian plans to do everything next year, at length, indoors."
+season = 3
+
+[sub_resource type="Resource" id="Resource_md7jt"]
+script = ExtResource("1_r78et")
+id = &"friend_2"
+text = "Dorian would say you are growing on them, but not in the garden."
+min_hearts = 2
+
+[sub_resource type="Resource" id="Resource_n0m85"]
+script = ExtResource("1_r78et")
+id = &"friend_4"
+text = "Dorian says you are the rare sort who stays for the dull parts."
+min_hearts = 4
+
+[sub_resource type="Resource" id="Resource_1jkaw"]
+script = ExtResource("2_y5lih")
+text = "Why not?"
+next = &"story_2"
+
+[sub_resource type="Resource" id="Resource_0wr6c"]
+script = ExtResource("2_y5lih")
+text = "I will let the stone keep its secret."
+set_flags = Array[StringName]([&"dorian_dodged"])
+
+[sub_resource type="Resource" id="Resource_yp7ih"]
+script = ExtResource("1_r78et")
+id = &"story_1"
+text = "There is a seam of iron under the old quarry nobody has touched."
+requires_flag = &"met_dorian"
+once = true
+choices = Array[ExtResource("2_y5lih")]([SubResource("Resource_1jkaw"), SubResource("Resource_0wr6c")])
+
+[sub_resource type="Resource" id="Resource_2rfpn"]
+script = ExtResource("1_r78et")
+id = &"story_2"
+text = "Because I put the support beams in myself. Nobody is going in after it while I am here."
+requires_flag = &"met_dorian"
+once = true
+hearts = 1
+set_flags = Array[StringName]([&"dorian_beat"])
+
+[sub_resource type="Resource" id="Resource_ggklg"]
+script = ExtResource("1_r78et")
+id = &"dating"
+text = "Stone does not change. I thought I was the same. Then you started coming around."
+min_romance = 1
+
+[sub_resource type="Resource" id="Resource_x6am3"]
+script = ExtResource("1_r78et")
+id = &"married"
+text = "I built a shelf for your things. Properly. It will outlast us both."
+min_romance = 2
+
+[resource]
+script = ExtResource("3_q67wp")
+npc_id = &"dorian"
+entries = Array[ExtResource("1_r78et")]([SubResource("Resource_1xh21"), SubResource("Resource_dnxqk"), SubResource("Resource_nni6x"), SubResource("Resource_3sxgq"), SubResource("Resource_a838c"), SubResource("Resource_poe88"), SubResource("Resource_t8dwj"), SubResource("Resource_8u85v"), SubResource("Resource_eyqly"), SubResource("Resource_ejq11"), SubResource("Resource_1i6pf"), SubResource("Resource_md7jt"), SubResource("Resource_n0m85"), SubResource("Resource_yp7ih"), SubResource("Resource_2rfpn"), SubResource("Resource_ggklg"), SubResource("Resource_x6am3")])

@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="NpcSchedule" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule_entry.gd" id="1_7xe43"]
+[ext_resource type="Script" path="res://scripts/npc/npc_schedule.gd" id="2_xiuxw"]
+
+[sub_resource type="Resource" id="Resource_nvcvh"]
+script = ExtResource("1_7xe43")
+to_minute = 900
+location = &"garrick_cottage"
+activity = &"waking"
+
+[sub_resource type="Resource" id="Resource_fqn0k"]
+script = ExtResource("1_7xe43")
+from_minute = 900
+to_minute = 1200
+location = &"kitchen_garden"
+activity = &"weeding"
+
+[sub_resource type="Resource" id="Resource_kkvce"]
+script = ExtResource("1_7xe43")
+from_minute = 1200
+to_minute = 1700
+location = &"village_well"
+activity = &"watering the pumpkins"
+
+[sub_resource type="Resource" id="Resource_k8i86"]
+script = ExtResource("1_7xe43")
+from_minute = 1700
+to_minute = 2100
+location = &"village_square"
+activity = &"weighing the harvest"
+
+[sub_resource type="Resource" id="Resource_a5bn1"]
+script = ExtResource("1_7xe43")
+from_minute = 2100
+location = &"garrick_cottage"
+activity = &"sleeping"
+
+[resource]
+script = ExtResource("2_xiuxw")
+npc_id = &"garrick"
+entries = Array[ExtResource("1_7xe43")]([SubResource("Resource_nvcvh"), SubResource("Resource_fqn0k"), SubResource("Resource_kkvce"), SubResource("Resource_k8i86"), SubResource("Resource_a5bn1")])

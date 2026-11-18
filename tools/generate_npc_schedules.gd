@@ -184,6 +184,68 @@ const SCHEDULES: Array[Dictionary] = [
 			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"sable_cottage", "doing": "sleeping"},
 		],
 	},
+	# --- The second six ---------------------------------------------------------
+	{
+		"id": &"aurel",
+		"blocks": [
+			{"at": [600, 900], "where": &"aurel_cottage", "doing": "balancing the books"},
+			{"at": [900, 1200], "where": &"general_store", "doing": "checking the ledger"},
+			{"at": [1200, 1700], "where": &"village_well", "doing": "counting the coins"},
+			{"at": [1700, 2100], "where": &"village_square", "doing": "collecting debts"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"aurel_cottage", "doing": "sleeping"},
+		],
+	},
+	{
+		"id": &"cassia",
+		"blocks": [
+			{"at": [600, 900], "where": &"cassia_cottage", "doing": "waking"},
+			{"at": [900, 1200], "where": &"kitchen_garden", "doing": "reading the beds", "dry": true},
+			{"at": [900, 1200], "where": &"village_square", "doing": "sheltering", "wet": true},
+			{"at": [1200, 1700], "where": &"pond_shore", "doing": "reading the water"},
+			{"at": [1700, 2100], "where": &"general_store", "doing": "buying ink"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"cassia_cottage", "doing": "sleeping"},
+		],
+	},
+	{
+		"id": &"dorian",
+		"blocks": [
+			{"at": [600, 800], "where": &"dorian_cottage", "doing": "waking"},
+			{"at": [800, 1200], "where": &"forest_edge", "doing": "splitting stone"},
+			{"at": [1200, 1700], "where": &"village_well", "doing": "washing the dust off"},
+			{"at": [1700, 2100], "where": &"general_store", "doing": "buying blasting powder"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"dorian_cottage", "doing": "sleeping"},
+		],
+	},
+	{
+		"id": &"elke",
+		"blocks": [
+			{"at": [600, 800], "where": &"elke_cottage", "doing": "drawing a map"},
+			{"at": [800, 1200], "where": &"village_orchard", "doing": "checking the landmarks"},
+			{"at": [1200, 1700], "where": &"village_square", "doing": "selling directions"},
+			{"at": [1700, 2100], "where": &"general_store", "doing": "buying parchment"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"elke_cottage", "doing": "sleeping"},
+		],
+	},
+	{
+		"id": &"garrick",
+		"blocks": [
+			{"at": [600, 900], "where": &"garrick_cottage", "doing": "waking"},
+			{"at": [900, 1200], "where": &"kitchen_garden", "doing": "weeding"},
+			{"at": [1200, 1700], "where": &"village_well", "doing": "watering the pumpkins"},
+			{"at": [1700, 2100], "where": &"village_square", "doing": "weighing the harvest"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"garrick_cottage", "doing": "sleeping"},
+		],
+	},
+	{
+		"id": &"lyra",
+		"blocks": [
+			{"at": [600, 800], "where": &"lyra_cottage", "doing": "waking"},
+			{"at": [800, 1200], "where": &"village_square", "doing": "inspecting the fence"},
+			{"at": [1200, 1700], "where": &"village_well", "doing": "minding the well"},
+			{"at": [1700, 2100], "where": &"general_store", "doing": "buying good rope"},
+			{"at": [2100, NpcScheduleEntry.OPEN_END], "where": &"lyra_cottage", "doing": "sleeping"},
+		],
+	},
 ]
 
 

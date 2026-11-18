@@ -17,7 +17,7 @@ reasoning.
 | M2 | Time and calendar | **COMPLETE** |
 | M3 | Farming | **COMPLETE** |
 | M4 | Inventory, tools, economy | **COMPLETE** |
-| M5 | NPCs, dialogue | dialogue **COMPLETE**; six villagers open |
+| M5 | NPCs, dialogue | **COMPLETE** — twelve villagers |
 | M6 | Quests, relationships | **COMPLETE** |
 | M7 | Fishing, animals, crafting, cooking | |
 | M8 | Mines and combat | |
