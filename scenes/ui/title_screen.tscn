@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/title_screen.gd" id="1_eb34j"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aqpy5"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.09, 0.12, 0.18, 0.96)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="TitleScreen" type="CanvasLayer"]
+script = ExtResource("1_eb34j")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.07, 0.12, 0.92)
+
+[node name="Panel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(420, 260)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+theme_override_styles/panel = SubResource("StyleBoxFlat_aqpy5")
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "HOLLOWBROOK HOLLOW"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "A valley that remembers you"
+horizontal_alignment = 1
+
+[node name="NewGame" type="Button" parent="Panel/Column"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "New Game"
+
+[node name="Continue" type="Button" parent="Panel/Column"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Continue"
+
+[node name="Hint" type="Label" parent="Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "F5 saves  •  F9 loads"
+horizontal_alignment = 1

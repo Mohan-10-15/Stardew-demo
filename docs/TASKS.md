@@ -197,7 +197,7 @@ specification when it is picked up, not now.
 | TASK-007 | Friendship and gifting | Group 17 / M6. **Complete** — see Recently completed above |
 | TASK-008 | Dialogue system | M5. **Complete** — see Recently completed above |
 | TASK-009 | Save system, versioned | M1/M16. **Complete** — aggregate versioned save |
-| TASK-010 | New-game menu and title screen | M1. Needed before save/load is reachable |
+| TASK-010 | New-game menu and title screen | M1. **Complete** — generated title with New Game / Continue |
 | TASK-011 | Crafting and cooking | M7 |
 | TASK-012 | Buildings and upgrades | Group 20 / M11 |
 | TASK-013 | Fishing | Group 21 / M7. Needs time of day and weather to bite |

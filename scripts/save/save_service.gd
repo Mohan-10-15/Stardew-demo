@@ -25,6 +25,9 @@ var npc_manager: Node = null
 var quest_service: Node = null
 var dialogue_service: Node = null
 var cutscene_director: Node = null
+## The player body, saved separately from `player_state` (which owns the bag,
+## purse and stamina but deliberately not a world coordinate).
+var player: Node3D = null
 
 var last_error: StringName = &""
 
@@ -49,6 +52,21 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
+## Removes the save so "New Game" starts genuinely fresh. A failed removal is
+## reported, not swallowed: the title screen's Continue button must never offer
+## a save the player thought they had deleted.
+func delete_save() -> bool:
+	last_error = &""
+	if not has_save():
+		return true
+	var error := DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	if error != OK:
+		last_error = &"cannot_delete"
+		Log.warn("Save", "could not delete the old save")
+		return false
+	return true
+
+
 ## Snapshot every attached service into one versioned dictionary.
 func to_dict() -> Dictionary:
 	var data := {"version": SAVE_VERSION}
@@ -66,6 +84,9 @@ func to_dict() -> Dictionary:
 		data["quests"] = quest_service.call("to_dict")
 	if dialogue_service != null and dialogue_service.has_method("to_dict"):
 		data["dialogue"] = dialogue_service.call("to_dict")
+	if player != null:
+		var p := player.global_position
+		data["player_position"] = {"x": p.x, "y": p.y, "z": p.z}
 	if cutscene_director != null:
 		var flags: Variant = cutscene_director.get("applied_flags")
 		if flags is Dictionary:
@@ -212,5 +233,10 @@ func load_game(path: String = SAVE_PATH) -> bool:
 		EventBus.game_load_failed.emit(last_error)
 		return false
 	from_dict(payload)
+	if player != null and payload.get("player_position") is Dictionary:
+		var pos: Dictionary = payload["player_position"]
+		player.global_position = Vector3(
+			float(pos.get("x", 0.0)), float(pos.get("y", 0.0)), float(pos.get("z", 0.0))
+		)
 	EventBus.game_loaded.emit(path)
 	return true

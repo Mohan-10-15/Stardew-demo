@@ -20,6 +20,7 @@ const FriendshipHudScene := "res://scenes/ui/friendship_hud.tscn"
 const ShopUiScene := "res://scenes/ui/shop_ui.tscn"
 const LogPanelScene := "res://scenes/ui/log_panel.tscn"
 const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
+const TitleScreenScene := "res://scenes/ui/title_screen.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -53,6 +54,9 @@ const DialogueUiScene := "res://scenes/ui/dialogue_panel.tscn"
 ## existing boot assertion. The playtest enables it explicitly.
 @export var play_intro_cutscene: bool = false
 @export var load_save_service: bool = true
+@export var title_scene_path: String = TitleScreenScene
+@export var load_title_screen: bool = true
+@export var show_title_on_boot: bool = true
 @export var load_npcs: bool = true
 
 var world: WorldRoot = null
@@ -75,6 +79,7 @@ var dialogue_ui: CanvasLayer = null
 var audio_manager: AudioManager = null
 var cutscene_director: CutsceneDirector = null
 var save_service: SaveService = null
+var title_screen: CanvasLayer = null
 var _time_service: TimeService = null
 
 
@@ -161,6 +166,8 @@ func _boot() -> void:
 	# everything it might report on.
 	if load_log_panel:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
+	if load_title_screen:
+		_spawn_overlay(title_scene_path, "title screen", "title_screen")
 
 	# The player is up and their state exists, so the opening tool is ready for the
 	# first click rather than a frame later.
@@ -171,9 +178,49 @@ func _boot() -> void:
 
 	GameState.set_phase(GameState.Phase.PLAYING)
 	EventBus.game_ready.emit()
-	if play_intro_cutscene and cutscene_director != null:
+	# A "New Game" reload sets this meta so the fresh scene goes straight in
+	# instead of showing the title a second time.
+	if show_title_on_boot and not get_tree().has_meta(&"skip_title"):
+		_enter_title()
+	elif play_intro_cutscene and cutscene_director != null:
 		EventBus.cutscene_requested.emit(&"intro")
 	Log.info("Main", "Boot sequence complete")
+
+
+func _enter_title() -> void:
+	if title_screen == null:
+		return
+	GameState.set_phase(GameState.Phase.TITLE)
+	GameState.set_paused(true)
+	title_screen.visible = true
+	if title_screen.has_method("refresh"):
+		title_screen.call("refresh")
+	if not title_screen.new_game_requested.is_connected(_on_new_game):
+		title_screen.new_game_requested.connect(_on_new_game)
+	if not title_screen.continue_requested.is_connected(_on_continue_game):
+		title_screen.continue_requested.connect(_on_continue_game)
+	Log.info("Main", "Title screen shown")
+
+
+func _on_new_game() -> void:
+	# Start genuinely fresh: the old save is removed, and the freshly loaded
+	# scene skips the title via a tree meta so one click means one new game.
+	if save_service != null:
+		save_service.delete_save()
+	get_tree().set_meta(&"skip_title", true)
+	get_tree().reload_current_scene()
+
+
+func _on_continue_game() -> void:
+	if save_service != null:
+		save_service.load_game()
+	if title_screen != null:
+		title_screen.visible = false
+	GameState.set_paused(false)
+	GameState.set_phase(GameState.Phase.PLAYING)
+	if player != null:
+		player.call("set_mouse_captured", true)
+	Log.info("Main", "Continued from save")
 
 
 ## The owner of the bag, hotbar, purse and stamina.
@@ -459,6 +506,10 @@ func _spawn_player() -> void:
 	add_child(player)
 	player.global_position = world.get_spawn_point()
 	_time_service = TimeService.find(get_tree().get_root())
+	# The player body exists only now; the save service was spawned earlier and
+	# needs the reference to persist (and restore) a world position.
+	if save_service != null:
+		save_service.player = player
 	Log.info("Main", "Spawned player at %s" % player.global_position)
 
 

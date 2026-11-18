@@ -2912,3 +2912,19 @@ F5 and F9 are bound to save and load through the `InputActions` registry and
 `tools/playtest_save.gd` both pass; the real-window run writes gold 875, changes
 it to 12, and F9 restores 875. **Full pipeline: 565/565**, all stages green,
 zero script errors.
+
+### M1 title screen and reachable saves
+
+`tools/generate_title_screen.gd` writes `scenes/ui/title_screen.tscn`: a dark
+full-screen menu with the game title, New Game and Continue. `main.gd` now
+boots into `GameState.Phase.TITLE` with the tree paused; Continue is disabled
+until `SaveService.has_save()` is true. New Game deletes the old save and marks
+the tree with `skip_title` before reloading, so one click means one fresh game.
+Continue loads the aggregate save, hides the menu, resumes play and recaptures
+the mouse. Player world position was added to the save so M1's "position,
+world state and inventory intact" row is literally true.
+
+`tests/suites/test_title.gd` — 2 cases — plus `tools/playtest_title.gd`,
+which presses F5 to enable Continue and clicks it with a real mouse: PASS.
+**Full pipeline: 567/567**, all stages green, zero script errors. Boot now
+reports `phase=TITLE`, which is the intended front door.

@@ -36,14 +36,18 @@ Fixed and covered by `tests/suites/test_world_geometry.gd`.
 
 ## M1 — Core player, world, interaction
 
-- [ ] New game starts from a menu, not straight into the world
-- [ ] Move with WASD, look with the mouse, jump
-- [ ] Interact with a prop; hold interactions progress visibly
-- [ ] Save, quit, reload: position, world state and inventory are intact
-- [ ] Save files are versioned, and an older version migrates forward
+- [x] New game starts from a menu, not straight into the world
+- [x] Move with WASD, look with the mouse, jump
+- [x] Interact with a prop; hold interactions progress visibly
+- [x] Save, quit, reload: position, world state and inventory are intact
+- [x] Save files are versioned, and an older version migrates forward
 
-Blocked on M16 for the save system; the play-and-interact half can be signed off
-independently.
+The generated title screen opens on a paused world with New Game and Continue;
+Continue is disabled until a save exists. New Game deletes the old save and
+reloads straight into play. The aggregate save (M16) carries the player's world
+position as well as the bag, purse, stamina, world time and farm grid. Verified
+by `tests/suites/test_title.gd`, `tests/suites/test_save.gd` and the
+`tools/playtest_title.gd` / `tools/playtest_save.gd` real-window runs.
 
 ---
 
