@@ -77,6 +77,7 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_add_fishing_spot(root)
 	_add_coop(root)
 	_add_stove(root)
+	_add_clouds(root, seed_value)
 
 
 ## Height of the terrain at a world XZ position.
@@ -743,6 +744,13 @@ static func _add_stove(root: Node3D) -> void:
 	component.set_script(load("res://scripts/cooking/stove_interactable.gd"))
 	body.add_child(component)
 	_finish(body, root)
+
+
+static func _add_clouds(root: Node3D, seed_value: int) -> void:
+	var field := CloudField.new()
+	field.name = "CloudField"
+	root.add_child(field)
+	field.build(seed_value + 977)
 
 
 ## Whether [param pos] is somewhere a gatherable must not stand.

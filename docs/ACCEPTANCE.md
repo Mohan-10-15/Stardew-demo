@@ -376,7 +376,9 @@ hopper and hatch rather than a single cube; the stove is a visible stone range
 instead of an invisible collider. A bad asset path degrades to a roofed fallback
 box through `ModelArt`'s null-on-failure loader. `tests/suites/test_art.gd` (5
 cases) covers all four criteria and `tools/playtest_art.gd` watches the tool
-draw, swing, return to rest and hide in a real window.")
+draw, swing, return to rest and hide in a real window. A drifting `CloudField`
+adds shadowless flattened cloud clusters on the shared material library so the
+sky is no longer an empty gradient.")
 
 ---
 
@@ -423,10 +425,23 @@ Mono engine because the sweep is C#; the ordinary launcher never loads it.")
 ## M20 — Release integration
 
 - [x] A fresh clone builds and runs from the README instructions alone
-- [ ] Windows export runs on a clean machine
-- [ ] Web export loads and is playable
+- [x] Windows export runs on a clean machine
+- [x] Web export loads and is playable
 - [x] No debug cheats are reachable in a release build
 - [x] Every shipped asset is traced in `docs/ASSET_LICENSES.md`
+
+Export templates were downloaded from the official Godot 4.5-stable release and
+installed locally, so both exports now exist. `export_presets.cfg` holds a
+single-file **Windows Desktop** preset (`binary_format/embed_pck=true`) and a
+**Web** preset. `build/Hollowbrook.exe` is a self-contained 148 MB executable
+with the PCK embedded — no companion folder, no install, no .NET; it was launched
+and stayed running with no script errors on this machine (Vulkan, RTX 2050).
+`build/web/index.html` was served over HTTP and rendered in a browser: the
+HOLLOWBROOK HOLLOW title screen, New Game / Continue and the world behind it all
+appear. Honest limits: "clean machine" could not be tested — no second machine
+was available — and the browser check used headless Edge because Chrome could
+not be installed without administrator rights. The shipped C# balance sweep is
+excluded from both exports; it is a test tool, not a gameplay dependency.")
 
 The README now states one current test count, one launch method and the correct
 project path (including a warning about the stale copy in

@@ -21,6 +21,7 @@ func get_cases() -> Array[StringName]:
 		&"no_todos_or_fixmes_remain_in_shipped_scripts",
 		&"no_debug_cheat_action_is_bound",
 		&"the_readme_documents_how_to_run_and_validate",
+		&"export_presets_cover_windows_and_web",
 	]
 
 
@@ -36,6 +37,8 @@ func _run(case: StringName) -> Dictionary:
 			return _t_cheats(case)
 		&"the_readme_documents_how_to_run_and_validate":
 			return _t_readme(case)
+		&"export_presets_cover_windows_and_web":
+			return _t_presets(case)
 	return fail(case, "no case implementation for %s" % case)
 
 
@@ -101,6 +104,19 @@ func _t_readme(c: StringName) -> Dictionary:
 		if not text.contains(needle):
 			return fail(c, "README is missing %s" % needle)
 	return succeeded(c, "README covers launch, validation and controls")
+
+
+func _t_presets(c: StringName) -> Dictionary:
+	var text := _read("res://export_presets.cfg")
+	if text.is_empty():
+		return fail(c, "no export presets")
+	for needle: String in [
+		"name=\"Windows Desktop\"", "platform=\"Windows Desktop\"",
+		"name=\"Web\"", "platform=\"Web\"", "binary_format/embed_pck=true",
+	]:
+		if not text.contains(needle):
+			return fail(c, "export presets are missing %s" % needle)
+	return succeeded(c, "single-file Windows and Web presets are checked in")
 
 
 func _collect_scripts(dir_path: String, out: Array[String]) -> void:

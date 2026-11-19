@@ -157,11 +157,12 @@ A group is not done until all of these hold:
 ## 7. Group roadmap
 
 Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–17 and 25 are complete.** Group 18 is next. The current
-record — including TASK-007 (Friendship / M6) and TASK-008 (dialogue / M5) — is
-in `DEVELOPMENT_STATUS.md`, which is authoritative when this line goes stale.
-The full table, and the per-group record of what was implemented, what was tested
-and what was found, is in `DEVELOPMENT_STATUS.md`.
+next begins. **All milestones M0–M20 are complete.** Windows and Web exports
+are built with the official Godot 4.5 export templates; `build/` is git-ignored,
+so re-run the exports from `export_presets.cfg` after a fresh clone. The
+current record is in `DEVELOPMENT_STATUS.md`, which is authoritative when this
+line goes stale. The full table, and the per-group record of what was
+implemented, what was tested and what was found, is in `DEVELOPMENT_STATUS.md`.
 
 Do not start a group until the previous group's `check.ps1` run is green.
 

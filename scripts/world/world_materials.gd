@@ -47,6 +47,7 @@ const SURFACES := {
 	&"door": [Color(0.32, 0.22, 0.15), 0.88, 0.0, 0.22, 1.60],
 	&"glass": [Color(0.55, 0.72, 0.85, 0.62), 0.18, 0.0, 0.85, 1.00],
 	&"metal": [Color(0.58, 0.58, 0.62), 0.42, 0.85, 0.60, 1.40],
+	&"cloud": [Color(0.96, 0.97, 1.0), 1.0, 0.0, 0.0, 1.0],
 }
 
 ## Every class name, for tests that assert the library is complete.

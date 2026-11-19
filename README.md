@@ -221,8 +221,9 @@ See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md) for the per-milestone recor
 | Channel | Status |
 | --- | --- |
 | Windows — clickable launcher | **Works.** `Hollowbrook.exe` finds the project, starts the bundled non-Mono Godot with `--rendering-driver opengl3`, and needs no install. Verified on this machine. |
-| Windows — Godot export template build | Not produced: export templates are not installed on this machine and no network is available. The launcher is the supported distribution instead. |
-| Web export | Not available for the same reason (no export templates). The game itself has no web-only dependencies. |
+| Windows — standalone Godot export | **Works.** `build/Hollowbrook.exe` is a self-contained 148 MB executable (PCK embedded) — copy it anywhere and double-click; no repo, engine or .NET needed. Verified running here. |
+| Web export | **Works.** `build/web/index.html` plus its `.wasm`, `.pck` and support files; serve the folder over HTTP and open `index.html`. The title screen renders in a browser. |
+| Fresh clone | Clone the repo, keep `tools/` (the portable engine and `GodotSharp` assemblies are git-ignored, so copy them from an existing checkout), then double-click `Hollowbrook.exe` or run `tools/check.ps1`. To rebuild the exports, install Godot 4.5 export templates and run `godot --headless --path . --export-release "Windows Desktop" build/Hollowbrook.exe` (or `"Web" build/web/index.html`). |
 | Fresh clone | Clone the repo, keep `tools/` (the portable engine and `GodotSharp` assemblies are git-ignored, so copy them from an existing checkout), then double-click `Hollowbrook.exe` or run `tools/check.ps1`. |
 | Debug cheats | No cheat, god-mode or noclip action exists in the InputMap. F3 (log), F5/F9 (save/load) and the F2 settings panel are ordinary player-facing tools. |
 

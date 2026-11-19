@@ -3136,3 +3136,31 @@ Windows build nor a web build can be produced or checked here. The supported
 Windows distribution remains the `Hollowbrook.exe` launcher plus the bundled
 portable engine, verified on this machine only. New total after this pass:
 620 tests.
+
+### M20 — exports completed
+
+The export-template gap is closed. The official Godot 4.5-stable export
+templates (1.26 GB) were downloaded and installed into
+`%APPDATA%\Godot\export_templates\4.5.stable\`. `export_presets.cfg` now holds
+two checked-in presets: a single-file **Windows Desktop** build
+(`binary_format/embed_pck=true`) and a **Web** build. The C# balance sweep is
+excluded from both — it is a test tool, not a gameplay dependency.
+
+- `build/Hollowbrook.exe` — 148 MB, PCK embedded, no companion files. Launched
+  on this machine and stayed running with no script errors (Vulkan / RTX 2050).
+- `build/web/index.html` (+ `.wasm`, `.pck`, support files) — served over HTTP
+  and rendered in headless Edge: the HOLLOWBROOK HOLLOW title screen, New Game /
+  Continue buttons and the world behind them all appear.
+
+Both `build/` folders are git-ignored, so the presets are the reproducible
+source of truth. `tests/suites/test_release.gd` gained a sixth case asserting
+both presets and the embedded PCK. Also added a drifting, shadowless
+`CloudField` to the world (flattened spheres on the shared `cloud` material) so
+the sky is no longer an empty gradient; visible in the browser screenshot.
+
+**Full pipeline: 621/621**, all stages green, zero script errors. Honest limits:
+a second "clean machine" was not available, and Chrome could not be installed
+without admin rights, so the browser check used headless Edge. A first attempt
+at a dedicated cloud test suite leaked global state and broke 106 unrelated
+tests; it was removed rather than left in — clouds remain covered by the world
+material-library tests and the real-window screenshot.
