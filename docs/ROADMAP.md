@@ -27,7 +27,7 @@ reasoning.
 | M12 | Festivals | **COMPLETE** |
 | M13 | Story progression | **COMPLETE** |
 | M14 | Audio | **COMPLETE** |
-| M15 | UI and accessibility | |
+| M15 | UI and accessibility | **COMPLETE** |
 | M16 | Save and load | **COMPLETE** |
 | M17 | Art and animation polish | **COMPLETE** |
 | M18 | Performance | |

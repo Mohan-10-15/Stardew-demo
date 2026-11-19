@@ -129,6 +129,9 @@ signal item_added(item_id: StringName, amount: int)
 signal item_removed(item_id: StringName, amount: int)
 signal inventory_changed()
 signal hotbar_selection_changed(slot: int)
+## A key was rebound at runtime. HUDs read their labels from the InputMap, so
+## they refresh from the new binding rather than from a cached string.
+signal input_rebound(action: StringName, keycode: int)
 ## A tool ran out of uses. Distinct from `item_removed` so a HUD can warn the
 ## player before they are left holding nothing.
 signal tool_broken(item_id: StringName)

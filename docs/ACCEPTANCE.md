@@ -321,11 +321,25 @@ round-trip and a headless boot with no audio device.
 
 ## M15 — UI and accessibility
 
-- [ ] Every screen is reachable and dismissible by keyboard alone
-- [ ] No screen traps the player
-- [ ] Rebinding input works end to end, with the HUD reflecting it
-- [ ] Text scales without clipping
-- [ ] Colour is never the only channel carrying information
+- [x] Every screen is reachable and dismissible by keyboard alone
+- [x] No screen traps the player
+- [x] Rebinding input works end to end, with the HUD reflecting it
+- [x] Text scales without clipping
+- [x] Colour is never the only channel carrying information
+
+F2 opens a generated settings panel driven entirely by arrows, `<`/`>` and
+Enter; Escape closes it, and the build and machine panels now answer Escape as
+well, so no menu can trap a keyboard player. `RebindService` applies overrides
+to the live InputMap and persists them through `GameConfig.bindings`, stealing
+a key from its previous owner; the interaction prompt already reads its label
+from the InputMap, so it follows the rebind with no extra wiring. Text scale
+multiplies each label's remembered base font size rather than scaling the
+viewport, so corner HUDs stay on screen and repeated applies do not compound;
+high contrast adds a dark text outline. Meaning was never carried by colour
+alone in the shipped HUDs — quest rows say "ready", friendship rows print
+hearts as numbers, stamina prints `100/100` and shop messages are words — and
+`test_accessibility.gd` (5 cases) plus `tools/playtest_accessibility.gd` cover
+the new behaviour in a real window.")
 
 ---
 

@@ -15,6 +15,12 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Escape always closes an open panel. The build key still toggles, but a
+	# player who has forgotten which key opened a menu must never be stuck in it.
+	if _open and event.is_action_pressed(&"ui_cancel"):
+		_toggle()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(InputActions.BUILD):
 		_toggle()
 		get_viewport().set_input_as_handled()

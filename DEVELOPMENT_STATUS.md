@@ -3041,3 +3041,31 @@ The graphics pass closed the remaining art/animation criteria. A `ToolViewModel`
 Every asset goes through `ModelArt`, which returns null on a bad path; new visuals fall back to a roofed composed box rather than crashing or vanishing. New `tests/suites/test_art.gd` (5 cases) covers tool coverage, unknown ids, real building art, fallback geometry and collider-safe reactions. `tools/playtest_art.gd` confirms in a real window that the tool draws, swings, returns to rest and hides in third person. **Full pipeline: 603/603**, all stages green, zero script errors.
 
 Bugs found and fixed: the starter loadout is granted after the player scene builds, so the view model also refreshes on `inventory_changed`; the swing tween initially returned the tool to the parent's rest rotation and tilted it twice; the first-person tool was drawn far too large and was scaled down; and the stove meshes were rejected by the world-library test until they used `WorldMaterials.surface()`.
+
+### M15 complete
+
+F2 opens a generated, keyboard-only settings panel: arrows move the highlight,
+`<`/`>` adjust text size, Enter toggles high contrast or starts a rebind and
+listens for the next key, and Escape always closes. The machine and building
+panels now answer Escape too, so no menu can trap a player. `RebindService`
+applies key overrides to the live InputMap and persists them in
+`GameConfig.bindings`; a rebind steals the key from its previous owner, and the
+interaction prompt follows automatically because it already derives its label
+from the InputMap. `UiAccessibility` multiplies each label's remembered base
+font size instead of scaling the viewport, so corner-anchored HUDs stay on
+screen and repeated applies do not compound; high contrast adds a dark text
+outline.
+
+New `tests/suites/test_accessibility.gd` (5 cases) covers defaults, non-compounding
+scale, InputMap/config persistence, key stealing and Escape dismissal.
+`tools/playtest_accessibility.gd` opens settings with a real F2, scales text,
+enables high contrast, rebinds interact to R and confirms the HUD label reads
+R, then closes with Escape. **Full pipeline: 608/608**, all stages green, zero
+script errors.
+
+Bugs found and fixed: `reset_all()` first tried to rebuild defaults from
+`ProjectSettings` in the wrong format and erased ten actions for every other
+test — it now captures the real InputMap events before applying overrides. The
+playtest held a freed row label after a refresh and read the outline as a font
+size instead of a theme constant; both were corrected, and the config is reset
+at the start so the run is deterministic.

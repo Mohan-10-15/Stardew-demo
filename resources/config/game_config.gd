@@ -30,6 +30,16 @@ extends Resource
 @export var camera_switch_key_action: StringName = &"toggle_camera_mode"
 @export var show_debug_overlay: bool = false
 
+@export_group("Accessibility")
+## Multiplier applied to every label and button font size. 1.0 is the shipped
+## size; 1.25 makes text legible on a high-DPI display without clipping rows.
+@export_range(0.75, 1.5, 0.05) var ui_scale: float = 1.0
+## Adds a text marker beside status colours so colour is never the only channel.
+@export var colour_assist: bool = false
+## Runtime key overrides: action name -> physical keycode. These are applied to
+## the InputMap on boot by RebindService, so a rebind survives save and reload.
+@export var bindings: Dictionary = {}
+
 @export_group("Graphics")
 ## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision
 ## a player makes is "how much am I willing to pay", and low/high with nothing between

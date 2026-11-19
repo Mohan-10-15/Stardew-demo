@@ -34,6 +34,12 @@ func _on_change(_a: StringName, _b: int, _c: int = 0) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Escape is the universal exit. N toggles too, but never the only way out.
+	if _open and event.is_action_pressed(&"ui_cancel"):
+		_open = false
+		visible = false
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(InputActions.BUILDINGS):
 		_open = not _open
 		visible = _open

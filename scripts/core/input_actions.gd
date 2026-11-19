@@ -34,6 +34,10 @@ const PAUSE := &"pause"
 ## have to unpause, navigate a menu and close again to read is a log nobody reads.
 const TOGGLE_LOG_PANEL := &"toggle_log_panel"
 
+## Opens the settings and accessibility panel. F2: away from the movement and
+## hotbar rows, and free of the browser's F1 help key.
+const SETTINGS := &"settings"
+
 ## Aggregate save/load. Deliberately plain keys rather than a menu: the menu
 ## comes with its own milestone, and these make the versioned save reachable
 ## and testable through real input today.

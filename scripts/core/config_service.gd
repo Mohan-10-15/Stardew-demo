@@ -46,6 +46,14 @@ func load_config() -> void:
 	settings.graphics_quality = clampi(
 		int(cfg.get_value("graphics", "graphics_quality", settings.graphics_quality)), 0, 2
 	)
+	settings.ui_scale = clampf(
+		float(cfg.get_value("accessibility", "ui_scale", settings.ui_scale)), 0.75, 1.5
+	)
+	settings.colour_assist = bool(cfg.get_value(
+		"accessibility", "colour_assist", settings.colour_assist
+	))
+	var loaded_bindings: Variant = cfg.get_value("accessibility", "bindings", {})
+	settings.bindings = loaded_bindings.duplicate(true) if loaded_bindings is Dictionary else {}
 
 
 func save_config() -> void:
@@ -67,6 +75,9 @@ func save_config() -> void:
 	cfg.set_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action))
 	cfg.set_value("gameplay", "show_debug_overlay", settings.show_debug_overlay)
 	cfg.set_value("graphics", "graphics_quality", settings.graphics_quality)
+	cfg.set_value("accessibility", "ui_scale", settings.ui_scale)
+	cfg.set_value("accessibility", "colour_assist", settings.colour_assist)
+	cfg.set_value("accessibility", "bindings", settings.bindings)
 	var err := cfg.save(CONFIG_PATH)
 	if err != OK:
 		Log.error("Config", "Failed to save config: %d" % err)
@@ -143,6 +154,14 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					# typo'd 7 from reaching the renderer as a tier that exists in no
 					# table and silently means "high".
 					settings.graphics_quality = clampi(int(value), 0, 2)
+		&"accessibility":
+			match key:
+				"ui_scale":
+					settings.ui_scale = clampf(float(value), 0.75, 1.5)
+				"colour_assist":
+					settings.colour_assist = bool(value)
+				"bindings":
+					settings.bindings = value.duplicate(true) if value is Dictionary else {}
 		_:
 			Log.warn("Config", "Unknown config section '%s'" % section)
 			return

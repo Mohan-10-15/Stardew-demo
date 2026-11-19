@@ -27,6 +27,7 @@ const FestivalHudScene := "res://scenes/ui/festival_hud.tscn"
 const CraftingPanelScene := "res://scenes/ui/crafting_panel.tscn"
 const MachinePanelScene := "res://scenes/ui/machine_panel.tscn"
 const BuildingPanelScene := "res://scenes/ui/building_panel.tscn"
+const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -73,6 +74,10 @@ const BuildingPanelScene := "res://scenes/ui/building_panel.tscn"
 @export var load_crafting_panel: bool = true
 @export var building_panel_scene_path: String = BuildingPanelScene
 @export var load_building_panel: bool = true
+@export var settings_panel_scene_path: String = SettingsPanelScene
+@export var load_settings_panel: bool = true
+@export var load_accessibility: bool = true
+@export var load_rebind: bool = true
 @export var load_buildings: bool = true
 @export var machine_panel_scene_path: String = MachinePanelScene
 @export var load_machine_panel: bool = true
@@ -114,6 +119,9 @@ var combat_service: CombatService = null
 var combat_hud: CanvasLayer = null
 var building_service: BuildingService = null
 var building_panel: CanvasLayer = null
+var settings_panel: CanvasLayer = null
+var rebind_service: RebindService = null
+var ui_accessibility: UiAccessibility = null
 var machine_service: MachineService = null
 var machine_panel: CanvasLayer = null
 var cooking_service: CookingService = null
@@ -151,6 +159,10 @@ func _boot() -> void:
 	# stamina through it. It needs no world and no player, so it goes first of the
 	# three.
 	_spawn_player_state()
+	# Input overrides must be in the InputMap before any panel starts reading
+	# actions, so this sits next to the state service near the front of boot.
+	if load_rebind:
+		_spawn_rebind_service()
 	if load_audio:
 		_spawn_audio_manager()
 	if load_cutscenes:
@@ -232,6 +244,8 @@ func _boot() -> void:
 		_spawn_overlay(log_panel_scene_path, "log panel", "log_panel")
 	if load_building_panel:
 		_spawn_overlay(building_panel_scene_path, "building panel", "building_panel")
+	if load_settings_panel:
+		_spawn_overlay(settings_panel_scene_path, "settings panel", "settings_panel")
 	if load_machine_panel:
 		_spawn_overlay(machine_panel_scene_path, "machine panel", "machine_panel")
 	if load_crafting_panel:
@@ -248,6 +262,11 @@ func _boot() -> void:
 		# the menu; otherwise a boot that skips it still shows its dark backdrop.
 		if title_screen != null:
 			title_screen.visible = false
+
+	# After every overlay exists: the accessibility pass walks the live tree and
+	# a panel spawned afterwards would keep the shipped font size forever.
+	if load_accessibility:
+		_spawn_ui_accessibility()
 
 	# The player is up and their state exists, so the opening tool is ready for the
 	# first click rather than a frame later.
@@ -318,6 +337,20 @@ func _spawn_player_state() -> void:
 ## Sound is a listener: it needs no gameplay service, only the EventBus and the
 ## Config autoload, so it is spawned just after the bag and before everything
 ## that will publish an event worth hearing.
+func _spawn_rebind_service() -> void:
+	rebind_service = RebindService.new()
+	rebind_service.name = "RebindService"
+	add_child(rebind_service)
+	Log.info("Input", "Key rebinding service ready")
+
+
+func _spawn_ui_accessibility() -> void:
+	ui_accessibility = UiAccessibility.new()
+	ui_accessibility.name = "UiAccessibility"
+	add_child(ui_accessibility)
+	Log.info("UI", "Accessibility ready (scale %s)" % str(Config.settings.ui_scale))
+
+
 func _spawn_audio_manager() -> void:
 	audio_manager = AudioManager.new()
 	audio_manager.name = "AudioManager"
