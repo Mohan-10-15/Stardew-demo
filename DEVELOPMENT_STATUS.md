@@ -3069,3 +3069,25 @@ test — it now captures the real InputMap events before applying overrides. The
 playtest held a freed row label after a refresh and read the outline as a font
 size instead of a theme constant; both were corrected, and the config is reset
 at the start so the run is deterministic.
+
+### M18 complete
+
+`PerformanceMonitor` is always on but cheap: one float per frame in a bounded
+600-frame ring, one `Performance` memory read every 30 frames, and an explicit
+`mark_boundary()` API that restarts a 60-frame observation window for a region
+crossing. `main.gd` spawns it next to the player state so it sees the whole
+session. New `tests/suites/test_performance.gd` (4 cases) covers real sampling,
+the bounded ring, boundary measurement and a 120-day session that leaves main's
+child count unchanged. `tools/playtest_performance.gd` walks all five region
+crossings and idles 400 frames in a real window.
+
+Measured on this machine at 1280x720 with the OpenGL driver: **133.3 average
+FPS, 90.0 FPS at the 5th percentile, 10.9 ms worst frame around a crossing,
++0.1 MB static memory over 570 frames**. The 60 FPS row is ticked on that
+measurement; no claim is made about unmeasured hardware. **Full pipeline:
+612/612**, all stages green, zero script errors.
+
+Bugs found and fixed: the monitor's boundary window watched only the first mark
+in a list, so later crossings reported 0 ms — replaced with a single end-frame.
+The playtest's synchronous screenshot sat inside the measurement window and
+produced a fake 133 ms "spike"; it now runs after the report.

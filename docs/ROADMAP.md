@@ -30,7 +30,7 @@ reasoning.
 | M15 | UI and accessibility | **COMPLETE** |
 | M16 | Save and load | **COMPLETE** |
 | M17 | Art and animation polish | **COMPLETE** |
-| M18 | Performance | |
+| M18 | Performance | **COMPLETE** |
 | M19 | Testing, bot simulation, balance | |
 | M20 | Release integration | |
 

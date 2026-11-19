@@ -77,6 +77,7 @@ const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
 @export var settings_panel_scene_path: String = SettingsPanelScene
 @export var load_settings_panel: bool = true
 @export var load_accessibility: bool = true
+@export var load_performance_monitor: bool = true
 @export var load_rebind: bool = true
 @export var load_buildings: bool = true
 @export var machine_panel_scene_path: String = MachinePanelScene
@@ -122,6 +123,7 @@ var building_panel: CanvasLayer = null
 var settings_panel: CanvasLayer = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
+var performance_monitor: PerformanceMonitor = null
 var machine_service: MachineService = null
 var machine_panel: CanvasLayer = null
 var cooking_service: CookingService = null
@@ -159,6 +161,8 @@ func _boot() -> void:
 	# stamina through it. It needs no world and no player, so it goes first of the
 	# three.
 	_spawn_player_state()
+	if load_performance_monitor:
+		_spawn_performance_monitor()
 	# Input overrides must be in the InputMap before any panel starts reading
 	# actions, so this sits next to the state service near the front of boot.
 	if load_rebind:
@@ -337,6 +341,13 @@ func _spawn_player_state() -> void:
 ## Sound is a listener: it needs no gameplay service, only the EventBus and the
 ## Config autoload, so it is spawned just after the bag and before everything
 ## that will publish an event worth hearing.
+func _spawn_performance_monitor() -> void:
+	performance_monitor = PerformanceMonitor.new()
+	performance_monitor.name = "PerformanceMonitor"
+	add_child(performance_monitor)
+	Log.info("Perf", "Frame and memory sampling started")
+
+
 func _spawn_rebind_service() -> void:
 	rebind_service = RebindService.new()
 	rebind_service.name = "RebindService"
