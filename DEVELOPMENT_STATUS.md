@@ -3091,3 +3091,26 @@ Bugs found and fixed: the monitor's boundary window watched only the first mark
 in a list, so later crossings reported 0 ms — replaced with a single end-frame.
 The playtest's synchronous screenshot sat inside the measurement window and
 produced a fake 133 ms "spike"; it now runs after the report.
+
+### M19 complete
+
+The C# two-year sweep and its 11 balance tests were already in place; this pass
+added the missing assembled-game simulation. `tests/suites/test_long_sim.gd`
+(3 cases) drives the real main scene through 224 day rollovers with a bot that
+waters the plot, sows, feeds the hen, collects products and empties machines.
+It asserts main's child count stays flat, the phase never returns to TITLE, an
+idle player's 500 g is unchanged after 224 days, and bag growth is at most one
+item per day plus the starter loadout — the hen's one egg a day is production,
+not a leak. `tools/playtest_balance.gd` prints the live sweep in a window: nine
+crops, end gold 71,345–92,550, all tool gates reachable by day 69 at the worst,
+and 500 g unchanged after two idle years. It must be run with the Mono engine
+because the sweep is C#.
+
+New total: **615/615**, all stages green, zero script errors. Bugs found and
+fixed: the bot used the nonexistent `Inventory.contents` field (now `to_dict()`
+slots), called `GameState.get_phase()` instead of reading `.phase`, and fed the
+hen an onion every day regardless of whether it ate one — which made the *bot*
+print onions and briefly looked like a resource leak. The balance playtest also
+hit the `--script`/autoload compile trap when it named `BalanceReport` and
+`Clock` as globals; it now loads the report by path and uses the literal day
+count.

@@ -403,9 +403,20 @@ growth, no node accumulation), not a fixed frame rate on unknown hardware.")
 
 ## M19 — Testing and balance
 
-- [ ] A 2-year bot simulation (112 days × 2) completes without crash or soft-lock
-- [ ] The economy holds up: the player can afford to progress and cannot idle to infinite money
-- [ ] No unbounded growth or decay in any resource
+- [x] A 2-year bot simulation (112 days × 2) completes without crash or soft-lock
+- [x] The economy holds up: the player can afford to progress and cannot idle to infinite money
+- [x] No unbounded growth or decay in any resource
+
+The C# `BalanceSweep` (already covered by `test_balance.gd`’s 11 cases) models
+224 days over all nine crops; `tools/playtest_balance.gd` reports the live
+numbers — end gold 71,345–92,550 across the four strategies and every paid tool
+tier reachable by day 69 at the worst. `tests/suites/test_long_sim.gd` (3 cases)
+additionally drives the *assembled* scene through 224 real day rollovers with a
+bot that waters, feeds, collects and tends machines: the child count stays flat,
+the game never falls back to the title, 224 idle days leave the starting 500 g
+untouched, and bag growth stays at most one item per day plus the loadout (the
+hen legitimately lays one egg a day). `tools/playtest_balance.gd` must run on the
+Mono engine because the sweep is C#; the ordinary launcher never loads it.")
 
 ---
 

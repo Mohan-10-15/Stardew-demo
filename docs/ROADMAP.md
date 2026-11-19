@@ -31,7 +31,7 @@ reasoning.
 | M16 | Save and load | **COMPLETE** |
 | M17 | Art and animation polish | **COMPLETE** |
 | M18 | Performance | **COMPLETE** |
-| M19 | Testing, bot simulation, balance | |
+| M19 | Testing, bot simulation, balance | **COMPLETE** |
 | M20 | Release integration | |
 
 ### Two numbering schemes, one sequence
