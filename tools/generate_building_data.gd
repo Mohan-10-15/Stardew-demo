@@ -1,14 +1,18 @@
 extends SceneTree
 const OUT := "res://resources/buildings/"
 const SCRIPT := "res://resources/buildings/building_data.gd"
+const MODELS := "res://assets/models/quaternius/FarmBuildings/"
 
 const BUILDINGS: Array[Dictionary] = [
 	{"id": &"hen_coop", "name": "Hen Coop", "price": 500, "upgrade": 350,
-	 "effect": &"product", "value": 1, "tint": Color(0.82, 0.58, 0.34)},
+	 "effect": &"product", "value": 1, "tint": Color(0.82, 0.58, 0.34),
+	 "model": MODELS + "ChickenCoop.fbx", "height": 2.4},
 	{"id": &"dairy_barn", "name": "Dairy Barn", "price": 800, "upgrade": 550,
-	 "effect": &"product", "value": 2, "tint": Color(0.72, 0.42, 0.32)},
+	 "effect": &"product", "value": 2, "tint": Color(0.72, 0.42, 0.32),
+	 "model": MODELS + "Barn.fbx", "height": 3.6},
 	{"id": &"farm_well", "name": "Farm Well", "price": 450, "upgrade": 300,
-	 "effect": &"water", "value": 2, "tint": Color(0.52, 0.58, 0.62)},
+	 "effect": &"water", "value": 2, "tint": Color(0.52, 0.58, 0.62),
+	 "model": MODELS + "Well.fbx", "height": 2.0},
 ]
 
 func _initialize() -> void:
@@ -28,6 +32,8 @@ func _initialize() -> void:
 		data.set("effect_kind", spec["effect"])
 		data.set("effect_value", int(spec["value"]))
 		data.set("tint", spec["tint"])
+		data.set("model_path", spec["model"])
+		data.set("target_height", float(spec["height"]))
 		if not bool(data.call("is_valid")):
 			errors += 1
 			continue

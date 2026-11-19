@@ -10,3 +10,5 @@ price = 800
 upgrade_price = 550
 effect_value = 2
 tint = Color(0.72, 0.42, 0.32, 1)
+model_path = "res://assets/models/quaternius/FarmBuildings/Barn.fbx"
+target_height = 3.6

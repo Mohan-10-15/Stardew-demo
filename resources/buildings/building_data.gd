@@ -10,6 +10,10 @@ extends Resource
 ## Base strength of the effect; an upgrade doubles it.
 @export var effect_value: int = 1
 @export var tint: Color = Color.WHITE
+## CC0 model drawn for this building. Empty means the procedural fallback.
+@export var model_path: String = ""
+## Height in metres the model is drawn at; 0 keeps the imported scale.
+@export var target_height: float = 0.0
 
 
 func is_valid() -> bool:

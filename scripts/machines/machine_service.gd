@@ -172,25 +172,71 @@ func _build_visual(data: MachineData, slot: int) -> void:
 		_visuals = Node3D.new()
 		_visuals.name = "MachineVisuals"
 		get_tree().get_root().add_child(_visuals)
+	var old := _visuals.get_node_or_null(NodePath("Machine%d" % slot))
+	if old != null:
+		old.free()
 	var body := StaticBody3D.new()
 	body.name = "Machine%d" % slot
 	body.collision_layer = PhysicsLayers.INTERACTABLE
 	body.collision_mask = 0
-	body.position = PADS[slot] + Vector3(0, 0.55, 0)
-	var mesh := MeshInstance3D.new()
-	mesh.name = "Body"
+	body.position = PADS[slot]
+
+	var shell := MeshInstance3D.new()
+	shell.name = "Shell"
 	var box := BoxMesh.new()
-	box.size = Vector3(1.4, 1.1, 1.2)
-	mesh.mesh = box
+	box.size = Vector3(1.3, 1.0, 1.1)
+	shell.mesh = box
+	shell.position = Vector3(0, 0.5, 0)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = data.tint
-	mesh.material_override = mat
-	body.add_child(mesh)
+	shell.material_override = mat
+	body.add_child(shell)
+
+	# A chimney, a hopper and a hatch: composed geometry reads as a machine
+	# rather than the single placeholder cube it replaced.
+	var chimney := MeshInstance3D.new()
+	chimney.name = "Chimney"
+	var pipe := CylinderMesh.new()
+	pipe.top_radius = 0.16
+	pipe.bottom_radius = 0.22
+	pipe.height = 0.75
+	pipe.radial_segments = 10
+	chimney.mesh = pipe
+	chimney.position = Vector3(0.38, 1.28, -0.25)
+	var metal := StandardMaterial3D.new()
+	metal.albedo_color = Color(0.30, 0.28, 0.26)
+	chimney.material_override = metal
+	body.add_child(chimney)
+
+	var hopper := MeshInstance3D.new()
+	hopper.name = "Hopper"
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.36
+	cone.bottom_radius = 0.12
+	cone.height = 0.5
+	cone.radial_segments = 8
+	hopper.mesh = cone
+	hopper.position = Vector3(-0.34, 1.24, 0.1)
+	hopper.material_override = metal
+	body.add_child(hopper)
+
+	var hatch := MeshInstance3D.new()
+	hatch.name = "Hatch"
+	var door := BoxMesh.new()
+	door.size = Vector3(0.5, 0.42, 0.06)
+	hatch.mesh = door
+	hatch.position = Vector3(0, 0.52, 0.58)
+	var hatch_mat := StandardMaterial3D.new()
+	hatch_mat.albedo_color = data.tint.darkened(0.45)
+	hatch.material_override = hatch_mat
+	body.add_child(hatch)
+
 	var shape := CollisionShape3D.new()
 	shape.name = "CollisionShape3D"
 	var col := BoxShape3D.new()
-	col.size = box.size
+	col.size = Vector3(1.3, 1.0, 1.1)
 	shape.shape = col
+	shape.position = Vector3(0, 0.5, 0)
 	body.add_child(shape)
 	var component := Node.new()
 	component.name = "Interactable"

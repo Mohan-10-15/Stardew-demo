@@ -1,32 +1,36 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_lvxji"]
-[ext_resource type="Script" path="res://scripts/player/player_avatar.gd" id="2_p47bc"]
-[ext_resource type="Script" path="res://scripts/player/camera_rig.gd" id="3_75vfm"]
-[ext_resource type="Script" path="res://scripts/interaction/interaction_probe.gd" id="4_0owmy"]
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_p47bc"]
+[ext_resource type="Script" path="res://scripts/player/player_avatar.gd" id="2_75vfm"]
+[ext_resource type="Script" path="res://scripts/player/camera_rig.gd" id="3_0owmy"]
+[ext_resource type="Script" path="res://scripts/player/tool_view_model.gd" id="4_qek5x"]
+[ext_resource type="Script" path="res://scripts/interaction/interaction_probe.gd" id="5_5gtgg"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_qek5x"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_h17s1"]
 radius = 0.4
 height = 1.8
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
-script = ExtResource("1_lvxji")
+script = ExtResource("1_p47bc")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_qek5x")
+shape = SubResource("CapsuleShape3D_h17s1")
 
 [node name="Model" type="Node3D" parent="."]
-script = ExtResource("2_p47bc")
+script = ExtResource("2_75vfm")
 
 [node name="CameraRig" type="Node3D" parent="."]
-script = ExtResource("3_75vfm")
+script = ExtResource("3_0owmy")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
 current = true
 fov = 78.0
 far = 500.0
 
+[node name="ToolViewModel" type="Node3D" parent="CameraRig/Camera3D"]
+script = ExtResource("4_qek5x")
+
 [node name="InteractionProbe" type="Node" parent="."]
-script = ExtResource("4_0owmy")
+script = ExtResource("5_5gtgg")

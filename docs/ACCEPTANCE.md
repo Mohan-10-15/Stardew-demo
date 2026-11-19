@@ -346,10 +346,23 @@ covers the section set, a full round-trip, version migration and corruption;
 
 ## M17 — Art and animation polish
 
-- [ ] First-person tool animations exist for every tool
-- [ ] Every interactable has a use animation and a reaction
-- [ ] No placeholder geometry remains in normal play
-- [ ] Missing or invalid assets cannot crash the game
+- [x] First-person tool animations exist for every tool
+- [x] Every interactable has a use animation and a reaction
+- [x] No placeholder geometry remains in normal play
+- [x] Missing or invalid assets cannot crash the game
+
+A first-person `ToolViewModel` lives under the camera and draws a purpose-built
+mesh for hoe, watering can, scythe, axe, pickaxe and fishing rod; it swings on
+one global `tool_swung` event (emitted for farming, gathering and casting) and
+hides in third person. `Interactable.interact()` now gives every prop a scale
+pop on its *visual* child only — the collider and reach check are untouched.
+Placeable buildings draw the Quaternius ChickenCoop/Barn/Well CC0 models and
+upgrades gain a visible banner; machines are composed from a shell, chimney,
+hopper and hatch rather than a single cube; the stove is a visible stone range
+instead of an invisible collider. A bad asset path degrades to a roofed fallback
+box through `ModelArt`'s null-on-failure loader. `tests/suites/test_art.gd` (5
+cases) covers all four criteria and `tools/playtest_art.gd` watches the tool
+draw, swing, return to rest and hide in a real window.")
 
 ---
 

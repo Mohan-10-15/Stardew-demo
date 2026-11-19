@@ -68,6 +68,15 @@ func _initialize() -> void:
 	camera.far = 500.0
 	rig.add_child(camera)
 
+	# --- First-person tool view model -------------------------------------
+	# A child of the camera so it inherits pitch and yaw. The mesh is built at
+	# runtime from the held item id, exactly like the avatar, because baking a
+	# tool into the scene would freeze it to whichever tool was held in the editor.
+	var view_model := Node3D.new()
+	view_model.name = "ToolViewModel"
+	view_model.set_script(load("res://scripts/player/tool_view_model.gd"))
+	camera.add_child(view_model)
+
 	# --- Interaction probe ------------------------------------------------
 	# A plain Node, not Node3D: it aims from the active camera and has no
 	# transform of its own to keep in sync.
@@ -77,7 +86,7 @@ func _initialize() -> void:
 	probe.set("ray_length", 3.5)
 	root.add_child(probe)
 
-	for child: Node in [collision, avatar, rig, camera, probe]:
+	for child: Node in [collision, avatar, rig, camera, view_model, probe]:
 		child.owner = root
 
 	var err := _save(root)

@@ -212,6 +212,7 @@ specification when it is picked up, not now.
 | TASK-022 | Cutscene system | M10. **Complete** — data cutscenes with safe skip |
 | TASK-023 | Performance | Group 29 / M18 |
 | TASK-024 | Release integration | Group 31–32 / M20 |
+| TASK-025 | Art and animation polish | M17. **Complete** — first-person tool view model, interactable reactions, CC0 buildings |
 
 The ordering is a dependency order, not a difficulty order. Fishing is harder
 than the menus, and it is later only because a fish needs a time of day and

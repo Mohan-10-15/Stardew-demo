@@ -47,6 +47,7 @@ signal availability_changed()
 
 var _focused: bool = false
 var _used: bool = false
+var _reaction_tween: Tween = null
 
 
 func _ready() -> void:
@@ -95,7 +96,41 @@ func interact(actor: Node) -> bool:
 	if one_shot:
 		_used = true
 	interacted.emit(actor)
+	_play_reaction()
 	return true
+
+
+## Every interactable gets a small use animation for free: the prop it is
+## attached to pops and settles. The reaction is deliberately on the *visual*
+## sibling and never on the physics body — scaling a body would also scale its
+## collision shape and quietly break the reach check that made the prop usable
+## in the first place.
+func _play_reaction() -> void:
+	if not is_inside_tree() or Engine.is_editor_hint():
+		return
+	var visual := _reaction_target()
+	if visual == null:
+		return
+	if _reaction_tween != null and _reaction_tween.is_valid():
+		_reaction_tween.kill()
+	var original := visual.scale
+	_reaction_tween = create_tween()
+	_reaction_tween.set_trans(Tween.TRANS_QUAD)
+	_reaction_tween.set_ease(Tween.EASE_OUT)
+	_reaction_tween.tween_property(visual, "scale", original * Vector3(1.09, 1.09, 1.09), 0.08)
+	_reaction_tween.tween_property(visual, "scale", original, 0.20)
+
+
+## The direct mesh child of this component's body, or null when the prop has no
+## simple visual (an imported character, for instance, owns its own animation).
+func _reaction_target() -> Node3D:
+	var parent := get_parent()
+	if parent == null:
+		return null
+	for child: Node in parent.get_children():
+		if child is MeshInstance3D:
+			return child as Node3D
+	return null
 
 
 ## Text shown in the HUD prompt. Override to react to state, e.g.

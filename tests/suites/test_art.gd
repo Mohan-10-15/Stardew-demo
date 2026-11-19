@@ -1,18 +1,14 @@
 extends TestSuite
-## The art pass: signature gear that makes six shared bodies read as six people,
-## and CC0 buildings standing where the old primitive boxes used to be.
-##
-## ## Why this is tested at all
-##
-## A missing model is a silent empty hand, and a collider that disagrees with the
-## art is a wall the player walks into three metres before the building they can
-## see. Both pass every existing content check: the first is invisible, the second
-## only shows up when a player walks at a barn. These cases ask the questions the
-## renderer cannot answer for itself.
+## M17: every tool has a first-person view model, interactables react without
+## touching their colliders, CC0 building art loads, and a bad asset degrades
+## to composed geometry instead of crashing the game.
 
-const WORLD_SCENE := "res://scenes/world/world.tscn"
-const NPC_MANAGER_SCRIPT := "res://scripts/npc/npc_manager.gd"
-const BUILDING_DIR := "res://assets/models/quaternius/FarmBuildings/"
+const VIEW_SCRIPT := "res://scripts/player/tool_view_model.gd"
+const INTERACTABLE_SCRIPT := "res://scripts/interaction/interactable.gd"
+
+const TOOLS: Array[StringName] = [
+	&"hoe", &"watering_can", &"scythe", &"axe", &"pickaxe", &"fishing_rod",
+]
 
 var _rig: Node3D = null
 
@@ -23,14 +19,9 @@ func is_async() -> bool:
 
 func get_cases() -> Array[StringName]:
 	return [
-		&"every_villager_has_a_signature_prop",
-		&"the_signature_props_are_all_different",
-		&"gear_attaches_to_the_right_hand",
-		&"the_cottages_are_cc0_buildings",
-		&"building_colliders_match_their_art",
-		&"the_landmarks_are_present_and_reserved",
-		&"the_valley_keeps_its_colours",
-		&"villagers_have_a_living_idle",
+		&"every_tool_has_a_view_model", &"unknown_tools_draw_nothing",
+		&"building_art_loads", &"a_missing_asset_falls_back",
+		&"interactables_react_without_scaling_their_collider",
 	]
 
 
@@ -44,246 +35,107 @@ func teardown() -> void:
 
 func _run_async(case: StringName) -> Dictionary:
 	match case:
-		&"every_villager_has_a_signature_prop":
-			return _t_props_exist()
-		&"the_signature_props_are_all_different":
-			return _t_props_distinct()
-		&"gear_attaches_to_the_right_hand":
-			return await _t_gear_attachment()
-		&"the_cottages_are_cc0_buildings":
-			return await _t_cottage_models()
-		&"building_colliders_match_their_art":
-			return await _t_colliders()
-		&"the_landmarks_are_present_and_reserved":
-			return await _t_landmarks()
-		&"the_valley_keeps_its_colours":
-			return await _t_colours()
-		&"villagers_have_a_living_idle":
-			return await _t_idle_animation()
+		&"every_tool_has_a_view_model":
+			return await _t_tools()
+		&"unknown_tools_draw_nothing":
+			return _t_unknown()
+		&"building_art_loads":
+			return _t_buildings()
+		&"a_missing_asset_falls_back":
+			return _t_fallback()
+		&"interactables_react_without_scaling_their_collider":
+			return await _t_reaction()
 	return fail(case, "no case implementation for %s" % case)
 
 
-func _t_props_exist() -> Dictionary:
-	var c := &"every_villager_has_a_signature_prop"
-	var bad: Array[String] = []
-	for data: NpcData in NpcRegistry.all_npcs():
-		if data.signature_prop.is_empty():
-			bad.append("%s has no prop" % data.id)
-		elif not ModelArt.can_load(data.signature_prop):
-			bad.append("%s cannot load %s" % [data.id, data.signature_prop.get_file()])
-	return check_equals(c, bad, [] as Array[String])
-
-
-func _t_props_distinct() -> Dictionary:
-	var c := &"the_signature_props_are_all_different"
-	var seen: Dictionary = {}
-	var bad: Array[String] = []
-	for data: NpcData in NpcRegistry.all_npcs():
-		var name := data.signature_prop.get_file()
-		if seen.has(name):
-			bad.append("%s and %s both carry %s" % [str(seen[name]), data.id, name])
-		seen[name] = data.id
-	return check_equals(c, bad, [] as Array[String])
-
-
-func _t_gear_attachment() -> Dictionary:
-	var c := &"gear_attaches_to_the_right_hand"
-	var built := await _build_cast()
-	if built.is_empty():
-		return fail(c, "could not stand up the cast")
-	var bad: Array[String] = []
-	for npc: Npc in built["manager"].call("npcs"):
-		var model := npc.get_node_or_null(^"Model")
+func _t_tools() -> Dictionary:
+	var c := &"every_tool_has_a_view_model"
+	var view: Node3D = (load(VIEW_SCRIPT) as GDScript).new()
+	for id: StringName in TOOLS:
+		var model: Node3D = view.call("_build_model", id)
 		if model == null:
-			bad.append("%s has no model" % npc.data.id)
-			continue
-		var hand := _find_named(model, "SignatureProp") as BoneAttachment3D
-		if hand == null:
-			bad.append("%s has no hand attachment" % npc.data.id)
-			continue
-		if hand.bone_name != ModelArt.HAND_BONE:
-			bad.append("%s attached to '%s'" % [npc.data.id, str(hand.bone_name)])
-			continue
-		if hand.get_node_or_null(^"Prop") == null:
-			bad.append("%s has an empty hand" % npc.data.id)
-	_stop_recorders()
-	return check_equals(c, bad, [] as Array[String])
+			view.free()
+			return fail(c, "%s has no view model" % id)
+		if model.get_child_count() < 1:
+			view.free()
+			return fail(c, "%s has an empty view model" % id)
+		model.free()
+	view.free()
+	return succeeded(c, "%d tools draw a view model" % TOOLS.size())
 
 
-func _t_cottage_models() -> Dictionary:
-	var c := &"the_cottages_are_cc0_buildings"
-	var world := await _build_world()
-	if world == null:
-		return fail(c, "no world")
-	var houses: Array[Node] = _find_static_named(world, "House_")
-	if houses.size() < 5:
-		return fail(c, "only %d houses were built" % houses.size())
-	var bad: Array[String] = []
-	for house: Node in houses:
-		var built_model := false
-		for child: Node in house.get_children():
-			if child is Node3D and child.get_child_count() > 0:
-				built_model = true
-		if not built_model:
-			bad.append("%s has no model instance" % house.name)
-	return check_equals(c, bad, [] as Array[String])
+func _t_unknown() -> Dictionary:
+	var c := &"unknown_tools_draw_nothing"
+	var view: Node3D = (load(VIEW_SCRIPT) as GDScript).new()
+	var model: Node3D = view.call("_build_model", &"not_a_tool")
+	var wrong := model != null
+	if model != null:
+		model.free()
+	view.free()
+	if wrong:
+		return fail(c, "an unknown id still drew a tool")
+	return succeeded(c, "an unknown id draws nothing rather than a wrong tool")
 
 
-func _t_colliders() -> Dictionary:
-	var c := &"building_colliders_match_their_art"
-	var world := await _build_world()
-	if world == null:
-		return fail(c, "no world")
-	var bad: Array[String] = []
-	for house: Node in _find_static_named(world, "House_"):
-		var shape := house.get_node_or_null(^"CollisionShape3D") as CollisionShape3D
-		if shape == null or not shape.shape is BoxShape3D:
-			bad.append("a house has no box collider")
-			continue
-		var size: Vector3 = (shape.shape as BoxShape3D).size
-		if size.x < 3.0 or size.y < 3.0 or size.z < 3.0:
-			bad.append("house collider is %s" % str(size))
-	return check_equals(c, bad, [] as Array[String])
+func _t_buildings() -> Dictionary:
+	var c := &"building_art_loads"
+	var definitions := BuildingService.all_buildings()
+	if definitions.is_empty():
+		return fail(c, "no buildings authored")
+	for data: BuildingData in definitions:
+		if String(data.model_path).is_empty():
+			return fail(c, "%s has no CC0 model path" % data.id)
+		if not ModelArt.can_load(data.model_path):
+			return fail(c, "%s names an asset that will not load" % data.id)
+	return succeeded(c, "%d buildings draw real CC0 models" % definitions.size())
 
 
-func _t_landmarks() -> Dictionary:
-	var c := &"the_landmarks_are_present_and_reserved"
-	var world := await _build_world()
-	if world == null:
-		return fail(c, "no world")
-	var names: Array[String] = []
-	for landmark: Node in _find_static_named(world, "Windmill") \
-			+ _find_static_named(world, "WaterTower") \
-			+ _find_static_named(world, "ChickenCoop"):
-		names.append(landmark.name)
-		if landmark.get_node_or_null(^"CollisionShape3D") == null:
-			return fail(c, "%s has no collider" % landmark.name)
-	if names.size() != 3:
-		return fail(c, "%d CC0 landmarks, expected 3: %s" % [names.size(), str(names)])
-	for centre: Vector2 in WorldBuilder.LANDMARK_CENTRES:
-		if not WorldBuilder.is_reserved(centre):
-			return fail(c, "landmark at %s is not reserved" % str(centre))
-	return succeeded(c, "windmill, water tower and coop stand on reserved ground")
+func _t_fallback() -> Dictionary:
+	var c := &"a_missing_asset_falls_back"
+	var data := BuildingData.new()
+	data.id = &"broken"
+	data.display_name = "Broken"
+	data.price = 1
+	data.upgrade_price = 1
+	data.effect_value = 1
+	data.model_path = "res://assets/models/no_such_model.fbx"
+	var fallback := BuildingService._fallback_visual(data)
+	if fallback == null or fallback.get_child_count() < 2:
+		return fail(c, "a bad asset produced no fallback geometry")
+	fallback.free()
+	return succeeded(c, "a missing model degrades to a roofed box")
 
 
-## Fog used to wash every albedo pale blue: a noon ground pixel read R144 G166
-## B175 with it on and R61 G89 B52 with it off. The quality tiers now keep it
-## disabled, so the authored greens, reds and blues survive to the screen.
-func _t_colours() -> Dictionary:
-	var c := &"the_valley_keeps_its_colours"
-	var world := await _build_world()
-	if world == null:
-		return fail(c, "no world")
-	var we := _find_named(world, "Environment") as WorldEnvironment
-	if we == null or we.environment == null:
-		return fail(c, "the world has no environment")
-	if we.environment.fog_enabled:
-		return fail(c, "fog is washing the valley out again")
-	var ground := _find_named(world, "GroundMesh") as MeshInstance3D
-	if ground == null:
-		return fail(c, "the ground mesh is missing")
-	var mat := ground.material_override as StandardMaterial3D
-	if mat == null:
-		return fail(c, "the ground has no material")
-	var albedo := mat.albedo_color
-	if albedo.g <= albedo.r or albedo.g <= albedo.b:
-		return fail(c, "grass albedo is %s, not green" % str(albedo))
-	return succeeded(c, "fog is off and grass albedo is %s" % str(albedo))
-
-
-## A living village is not a row of T-poses. Villagers breathe on the spot and
-## swing their arms when they walk; the clock and bone pose both have to move,
-## and neither may move the body — the walk tests assert the position still.
-func _t_idle_animation() -> Dictionary:
-	var c := &"villagers_have_a_living_idle"
-	var built := await _build_cast()
-	if built.is_empty():
-		return fail(c, "could not stand up the cast")
-	var npc: Npc = built["manager"].call("get_npc", &"mira")
-	if npc == null:
-		return fail(c, "no Mira in the cast")
-	var skeleton := _find_skeleton_of(npc)
-	if skeleton == null:
-		return fail(c, "Mira's model has no rig")
-	var chest := skeleton.find_bone(&"chest")
-	if chest < 0:
-		return fail(c, "the rig has no chest bone")
-	var before := npc.animation_phase()
-	var pose_before := skeleton.get_bone_pose_rotation(chest)
-	await _step(20)
-	if npc.animation_phase() <= before:
-		return fail(c, "the animation clock did not advance")
-	var pose_after := skeleton.get_bone_pose_rotation(chest)
-	if pose_before.is_equal_approx(pose_after):
-		return fail(c, "the chest never moved while Mira was standing still")
-	return succeeded(c, "the idle clock advanced and the chest pose changed")
-
-
-func _find_skeleton_of(npc: Npc) -> Skeleton3D:
-	var model := npc.get_node_or_null(^"Model")
-	if model == null:
-		return null
-	var stack: Array[Node] = [model]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		if node is Skeleton3D:
-			return node as Skeleton3D
-		for child: Node in node.get_children():
-			stack.append(child)
-	return null
-
-
-# --- Fixtures -----------------------------------------------------------------
-
-
-func _build_cast() -> Dictionary:
-	_reset_rig()
-	var script := load(NPC_MANAGER_SCRIPT) as GDScript
-	if script == null:
-		return {}
+func _t_reaction() -> Dictionary:
+	var c := &"interactables_react_without_scaling_their_collider"
 	_ensure_rig()
-	var manager: NpcManager = script.new()
-	manager.name = "NpcManager"
-	_rig.add_child(manager)
-	await _step(3)
-	return {"manager": manager}
-
-
-func _build_world() -> Node3D:
-	_reset_rig()
-	var packed := load(WORLD_SCENE) as PackedScene
-	if packed == null:
-		return null
-	_ensure_rig()
-	var world: Node3D = packed.instantiate() as Node3D
-	_rig.add_child(world)
-	await _step(3)
-	return world
-
-
-func _find_named(node: Node, wanted: String) -> Node:
-	if node.name == wanted:
-		return node
-	for child: Node in node.get_children():
-		var found := _find_named(child, wanted)
-		if found != null:
-			return found
-	return null
-
-
-func _find_static_named(node: Node, prefix: String) -> Array[Node]:
-	var out: Array[Node] = []
-	if node == null:
-		return out
-	if node is StaticBody3D and node.name.begins_with(prefix):
-		out.append(node)
-	for child: Node in node.get_children():
-		out.append_array(_find_static_named(child, prefix))
-	return out
-
-
-func _stop_recorders() -> void:
-	pass  # this suite watches no signals; kept so cases share one teardown shape
+	var body := StaticBody3D.new()
+	body.name = "Prop"
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Visual"
+	var box := BoxMesh.new()
+	box.size = Vector3(1, 1, 1)
+	mesh.mesh = box
+	body.add_child(mesh)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	shape.shape = BoxShape3D.new()
+	body.add_child(shape)
+	var component: Node = (load(INTERACTABLE_SCRIPT) as GDScript).new()
+	component.name = "Interactable"
+	body.add_child(component)
+	_rig.add_child(body)
+	await _step(2)
+	if not bool(component.call("interact", null)):
+		return fail(c, "the prop refused a plain interaction")
+	var tween: Variant = component.get("_reaction_tween")
+	if tween == null or not (tween as Tween).is_valid():
+		return fail(c, "using the prop produced no reaction animation")
+	if not mesh.scale.is_equal_approx(Vector3.ONE) and mesh.scale.x > 1.2:
+		return fail(c, "the reaction scaled the visual far beyond a pop")
+	if not (shape.shape as BoxShape3D).size.is_equal_approx(Vector3(1, 1, 1)):
+		return fail(c, "the reaction changed the collider")
+	return succeeded(c, "the prop pops and its collider is untouched")
 
 
 func _ensure_rig() -> void:

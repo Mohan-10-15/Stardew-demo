@@ -135,16 +135,87 @@ func _build_visual(data: BuildingData, slot: int, level: int) -> void:
 	var old := _visuals.get_node_or_null(NodePath("Building%d" % slot))
 	if old != null:
 		old.free()
-	var body := MeshInstance3D.new()
+	var body := StaticBody3D.new()
 	body.name = "Building%d" % slot
-	var box := BoxMesh.new()
-	box.size = Vector3(3.0 + float(level) * 0.4, 2.0 + float(level) * 0.5, 3.0)
-	body.mesh = box
-	body.position = SLOT_CENTRES[slot] + Vector3(0, box.size.y * 0.5, 0)
+	body.collision_layer = PhysicsLayers.INTERACTABLE
+	body.collision_mask = 0
+	body.position = SLOT_CENTRES[slot]
+
+	var natural := 0.0
+	if not data.model_path.is_empty():
+		natural = ModelArt.natural_height(data.model_path)
+	var factor := 1.0
+	if natural > 0.0 and data.target_height > 0.0:
+		factor = data.target_height / natural
+	# An upgrade is visible in the world, not only in a panel: level 2 stands a
+	# little taller and carries a bright banner over the door.
+	if level >= 2:
+		factor *= 1.15
+
+	var model := ModelArt.instantiate(data.model_path) if not data.model_path.is_empty() else null
+	if model == null:
+		# Asset resilience: a missing or invalid model degrades to composed
+		# geometry rather than an empty lot or a crash.
+		model = _fallback_visual(data)
+	elif natural > 0.0 and data.target_height > 0.0:
+		model.scale *= factor
+	if not ModelArt.is_white(data.tint) and model != null:
+		ModelArt.apply_tint(model, data.tint)
+	body.add_child(model)
+
+	if level >= 2:
+		var banner := MeshInstance3D.new()
+		banner.name = "UpgradeBanner"
+		var flag := BoxMesh.new()
+		flag.size = Vector3(0.5, 0.5, 0.06)
+		banner.mesh = flag
+		banner.position = Vector3(0, 2.2 * maxf(factor, 1.0) + 0.6, 0)
+		var flag_mat := StandardMaterial3D.new()
+		flag_mat.albedo_color = Color(0.95, 0.78, 0.20)
+		banner.material_override = flag_mat
+		body.add_child(banner)
+
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var col := BoxShape3D.new()
+	col.size = Vector3(3.2 * maxf(factor, 1.0), 2.4 * maxf(factor, 1.0), 3.2 * maxf(factor, 1.0))
+	shape.shape = col
+	shape.position = Vector3(0, col.size.y * 0.5, 0)
+	body.add_child(shape)
+	_visuals.add_child(body)
+
+
+## A roofed box used only when the CC0 model at `model_path` will not load.
+## Kept non-trivial so the world still reads as a building in a test rig that
+## ships without the art packs, and so a bad asset path fails nothing but art.
+static func _fallback_visual(data: BuildingData) -> Node3D:
+	var root := Node3D.new()
+	root.name = "FallbackBuilding"
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = data.tint
-	body.material_override = mat
-	_visuals.add_child(body)
+	var walls := MeshInstance3D.new()
+	walls.name = "Walls"
+	var box := BoxMesh.new()
+	box.size = Vector3(3.0, 2.0, 3.0)
+	walls.mesh = box
+	walls.position = Vector3(0, 1.0, 0)
+	walls.material_override = mat
+	root.add_child(walls)
+	var roof := MeshInstance3D.new()
+	roof.name = "Roof"
+	var prism := CylinderMesh.new()
+	prism.top_radius = 0.0
+	prism.bottom_radius = 2.3
+	prism.height = 1.1
+	prism.radial_segments = 4
+	roof.mesh = prism
+	roof.position = Vector3(0, 2.5, 0)
+	roof.rotation.y = PI * 0.25
+	var roof_mat := StandardMaterial3D.new()
+	roof_mat.albedo_color = data.tint.darkened(0.35)
+	roof.material_override = roof_mat
+	root.add_child(roof)
+	return root
 
 
 func to_dict() -> Dictionary:

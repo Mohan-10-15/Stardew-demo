@@ -704,6 +704,33 @@ static func _add_stove(root: Node3D) -> void:
 	# Just outside the farmhouse's south wall: the house collider fills the
 	# space around (22, 10), which would make a stove there impossible to reach.
 	body.position = Vector3(22, 0, 15)
+	var range := MeshInstance3D.new()
+	range.name = "StoveRange"
+	var range_box := BoxMesh.new()
+	range_box.size = Vector3(1.5, 1.0, 1.1)
+	range.mesh = range_box
+	range.position = Vector3(0, 0.5, 0)
+	range.material_override = WorldMaterials.surface(&"rock")
+	body.add_child(range)
+	var flue := MeshInstance3D.new()
+	flue.name = "Flue"
+	var pipe := CylinderMesh.new()
+	pipe.top_radius = 0.18
+	pipe.bottom_radius = 0.22
+	pipe.height = 1.1
+	pipe.radial_segments = 10
+	flue.mesh = pipe
+	flue.position = Vector3(0.4, 1.45, -0.3)
+	flue.material_override = WorldMaterials.surface(&"metal")
+	body.add_child(flue)
+	var oven := MeshInstance3D.new()
+	oven.name = "OvenDoor"
+	var door := BoxMesh.new()
+	door.size = Vector3(0.6, 0.5, 0.06)
+	oven.mesh = door
+	oven.position = Vector3(0, 0.5, 0.58)
+	oven.material_override = WorldMaterials.surface(&"door")
+	body.add_child(oven)
 	var shape := CollisionShape3D.new()
 	shape.name = "CollisionShape3D"
 	var box := BoxShape3D.new()

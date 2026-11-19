@@ -29,7 +29,7 @@ reasoning.
 | M14 | Audio | **COMPLETE** |
 | M15 | UI and accessibility | |
 | M16 | Save and load | **COMPLETE** |
-| M17 | Art and animation polish | |
+| M17 | Art and animation polish | **COMPLETE** |
 | M18 | Performance | |
 | M19 | Testing, bot simulation, balance | |
 | M20 | Release integration | |

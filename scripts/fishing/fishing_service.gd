@@ -60,6 +60,10 @@ func cast() -> bool:
 	var bus := _bus()
 	if bus != null:
 		bus.fishing_cast.emit()
+		var state_service := _find_named(get_tree().get_root(), "PlayerState")
+		if state_service != null:
+			var held: Dictionary = state_service.call("held_item_id")
+			bus.tool_swung.emit(StringName(held.get("id", &"")))
 	return true
 
 

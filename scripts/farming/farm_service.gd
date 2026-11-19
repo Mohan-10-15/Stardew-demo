@@ -150,6 +150,7 @@ func use_tool(target: SoilTile) -> int:
 		return 0
 
 	var action := current_tool_action()
+	_announce_swing()
 	var actor := _find_player()
 	if actor == null or not _in_reach(actor, target):
 		tool_used.emit(action, target.tile_index)
@@ -404,6 +405,16 @@ func _plant_refusal(target: SoilTile) -> StringName:
 ## The rules are not here any more — [method PlayerStateService.spend_tool_durability]
 ## owns them, because gathering wears tools down too and a second copy of this
 ## function is a second copy of the `remove_stack`-not-`remove` subtlety.
+## Tells the view model the swing started. Published once per swing, before any
+## reach or stamina check, so a whiff still animates the held tool.
+func _announce_swing() -> void:
+	var state := _state()
+	if state == null:
+		return
+	var held: Dictionary = state.call("held_item_id")
+	EventBus.tool_swung.emit(StringName(held.get("id", &"")))
+
+
 func _spend_durability(action: StringName) -> void:
 	var result := _state().spend_tool_durability(action) if _state() != null else {}
 	if result.get("broke", false):

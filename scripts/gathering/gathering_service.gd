@@ -176,6 +176,7 @@ func gather(node: ResourceNode, actor: Node) -> bool:
 
 	var status := status_for(node, actor)
 	var verb := StringName(status.get("verb", &"none"))
+	_announce_swing()
 	var node_id := node.data.id if node.data != null else &""
 	if not bool(status.get("ok", false)):
 		tool_used.emit(verb, node_id)
@@ -359,6 +360,15 @@ func _in_reach(actor: Node, node: ResourceNode) -> bool:
 ## The player's state, or null in a tree that has none.
 func _state() -> PlayerStateService:
 	return PlayerStateService.find()
+
+
+## One global swing announcement per gather, for the first-person view model.
+func _announce_swing() -> void:
+	var state := _state()
+	if state == null:
+		return
+	var held: Dictionary = state.held_item_id()
+	EventBus.tool_swung.emit(StringName(held.get("id", &"")))
 
 
 ## "an axe" / "a pickaxe", for the "you need one" refusal.

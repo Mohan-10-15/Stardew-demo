@@ -11,3 +11,5 @@ upgrade_price = 300
 effect_kind = &"water"
 effect_value = 2
 tint = Color(0.52, 0.58, 0.62, 1)
+model_path = "res://assets/models/quaternius/FarmBuildings/Well.fbx"
+target_height = 2.0

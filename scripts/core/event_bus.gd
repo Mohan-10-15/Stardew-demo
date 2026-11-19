@@ -132,6 +132,9 @@ signal hotbar_selection_changed(slot: int)
 ## A tool ran out of uses. Distinct from `item_removed` so a HUD can warn the
 ## player before they are left holding nothing.
 signal tool_broken(item_id: StringName)
+## A tool swing started, including whiffs. The first-person view model listens
+## to this so the held tool animates on every swing rather than only on success.
+signal tool_swung(item_id: StringName)
 
 # --- Interaction ----------------------------------------------------------
 signal interactable_focused(target: Node)
