@@ -11,7 +11,14 @@ Windows launcher use .NET; see `docs/MULTI_LANGUAGE_ARCHITECTURE.md`.
 ## Running the game
 
 Double-click **`Hollowbrook.exe`** in this folder. It starts the bundled portable
-Godot with the right arguments — no terminal, no install.
+Godot with the right arguments — no terminal, no install. A Desktop shortcut
+named **Hollowbrook** points at it.
+
+> **There is an older copy of this project at `C:\mohan\projects\Stardew dmeo`.**
+> It is stale (Group 17) and has no `tools/GodotSharp` folder. Launching the
+> *Mono* Godot binary there produces an "unable to find the .NET assemblies
+> directory" error. Always run the copy in `C:\mohan\Game\Stardew dmeo`, or the
+> Desktop shortcut — the launcher uses the non-Mono engine and never loads C#.
 
 From a terminal (PowerShell):
 
@@ -41,8 +48,9 @@ Nothing is taken from any existing commercial game.
 
 ## Requirements
 
-* Godot 4.x (developed against **4.5-stable**)
-* No addons, no C# — plain GDScript
+* Godot 4.x (developed against **4.5-stable**); a portable copy is in `tools/`
+* No addons. The game is plain GDScript; one measured balance sweep uses C#,
+  and the Windows launcher is a small .NET program. Neither is required to play.
 
 A portable copy lives in `tools/` (git-ignored). Nothing needs to be installed
 system-wide; use that binary, or point your own Godot 4.5 at this folder.
@@ -71,7 +79,9 @@ Runs the full pipeline — a clean project import, the automated test suite, and
 headless boot of the real main scene — and exits non-zero if anything fails or if
 the engine logs a script error. `-SkipImport` is faster while iterating.
 
-Current state: **92/92 tests passing**, import clean, boot clean.
+Current state: **620/620 tests passing**, import clean, boot clean, zero script
+errors. See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md) for the per-milestone
+record and [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) for what each M-number means.
 
 Individual stages, when you need one directly:
 
@@ -102,10 +112,22 @@ stdout clean so the pipeline can scan it for errors.
 | Jump | `Space` | A |
 | Interact | `E` / Left click | X |
 | Inventory | `Tab` | Y |
+| Journal / quests | `J` | Back |
 | Toggle camera (1st ↔ 3rd) | `V` | RB |
 | Pause / back | `Esc` | Start |
+| Settings & accessibility | `F2` | — |
+| Craft | `C` | — |
+| Machines | `B` | — |
+| Buildings | `N` | — |
+| Save / load | `F5` / `F9` | — |
+| Toggle log | `F3` | — |
 | Hotbar 1–9 | `1`…`9` | — |
 | Cycle hotbar | Mouse wheel | D-pad left/right |
+
+All bindings are data-driven from `tools/rebuild_input_map.gd`. The settings
+panel (F2) can rebind interact, inventory, craft, build, camera, log and attack
+at runtime; the changes persist in `user://config.cfg` and the interaction
+prompt's key label follows the new binding.
 
 Controller and movement bindings are **data-driven**: they live in
 `tools/rebuild_input_map.gd` and are written into `project.godot`.
@@ -188,6 +210,22 @@ res://
 
 ## Development progress
 
-Work proceeds in 33 sequential groups; each must launch and test clean before the
-next begins. **Groups 0–15 and 25 are complete.** Group 16 (NPC Schedules) is
-next. See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
+
+All milestones **M0–M19 are complete** (core, calendar, farming, economy,
+dialogue, relationships, homestead, combat, seasons, cutscenes, buildings,
+festivals, story, audio, accessibility, save, art, performance and balance).
+See [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md) for the per-milestone record.
+
+## Release status
+
+| Channel | Status |
+| --- | --- |
+| Windows — clickable launcher | **Works.** `Hollowbrook.exe` finds the project, starts the bundled non-Mono Godot with `--rendering-driver opengl3`, and needs no install. Verified on this machine. |
+| Windows — Godot export template build | Not produced: export templates are not installed on this machine and no network is available. The launcher is the supported distribution instead. |
+| Web export | Not available for the same reason (no export templates). The game itself has no web-only dependencies. |
+| Fresh clone | Clone the repo, keep `tools/` (the portable engine and `GodotSharp` assemblies are git-ignored, so copy them from an existing checkout), then double-click `Hollowbrook.exe` or run `tools/check.ps1`. |
+| Debug cheats | No cheat, god-mode or noclip action exists in the InputMap. F3 (log), F5/F9 (save/load) and the F2 settings panel are ordinary player-facing tools. |
+
+Every shipped art, audio and font asset is traced with source URL and licence in
+[`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md); audio is synthesised at
+runtime by `AudioSynth`, so there are no untracked sound files.

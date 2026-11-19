@@ -32,7 +32,7 @@ reasoning.
 | M17 | Art and animation polish | **COMPLETE** |
 | M18 | Performance | **COMPLETE** |
 | M19 | Testing, bot simulation, balance | **COMPLETE** |
-| M20 | Release integration | |
+| M20 | Release integration | PARTIAL — launcher + docs done; export templates unavailable |
 
 ### Two numbering schemes, one sequence
 

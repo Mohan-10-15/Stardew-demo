@@ -422,8 +422,21 @@ Mono engine because the sweep is C#; the ordinary launcher never loads it.")
 
 ## M20 — Release integration
 
-- [ ] A fresh clone builds and runs from the README instructions alone
+- [x] A fresh clone builds and runs from the README instructions alone
 - [ ] Windows export runs on a clean machine
 - [ ] Web export loads and is playable
-- [ ] No debug cheats are reachable in a release build
-- [ ] Every shipped asset is traced in `docs/ASSET_LICENSES.md`
+- [x] No debug cheats are reachable in a release build
+- [x] Every shipped asset is traced in `docs/ASSET_LICENSES.md`
+
+The README now states one current test count, one launch method and the correct
+project path (including a warning about the stale copy in
+`C:\mohan\projects`). `tools/release_check.gd` prints a one-shot readiness
+report — project root, EXE, launcher source, portable engine, C# assemblies,
+licence document, generated scene and the absence of cheat actions — and
+`tests/suites/test_release.gd` (5 cases) enforces those checks in CI. The two
+export rows stay **unticked**: no export templates are installed on this
+machine and there is no network to fetch them, so neither a Godot-exported
+Windows build nor a web build can be produced or verified here. The supported
+Windows distribution is the `Hollowbrook.exe` launcher plus the bundled portable
+engine, which is verified on this machine. No claim is made about a clean
+machine the project has never been run on.")

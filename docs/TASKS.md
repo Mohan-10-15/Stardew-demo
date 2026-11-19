@@ -211,7 +211,7 @@ specification when it is picked up, not now.
 | TASK-021 | Audio manager and music | Group 27 / M14. **Complete** — 52 synthesised sounds |
 | TASK-022 | Cutscene system | M10. **Complete** — data cutscenes with safe skip |
 | TASK-023 | Performance | Group 29 / M18. **Complete** — measured 133 FPS, 10.9 ms boundary frames, +0.1 MB |
-| TASK-024 | Release integration | Group 31–32 / M20 |
+| TASK-024 | Release integration | Group 31–32 / M20. README, launcher, readiness check and asset trace done; Windows/Web Godot exports blocked by missing templates |
 | TASK-025 | Art and animation polish | M17. **Complete** — first-person tool view model, interactable reactions, CC0 buildings |
 | TASK-026 | Settings and accessibility | M15. **Complete** — F2 panel, rebinding, text scale, high contrast |
 

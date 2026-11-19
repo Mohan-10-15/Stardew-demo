@@ -3114,3 +3114,25 @@ print onions and briefly looked like a resource leak. The balance playtest also
 hit the `--script`/autoload compile trap when it named `BalanceReport` and
 `Clock` as globals; it now loads the report by path and uses the literal day
 count.
+
+### M20 — release integration (partial, honestly)
+
+The README now has one current number (620/620), one launch method, the correct
+project path and an explicit warning about the stale `C:\mohan\projects` copy
+that caused the .NET assemblies error. Controls were brought up to date with F2
+settings, C craft, B machines, N buildings and F5/F9 save/load, and the release
+status table states plainly what exists and what does not.
+
+`tools/release_check.gd` prints a one-shot readiness report (project root, EXE,
+launcher source, portable engine, C# assemblies, licence document, main scene,
+no cheat actions) and `tests/suites/test_release.gd` (5 cases) enforces the same
+facts in CI, including that every shipped CC0 pack is traced in
+`ASSET_LICENSES.md` and that no cheat action is bound. **Full pipeline:
+620/620**, all stages green, zero script errors.
+
+Two acceptance rows are deliberately **unticked**: no Godot export templates are
+installed and there is no network to fetch them, so neither a Godot-exported
+Windows build nor a web build can be produced or checked here. The supported
+Windows distribution remains the `Hollowbrook.exe` launcher plus the bundled
+portable engine, verified on this machine only. New total after this pass:
+620 tests.
