@@ -43,6 +43,9 @@ extends Resource
 ## Metres. Measured from the model rather than trusted from content, so a villager
 ## is never three times the height of the player because someone typed a number.
 @export_range(0.5, 3.0, 0.05) var target_height: float = 1.8
+## Optional anime styling profile. The legacy model/model_tint path still works
+## untouched when this is null, so old saves and content files keep rendering.
+@export var profile: CharacterProfile = null
 
 @export_group("Home")
 ## Where this villager lives, in world metres on the XZ plane. Absolute rather than

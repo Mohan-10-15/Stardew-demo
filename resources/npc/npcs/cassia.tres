@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
+[ext_resource type="Resource" path="res://resources/npc/profiles/cassia.tres" id="1_dikey"]
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_qsfkx"]
 
 [resource]
@@ -10,6 +11,7 @@ description = "Reads the weather twice, just in case the first reading was hones
 model = "res://assets/models/kaykit/Characters/Mage.fbx"
 model_tint = Color(0.28, 0.78, 0.72, 1)
 target_height = 1.72
+profile = ExtResource("1_dikey")
 home = Vector2(26, 14)
 wander_radius = 7.0
 walk_speed = 1.65

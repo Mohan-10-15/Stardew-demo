@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_wtex3"]
+
+[resource]
+script = ExtResource("1_wtex3")
+id = &"sable"
+display_name = "Sable"
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+build = 2
+head_scale = 1.14
+hair_style = &"bob"
+hair_color = Color(0.42745098, 0.23137255, 0.14117648, 1)
+eye_color = Color(0.6901961, 0.43529412, 0.22745098, 1)
+skin_tone = Color(0.8509804, 0.627451, 0.47843137, 1)
+palette = Array[Color]([Color(0.5411765, 0.3529412, 0.20392157, 1), Color(0.84705883, 0.7882353, 0.65882355, 1), Color(0.2901961, 0.41960785, 0.32156864, 1)])
+accessory = &"fence_post"
+voice_pitch = 0.86

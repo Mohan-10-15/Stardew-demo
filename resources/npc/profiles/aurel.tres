@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_cgug5"]
+
+[resource]
+script = ExtResource("1_cgug5")
+id = &"aurel"
+display_name = "Aurel"
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+build = 4
+head_scale = 1.1
+hair_style = &"swept"
+hair_color = Color(0.7882353, 0.65882355, 0.2901961, 1)
+eye_color = Color(0.2901961, 0.47843137, 0.6117647, 1)
+skin_tone = Color(0.93333334, 0.7647059, 0.627451, 1)
+palette = Array[Color]([Color(0.6901961, 0.5411765, 0.22745098, 1), Color(0.9098039, 0.8745098, 0.7529412, 1), Color(0.24705882, 0.37254903, 0.47843137, 1)])
+accessory = &"ledger"
+voice_pitch = 0.92

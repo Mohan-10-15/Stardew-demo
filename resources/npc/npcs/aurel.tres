@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_agdl4"]
+[ext_resource type="Resource" path="res://resources/npc/profiles/aurel.tres" id="1_m8308"]
 
 [resource]
 script = ExtResource("1_agdl4")
@@ -10,6 +11,7 @@ description = "Keeps the valley's accounts and never loses a coin. Or says he ha
 model = "res://assets/models/kaykit/Characters/Knight.fbx"
 model_tint = Color(0.84, 0.7, 0.28, 1)
 target_height = 1.79
+profile = ExtResource("1_m8308")
 home = Vector2(24, 4)
 walk_speed = 1.6
 birthday_season = 1

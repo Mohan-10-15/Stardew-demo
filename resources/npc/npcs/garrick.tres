@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
+[ext_resource type="Resource" path="res://resources/npc/profiles/garrick.tres" id="1_apolx"]
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_o3bqm"]
 
 [resource]
@@ -10,6 +11,7 @@ description = "Grows pumpkins the size of a wheelbarrow and enters them in nothi
 model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
 model_tint = Color(0.44, 0.5, 0.3, 1)
 target_height = 1.77
+profile = ExtResource("1_apolx")
 home = Vector2(52, 4)
 wander_radius = 6.5
 walk_speed = 1.7

@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_ax6b0"]
+[ext_resource type="Resource" path="res://resources/npc/profiles/sable.tres" id="1_ggv1a"]
 
 [resource]
 script = ExtResource("1_ax6b0")
@@ -9,6 +10,7 @@ display_name = "Sable"
 description = "Mends things. Was asked to mend the fence, and did, eventually."
 model = "res://assets/models/kaykit/Characters/Knight.fbx"
 model_tint = Color(0.36, 0.54, 0.8, 1)
+profile = ExtResource("1_ggv1a")
 home = Vector2(27.6, 8.6)
 wander_radius = 9.0
 walk_speed = 1.65

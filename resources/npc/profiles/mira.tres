@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_3kwun"]
+
+[resource]
+script = ExtResource("1_3kwun")
+id = &"mira"
+display_name = "Mira"
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+head_scale = 1.22
+hair_style = &"long_braid"
+hair_color = Color(0.60784316, 0.3529412, 0.18039216, 1)
+eye_color = Color(0.30980393, 0.56078434, 0.65882355, 1)
+skin_tone = Color(0.9411765, 0.7764706, 0.65882355, 1)
+palette = Array[Color]([Color(0.18431373, 0.49019608, 0.41960785, 1), Color(0.9098039, 0.8627451, 0.7529412, 1), Color(0.7882353, 0.43529412, 0.32156864, 1)])
+accessory = &"seed_pouch"
+voice_pitch = 1.06

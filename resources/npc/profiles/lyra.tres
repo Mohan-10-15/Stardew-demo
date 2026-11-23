@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_dtkh7"]
+
+[resource]
+script = ExtResource("1_dtkh7")
+id = &"lyra"
+display_name = "Lyra"
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+build = 0
+head_scale = 1.28
+hair_style = &"twin_tails"
+hair_color = Color(0.6392157, 0.2901961, 0.41568628, 1)
+eye_color = Color(0.8156863, 0.63529414, 0.2901961, 1)
+skin_tone = Color(0.9411765, 0.76862746, 0.6431373, 1)
+palette = Array[Color]([Color(0.63529414, 0.2901961, 0.41568628, 1), Color(0.9411765, 0.84705883, 0.7529412, 1), Color(0.41568628, 0.56078434, 0.4392157, 1)])
+accessory = &"flute"
+voice_pitch = 1.24

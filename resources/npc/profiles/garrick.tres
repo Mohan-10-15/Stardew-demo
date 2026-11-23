@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_shldu"]
+
+[resource]
+script = ExtResource("1_shldu")
+id = &"garrick"
+display_name = "Garrick"
+model = "res://assets/models/kaykit/Characters/Barbarian.fbx"
+build = 4
+head_scale = 1.08
+hair_style = &"bald_beard"
+hair_color = Color(0.3529412, 0.2509804, 0.1882353, 1)
+eye_color = Color(0.627451, 0.2901961, 0.22745098, 1)
+skin_tone = Color(0.7882353, 0.59607846, 0.44705883, 1)
+palette = Array[Color]([Color(0.3529412, 0.2901961, 0.22745098, 1), Color(0.72156864, 0.627451, 0.5019608, 1), Color(0.5411765, 0.24705882, 0.20392157, 1)])
+accessory = &"shield"
+voice_pitch = 0.7

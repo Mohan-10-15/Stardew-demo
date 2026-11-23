@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_4qk8s"]
+
+[resource]
+script = ExtResource("1_4qk8s")
+id = &"halda"
+display_name = "Halda"
+model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
+build = 3
+head_scale = 1.24
+hair_style = &"bun"
+hair_color = Color(0.84705883, 0.8235294, 0.76862746, 1)
+eye_color = Color(0.47843137, 0.6117647, 0.41568628, 1)
+skin_tone = Color(0.9098039, 0.7607843, 0.627451, 1)
+palette = Array[Color]([Color(0.6039216, 0.6039216, 0.5411765, 1), Color(0.9098039, 0.8862745, 0.8235294, 1), Color(0.47843137, 0.6117647, 0.41568628, 1)])
+accessory = &"story_book"
+voice_pitch = 1.02

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_d6b6i"]
+
+[resource]
+script = ExtResource("1_d6b6i")
+id = &"elke"
+display_name = "Elke"
+model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
+build = 0
+head_scale = 1.3
+hair_style = &"short_curly"
+hair_color = Color(0.7882353, 0.5411765, 0.2901961, 1)
+eye_color = Color(0.37254903, 0.65882355, 0.47843137, 1)
+skin_tone = Color(0.9490196, 0.79607844, 0.65882355, 1)
+palette = Array[Color]([Color(0.43529412, 0.65882355, 0.41568628, 1), Color(0.9098039, 0.8627451, 0.68235296, 1), Color(0.7882353, 0.5411765, 0.2901961, 1)])
+accessory = &"watering_can"
+voice_pitch = 1.16

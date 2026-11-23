@@ -527,3 +527,37 @@ latency exceeding 2 ms per frame on the target hardware.
 **Consequence:** the mesher stays in GDScript (D14's bar for a language change
 has not been met); a texture pack swaps tile ids at runtime without changing
 the mesher.
+
+---
+
+## D21 — Anime route: Route C, anime-styled KayKit with real embedded clips
+
+**Status:** settled, 2026-11-23. **Amends** D16 only in scope: the cast stays
+original overlays on KayKit, but now also uses the rigs' own clip library.
+
+**What forced it.** W4 requires 12 distinct anime-styled characters with clip
+animation, expressions and portraits. The brief asks for a probe before
+choosing a route, and forbids claiming anime models if only styling is achieved.
+
+**What was measured.** `tools/probe_rig.gd` on the five shipped rigs:
+
+```
+Barbarian / Knight / Mage / Rogue / RogueHooded:
+  bones=41  skins=6  meshes=12-15  embedded_anims=76
+  scale=(1,1,1) on every imported root
+```
+
+All five share the same 41-bone skeleton. The 76 clips include `Idle`,
+`Walking_A/B/C`, `Running_A/B`, `Sit_Chair_*`, `Lie_*`, `PickUp`, `Interact`,
+`Use_Item`, `Cheer`, `Jump_*`, `Hit_*` and `Death_*`. No external animation pack,
+retargeting or addon is needed. No CC0 anime character pack could be sourced in
+this environment; Mixamo is login-gated and not redistributable.
+
+**What was decided.** Route C: keep the KayKit rigs, differentiate all twelve
+with procedural hair, eye colour, palette, head scale, build and accessories,
+and drive them with the **embedded 76-clip library** through an AnimationTree.
+No new character asset is committed, so D18's licensing rules add nothing here.
+
+**Consequence:** the cast is honestly described as **anime-styled KayKit**, not
+"anime models". If the owner later supplies VRoid exports (human queue 3),
+those can be processed under D18 without changing the animation contract.

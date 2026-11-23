@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_2odeb"]
+[ext_resource type="Resource" path="res://resources/npc/profiles/dorian.tres" id="1_h0b0i"]
 
 [resource]
 script = ExtResource("1_2odeb")
@@ -10,6 +11,7 @@ description = "Quarryman. Speaks in short sentences and long silences."
 model = "res://assets/models/kaykit/Characters/Barbarian.fbx"
 model_tint = Color(0.7, 0.34, 0.2, 1)
 target_height = 1.94
+profile = ExtResource("1_h0b0i")
 home = Vector2(40, 2)
 wander_radius = 5.5
 walk_speed = 1.55

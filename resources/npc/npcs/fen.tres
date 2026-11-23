@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_dps5s"]
+[ext_resource type="Resource" path="res://resources/npc/profiles/fen.tres" id="1_wgsp0"]
 
 [resource]
 script = ExtResource("1_dps5s")
@@ -10,6 +11,7 @@ description = "Comes and goes. Knows where the good berries are and will not say
 model = "res://assets/models/kaykit/Characters/Rogue.fbx"
 model_tint = Color(0.26, 0.72, 0.48, 1)
 target_height = 1.7
+profile = ExtResource("1_wgsp0")
 home = Vector2(34.2, 12.2)
 wander_radius = 11.0
 walk_speed = 2.1

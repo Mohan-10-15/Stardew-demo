@@ -194,6 +194,7 @@ func _build_model() -> void:
 			Log.warn("Npc", "%s has no hand for '%s'" % [data.id, data.signature_prop.get_file()])
 	_pose_idle_arms(_model)
 	_skeleton = _find_skeleton(_model)
+	_apply_profile()
 	# Cel-shade the pack textures, then draw the original anime face over the
 	# painted one. The face plane is unshaded and follows the head bone, so it
 	# cannot be lit or left behind when a villager turns to speak.
@@ -215,6 +216,31 @@ func _build_model() -> void:
 ## world Z. A -72° turn about local X drops both arms to the sides, which is
 ## where a villager standing still actually holds them — and it lifts a held
 ## prop out of the ground and into the hand where it belongs.
+## Per-character silhouette from the data profile (W4). Applied as *bone pose*
+## scales on the shared 41-bone rig, never as geometry changes, so one rig can
+## carry twelve distinct shapes and the old model_tint path still works.
+func _apply_profile() -> void:
+	var profile: CharacterProfile = data.profile
+	if profile == null or _skeleton == null:
+		return
+	var height_scale := 1.0
+	match profile.build:
+		0: height_scale = 0.92  # slim
+		2: height_scale = 1.06  # broad
+		3: height_scale = 0.86  # short
+		4: height_scale = 1.14  # tall
+	for bone_name: String in ["spine", "spine1", "chest", "hips"]:
+		var index := _skeleton.find_bone(bone_name)
+		if index >= 0:
+			var pose := _skeleton.get_bone_pose_scale(index)
+			var width := 1.0 if profile.build == 0 or profile.build == 3 else 1.10
+			_skeleton.set_bone_pose_scale(index, pose * Vector3(width, height_scale, width))
+	var head := _skeleton.find_bone("head")
+	if head >= 0:
+		var pose := _skeleton.get_bone_pose_scale(head)
+		_skeleton.set_bone_pose_scale(head, pose * Vector3.ONE * profile.head_scale)
+
+
 static func _pose_idle_arms(model: Node3D) -> void:
 	var skeleton := _find_skeleton(model)
 	if skeleton == null:

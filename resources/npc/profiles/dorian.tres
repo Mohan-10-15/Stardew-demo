@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_nanfx"]
+
+[resource]
+script = ExtResource("1_nanfx")
+id = &"dorian"
+display_name = "Dorian"
+model = "res://assets/models/kaykit/Characters/Knight.fbx"
+build = 2
+head_scale = 1.18
+hair_style = &"short_neat"
+hair_color = Color(0.18431373, 0.22745098, 0.2901961, 1)
+eye_color = Color(0.7882353, 0.5411765, 0.2901961, 1)
+skin_tone = Color(0.8784314, 0.7137255, 0.627451, 1)
+palette = Array[Color]([Color(0.22745098, 0.2901961, 0.41568628, 1), Color(0.84705883, 0.78431374, 0.65882355, 1), Color(0.627451, 0.3529412, 0.2901961, 1)])
+accessory = &"travel_bag"
+voice_pitch = 0.96

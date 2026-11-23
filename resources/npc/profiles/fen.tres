@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CharacterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/npc/character_profile.gd" id="1_hl23o"]
+
+[resource]
+script = ExtResource("1_hl23o")
+id = &"fen"
+display_name = "Fen"
+model = "res://assets/models/kaykit/Characters/Rogue.fbx"
+build = 0
+head_scale = 1.26
+hair_style = &"ponytail"
+hair_color = Color(0.1764706, 0.16470589, 0.2, 1)
+eye_color = Color(0.5411765, 0.43529412, 0.6901961, 1)
+skin_tone = Color(0.9098039, 0.73333335, 0.6039216, 1)
+palette = Array[Color]([Color(0.23921569, 0.23137255, 0.33333334, 1), Color(0.54901963, 0.47843137, 0.65882355, 1), Color(0.78431374, 0.7058824, 0.5411765, 1)])
+accessory = &"firewood"
+voice_pitch = 1.12

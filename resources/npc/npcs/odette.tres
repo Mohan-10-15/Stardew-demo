@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_fvkbv"]
+[ext_resource type="Resource" path="res://resources/npc/profiles/odette.tres" id="1_t677l"]
 
 [resource]
 script = ExtResource("1_fvkbv")
@@ -10,6 +11,7 @@ description = "Reads the weather off the water and is right more often than is c
 model = "res://assets/models/kaykit/Characters/Mage.fbx"
 model_tint = Color(0.56, 0.34, 0.84, 1)
 target_height = 1.74
+profile = ExtResource("1_t677l")
 home = Vector2(47.3, 9.3)
 wander_radius = 8.0
 walk_speed = 1.6

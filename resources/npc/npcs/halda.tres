@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="NpcData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="NpcData" load_steps=3 format=3]
 
+[ext_resource type="Resource" path="res://resources/npc/profiles/halda.tres" id="1_35in4"]
 [ext_resource type="Script" path="res://scripts/npc/npc_data.gd" id="1_mg3jb"]
 
 [resource]
@@ -10,6 +11,7 @@ description = "Grows one thing, remarkably well, and guards the rest of the vall
 model = "res://assets/models/kaykit/Characters/RogueHooded.fbx"
 model_tint = Color(0.88, 0.74, 0.26, 1)
 target_height = 1.76
+profile = ExtResource("1_35in4")
 home = Vector2(31, 9.6)
 wander_radius = 6.5
 walk_speed = 1.75
