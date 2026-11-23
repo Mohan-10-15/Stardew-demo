@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_3p71v"]
+
+[resource]
+script = ExtResource("1_3p71v")
+id = &"clay_block"
+display_name = "Clay"
+tile_top = &"clay_block_top"
+tile_side = &"clay_block_side"
+tile_bottom = &"clay_block_bottom"
+hardness = 0.6
+tool_kind = &""
+minimum_tier = 0
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+sound_set = &"dirt"

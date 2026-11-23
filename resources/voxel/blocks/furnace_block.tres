@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_10dt2"]
+
+[resource]
+script = ExtResource("1_10dt2")
+id = &"furnace_block"
+display_name = "Ore Furnace"
+tile_top = &"furnace_block_top"
+tile_side = &"furnace_block_side"
+tile_bottom = &"furnace_block_bottom"
+hardness = 2.4
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+light_emission = 5

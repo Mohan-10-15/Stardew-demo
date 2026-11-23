@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_i3c57"]
+
+[resource]
+script = ExtResource("1_i3c57")
+id = &"oak_planks"
+display_name = "Oak Planks"
+tile_top = &"oak_planks_top"
+tile_side = &"oak_planks_side"
+tile_bottom = &"oak_planks_bottom"
+hardness = 0.9
+tool_kind = &"axe"
+drops = Array[StringName]([&"wood"])
+place_item = &"wood"
+sound_set = &"wood"

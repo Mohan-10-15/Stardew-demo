@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_1pr7h"]
+
+[resource]
+script = ExtResource("1_1pr7h")
+id = &"glass_block"
+display_name = "Clear Glass"
+tile_top = &"glass_block_top"
+tile_side = &"glass_block_side"
+tile_bottom = &"glass_block_bottom"
+hardness = 0.4
+tool_kind = &""
+minimum_tier = 0
+sound_set = &"glass"
+transparent = true

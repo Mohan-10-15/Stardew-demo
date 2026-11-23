@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_jdjsa"]
+
+[resource]
+script = ExtResource("1_jdjsa")
+id = &"ember_crystal_block"
+display_name = "Ember Crystal"
+tile_top = &"ember_crystal_block_top"
+tile_side = &"ember_crystal_block_side"
+tile_bottom = &"ember_crystal_block_bottom"
+hardness = 4.5
+minimum_tier = 4
+drops = Array[StringName]([&"wild_berry"])
+place_item = &"wild_berry"
+sound_set = &"glass"
+light_emission = 7

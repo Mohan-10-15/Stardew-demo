@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_e80ri"]
+
+[resource]
+script = ExtResource("1_e80ri")
+id = &"sand_block"
+display_name = "Sand"
+tile_top = &"sand_block_top"
+tile_side = &"sand_block_side"
+tile_bottom = &"sand_block_bottom"
+hardness = 0.4
+tool_kind = &""
+minimum_tier = 0
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+sound_set = &"dirt"

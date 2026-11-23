@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_loi51"]
+
+[resource]
+script = ExtResource("1_loi51")
+id = &"hollowbrook_grass"
+display_name = "Hollow Turf"
+tile_top = &"hollowbrook_grass_top"
+tile_side = &"hollowbrook_grass_side"
+tile_bottom = &"hollowbrook_grass_bottom"
+hardness = 0.5
+tool_kind = &"hoe"
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+sound_set = &"grass"

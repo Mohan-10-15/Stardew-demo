@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_sdfr7"]
+
+[resource]
+script = ExtResource("1_sdfr7")
+id = &"lantern_block"
+display_name = "Lantern"
+tile_top = &"lantern_block_top"
+tile_side = &"lantern_block_side"
+tile_bottom = &"lantern_block_bottom"
+hardness = 0.4
+tool_kind = &""
+minimum_tier = 0
+sound_set = &"metal"
+transparent = true
+light_emission = 14

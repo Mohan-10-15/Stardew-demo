@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_0bswf"]
+
+[resource]
+script = ExtResource("1_0bswf")
+id = &"workbench_block"
+display_name = "Workbench"
+tile_top = &"workbench_block_top"
+tile_side = &"workbench_block_side"
+tile_bottom = &"workbench_block_bottom"
+tool_kind = &"axe"
+drops = Array[StringName]([&"wood"])
+place_item = &"wood"
+sound_set = &"wood"

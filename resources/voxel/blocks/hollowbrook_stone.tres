@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_s2cor"]
+
+[resource]
+script = ExtResource("1_s2cor")
+id = &"hollowbrook_stone"
+display_name = "Hollow Stone"
+tile_top = &"hollowbrook_stone_top"
+tile_side = &"hollowbrook_stone_side"
+tile_bottom = &"hollowbrook_stone_bottom"
+hardness = 1.5
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"

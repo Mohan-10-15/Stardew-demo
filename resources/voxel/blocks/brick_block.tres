@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_238s3"]
+
+[resource]
+script = ExtResource("1_238s3")
+id = &"brick_block"
+display_name = "Kiln Brick"
+tile_top = &"brick_block_top"
+tile_side = &"brick_block_side"
+tile_bottom = &"brick_block_bottom"
+hardness = 2.2
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"

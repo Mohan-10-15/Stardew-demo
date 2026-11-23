@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_xemw8"]
+
+[resource]
+script = ExtResource("1_xemw8")
+id = &"fence_block"
+display_name = "Fence Rail"
+tile_top = &"fence_block_top"
+tile_side = &"fence_block_side"
+tile_bottom = &"fence_block_bottom"
+hardness = 0.8
+tool_kind = &"axe"
+drops = Array[StringName]([&"wood"])
+place_item = &"wood"
+sound_set = &"wood"

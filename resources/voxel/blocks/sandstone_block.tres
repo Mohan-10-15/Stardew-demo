@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_yet1w"]
+
+[resource]
+script = ExtResource("1_yet1w")
+id = &"sandstone_block"
+display_name = "Sandstone"
+tile_top = &"sandstone_block_top"
+tile_side = &"sandstone_block_side"
+tile_bottom = &"sandstone_block_bottom"
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+sound_set = &"dirt"

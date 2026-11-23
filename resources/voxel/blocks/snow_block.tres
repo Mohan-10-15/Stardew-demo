@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_ylubf"]
+
+[resource]
+script = ExtResource("1_ylubf")
+id = &"snow_block"
+display_name = "Snow"
+tile_top = &"snow_block_top"
+tile_side = &"snow_block_side"
+tile_bottom = &"snow_block_bottom"
+hardness = 0.3
+tool_kind = &""
+minimum_tier = 0
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"
+sound_set = &"dirt"

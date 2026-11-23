@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_ik1tx"]
+
+[resource]
+script = ExtResource("1_ik1tx")
+id = &"gravel_block"
+display_name = "Gravel"
+tile_top = &"gravel_block_top"
+tile_side = &"gravel_block_side"
+tile_bottom = &"gravel_block_bottom"
+hardness = 0.7
+drops = Array[StringName]([&"stone"])
+place_item = &"stone"

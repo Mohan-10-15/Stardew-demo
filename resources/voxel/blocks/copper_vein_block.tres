@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlockData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/voxel/block_data.gd" id="1_xu2dg"]
+
+[resource]
+script = ExtResource("1_xu2dg")
+id = &"copper_vein_block"
+display_name = "Copper Vein"
+tile_top = &"copper_vein_block_top"
+tile_side = &"copper_vein_block_side"
+tile_bottom = &"copper_vein_block_bottom"
+hardness = 2.0
+drops = Array[StringName]([&"copper_ore"])
+place_item = &"copper_ore"
