@@ -54,6 +54,9 @@ func load_config() -> void:
 	))
 	var loaded_bindings: Variant = cfg.get_value("accessibility", "bindings", {})
 	settings.bindings = loaded_bindings.duplicate(true) if loaded_bindings is Dictionary else {}
+	settings.tutorial_enabled = bool(cfg.get_value(
+		"accessibility", "tutorial_enabled", settings.tutorial_enabled
+	))
 
 
 func save_config() -> void:
@@ -78,6 +81,7 @@ func save_config() -> void:
 	cfg.set_value("accessibility", "ui_scale", settings.ui_scale)
 	cfg.set_value("accessibility", "colour_assist", settings.colour_assist)
 	cfg.set_value("accessibility", "bindings", settings.bindings)
+	cfg.set_value("accessibility", "tutorial_enabled", settings.tutorial_enabled)
 	var err := cfg.save(CONFIG_PATH)
 	if err != OK:
 		Log.error("Config", "Failed to save config: %d" % err)
@@ -162,6 +166,8 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.colour_assist = bool(value)
 				"bindings":
 					settings.bindings = value.duplicate(true) if value is Dictionary else {}
+				"tutorial_enabled":
+					settings.tutorial_enabled = bool(value)
 		_:
 			Log.warn("Config", "Unknown config section '%s'" % section)
 			return

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/tutorial_step.gd" id="1_v45rj"]
+
+[resource]
+script = ExtResource("1_v45rj")
+id = &"sleep"
+hint = "Rest at the end of the day. A new morning brings new growth."
+completion_signal = &"day_started"
+order = 9

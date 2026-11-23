@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/tutorial_step.gd" id="1_i3t8t"]
+
+[resource]
+script = ExtResource("1_i3t8t")
+id = &"hoe"
+hint = "Select the hoe with {hotbar}. Your first tools are in the bag."
+completion_action = &"hotbar_1"
+order = 3

@@ -39,6 +39,8 @@ extends Resource
 ## Runtime key overrides: action name -> physical keycode. These are applied to
 ## the InputMap on boot by RebindService, so a rebind survives save and reload.
 @export var bindings: Dictionary = {}
+## First-day hints; skippable forever from Settings.
+@export var tutorial_enabled: bool = true
 
 @export_group("Graphics")
 ## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision

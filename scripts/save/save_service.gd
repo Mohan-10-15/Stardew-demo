@@ -32,6 +32,7 @@ var fishing_service: Node = null
 var animal_service: Node = null
 var machine_service: Node = null
 var building_service: Node = null
+var tutorial_service: Node = null
 ## The player body, saved separately from `player_state` (which owns the bag,
 ## purse and stamina but deliberately not a world coordinate).
 var player: Node3D = null
@@ -98,6 +99,8 @@ func to_dict() -> Dictionary:
 		data["machines"] = machine_service.call("to_dict")
 	if building_service != null and building_service.has_method("to_dict"):
 		data["buildings"] = building_service.call("to_dict")
+	if tutorial_service != null and tutorial_service.has_method("to_dict"):
+		data["tutorial"] = tutorial_service.call("to_dict")
 	if animal_service != null and animal_service.has_method("to_dict"):
 		data["animals"] = animal_service.call("to_dict")
 	if fishing_service != null and fishing_service.has_method("to_dict"):
@@ -143,6 +146,9 @@ func from_dict(data: Dictionary) -> void:
 	if building_service != null and building_service.has_method("from_dict") \
 			and payload.get("buildings") is Dictionary:
 		building_service.call("from_dict", payload["buildings"])
+	if tutorial_service != null and tutorial_service.has_method("from_dict") \
+			and payload.get("tutorial") is Dictionary:
+		tutorial_service.call("from_dict", payload["tutorial"])
 	if animal_service != null and animal_service.has_method("from_dict") \
 			and payload.get("animals") is Dictionary:
 		animal_service.call("from_dict", payload["animals"])

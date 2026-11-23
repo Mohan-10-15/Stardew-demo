@@ -12,6 +12,14 @@ static var _device: Device = Device.KEYBOARD_MOUSE
 ## Convenience glyphs. Kept here so a test can grep for hard-coded key names
 ## in the rest of scripts/ui/ and know they are wrong.
 const PAD_GLYPHS := {
+	InputActions.MOVE_FORWARD: "LS",
+	InputActions.MOVE_BACK: "LS",
+	InputActions.MOVE_LEFT: "LS",
+	InputActions.MOVE_RIGHT: "LS",
+	InputActions.LOOK_LEFT: "RS",
+	InputActions.LOOK_RIGHT: "RS",
+	InputActions.LOOK_UP: "RS",
+	InputActions.LOOK_DOWN: "RS",
 	InputActions.JUMP: "A",
 	InputActions.INTERACT: "X",
 	InputActions.USE: "RT",

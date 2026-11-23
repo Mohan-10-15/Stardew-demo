@@ -26,7 +26,7 @@ the behaviour, its test and its playtest evidence must all exist (§0.7).
 | Wave | Scope | Status | Evidence | Open items |
 |---|---|---|---|---|
 | W0 | Foundation, honesty, tooling | COMPLETE | `w0-baseline.log` (first run 620/1, rerun 621/0; flaky modal setup fixed), `w0-fresh-clone.log` (621/0, all stages OK); D17–D19 written; MCP `godot` connected and `check_project` called; `docs/DEV_TOOLING.md` records all outputs. | Nothing blocking; human queue items 5–7 stand |
-| W1 | Front door, easy controls | IN PROGRESS (W1.1, W1.2, W1.5, W1.6, W1.8 done) | `w1-controls.log`, `w1-title-v2.log`, `art_review_title_v2_*.png` (7 buttons at 1280 and 1920); 6 About pages + How to Play, generated credits covering all packs; tests 621→632 (need `-TimeoutSeconds 300`; default raised with the measurement). | W1.3 options, W1.4 autosave, W1.7 welcome, W1.9 tutorial |
+| W1 | Front door, easy controls | COMPLETE at minimum shippable | `w1-controls.log`, `w1-title-v2.log`, `w1-tutorial.log`, `art_review_title_v2_*.png`, `art_review_tutorial_*.png`; 10 tutorial steps advance on real events; 6 About pages + How to Play; generated credits cover all licensed packs; tests 621→637. Check timeout default raised to 300 s with a measurement. | Not in minimum: W1.3 extended options, W1.4 autosave slot, W1.7 welcome cards |
 | W2 | Heartstone, story, collections, logic | OPEN | — | — |
 | W3 | Block sandbox | OPEN | — | — |
 | W4 | Anime cast | OPEN | — | — |

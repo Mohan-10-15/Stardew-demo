@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/tutorial_step.gd" id="1_2e2gv"]
+
+[resource]
+script = ExtResource("1_2e2gv")
+id = &"water"
+hint = "Fill the can at the well, then water the seed with {use}."
+completion_signal = &"soil_watered"
+order = 6

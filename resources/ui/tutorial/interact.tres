@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/tutorial_step.gd" id="1_8doqp"]
+
+[resource]
+script = ExtResource("1_8doqp")
+id = &"interact"
+hint = "Press {interact} to talk, pick up or open what you are aiming at."
+completion_signal = &"interaction_performed"
+order = 2

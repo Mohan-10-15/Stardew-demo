@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/tutorial_step.gd" id="1_3vcsu"]
+
+[resource]
+script = ExtResource("1_3vcsu")
+id = &"till"
+hint = "Use the hoe on the farm soil with {use}."
+completion_signal = &"soil_tilled"
+order = 4

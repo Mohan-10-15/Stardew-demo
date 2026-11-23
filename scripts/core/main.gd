@@ -30,6 +30,7 @@ const BuildingPanelScene := "res://scenes/ui/building_panel.tscn"
 const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
 const AboutPanelScene := "res://scenes/ui/about_panel.tscn"
 const CreditsPanelScene := "res://scenes/ui/credits_panel.tscn"
+const TutorialHudScene := "res://scenes/ui/tutorial_hud.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -76,6 +77,8 @@ const CreditsPanelScene := "res://scenes/ui/credits_panel.tscn"
 @export var load_crafting_panel: bool = true
 @export var building_panel_scene_path: String = BuildingPanelScene
 @export var load_building_panel: bool = true
+@export var tutorial_hud_scene_path: String = TutorialHudScene
+@export var load_tutorial: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -127,6 +130,7 @@ var building_panel: CanvasLayer = null
 var settings_panel: CanvasLayer = null
 var about_panel: CanvasLayer = null
 var credits_panel: CanvasLayer = null
+var tutorial_service: TutorialService = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -169,6 +173,8 @@ func _boot() -> void:
 	_spawn_player_state()
 	if load_performance_monitor:
 		_spawn_performance_monitor()
+	if load_tutorial:
+		_spawn_tutorial()
 	# Input overrides must be in the InputMap before any panel starts reading
 	# actions, so this sits next to the state service near the front of boot.
 	if load_rebind:
@@ -264,6 +270,8 @@ func _boot() -> void:
 		_spawn_overlay(about_panel_scene_path, "about panel", "about_panel")
 	if load_settings_panel:
 		_spawn_overlay(credits_panel_scene_path, "credits panel", "credits_panel")
+	if load_tutorial:
+		_spawn_overlay(tutorial_hud_scene_path, "tutorial HUD", "tutorial_hud")
 	if load_machine_panel:
 		_spawn_overlay(machine_panel_scene_path, "machine panel", "machine_panel")
 	if load_crafting_panel:
@@ -358,6 +366,13 @@ func _spawn_player_state() -> void:
 ## Sound is a listener: it needs no gameplay service, only the EventBus and the
 ## Config autoload, so it is spawned just after the bag and before everything
 ## that will publish an event worth hearing.
+func _spawn_tutorial() -> void:
+	tutorial_service = TutorialService.new()
+	tutorial_service.name = "TutorialService"
+	add_child(tutorial_service)
+	Log.info("UI", "First-day tutorial ready")
+
+
 func _spawn_performance_monitor() -> void:
 	performance_monitor = PerformanceMonitor.new()
 	performance_monitor.name = "PerformanceMonitor"
@@ -475,6 +490,7 @@ func _spawn_save_service() -> void:
 	save_service.animal_service = animal_service
 	save_service.machine_service = machine_service
 	save_service.building_service = building_service
+	save_service.tutorial_service = tutorial_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 
