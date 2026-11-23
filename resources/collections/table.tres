@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_fkh3m"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_4ttrf"]
+
+[sub_resource type="Resource" id="Resource_obljq"]
+script = ExtResource("2_4ttrf")
+unlock = &"advanced_recipes"
+ember = &"table"
+
+[sub_resource type="Resource" id="Resource_pedri"]
+script = ExtResource("2_4ttrf")
+threshold = 0.7
+unlock = &"festival_feast"
+ember = &"table"
+
+[sub_resource type="Resource" id="Resource_qwld0"]
+script = ExtResource("2_4ttrf")
+threshold = 1.0
+unlock = &"ember_table"
+ember = &"table"
+
+[resource]
+script = ExtResource("1_fkh3m")
+id = &"table"
+display_name = "Table"
+ember = &"table"
+entries = Array[StringName]([&"berry_jam", &"onion_soup", &"egg_omelette", &"milk_tea", &"fish_stew", &"trail_mix"])
+tiers = Array[ExtResource("2_4ttrf")]([SubResource("Resource_obljq"), SubResource("Resource_pedri"), SubResource("Resource_qwld0")])

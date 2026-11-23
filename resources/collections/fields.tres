@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_jsqer"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_vog7r"]
+
+[sub_resource type="Resource" id="Resource_my3he"]
+script = ExtResource("2_vog7r")
+unlock = &"orchard_path"
+ember = &"fields"
+
+[sub_resource type="Resource" id="Resource_wj1ms"]
+script = ExtResource("2_vog7r")
+threshold = 0.7
+unlock = &"sprinkler_recipe"
+ember = &"fields"
+
+[sub_resource type="Resource" id="Resource_w2n54"]
+script = ExtResource("2_vog7r")
+threshold = 1.0
+unlock = &"ember_fields"
+ember = &"fields"
+
+[resource]
+script = ExtResource("1_jsqer")
+id = &"fields"
+display_name = "Fields"
+ember = &"fields"
+entries = Array[StringName]([&"parsnip", &"potato", &"cauliflower", &"corn", &"tomato", &"pumpkin", &"melon", &"yam"])
+tiers = Array[ExtResource("2_vog7r")]([SubResource("Resource_my3he"), SubResource("Resource_wj1ms"), SubResource("Resource_w2n54")])

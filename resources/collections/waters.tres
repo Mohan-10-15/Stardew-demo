@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_bg7av"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_myo53"]
+
+[sub_resource type="Resource" id="Resource_gw5vs"]
+script = ExtResource("2_myo53")
+unlock = &"pond_pier"
+ember = &"waters"
+
+[sub_resource type="Resource" id="Resource_bfbja"]
+script = ExtResource("2_myo53")
+threshold = 0.7
+unlock = &"bait_recipe"
+ember = &"waters"
+
+[sub_resource type="Resource" id="Resource_l2p7y"]
+script = ExtResource("2_myo53")
+threshold = 1.0
+unlock = &"ember_waters"
+ember = &"waters"
+
+[resource]
+script = ExtResource("1_bg7av")
+id = &"waters"
+display_name = "Waters"
+ember = &"waters"
+entries = Array[StringName]([&"fish_trout", &"fish_smilte", &"fish_darter", &"fish_eel", &"fish_pike", &"fish_sunfin"])
+tiers = Array[ExtResource("2_myo53")]([SubResource("Resource_gw5vs"), SubResource("Resource_bfbja"), SubResource("Resource_l2p7y")])

@@ -135,6 +135,14 @@ signal input_rebound(action: StringName, keycode: int)
 ## The last-used input family changed (keyboard+mouse or gamepad). HUDs use it
 ## to swap keycap labels for pad glyphs without polling the device each frame.
 signal input_device_changed(device: int)
+
+# --- Collections and Heartstone (Update 2, W2) -------------------------------
+signal collection_progressed(collection_id: StringName, current: int, total: int)
+signal collection_tier_reached(collection_id: StringName, tier: int,
+		unlock: StringName, ember: StringName)
+signal collection_failed(collection_id: StringName, reason: StringName)
+signal ember_returned(ember: StringName, count: int)
+signal heartstone_mended()
 ## A tool ran out of uses. Distinct from `item_removed` so a HUD can warn the
 ## player before they are left holding nothing.
 signal tool_broken(item_id: StringName)

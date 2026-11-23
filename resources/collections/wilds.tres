@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_qfvq1"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_e4bhr"]
+
+[sub_resource type="Resource" id="Resource_fmll0"]
+script = ExtResource("2_e4bhr")
+unlock = &"forest_road"
+ember = &"wilds"
+
+[sub_resource type="Resource" id="Resource_d2c4q"]
+script = ExtResource("2_e4bhr")
+threshold = 0.7
+unlock = &"foraging_basket"
+ember = &"wilds"
+
+[sub_resource type="Resource" id="Resource_bju2d"]
+script = ExtResource("2_e4bhr")
+threshold = 1.0
+unlock = &"ember_wilds"
+ember = &"wilds"
+
+[resource]
+script = ExtResource("1_qfvq1")
+id = &"wilds"
+display_name = "Wilds"
+ember = &"wilds"
+entries = Array[StringName]([&"spring_onion", &"wild_berry", &"wild_horseradish", &"wood", &"egg", &"milk"])
+tiers = Array[ExtResource("2_e4bhr")]([SubResource("Resource_fmll0"), SubResource("Resource_d2c4q"), SubResource("Resource_bju2d")])

@@ -33,6 +33,9 @@ var animal_service: Node = null
 var machine_service: Node = null
 var building_service: Node = null
 var tutorial_service: Node = null
+var collection_service: Node = null
+var heartstone: Object = null
+var valley_memory: Node = null
 ## The player body, saved separately from `player_state` (which owns the bag,
 ## purse and stamina but deliberately not a world coordinate).
 var player: Node3D = null
@@ -101,6 +104,12 @@ func to_dict() -> Dictionary:
 		data["buildings"] = building_service.call("to_dict")
 	if tutorial_service != null and tutorial_service.has_method("to_dict"):
 		data["tutorial"] = tutorial_service.call("to_dict")
+	if collection_service != null and collection_service.has_method("to_dict"):
+		data["collections"] = collection_service.call("to_dict")
+	if heartstone != null and heartstone.has_method("to_dict"):
+		data["heartstone"] = heartstone.call("to_dict")
+	if valley_memory != null and valley_memory.has_method("to_dict"):
+		data["valley_memory"] = valley_memory.call("to_dict")
 	if animal_service != null and animal_service.has_method("to_dict"):
 		data["animals"] = animal_service.call("to_dict")
 	if fishing_service != null and fishing_service.has_method("to_dict"):
@@ -149,6 +158,15 @@ func from_dict(data: Dictionary) -> void:
 	if tutorial_service != null and tutorial_service.has_method("from_dict") \
 			and payload.get("tutorial") is Dictionary:
 		tutorial_service.call("from_dict", payload["tutorial"])
+	if collection_service != null and collection_service.has_method("from_dict") \
+			and payload.get("collections") is Dictionary:
+		collection_service.call("from_dict", payload["collections"])
+	if heartstone != null and heartstone.has_method("from_dict") \
+			and payload.get("heartstone") is Dictionary:
+		heartstone.call("from_dict", payload["heartstone"])
+	if valley_memory != null and valley_memory.has_method("from_dict") \
+			and payload.get("valley_memory") is Dictionary:
+		valley_memory.call("from_dict", payload["valley_memory"])
 	if animal_service != null and animal_service.has_method("from_dict") \
 			and payload.get("animals") is Dictionary:
 		animal_service.call("from_dict", payload["animals"])

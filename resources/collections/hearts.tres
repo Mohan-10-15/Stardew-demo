@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_gpnt8"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_eswwl"]
+
+[sub_resource type="Resource" id="Resource_yivei"]
+script = ExtResource("2_eswwl")
+unlock = &"plinth_wakes"
+ember = &"hearts"
+
+[sub_resource type="Resource" id="Resource_v7f26"]
+script = ExtResource("2_eswwl")
+threshold = 0.7
+unlock = &"heart_event"
+ember = &"hearts"
+
+[sub_resource type="Resource" id="Resource_c2tk8"]
+script = ExtResource("2_eswwl")
+threshold = 1.0
+unlock = &"ember_hearts"
+ember = &"hearts"
+
+[resource]
+script = ExtResource("1_gpnt8")
+id = &"hearts"
+display_name = "Hearts"
+ember = &"hearts"
+kind = "npc"
+entries = Array[StringName]([&"mira", &"bram", &"fen", &"odette", &"sable", &"aurel", &"lyra", &"cassia", &"elke", &"garrick", &"halda", &"dorian"])
+tiers = Array[ExtResource("2_eswwl")]([SubResource("Resource_yivei"), SubResource("Resource_v7f26"), SubResource("Resource_c2tk8")])

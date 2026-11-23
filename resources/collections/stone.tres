@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CollectionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/collections/collection_data.gd" id="1_madn4"]
+[ext_resource type="Script" path="res://resources/collections/collection_tier.gd" id="2_iwe7l"]
+
+[sub_resource type="Resource" id="Resource_hx0ut"]
+script = ExtResource("2_iwe7l")
+unlock = &"deep_mines_stairs"
+ember = &"stone"
+
+[sub_resource type="Resource" id="Resource_nb1hr"]
+script = ExtResource("2_iwe7l")
+threshold = 0.7
+unlock = &"lantern_recipe"
+ember = &"stone"
+
+[sub_resource type="Resource" id="Resource_m1qn2"]
+script = ExtResource("2_iwe7l")
+threshold = 1.0
+unlock = &"ember_stone"
+ember = &"stone"
+
+[resource]
+script = ExtResource("1_madn4")
+id = &"stone"
+display_name = "Stone"
+ember = &"stone"
+entries = Array[StringName]([&"copper_ore", &"iron_ore", &"stone", &"stone_brick", &"ore_flux", &"plank"])
+tiers = Array[ExtResource("2_iwe7l")]([SubResource("Resource_hx0ut"), SubResource("Resource_nb1hr"), SubResource("Resource_m1qn2")])

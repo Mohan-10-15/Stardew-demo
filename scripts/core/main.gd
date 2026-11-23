@@ -31,6 +31,7 @@ const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
 const AboutPanelScene := "res://scenes/ui/about_panel.tscn"
 const CreditsPanelScene := "res://scenes/ui/credits_panel.tscn"
 const TutorialHudScene := "res://scenes/ui/tutorial_hud.tscn"
+# Collections and the Heartstone spine are pure logic spawned by main.
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -79,6 +80,8 @@ const TutorialHudScene := "res://scenes/ui/tutorial_hud.tscn"
 @export var load_building_panel: bool = true
 @export var tutorial_hud_scene_path: String = TutorialHudScene
 @export var load_tutorial: bool = true
+@export var load_collections: bool = true
+@export var load_valley_memory: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -131,6 +134,9 @@ var settings_panel: CanvasLayer = null
 var about_panel: CanvasLayer = null
 var credits_panel: CanvasLayer = null
 var tutorial_service: TutorialService = null
+var collection_service: CollectionService = null
+var heartstone: HeartstoneState = null
+var valley_memory: ValleyMemory = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -175,6 +181,12 @@ func _boot() -> void:
 		_spawn_performance_monitor()
 	if load_tutorial:
 		_spawn_tutorial()
+	if load_collections:
+		_spawn_collections()
+	if load_valley_memory:
+		valley_memory = ValleyMemory.new()
+		valley_memory.name = "ValleyMemory"
+		add_child(valley_memory)
 	# Input overrides must be in the InputMap before any panel starts reading
 	# actions, so this sits next to the state service near the front of boot.
 	if load_rebind:
@@ -366,6 +378,27 @@ func _spawn_player_state() -> void:
 ## Sound is a listener: it needs no gameplay service, only the EventBus and the
 ## Config autoload, so it is spawned just after the bag and before everything
 ## that will publish an event worth hearing.
+func _spawn_collections() -> void:
+	heartstone = HeartstoneState.new()
+	collection_service = CollectionService.new()
+	collection_service.name = "CollectionService"
+	add_child(collection_service)
+	EventBus.collection_tier_reached.connect(_on_collection_tier)
+	Log.info("Story", "Collections and Heartstone ready")
+
+
+func _on_collection_tier(_id: StringName, _tier: int, _unlock: StringName,
+		ember: StringName) -> void:
+	if ember.is_empty():
+		return
+	if heartstone.add_ember(ember):
+		EventBus.ember_returned.emit(ember, heartstone.count())
+		Log.info("Story", "Ember %s returned (%d/6)" % [ember, heartstone.count()])
+		if heartstone.can_mend():
+			EventBus.heartstone_mended.emit()
+			Log.info("Story", "All six Embers returned — the Plinth wakes")
+
+
 func _spawn_tutorial() -> void:
 	tutorial_service = TutorialService.new()
 	tutorial_service.name = "TutorialService"
@@ -491,6 +524,9 @@ func _spawn_save_service() -> void:
 	save_service.machine_service = machine_service
 	save_service.building_service = building_service
 	save_service.tutorial_service = tutorial_service
+	save_service.collection_service = collection_service
+	save_service.heartstone = heartstone
+	save_service.valley_memory = valley_memory
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 
