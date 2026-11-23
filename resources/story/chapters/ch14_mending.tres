@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_drb50"]
+
+[resource]
+script = ExtResource("1_drb50")
+id = &"ch14_mending"
+title = "The Mending"
+description = "At the plinth, the hollow recites what you did and the Heartstone comes home."
+requires = Array[StringName]([&"all_embers"])
+cutscene_id = &"the_mending"
+reward_gold = 1200
+act = 3
+order = 14

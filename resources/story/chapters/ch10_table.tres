@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_xhujk"]
+
+[resource]
+script = ExtResource("1_xhujk")
+id = &"ch10_table"
+title = "A Seat at the Table"
+description = "Recipes long forgotten come back, and the festival feasts have flavour again."
+requires = Array[StringName]([&"ember_table"])
+reward_gold = 320
+act = 2
+order = 10

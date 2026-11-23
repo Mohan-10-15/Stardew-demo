@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_gnre1"]
+
+[resource]
+script = ExtResource("1_gnre1")
+id = &"ch11_wilds"
+title = "The Forest Road"
+description = "The wilds open their road. Something in the hollow exhales."
+requires = Array[StringName]([&"ember_wilds"])
+reward_gold = 340
+act = 2
+order = 11

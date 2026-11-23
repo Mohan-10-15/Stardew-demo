@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_0to1h"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_ufeno"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_tn75b"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_6vjui"]
+
+[sub_resource type="Resource" id="Resource_x778u"]
+script = ExtResource("1_0to1h")
+kind = &"collect"
+item_id = &"milk"
+count = 3
+
+[sub_resource type="Resource" id="Resource_drfgn"]
+script = ExtResource("2_ufeno")
+npc = &"halda"
+
+[sub_resource type="Resource" id="Resource_lg6lv"]
+script = ExtResource("3_tn75b")
+gold = 220
+hearts = Array[ExtResource("2_ufeno")]([SubResource("Resource_drfgn")])
+
+[resource]
+script = ExtResource("4_6vjui")
+id = &"q_z_halda_story"
+title = "The Name She Forgot"
+description = "Halda remembers a story but not the name in it. A little milk, she says, helps her think."
+giver = &"halda"
+objective = SubResource("Resource_x778u")
+reward = SubResource("Resource_lg6lv")
+min_hearts = 2

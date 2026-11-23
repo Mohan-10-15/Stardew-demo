@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_jg4n4"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_mgwg8"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_sm73w"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_ktb6b"]
+
+[sub_resource type="Resource" id="Resource_ih5r0"]
+script = ExtResource("1_jg4n4")
+kind = &"collect"
+item_id = &"parsnip"
+count = 10
+
+[sub_resource type="Resource" id="Resource_smyl5"]
+script = ExtResource("2_mgwg8")
+npc = &"aurel"
+
+[sub_resource type="Resource" id="Resource_pfhhd"]
+script = ExtResource("3_sm73w")
+gold = 240
+hearts = Array[ExtResource("2_mgwg8")]([SubResource("Resource_smyl5")])
+
+[resource]
+script = ExtResource("4_ktb6b")
+id = &"q_z_aurel_ledger"
+title = "The Square Ledger"
+description = "Aurel wants the harvest numbers written down before the festival, so someone will know the valley was here."
+giver = &"aurel"
+objective = SubResource("Resource_ih5r0")
+reward = SubResource("Resource_pfhhd")
+min_hearts = 2

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_p5xu6"]
+
+[resource]
+script = ExtResource("1_p5xu6")
+id = &"ch15_free_play"
+title = "The Long Afternoon"
+description = "The Heartstone is whole. The valley keeps going, and so do you."
+requires = Array[StringName]([&"all_embers"])
+is_ending = true
+act = 3
+order = 15

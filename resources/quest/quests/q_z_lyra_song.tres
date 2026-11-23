@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_fj5x6"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_xwxt8"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_5jga4"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_borms"]
+
+[sub_resource type="Resource" id="Resource_wnyhf"]
+script = ExtResource("1_fj5x6")
+kind = &"collect"
+item_id = &"wild_berry"
+count = 8
+
+[sub_resource type="Resource" id="Resource_jilt8"]
+script = ExtResource("2_xwxt8")
+npc = &"lyra"
+
+[sub_resource type="Resource" id="Resource_belpn"]
+script = ExtResource("3_5jga4")
+gold = 210
+hearts = Array[ExtResource("2_xwxt8")]([SubResource("Resource_jilt8")])
+
+[resource]
+script = ExtResource("4_borms")
+id = &"q_z_lyra_song"
+title = "A Song for the Square"
+description = "Lyra has forgotten the second verse. She thinks a basket of berries might bring it back."
+giver = &"lyra"
+objective = SubResource("Resource_wnyhf")
+reward = SubResource("Resource_belpn")
+min_hearts = 2

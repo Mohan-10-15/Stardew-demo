@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_3j0yb"]
+
+[resource]
+script = ExtResource("1_3j0yb")
+id = &"ch12_frost"
+title = "The Early Frost"
+description = "Winter comes too soon. The Frost Lantern will not light, and the village looks to you."
+requires = Array[StringName]([&"ember_wilds", &"quest_q_odette_first_frost_done"])
+reward_gold = 400
+act = 3
+order = 12

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_wylh3"]
+
+[resource]
+script = ExtResource("1_wylh3")
+id = &"lantern_walk"
+display_name = "Lantern Walk"
+season = 2
+day_of_month = 21
+description = "The village cooks together and carries the table into the square."
+reward_gold = 300
+reward_item = &"berry_jam"
+heart_reward = 2

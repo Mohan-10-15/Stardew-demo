@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_erjxb"]
+
+[resource]
+script = ExtResource("1_erjxb")
+id = &"seedling_day"
+display_name = "Seedling Day"
+day_of_month = 21
+description = "Every garden gate opens again and the season's first seeds change hands."
+reward_gold = 150
+reward_item = &"parsnip_seeds"

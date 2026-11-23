@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_8k3r7"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_3akug"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_0ccnk"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_gnsoe"]
+
+[sub_resource type="Resource" id="Resource_xjxgk"]
+script = ExtResource("1_8k3r7")
+kind = &"collect"
+item_id = &"wood"
+count = 8
+
+[sub_resource type="Resource" id="Resource_tsakf"]
+script = ExtResource("2_3akug")
+npc = &"sable"
+
+[sub_resource type="Resource" id="Resource_lmhfm"]
+script = ExtResource("3_0ccnk")
+gold = 420
+hearts = Array[ExtResource("2_3akug")]([SubResource("Resource_tsakf")])
+
+[resource]
+script = ExtResource("4_gnsoe")
+id = &"q_z_main_mending"
+title = "Before the Mending"
+description = "Sable says a mended fence and a mended heart start the same way: one honest piece at a time."
+giver = &"sable"
+objective = SubResource("Resource_xjxgk")
+reward = SubResource("Resource_lmhfm")
+min_hearts = 4

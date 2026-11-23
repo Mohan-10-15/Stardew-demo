@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_704rr"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_l4yws"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_in6vy"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_4h5v2"]
+
+[sub_resource type="Resource" id="Resource_f4kuh"]
+script = ExtResource("1_704rr")
+kind = &"collect"
+item_id = &"corn_seeds"
+count = 2
+
+[sub_resource type="Resource" id="Resource_qus5a"]
+script = ExtResource("2_l4yws")
+npc = &"elke"
+
+[sub_resource type="Resource" id="Resource_co1rd"]
+script = ExtResource("3_in6vy")
+gold = 190
+hearts = Array[ExtResource("2_l4yws")]([SubResource("Resource_qus5a")])
+
+[resource]
+script = ExtResource("4_4h5v2")
+id = &"q_z_elke_garden"
+title = "A Garden of Her Own"
+description = "Elke wants seeds that will actually grow this season. There is a packet with her name on it."
+giver = &"elke"
+objective = SubResource("Resource_f4kuh")
+reward = SubResource("Resource_co1rd")
+min_hearts = 2

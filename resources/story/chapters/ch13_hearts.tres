@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_wjlox"]
+
+[resource]
+script = ExtResource("1_wjlox")
+id = &"ch13_hearts"
+title = "What the Valley Kept"
+description = "The last Ember needs no collection. It needs twelve people who know your name."
+requires = Array[StringName]([&"ember_hearts"])
+reward_gold = 500
+act = 3
+order = 13

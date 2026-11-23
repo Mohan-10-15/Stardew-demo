@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_t5w3u"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_efi8o"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_ntaqe"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_fm0ij"]
+
+[sub_resource type="Resource" id="Resource_teopd"]
+script = ExtResource("1_t5w3u")
+kind = &"collect"
+item_id = &"iron_ore"
+count = 6
+
+[sub_resource type="Resource" id="Resource_omq0h"]
+script = ExtResource("2_efi8o")
+npc = &"bram"
+
+[sub_resource type="Resource" id="Resource_pnh30"]
+script = ExtResource("3_ntaqe")
+gold = 380
+hearts = Array[ExtResource("2_efi8o")]([SubResource("Resource_omq0h")])
+
+[resource]
+script = ExtResource("4_fm0ij")
+id = &"q_z_main_mines"
+title = "Below the Stairs"
+description = "Bram cleared the mine stairs. He wants to know what is down there before anyone else does."
+giver = &"bram"
+objective = SubResource("Resource_teopd")
+reward = SubResource("Resource_pnh30")
+min_hearts = 2

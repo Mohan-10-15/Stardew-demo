@@ -17,6 +17,9 @@ extends Resource
 @export var reward_gold: int = 0
 ## The final chapter: reaching it publishes `story_ending_reached`.
 @export var is_ending: bool = false
+## Update 2 story spine. Existing ids are never renamed or renumbered (saves).
+@export var act: int = 1
+@export var order: int = 0
 
 
 func is_valid() -> bool:

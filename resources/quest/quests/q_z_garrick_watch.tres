@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_qgg5t"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_4f3sq"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_ipl4t"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_3ejvs"]
+
+[sub_resource type="Resource" id="Resource_aqesl"]
+script = ExtResource("1_qgg5t")
+kind = &"collect"
+item_id = &"stone"
+count = 18
+
+[sub_resource type="Resource" id="Resource_o0bbr"]
+script = ExtResource("2_4f3sq")
+npc = &"garrick"
+
+[sub_resource type="Resource" id="Resource_r7vdx"]
+script = ExtResource("3_ipl4t")
+gold = 300
+hearts = Array[ExtResource("2_4f3sq")]([SubResource("Resource_o0bbr")])
+
+[resource]
+script = ExtResource("4_3ejvs")
+id = &"q_z_garrick_watch"
+title = "The Night Watch"
+description = "Garrick keeps the old road watched. He needs stone for the wall before the frost."
+giver = &"garrick"
+objective = SubResource("Resource_aqesl")
+reward = SubResource("Resource_r7vdx")
+min_hearts = 2

@@ -103,7 +103,17 @@ func _emit_flag(bus: Node, flag: StringName) -> void:
 			bus.emit_signal(&"npc_friendship_changed", &"mira", 4, "Friend")
 		&"married":
 			bus.emit_signal(&"npc_married", &"mira")
+		&"all_embers":
+			bus.emit_signal(&"heartstone_mended")
 		_:
+			if String(flag).begins_with("ember_"):
+				bus.emit_signal(&"ember_returned", StringName(
+					String(flag).trim_prefix("ember_")), 1)
+				return
+			if String(flag).ends_with("_path") or String(flag).ends_with("_pier") \
+					or String(flag).ends_with("_road") or String(flag).ends_with("_stairs"):
+				bus.emit_signal(&"collection_tier_reached", &"fields", 0, flag, &"fields")
+				return
 			if String(flag).ends_with("_done"):
 				var quest_id := String(flag).replace("quest_", "").replace("_done", "")
 				bus.emit_signal(&"quest_turned_in", StringName(quest_id), &"mira")

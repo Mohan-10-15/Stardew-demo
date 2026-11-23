@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_q2280"]
+
+[resource]
+script = ExtResource("1_q2280")
+id = &"sunfin_regatta"
+display_name = "Sunfin Regatta"
+season = 1
+day_of_month = 7
+description = "A fishing contest at the pond; the biggest catch wins the feast."
+reward_gold = 260
+reward_item = &"fish_trout"

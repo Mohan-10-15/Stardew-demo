@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_gshwa"]
+
+[resource]
+script = ExtResource("1_gshwa")
+id = &"ch09_stone"
+title = "Below the Ash"
+description = "The Deep Mines stairs are clear. Stone remembers what was buried."
+requires = Array[StringName]([&"ember_stone"])
+reward_gold = 300
+act = 2
+order = 9

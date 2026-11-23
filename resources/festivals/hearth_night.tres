@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FestivalData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/festivals/festival_data.gd" id="1_unf5j"]
+
+[resource]
+script = ExtResource("1_unf5j")
+id = &"hearth_night"
+display_name = "Hearth Night"
+season = 3
+day_of_month = 21
+description = "The coldest week ends with wood, warm stories and a light in every window."
+reward_gold = 240
+reward_item = &"wood"

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_ch27n"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_ct1m3"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_1b0sg"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_geno4"]
+
+[sub_resource type="Resource" id="Resource_gcl32"]
+script = ExtResource("1_ch27n")
+kind = &"collect"
+item_id = &"fish_trout"
+count = 3
+
+[sub_resource type="Resource" id="Resource_wr3dn"]
+script = ExtResource("2_ct1m3")
+npc = &"odette"
+
+[sub_resource type="Resource" id="Resource_bvyfs"]
+script = ExtResource("3_1b0sg")
+gold = 300
+hearts = Array[ExtResource("2_ct1m3")]([SubResource("Resource_wr3dn")])
+
+[resource]
+script = ExtResource("4_geno4")
+id = &"q_z_main_pond"
+title = "The Old Pier"
+description = "Odette reads the water and says the pier remembers being whole. Bring her a catch from it."
+giver = &"odette"
+objective = SubResource("Resource_gcl32")
+reward = SubResource("Resource_bvyfs")
+min_hearts = 2

@@ -21,6 +21,20 @@ const FESTIVALS: Array[Dictionary] = [
 	{"id": &"starfall", "name": "Starfall", "season": 1, "day": 21,
 	 "description": "The orchard stays open past midnight and nobody pretends to be asleep.",
 	 "gold": 280, "item": &"melon", "hearts": 1},
+	# Update 2 W2.5: one more per season, each rewarding a different existing
+	# loop (crops, fishing, cooking, foraging).
+	{"id": &"seedling_day", "name": "Seedling Day", "season": 0, "day": 21,
+	 "description": "Every garden gate opens again and the season's first seeds change hands.",
+	 "gold": 150, "item": &"parsnip_seeds", "hearts": 1},
+	{"id": &"sunfin_regatta", "name": "Sunfin Regatta", "season": 1, "day": 7,
+	 "description": "A fishing contest at the pond; the biggest catch wins the feast.",
+	 "gold": 260, "item": &"fish_trout", "hearts": 1},
+	{"id": &"lantern_walk", "name": "Lantern Walk", "season": 2, "day": 21,
+	 "description": "The village cooks together and carries the table into the square.",
+	 "gold": 300, "item": &"berry_jam", "hearts": 2},
+	{"id": &"hearth_night", "name": "Hearth Night", "season": 3, "day": 21,
+	 "description": "The coldest week ends with wood, warm stories and a light in every window.",
+	 "gold": 240, "item": &"wood", "hearts": 1},
 ]
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_d4oun"]
+
+[resource]
+script = ExtResource("1_d4oun")
+id = &"ch08_waters"
+title = "Where the Water Remembers"
+description = "The pond pier stands again, and a second Ember settles into the square."
+requires = Array[StringName]([&"ember_waters"])
+reward_gold = 240
+act = 2
+order = 8

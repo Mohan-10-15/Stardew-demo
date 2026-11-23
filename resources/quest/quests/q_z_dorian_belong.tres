@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_dn8u5"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_27e3d"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_ujlfv"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_hpoxf"]
+
+[sub_resource type="Resource" id="Resource_yku8x"]
+script = ExtResource("1_dn8u5")
+kind = &"collect"
+item_id = &"milk"
+count = 2
+
+[sub_resource type="Resource" id="Resource_6ptrt"]
+script = ExtResource("2_27e3d")
+npc = &"dorian"
+
+[sub_resource type="Resource" id="Resource_odb7j"]
+script = ExtResource("3_ujlfv")
+gold = 260
+hearts = Array[ExtResource("2_27e3d")]([SubResource("Resource_6ptrt")])
+
+[resource]
+script = ExtResource("4_hpoxf")
+id = &"q_z_dorian_belong"
+title = "A Reason to Stay"
+description = "Dorian says he is only passing through. A cooked meal might make him stay for the evening."
+giver = &"dorian"
+objective = SubResource("Resource_yku8x")
+reward = SubResource("Resource_odb7j")
+min_hearts = 2

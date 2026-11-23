@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_qccfg"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_fv7vi"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_k1pcb"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_3uvwk"]
+
+[sub_resource type="Resource" id="Resource_xi51b"]
+script = ExtResource("1_qccfg")
+kind = &"collect"
+item_id = &"pumpkin"
+count = 6
+
+[sub_resource type="Resource" id="Resource_i6c72"]
+script = ExtResource("2_fv7vi")
+npc = &"mira"
+
+[sub_resource type="Resource" id="Resource_bi6gw"]
+script = ExtResource("3_k1pcb")
+gold = 320
+hearts = Array[ExtResource("2_fv7vi")]([SubResource("Resource_i6c72")])
+
+[resource]
+script = ExtResource("4_3uvwk")
+id = &"q_z_main_orchard"
+title = "The Orchard Gate"
+description = "Mira says the orchard path has been closed since the ash. The harvest can open it."
+giver = &"mira"
+objective = SubResource("Resource_xi51b")
+reward = SubResource("Resource_bi6gw")
+min_hearts = 2

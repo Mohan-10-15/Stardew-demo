@@ -6,7 +6,8 @@
 script = ExtResource("1_i5oom")
 id = &"ch06_ending"
 title = "The Valley Remembers"
-description = "Someone chooses to live here with you. The story ends; the farming does not."
+description = "Someone chooses to live here with you — the partnership beat, before the Mending."
 requires = Array[StringName]([&"married"])
-reward_gold = 1000
-is_ending = true
+reward_gold = 400
+act = 2
+order = 6

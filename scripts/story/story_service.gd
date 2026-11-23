@@ -37,6 +37,9 @@ func _ready() -> void:
 		bus.crop_harvested.connect(_on_harvest)
 		bus.cutscene_finished.connect(_on_cutscene)
 		bus.cutscene_skipped.connect(_on_cutscene)
+		bus.collection_tier_reached.connect(_on_collection_tier)
+		bus.ember_returned.connect(_on_ember)
+		bus.heartstone_mended.connect(_on_mended)
 	_start()
 
 
@@ -56,6 +59,12 @@ func _exit_tree() -> void:
 		bus.cutscene_finished.disconnect(_on_cutscene)
 	if bus.cutscene_skipped.is_connected(_on_cutscene):
 		bus.cutscene_skipped.disconnect(_on_cutscene)
+	if bus.collection_tier_reached.is_connected(_on_collection_tier):
+		bus.collection_tier_reached.disconnect(_on_collection_tier)
+	if bus.ember_returned.is_connected(_on_ember):
+		bus.ember_returned.disconnect(_on_ember)
+	if bus.heartstone_mended.is_connected(_on_mended):
+		bus.heartstone_mended.disconnect(_on_mended)
 
 
 func set_flag(name: StringName, value: bool = true) -> void:
@@ -125,6 +134,20 @@ func _on_quest_turned_in(quest_id: StringName, _giver: StringName) -> void:
 func _on_friendship(_npc_id: StringName, hearts: int, _tier: String) -> void:
 	if hearts >= 4:
 		set_flag(&"first_friend")
+
+
+func _on_collection_tier(_id: StringName, _tier: int, unlock: StringName,
+		_ember: StringName) -> void:
+	if not String(unlock).is_empty():
+		set_flag(unlock)
+
+
+func _on_ember(ember: StringName, _count: int) -> void:
+	set_flag(StringName("ember_%s" % ember))
+
+
+func _on_mended() -> void:
+	set_flag(&"all_embers")
 
 
 func _on_married(_npc_id: StringName) -> void:

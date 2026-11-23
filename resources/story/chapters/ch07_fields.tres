@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoryChapter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/story/story_chapter.gd" id="1_h7u1m"]
+
+[resource]
+script = ExtResource("1_h7u1m")
+id = &"ch07_fields"
+title = "The Orchard Path"
+description = "The first Ember answers the harvest. An old path to the orchard opens."
+requires = Array[StringName]([&"ember_fields"])
+reward_gold = 200
+act = 2
+order = 7

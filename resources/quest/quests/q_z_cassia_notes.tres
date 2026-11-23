@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/quest/quest_objective.gd" id="1_x2s07"]
+[ext_resource type="Script" path="res://scripts/quest/quest_heart_reward.gd" id="2_30lcj"]
+[ext_resource type="Script" path="res://scripts/quest/quest_reward.gd" id="3_tqkge"]
+[ext_resource type="Script" path="res://scripts/quest/quest_data.gd" id="4_opsi4"]
+
+[sub_resource type="Resource" id="Resource_t2ykj"]
+script = ExtResource("1_x2s07")
+kind = &"collect"
+item_id = &"copper_ore"
+count = 8
+
+[sub_resource type="Resource" id="Resource_724dm"]
+script = ExtResource("2_30lcj")
+npc = &"cassia"
+
+[sub_resource type="Resource" id="Resource_87y52"]
+script = ExtResource("3_tqkge")
+gold = 280
+hearts = Array[ExtResource("2_30lcj")]([SubResource("Resource_724dm")])
+
+[resource]
+script = ExtResource("4_opsi4")
+id = &"q_z_cassia_notes"
+title = "Notes from the Ash"
+description = "Cassia's notes disagree about the old road. Bring her something from underground to check against."
+giver = &"cassia"
+objective = SubResource("Resource_t2ykj")
+reward = SubResource("Resource_87y52")
+min_hearts = 2
