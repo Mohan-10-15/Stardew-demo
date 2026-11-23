@@ -75,7 +75,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton):
 		return
 	# Consumed here so gameplay code does not also react to the same press.
-	if event.is_action_pressed(interact_action):
+	# Left click is the eight-input "use held item" button; with no tool aimed
+	# it resolves to the same focused prop as E.
+	if event.is_action_pressed(interact_action) or event.is_action_pressed(InputActions.USE):
 		get_viewport().set_input_as_handled()
 
 
@@ -233,7 +235,9 @@ func _world_mask() -> int:
 
 
 func _process_action(delta: float) -> void:
-	if not Input.is_action_pressed(interact_action):
+	var pressed := Input.is_action_pressed(interact_action) \
+		or Input.is_action_pressed(InputActions.USE)
+	if not pressed:
 		_hold_elapsed = 0.0
 		_hold_target = null
 		_instant_fired = false

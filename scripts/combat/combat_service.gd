@@ -53,7 +53,10 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	_invulnerable = maxf(0.0, _invulnerable - delta)
-	if Input.is_action_just_pressed(InputActions.ATTACK) and in_mine:
+	# Left click is the eight-input use/attack button; K stays as its keyboard
+	# alias, and the gamepad uses RT through the same USE action.
+	if (Input.is_action_just_pressed(InputActions.ATTACK) \
+			or Input.is_action_just_pressed(InputActions.USE)) and in_mine:
 		attempt_attack()
 
 

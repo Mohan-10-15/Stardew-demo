@@ -23,6 +23,10 @@ const LOOK_UP := &"look_up"
 const LOOK_DOWN := &"look_down"
 
 const INTERACT := &"interact"
+## Eight-input core loop: use the held item with the primary button (till,
+## water, plant, harvest, swing, break a block); alt-use places or cancels.
+const USE := &"use"
+const ALT_USE := &"alt_use"
 const INVENTORY := &"inventory"
 const JOURNAL := &"journal"
 

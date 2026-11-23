@@ -17,6 +17,10 @@ const KeyBindings := {
 	InputActions.SPRINT: [KEY_SHIFT],
 	InputActions.CROUCH: [KEY_CTRL],
 	InputActions.INTERACT: [KEY_E],
+	# Primary use is left-click; attack keeps K as its keyboard alias only, so
+	# the two actions do not share a binding in the same context (W1.1).
+	InputActions.USE: [],
+	InputActions.ALT_USE: [],
 	InputActions.INVENTORY: [KEY_TAB],
 	InputActions.JOURNAL: [KEY_J],
 	InputActions.TOGGLE_CAMERA_MODE: [KEY_V],
@@ -43,15 +47,20 @@ const KeyBindings := {
 }
 
 const MouseBindings := {
-	InputActions.INTERACT: [MOUSE_BUTTON_LEFT],
+	InputActions.USE: [MOUSE_BUTTON_LEFT],
+	InputActions.ALT_USE: [MOUSE_BUTTON_RIGHT],
+	InputActions.ATTACK: [],
 	InputActions.HOTBAR_SLOT_NEXT: [MOUSE_BUTTON_WHEEL_DOWN],
 	InputActions.HOTBAR_SLOT_PREV: [MOUSE_BUTTON_WHEEL_UP],
 }
 
 const JoyButtonBindings := {
-	InputActions.MOVE_FORWARD: [JOY_BUTTON_A],
-	InputActions.MOVE_BACK: [JOY_BUTTON_A],
+	# Movement comes from the left-stick axis; binding A to forward as well
+	# collided with jump in the same context (W1.1 audit).
 	InputActions.JUMP: [JOY_BUTTON_A],
+	InputActions.ATTACK: [JOY_BUTTON_B],
+	InputActions.ZOOM_IN: [JOY_BUTTON_DPAD_UP],
+	InputActions.ZOOM_OUT: [JOY_BUTTON_DPAD_DOWN],
 	InputActions.SPRINT: [JOY_BUTTON_LEFT_STICK],
 	InputActions.CROUCH: [JOY_BUTTON_RIGHT_STICK],
 	InputActions.INTERACT: [JOY_BUTTON_X],
@@ -72,8 +81,9 @@ const JoyAxisBindings := {
 	InputActions.LOOK_RIGHT: [[JOY_AXIS_RIGHT_X, 1.0]],
 	InputActions.LOOK_UP: [[JOY_AXIS_RIGHT_Y, -1.0]],
 	InputActions.LOOK_DOWN: [[JOY_AXIS_RIGHT_Y, 1.0]],
-	InputActions.ZOOM_IN: [[JOY_AXIS_TRIGGER_RIGHT, 1.0]],
-	InputActions.ZOOM_OUT: [[JOY_AXIS_TRIGGER_LEFT, 1.0]],
+	# The triggers are the eight-input use / alt-use pair (RT / LT).
+	InputActions.USE: [[JOY_AXIS_TRIGGER_RIGHT, 1.0]],
+	InputActions.ALT_USE: [[JOY_AXIS_TRIGGER_LEFT, 1.0]],
 }
 
 const DEADZONES := {
@@ -111,6 +121,8 @@ const ALL_ACTIONS := [
 	InputActions.LOOK_UP,
 	InputActions.LOOK_DOWN,
 	InputActions.INTERACT,
+	InputActions.USE,
+	InputActions.ALT_USE,
 	InputActions.INVENTORY,
 	InputActions.JOURNAL,
 	InputActions.TOGGLE_CAMERA_MODE,
