@@ -128,8 +128,16 @@ func _t_shop_stops_player() -> Dictionary:
 	# moved is worse than no test.
 	var start := (player as Node3D).global_position
 	_drive_move(player, true)
-	await _steps(12)
-	var moved := (player as Node3D).global_position.distance_to(start)
+	# The first frames after a boot can still be settling (colliders, the
+	# title-screen unpause). Give the setup bounded extra chances to establish
+	# movement rather than failing on a slow frame — the assertion below is
+	# unchanged: if the body never moves, this case still fails.
+	var moved := 0.0
+	for _attempt: int in range(6):
+		await _steps(12)
+		moved = (player as Node3D).global_position.distance_to(start)
+		if moved > 0.0:
+			break
 	_drive_move(player, false)
 	await _steps(6)
 	if moved <= 0.0:

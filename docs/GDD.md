@@ -173,7 +173,9 @@ attempt at photorealism.
   already in `assets/models/quaternius/`.
 
 Cohesion matters more than any single asset's fidelity, so nothing outside these
-two packs is mixed in. See `ART_LICENSES.md`.
+two packs is mixed in. See `ASSET_LICENSES.md`. **D18** widens this to CC0 and
+credited CC-BY for Update 2; **D17** confines voxel blocks to the Builders'
+Plot and the Deep Mines.
 
 ## 7. Accessibility
 

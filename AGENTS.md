@@ -9,7 +9,9 @@
 
 Godot is **not** installed system-wide. If `tools/Godot_v4.5-stable_win64_console.exe`
 is missing, re-download Godot 4.5-stable and drop it there. Do not add an
-installer to this machine and do not expect `godot` to be on `PATH`.
+installer to this machine and do not expect `godot` to be on `PATH`. **D19**
+permits development-only MCP servers via `npx` and portable CLI tools under
+`tools/portable/` / `tools/.venv/`; neither is shipped in an export.
 
 ## 0. Canonical invocation
 
@@ -101,7 +103,9 @@ the full list.
 - **Art:** real modeled assets from free CC0 packs — KayKit (characters),
   Quaternius (buildings, nature). Imported under `assets/`. Stylized and
   detailed, not blocky primitives. Every pack logged in
-  `docs/ASSET_LICENSES.md` with source URL and license.
+  `docs/ASSET_LICENSES.md` with source URL and license. **D17** confines voxel
+  blocks to the Builders' Plot and Deep Mines; **D18** widens sources to CC0 and
+  credited CC-BY.
 - **Original IP only:** genre-inspired, never copy another game's names, art or
   mechanics verbatim.
 

@@ -421,4 +421,74 @@ change to geometry, colliders or gameplay.
 **Consequence:** the faces are deliberately simple — a drawn overlay rather
 than new geometry — and will read as flat up close. If a CC0 anime pack ever
 becomes available, it should replace the rigs wholesale with a new decision
-entry, not be mixed into this treatment.
+entry, not be mixed into this treatment. D18 now authorises that replacement;
+this treatment stays until a licensed pack is actually sourced.
+
+---
+
+## D17 — Voxel blocks are confined to the Builders' Plot and the Deep Mines
+
+**Status:** settled, 2026-11-23. **Amends** `AGENTS.md` §4 Art ("not blocky
+primitives") and `docs/GDD.md` §6 for two locations only.
+
+**What forced it.** The owner asked for a game "like Minecraft". That request
+collides with the repo's art rule, which forbids blocky primitives everywhere.
+The two can only both be honoured if blocks are a *contained* layer rather than
+a new look for the whole valley.
+
+**What was decided.** Voxel blocks may exist only inside a Builders' Plot beside
+the farm and inside the Deep Mines. They use detailed textures by default, with
+a swappable texture pack for the pixel-block look. The farm, village, terrain
+and characters keep their current detailed art. No Mojang asset, name, texture
+or sound is used, now or later.
+
+**Consequence:** the plot and mines are the only places with a voxel grid; a
+test asserts NPCs never route through the plot. Any proposal to blockify the
+rest of the valley is out of scope under this decision.
+
+---
+
+## D18 — Asset sources widened to CC0 and credited CC-BY
+
+**Status:** settled, 2026-11-23. **Amends** `docs/ASSET_LICENSES.md`'s
+KayKit-and-Quaternius-only rule, `docs/GDD.md` §6, and D16's "new pack needs a
+new decision" clause.
+
+**What forced it.** Update 2 needs an anime cast, block textures and a real
+music score. The existing two-pack restriction cannot supply all three, and D16
+already anticipated a replacement pack needing its own decision.
+
+**What was decided.** New sources are accepted when they are CC0, or CC-BY with
+a row in `docs/ASSET_LICENSES.md` and an entry on the in-game credits screen.
+Every file carries its licence evidence beside it and a SHA-256 in the licence
+table. Still forbidden: NC, ND, "free for non-commercial", login-gated,
+unclear-licence assets, and anything whose licence forbids standalone
+redistribution — this repo is public. Share-alike assets need the owner's
+say-so and go to the human queue.
+
+**Consequence:** a new asset folder without a licence row fails a test; a
+CC-BY row without a credits entry fails the same test. The anime route chosen in
+W4 is recorded honestly as anime models or anime-styled KayKit, never
+oversold.
+
+---
+
+## D19 — Development-only MCP servers and portable CLI tools
+
+**Status:** settled, 2026-11-23. **Amends** D1 / `AGENTS.md` §5 ("no addon",
+nothing installed system-wide) for development tooling only.
+
+**What forced it.** The owner asked for any MCP or plugin that makes the game
+better. The no-addon rule protects the shipped game from dependencies; it was
+not written to forbid a verification tool that lives outside the export.
+
+**What was decided.** MCP servers may run via `npx` at user scope as development
+tools. They are never shipped and never included in an export. Portable CLI
+tools (ffmpeg, FluidSynth, a Python venv) may be extracted under `tools/portable/`
+and `tools/.venv/`, both git-ignored. System-wide installers remain forbidden,
+and a Godot addon still needs its own measured decision.
+
+**Consequence:** `opencode.json` is committed with pinned versions; tool output
+is recorded in `docs/DEV_TOOLING.md`. Nothing under `tools/portable/` or
+`tools/.venv/` is a gameplay dependency — `check.ps1` and the game do not need
+them.

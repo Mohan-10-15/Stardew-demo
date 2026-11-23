@@ -6,7 +6,8 @@ of anything shipping is always traceable.
 
 **Rule:** art stays within KayKit and Quaternius so the game reads as one
 deliberate style. A pack from outside these sources needs a decision entry in
-`DECISIONS.md` first.
+`DECISIONS.md` first. **D18** widens the accepted sources to CC0 and credited
+CC-BY for Update 2; share-alike still needs the owner's say-so.
 
 All paths are `res://` paths relative to the Godot project root.
 
