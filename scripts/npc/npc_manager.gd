@@ -666,6 +666,7 @@ func _refresh_schedule(npc: Npc, now: WorldTime) -> void:
 	var schedule := npc.get_schedule()
 	var home_id := npc.home_location_id()
 	var loc_id := home_id if schedule == null else schedule.location_at(now, home_id)
+	npc.current_activity = &"" if schedule == null else schedule.activity_at(now)
 	if loc_id.is_empty():
 		loc_id = home_id
 	if npc.scheduled_location_id == loc_id:

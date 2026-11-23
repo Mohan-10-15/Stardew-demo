@@ -75,6 +75,11 @@ var wandering: bool = true
 var attending: bool = false
 
 var _model: Node3D = null
+## Set by the schedule manager when a villager sits, sleeps or works. Used to
+## choose an embedded clip; when empty, locomotion decides the clip.
+var current_activity: StringName = &""
+var _clip_player: AnimationPlayer = null
+var _current_clip: StringName = &""
 ## Cached rig and animation clock. The animation never moves the body — it only
 ## poses bones — so a test that drives `_advance` directly still measures the
 ## same walk, and a paused conversation can hold a villager still.
@@ -195,6 +200,10 @@ func _build_model() -> void:
 	_pose_idle_arms(_model)
 	_skeleton = _find_skeleton(_model)
 	_apply_profile()
+	# The five KayKit rigs share 41 bones and embed 76 clips (probe_rig.gd).
+	# Prefer them over hand-posed bones; the procedural path remains a fallback
+	# for a profile-less or clip-less rig.
+	_clip_player = NpcAnimator.find_player(_model)
 	# Cel-shade the pack textures, then draw the original anime face over the
 	# painted one. The face plane is unshaded and follows the head bone, so it
 	# cannot be lit or left behind when a villager turns to speak.
@@ -360,6 +369,22 @@ func _animate(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	var walking := speed > 0.15
 	var amp := clampf(speed / maxf(data.walk_speed, 0.01), 0.0, 1.0)
+
+	# Real embedded clips take priority. A borrowed clip writes bone poses every
+	# frame, so the procedural block below must not also write them or the two
+	# fight and the character visibly stutters.
+	if _clip_player != null:
+		var wanted := NpcAnimator.DEFAULT_CLIP
+		if walking:
+			wanted = &"Running_A" if amp > 0.75 else &"Walking_A"
+		elif current_activity != &"":
+			wanted = NpcAnimator.clip_for(current_activity)
+		if _clip_player.has_animation(wanted):
+			if wanted != _current_clip:
+				_clip_player.play(wanted)
+				_current_clip = wanted
+			return
+	# Fallback: hand-posed bones for a rig without the clip.
 	var phase := _anim_time * (7.0 if walking else 1.8) \
 		+ float(abs(hash(String(data.id))) % 1000) * 0.01
 

@@ -23,8 +23,9 @@ and palettes — **not** twelve unrelated anime models.
 ## Status
 
 Profiles, colours, builds and activity→clip mapping are authored and tested
-(`test_cast.gd`). The clips exist in the shared rig library (76 embedded clips,
-`tools/probe_rig.gd`). `NpcAnimator` is a tested mapping layer; wiring it into
-the live `Npc._animate` loop through an `AnimationTree` blend is still open, so
-the in-game motion remains the original procedural bone posing for now. This is
-recorded as a gap, not claimed as done.
+(`test_cast.gd`). The 76 embedded clips are on every rig (`tools/probe_rig.gd`).
+`Npc` now plays them directly by locomotion and schedule activity, with the old
+procedural bone posing as a fallback; `docs/evidence/update2/w4-anime.log`
+confirms a villager playing a real clip in a window. Still open: a blended
+AnimationTree for layered upper-body gestures, extra moods, gaze, voice blips
+and the portrait renderer.

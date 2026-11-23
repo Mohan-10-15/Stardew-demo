@@ -53,6 +53,13 @@ func location_at(time: WorldTime, home_id: StringName = &"") -> StringName:
 	return home_id
 
 
+## The activity string of the block active at [param time], or empty. Drives
+## the embedded animation clip (W4.4) without adding a second schedule parser.
+func activity_at(time: WorldTime) -> StringName:
+	var entry := entry_for(time)
+	return entry.activity if entry != null else &""
+
+
 ## Whether [param id] is named by any block.
 func uses_location(id: StringName) -> bool:
 	for entry: NpcScheduleEntry in entries:
