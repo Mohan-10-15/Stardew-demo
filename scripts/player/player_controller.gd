@@ -49,6 +49,8 @@ var _pitch: float = 0.0
 var _move_mode: PlayerMotion.MoveMode = PlayerMotion.MoveMode.WALK
 var _was_on_floor := false
 var _gravity: float = 24.0
+var _since_grounded: float = 0.0
+var _since_jump_pressed: float = 999.0
 var _cursor_was_captured := false
 var _sensitivity: float = 0.003
 ## Radians per second the body turns toward its direction of travel.
@@ -76,6 +78,9 @@ func _ready() -> void:
 		movement_config = _load_default_config()
 	_gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 24.0)
 	_was_on_floor = is_on_floor()
+	# W5.2 jump feel timers, advanced every physics frame.
+	_since_grounded = 0.0
+	_since_jump_pressed = 999.0
 
 
 func _load_default_config() -> MovementConfig:
@@ -135,8 +140,20 @@ func _physics_process(delta: float) -> void:
 
 	velocity = PlayerMotion.accelerate(velocity, wish, speed, accel, decel, delta)
 
-	if Input.is_action_just_pressed(InputActions.JUMP) and is_on_floor():
+	# W5.2: coyote time and jump buffering. The timers are advanced every
+	# physics frame and the decision itself is pure PlayerMotion math.
+	if is_on_floor():
+		_since_grounded = 0.0
+	else:
+		_since_grounded += delta
+	if Input.is_action_just_pressed(InputActions.JUMP):
+		_since_jump_pressed = 0.0
+	else:
+		_since_jump_pressed += delta
+	if PlayerMotion.can_jump(
+			is_on_floor(), _since_grounded, _since_jump_pressed, movement_config):
 		velocity.y = movement_config.jump_velocity
+		_since_jump_pressed = 999.0  # consume the buffered press
 		jumped.emit()
 	elif Input.is_action_just_released(InputActions.JUMP) and velocity.y > 0.0:
 		# Cutting the jump short on release is what makes jumps feel responsive.

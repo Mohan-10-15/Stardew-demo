@@ -72,6 +72,29 @@ static func apply_gravity(
 	return Vector3(velocity.x, maxf(y, -cfg.terminal_velocity), velocity.z)
 
 
+## W5.2: coyote time + jump buffer as one pure decision. A press counts if the
+## body is grounded, if it left the ground recently, or if it was pressed
+## shortly before landing. Callers advance the timers with real delta time.
+static func can_jump(grounded: bool, since_grounded: float, since_pressed: float,
+		cfg: MovementConfig) -> bool:
+	if since_pressed > cfg.jump_buffer:
+		return false
+	return grounded or since_grounded <= cfg.coyote_time
+
+
+## Whether a ledge of `rise` metres can be stepped onto without a jump.
+static func can_step_up(rise: float, cfg: MovementConfig) -> bool:
+	return rise > 0.0 and rise <= cfg.step_up_height
+
+
+## Ballistic apex of a plain jump — the contract the block sandbox needs: a
+## one-metre block must be clearable without a running start.
+static func jump_apex(cfg: MovementConfig, gravity: float) -> float:
+	if gravity <= 0.0:
+		return 0.0
+	return (cfg.jump_velocity * cfg.jump_velocity) / (2.0 * gravity)
+
+
 ## Clamps and smooths a pitch value in radians.
 static func apply_pitch(current_pitch: float, delta_yaw: float, cfg: MovementConfig) -> float:
 	var min_pitch := deg_to_rad(cfg.min_pitch_degrees)

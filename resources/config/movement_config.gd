@@ -37,6 +37,17 @@ extends Resource
 ## Minimum downward speed, prevents slow floaty falls.
 @export var terminal_velocity: float = 55.0
 
+## Update 2 W5.2: a jump in this many seconds after leaving the ground still
+## counts as grounded.
+@export_range(0.0, 0.4, 0.01) var coyote_time: float = 0.10
+## A jump pressed this many seconds before landing is buffered and fires on
+## touchdown.
+@export_range(0.0, 0.4, 0.01) var jump_buffer: float = 0.12
+## Highest ledge the controller will step up without a jump.
+@export_range(0.0, 0.6, 0.01) var step_up_height: float = 0.35
+## Steepest walkable floor, in degrees.
+@export_range(20.0, 70.0, 1.0) var floor_max_angle_degrees: float = 46.0
+
 @export_group("Look")
 ## Radians of yaw/pitch per pixel of mouse movement. Overridden by
 ## `Config.settings.mouse_sensitivity` when that is non-zero.

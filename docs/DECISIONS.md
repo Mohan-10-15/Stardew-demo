@@ -561,3 +561,31 @@ No new character asset is committed, so D18's licensing rules add nothing here.
 **Consequence:** the cast is honestly described as **anime-styled KayKit**, not
 "anime models". If the owner later supplies VRoid exports (human queue 3),
 those can be processed under D18 without changing the animation contract.
+
+---
+
+## D22 — Jolt physics with interpolation
+
+**Status:** settled, 2026-11-23. **Amends** the default `physics/3d/physics_engine`
+and `physics/common/physics_interpolation` in `project.godot`.
+
+**What forced it.** W5 asks for "good physics": stable controller, deterministic
+drops and no tunnelling at terminal velocity. Godot 4.5 ships Jolt in this exact
+build (`tools/probe_engine.gd` printed the options `DEFAULT,Jolt Physics,
+GodotPhysics3D,Dummy`).
+
+**What was measured.** `tools/apply_project_settings.gd` switched the engine
+from `DEFAULT` to `Jolt Physics` and interpolation from `false` to `true`.
+The full `check.ps1` then ran **669 passed / 0 failed**, with import and boot
+clean. No test asserted engine-specific behaviour, so nothing needed changing
+at its cause. The pond raycast regression (D9) and NPC navigation probes still
+pass under Jolt.
+
+**What was decided.** Keep Jolt + interpolation. Both settings are written by
+the reproducible tool rather than hand-edited, so a fresh clone can re-apply
+them. Any teleport (respawn, mine descent, cutscene cut) must call
+`reset_physics_interpolation()` or it produces a one-frame smear — a windowed
+check is part of W5.
+
+**Consequence:** physics results may differ from the old default in edge cases;
+the deterministic fixed-step tests in W5 are the contract, not the old numbers.
