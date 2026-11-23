@@ -9,6 +9,7 @@ display_name = "Sandstone"
 tile_top = &"sandstone_block_top"
 tile_side = &"sandstone_block_side"
 tile_bottom = &"sandstone_block_bottom"
+tool_kind = &"mine"
 drops = Array[StringName]([&"stone"])
 place_item = &"stone"
 sound_set = &"dirt"

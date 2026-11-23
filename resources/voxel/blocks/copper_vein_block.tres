@@ -10,5 +10,6 @@ tile_top = &"copper_vein_block_top"
 tile_side = &"copper_vein_block_side"
 tile_bottom = &"copper_vein_block_bottom"
 hardness = 2.0
+tool_kind = &"mine"
 drops = Array[StringName]([&"copper_ore"])
 place_item = &"copper_ore"

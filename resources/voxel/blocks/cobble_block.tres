@@ -10,5 +10,6 @@ tile_top = &"cobble_block_top"
 tile_side = &"cobble_block_side"
 tile_bottom = &"cobble_block_bottom"
 hardness = 2.0
+tool_kind = &"mine"
 drops = Array[StringName]([&"stone"])
 place_item = &"stone"

@@ -84,6 +84,7 @@ const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
 @export var load_tutorial: bool = true
 @export var load_collections: bool = true
 @export var load_valley_memory: bool = true
+@export var load_voxel: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -140,6 +141,7 @@ var journal_panel: CanvasLayer = null
 var collection_service: CollectionService = null
 var heartstone: HeartstoneState = null
 var valley_memory: ValleyMemory = null
+var voxel_service: VoxelService = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -186,6 +188,10 @@ func _boot() -> void:
 		_spawn_tutorial()
 	if load_collections:
 		_spawn_collections()
+	if load_voxel:
+		voxel_service = VoxelService.new()
+		voxel_service.name = "VoxelService"
+		add_child(voxel_service)
 	if load_valley_memory:
 		valley_memory = ValleyMemory.new()
 		valley_memory.name = "ValleyMemory"
@@ -531,6 +537,7 @@ func _spawn_save_service() -> void:
 	save_service.collection_service = collection_service
 	save_service.heartstone = heartstone
 	save_service.valley_memory = valley_memory
+	save_service.voxel_service = voxel_service
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 

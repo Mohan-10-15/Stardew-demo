@@ -492,3 +492,38 @@ and a Godot addon still needs its own measured decision.
 is recorded in `docs/DEV_TOOLING.md`. Nothing under `tools/portable/` or
 `tools/.venv/` is a gameplay dependency — `check.ps1` and the game do not need
 them.
+
+---
+
+## D20 — Chunk mesher, not GridMap, for voxel blocks
+
+**Status:** settled, 2026-11-23. **Amends** nothing; this is the renderer choice
+W3.1 required a measurement for.
+
+**What forced it.** W3 adds a block sandbox and demands detailed art, per-vertex
+ambient occlusion and hidden-face culling. `GridMap` draws a fixed mesh per
+cell and cannot shade a face from its neighbours; the custom mesher can. The
+brief asks for both to be measured before choosing.
+
+**What was measured.** `tools/spike_voxel_renderer.gd`, headless, same generated
+64×32×64 volume with 5,073 occupied cells:
+
+```
+data build:        54.4 ms
+custom mesher:    197.6 ms, 4,791 faces, 19,164 verts (~599 KiB arrays)
+GridMap:           48.6 ms, 5,073 set_cell_item calls
+```
+
+GridMap builds faster. That is the honest number.
+
+**What was decided.** Use the custom `VoxelMesher` (ArrayMesh, hidden-face
+culling, per-vertex AO) as the default. The ~150 ms build-time difference is a
+one-off per chunk, off the frame path; the visual difference — smooth corner
+shading and no internal faces — is on screen for the whole session. A 16³
+chunk at 4,791 faces over 32 chunks is ~150 faces per chunk, well inside the
+frame budget. GridMap remains the fallback if a future measurement shows edit
+latency exceeding 2 ms per frame on the target hardware.
+
+**Consequence:** the mesher stays in GDScript (D14's bar for a language change
+has not been met); a texture pack swaps tile ids at runtime without changing
+the mesher.

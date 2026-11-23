@@ -10,6 +10,7 @@ tile_top = &"obsidian_block_top"
 tile_side = &"obsidian_block_side"
 tile_bottom = &"obsidian_block_bottom"
 hardness = 6.0
+tool_kind = &"mine"
 minimum_tier = 4
 drops = Array[StringName]([&"stone"])
 place_item = &"stone"

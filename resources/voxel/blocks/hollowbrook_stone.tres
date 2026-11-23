@@ -10,5 +10,6 @@ tile_top = &"hollowbrook_stone_top"
 tile_side = &"hollowbrook_stone_side"
 tile_bottom = &"hollowbrook_stone_bottom"
 hardness = 1.5
+tool_kind = &"mine"
 drops = Array[StringName]([&"stone"])
 place_item = &"stone"

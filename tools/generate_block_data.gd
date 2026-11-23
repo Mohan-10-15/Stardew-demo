@@ -7,8 +7,8 @@ const SCRIPT := "res://resources/voxel/block_data.gd"
 
 const BLOCKS: Array[Dictionary] = [
 	{"id": &"hollowbrook_stone", "name": "Hollow Stone", "hard": 1.5, "tool": &"pickaxe", "tier": 1, "drop": &"stone", "sound": &"stone"},
-	{"id": &"hollowbrook_soil", "name": "Hollow Soil", "hard": 0.6, "tool": &"hoe", "tier": 1, "drop": &"stone", "sound": &"dirt"},
-	{"id": &"hollowbrook_grass", "name": "Hollow Turf", "hard": 0.5, "tool": &"hoe", "tier": 1, "drop": &"stone", "sound": &"grass"},
+	{"id": &"hollowbrook_soil", "name": "Hollow Soil", "hard": 0.6, "tool": &"hoe", "tier": 0, "drop": &"stone", "sound": &"dirt"},
+	{"id": &"hollowbrook_grass", "name": "Hollow Turf", "hard": 0.5, "tool": &"hoe", "tier": 0, "drop": &"stone", "sound": &"grass"},
 	{"id": &"fence_block", "name": "Fence Rail", "hard": 0.8, "tool": &"axe", "tier": 1, "drop": &"wood", "sound": &"wood"},
 	{"id": &"copper_vein_block", "name": "Copper Vein", "hard": 2.0, "tool": &"pickaxe", "tier": 1, "drop": &"copper_ore", "sound": &"stone"},
 	{"id": &"iron_vein_block", "name": "Iron Vein", "hard": 3.0, "tool": &"pickaxe", "tier": 2, "drop": &"iron_ore", "sound": &"stone"},
@@ -52,7 +52,11 @@ func _initialize() -> void:
 		block.set("tile_side", String(spec["id"]) + "_side")
 		block.set("tile_bottom", String(spec["id"]) + "_bottom")
 		block.set("hardness", float(spec["hard"]))
-		block.set("tool_kind", StringName(spec.get("tool", &"")))
+		# BlockData records the *tool action* the game uses, not the item name:
+		# hoe=till, pickaxe=mine, axe=chop (ItemRegistry.tool_action).
+		var action_map := {&"hoe": &"till", &"pickaxe": &"mine", &"axe": &"chop"}
+		var wanted := StringName(spec.get("tool", &""))
+		block.set("tool_kind", action_map.get(wanted, wanted))
 		block.set("minimum_tier", int(spec["tier"]))
 		var drops: Array[StringName] = []
 		if spec.has("drop"):

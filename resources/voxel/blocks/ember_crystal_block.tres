@@ -10,6 +10,7 @@ tile_top = &"ember_crystal_block_top"
 tile_side = &"ember_crystal_block_side"
 tile_bottom = &"ember_crystal_block_bottom"
 hardness = 4.5
+tool_kind = &"mine"
 minimum_tier = 4
 drops = Array[StringName]([&"wild_berry"])
 place_item = &"wild_berry"

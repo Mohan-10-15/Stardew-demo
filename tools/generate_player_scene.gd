@@ -77,6 +77,12 @@ func _initialize() -> void:
 	view_model.set_script(load("res://scripts/player/tool_view_model.gd"))
 	camera.add_child(view_model)
 
+	# --- Voxel break / place component ------------------------------------
+	var voxel := Node.new()
+	voxel.name = "VoxelInteractor"
+	voxel.set_script(load("res://scripts/voxel/voxel_interactor.gd"))
+	root.add_child(voxel)
+
 	# --- Interaction probe ------------------------------------------------
 	# A plain Node, not Node3D: it aims from the active camera and has no
 	# transform of its own to keep in sync.
@@ -86,7 +92,7 @@ func _initialize() -> void:
 	probe.set("ray_length", 3.5)
 	root.add_child(probe)
 
-	for child: Node in [collision, avatar, rig, camera, view_model, probe]:
+	for child: Node in [collision, avatar, rig, camera, view_model, voxel, probe]:
 		child.owner = root
 
 	var err := _save(root)

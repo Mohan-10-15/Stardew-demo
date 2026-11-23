@@ -35,6 +35,8 @@ func apply() -> void:
 
 
 func _apply(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
 	if node is Label or node is Button:
 		_apply_text(node as Control)
 	for child: Node in node.get_children():

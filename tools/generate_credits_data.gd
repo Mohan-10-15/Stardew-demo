@@ -13,6 +13,7 @@ const ROWS: Array[Dictionary] = [
 	{"label": "Quaternius Ultimate Nature Pack", "detail": "CC0 1.0 — https://quaternius.com/packs/ultimatenature.html"},
 	{"label": "Original audio", "detail": "Synthesised in-engine by AudioSynth; no third-party sound files."},
 	{"label": "Original art overlays", "detail": "Anime faces, toon materials, clouds and voxel textures generated in code."},
+	{"label": "Hollowbrook Detailed voxel atlas", "detail": "CC0 1.0 — generated in-repo by tools/generate_block_atlas.gd."},
 ]
 
 

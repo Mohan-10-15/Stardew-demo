@@ -10,6 +10,7 @@ tile_top = &"iron_vein_block_top"
 tile_side = &"iron_vein_block_side"
 tile_bottom = &"iron_vein_block_bottom"
 hardness = 3.0
+tool_kind = &"mine"
 minimum_tier = 2
 drops = Array[StringName]([&"iron_ore"])
 place_item = &"iron_ore"

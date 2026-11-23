@@ -10,6 +10,7 @@ tile_top = &"furnace_block_top"
 tile_side = &"furnace_block_side"
 tile_bottom = &"furnace_block_bottom"
 hardness = 2.4
+tool_kind = &"mine"
 drops = Array[StringName]([&"stone"])
 place_item = &"stone"
 light_emission = 5
