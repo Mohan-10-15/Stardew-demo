@@ -143,6 +143,8 @@ signal collection_tier_reached(collection_id: StringName, tier: int,
 signal collection_failed(collection_id: StringName, reason: StringName)
 signal ember_returned(ember: StringName, count: int)
 signal heartstone_mended()
+signal plinth_inspected(embers: int, needed: int)
+signal area_gate_opened(gate_id: StringName)
 ## A tool ran out of uses. Distinct from `item_removed` so a HUD can warn the
 ## player before they are left holding nothing.
 signal tool_broken(item_id: StringName)

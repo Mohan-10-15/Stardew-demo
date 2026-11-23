@@ -78,6 +78,8 @@ static func build(root: Node3D, seed_value: int = 12345) -> void:
 	_add_coop(root)
 	_add_stove(root)
 	_add_clouds(root, seed_value)
+	_add_heartstone_plinth(root)
+	_add_area_gates(root)
 
 
 ## Height of the terrain at a world XZ position.
@@ -744,6 +746,91 @@ static func _add_stove(root: Node3D) -> void:
 	component.set_script(load("res://scripts/cooking/stove_interactable.gd"))
 	body.add_child(component)
 	_finish(body, root)
+
+
+## The Heartstone plinth in the village square: a visible progress marker with
+## an Interactable that starts the Mending when all six Embers are home.
+static func _add_heartstone_plinth(root: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "HeartstonePlinth"
+	body.collision_layer = PhysicsLayers.INTERACTABLE
+	body.collision_mask = 0
+	body.position = Vector3(REGION_VILLAGE.x - 3.0, 0.0, REGION_VILLAGE.y - 3.0)
+	var base := MeshInstance3D.new()
+	base.name = "PlinthBase"
+	var stone := BoxMesh.new()
+	stone.size = Vector3(1.6, 1.0, 1.6)
+	base.mesh = stone
+	base.position = Vector3(0, 0.5, 0)
+	base.material_override = WorldMaterials.surface(&"rock")
+	body.add_child(base)
+	var shard := MeshInstance3D.new()
+	shard.name = "EmptySocket"
+	var crystal := SphereMesh.new()
+	crystal.radius = 0.45
+	crystal.height = 0.7
+	shard.mesh = crystal
+	shard.position = Vector3(0, 1.35, 0)
+	shard.material_override = WorldMaterials.surface(&"glass")
+	body.add_child(shard)
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var col := BoxShape3D.new()
+	col.size = Vector3(1.8, 2.4, 1.8)
+	shape.shape = col
+	shape.position = Vector3(0, 1.2, 0)
+	body.add_child(shape)
+	var component := Node.new()
+	component.name = "Interactable"
+	component.set_script(load("res://scripts/world/heartstone_plinth.gd"))
+	body.add_child(component)
+	_finish(body, root)
+
+
+## Player-only story barriers. Each carries an Interactable that says what
+## unlocks it, and opens when the matching collection tier is reached.
+static func _add_area_gates(root: Node3D) -> void:
+	var specs: Array[Dictionary] = [
+		{"id": &"orchard_path", "unlock": &"orchard_path", "name": "the orchard path",
+		 "at": REGION_VILLAGE + Vector2(2.0, -13.0)},
+		{"id": &"pond_pier", "unlock": &"pond_pier", "name": "the pond pier",
+		 "at": REGION_FARM + Vector2(4.0, -15.0)},
+		{"id": &"forest_road", "unlock": &"forest_road", "name": "the forest road",
+		 "at": REGION_FARM + Vector2(-15.0, 2.0)},
+	]
+	for spec: Dictionary in specs:
+		var body := StaticBody3D.new()
+		body.name = "Gate_%s" % spec["id"]
+		body.collision_layer = PhysicsLayers.GATE
+		body.collision_mask = 0
+		var at: Vector2 = spec["at"]
+		body.position = Vector3(at.x, 0.0, at.y)
+		var drift := Node3D.new()
+		drift.name = "AshDrift"
+		var veil := MeshInstance3D.new()
+		veil.name = "AshVeil"
+		var box := BoxMesh.new()
+		box.size = Vector3(3.0, 2.6, 0.25)
+		veil.mesh = box
+		veil.position = Vector3(0, 1.3, 0)
+		veil.material_override = WorldMaterials.surface(&"wall")
+		drift.add_child(veil)
+		body.add_child(drift)
+		var shape := CollisionShape3D.new()
+		shape.name = "CollisionShape3D"
+		var col := BoxShape3D.new()
+		col.size = Vector3(3.0, 2.6, 0.35)
+		shape.shape = col
+		shape.position = Vector3(0, 1.3, 0)
+		body.add_child(shape)
+		var component := Node.new()
+		component.name = "Interactable"
+		component.set_script(load("res://scripts/world/area_gate.gd"))
+		component.set("gate_id", spec["id"])
+		component.set("unlock_id", spec["unlock"])
+		component.set("region_name", String(spec["name"]))
+		body.add_child(component)
+		_finish(body, root)
 
 
 static func _add_clouds(root: Node3D, seed_value: int) -> void:

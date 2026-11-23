@@ -288,6 +288,7 @@ alt_use={
 3d_physics/layer_3="npc"
 3d_physics/layer_4="interactable"
 3d_physics/layer_5="resource"
+3d_physics/layer_6="gate"
 
 [physics]
 

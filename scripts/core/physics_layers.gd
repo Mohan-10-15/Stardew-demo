@@ -39,12 +39,15 @@ const INTERACTABLE := 1 << 3
 ## Loose items on the ground: solid against the world, transparent to everything
 ## that walks.
 const RESOURCE := 1 << 4
+## Story gates: solid for the player only. Villagers' masks deliberately omit
+## this bit so a closed path never breaks a schedule (W2.3).
+const GATE := 1 << 5
 
 ## What the player's movement collides with.
-const PLAYER_MASK := WORLD
+const PLAYER_MASK := WORLD | GATE
 ## What the interaction probe raycast looks for: solid world geometry plus the
 ## interaction-only layer.
-const INTERACTION_MASK := WORLD | INTERACTABLE
+const INTERACTION_MASK := WORLD | INTERACTABLE | GATE
 ## What a dropped item rests on. Deliberately not [constant RESOURCE]: two logs
 ## bouncing off each other in a heap that never settles is a worse artefact than
 ## logs that sink gently through one another.
