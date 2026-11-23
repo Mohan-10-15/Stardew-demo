@@ -2,7 +2,8 @@
 
 **Genre:** farming-life sim with combat, crafting and village social systems
 **Target:** native Windows desktop; a web export is a later goal, not a constraint on architecture
-**Engine:** Godot 4.5-stable, GDScript, no addons, no C#
+**Engine:** Godot 4.5-stable, GDScript, no addons; one measured C# system
+(`scripts/sim/BalanceSweep.cs`) per D14. No addons.
 **Target hardware:** RTX 2050-class, 60 FPS
 **Session shape:** a day is ~10 real minutes; a full year is 112 in-game days
 

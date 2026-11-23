@@ -22,17 +22,25 @@ reasoning.
 | M7 | Fishing, animals, crafting, cooking | **COMPLETE** |
 | M8 | Mines and combat | **COMPLETE** |
 | M9 | Weather and seasons | **COMPLETE** |
-| M10 | Cutscene system | **COMPLETE** |
+| M10 | Cutscene system | **REOPENED** — toolkit + 2 scenes; no actors/camera work (W7) |
 | M11 | Buildings and farm upgrades | **COMPLETE** |
-| M12 | Festivals | **COMPLETE** |
-| M13 | Story progression | **COMPLETE** |
-| M14 | Audio | **COMPLETE** |
-| M15 | UI and accessibility | **COMPLETE** |
+| M12 | Festivals | **REOPENED** — 4 of 8 festivals (W2) |
+| M13 | Story progression | **REOPENED** — no Heartstone/collections/ending/credits (W2) |
+| M14 | Audio | **REOPENED** — no music wired; themes are single tones (W6) |
+| M15 | UI and accessibility | **REOPENED** — no journal, tutorial, About, credits (W1) |
 | M16 | Save and load | **COMPLETE** |
-| M17 | Art and animation polish | **COMPLETE** |
+| M17 | Art and animation polish | **REOPENED** — no clip animation or portraits (W4) |
 | M18 | Performance | **COMPLETE** |
 | M19 | Testing, bot simulation, balance | **COMPLETE** |
 | M20 | Release integration | **COMPLETE** — Windows + Web exports verified |
+| M21 | Update 2 · Foundation, honesty, tooling | OPEN (W0) |
+| M22 | Update 2 · Front door and easy controls | OPEN (W1) |
+| M23 | Update 2 · Heartstone, story, collections, logic | OPEN (W2) |
+| M24 | Update 2 · Block sandbox | OPEN (W3) |
+| M25 | Update 2 · Anime cast | OPEN (W4) |
+| M26 | Update 2 · Physics and game feel | OPEN (W5) |
+| M27 | Update 2 · Score and sound | OPEN (W6) |
+| M28 | Update 2 · Cutscenes, set pieces, release | OPEN (W7) |
 
 ### Two numbering schemes, one sequence
 

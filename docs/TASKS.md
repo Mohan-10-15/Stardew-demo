@@ -9,12 +9,13 @@ with what was implemented, what was tested, and every bug found along the way.
 
 ## In flight
 
-**None.** Groups 0–17 and 25 are complete. TASK-007 (Friendship, group 17 / M6)
-closed with this batch and **M6 is complete**; TASK-008 (the dialogue system, M5)
-was already done. The next work item is picked from the queue below.
-
-M5 is *not* closed: it still wants the other six of the twelve villagers
-`prompt.md` §16 asks for. See TASK-008 below for what that means.
+**Update 2 — Wave 0 (foundation, honesty, tooling).** All original milestones
+M0–M20 landed, but `docs/ROADMAP.md` has reopened six of them under Update 2's
+stricter definition. The living plan is `docs/UPDATE2.md`, the brief is
+`docs/UPDATE2_PROMPT.md`; work proceeds W0 → W7 with one commit per group.
+Wave 0 progress: baseline recorded (W0.1), export-preset defect fixed and fresh
+clone proven green (W0.2), GDD/status truth pass (W0.3), decisions D17–D19
+written (W0.4), tooling pending (W0.5).
 
 ---
 

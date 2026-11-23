@@ -5,13 +5,18 @@ GDScript by default with one measured system in C# (see
 `docs/MULTI_LANGUAGE_ARCHITECTURE.md`). Dual first-person / third-person
 cameras, switchable at runtime.
 
-Progress: **Groups 0–17 and 25 complete, plus TASK-007 and TASK-008.** The cast
-is now the twelve villagers `prompt.md` §16 asks for, so **M5 and M6 are both
-complete**. The current workstream is art and presentation polish on top of that
-finished content.
+Progress: **all milestones M0–M20 of the original prompt landed.** Update 2
+("The Living Valley") is now in progress — see `docs/UPDATE2.md` for the living
+plan, `docs/UPDATE2_PROMPT.md` for the full brief, and the section at the end of
+this file for each wave's record. The original milestones are NOT all complete
+in the deeper sense Update 2 defines: M10 is a toolkit with two scenes, M12 has
+4 of 8 festivals, M13 has no Heartstone/collections/ending/credits, M14 has no
+music wired into gameplay, M15 has no journal/tutorial/About, and M17 has no
+clip animation. `docs/ROADMAP.md` has reopened those rows.
 
-Current baseline: **549/549 tests**, C# build clean, import clean, boot clean,
-zero script errors.
+Current baseline at the start of Update 2: **621/621 tests**, C# build clean,
+import clean, boot clean, zero script errors on both the owner's machine and a
+fresh clone (evidence: `docs/evidence/update2/w0-*.log`).
 
 ---
 

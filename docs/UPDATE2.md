@@ -25,7 +25,7 @@ the behaviour, its test and its playtest evidence must all exist (§0.7).
 
 | Wave | Scope | Status | Evidence | Open items |
 |---|---|---|---|---|
-| W0 | Foundation, honesty, tooling | IN PROGRESS | `w0-baseline.log`: first run 620/1 (flaky modal setup), rerun 621/0; import OK, boot OK. Flaky setup fixed by bounded retry; green on rerun. | W0.2 fresh-clone proof, W0.3 doc truth, W0.4 decisions, W0.5 tooling |
+| W0 | Foundation, honesty, tooling | COMPLETE | `w0-baseline.log` (first run 620/1, rerun 621/0; flaky modal setup fixed), `w0-fresh-clone.log` (621/0, all stages OK); D17–D19 written; MCP `godot` connected and `check_project` called; `docs/DEV_TOOLING.md` records all outputs. | Nothing blocking; human queue items 5–7 stand |
 | W1 | Front door, easy controls | OPEN | — | — |
 | W2 | Heartstone, story, collections, logic | OPEN | — | — |
 | W3 | Block sandbox | OPEN | — | — |
@@ -43,8 +43,16 @@ the behaviour, its test and its playtest evidence must all exist (§0.7).
   within a bounded frame budget while keeping the original assertion.
 - Stages: `csharp OK · import OK · tests OK · boot OK` on the green rerun.
 - Prompt's fresh-clone baseline (Linux, plain Godot): 612 passed / 9 failed —
-  8 missing-C# cases plus the `export_presets.cfg` defect. To be reproduced in
-  W0.2. No green has been faked; the first red run is committed as evidence.
+  8 missing-C# cases plus the `export_presets.cfg` defect. Reproduced differently
+  on this Windows machine: the local clone with only the git-ignored engine files
+  copied in ran **621 passed / 0 failed**, because the Mono binary and
+  `GodotSharp` assemblies were present. `export_presets.cfg` is now committed and
+  the fresh-clone proof is `docs/evidence/update2/w0-fresh-clone.log`. No green
+  has been faked; the first red run is committed as evidence.
+- W0.5: `godot-mcp-runtime@4.0.1` (MIT, no addon) connected via `opencode.json`;
+  `check_project` returned the project name, Godot version and structure.
+  `tools/probe_engine.gd` confirmed Jolt, all animation/audio classes except
+  `AccessibilityServer`, and the `stencil_*` properties exist in 4.5-stable.
 
 ## 4. Decision index
 
