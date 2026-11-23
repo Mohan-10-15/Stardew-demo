@@ -37,6 +37,7 @@ var collection_service: Node = null
 var heartstone: Object = null
 var valley_memory: Node = null
 var voxel_service: Node = null
+var deep_mines: Node = null
 ## The player body, saved separately from `player_state` (which owns the bag,
 ## purse and stamina but deliberately not a world coordinate).
 var player: Node3D = null
@@ -113,6 +114,8 @@ func to_dict() -> Dictionary:
 		data["valley_memory"] = valley_memory.call("to_dict")
 	if voxel_service != null and voxel_service.has_method("to_dict"):
 		data["voxel"] = voxel_service.call("to_dict")
+	if deep_mines != null and deep_mines.has_method("to_dict"):
+		data["deep_mines"] = deep_mines.call("to_dict")
 	if animal_service != null and animal_service.has_method("to_dict"):
 		data["animals"] = animal_service.call("to_dict")
 	if fishing_service != null and fishing_service.has_method("to_dict"):
@@ -173,6 +176,9 @@ func from_dict(data: Dictionary) -> void:
 	if voxel_service != null and voxel_service.has_method("from_dict") \
 			and payload.get("voxel") is Dictionary:
 		voxel_service.call("from_dict", payload["voxel"])
+	if deep_mines != null and deep_mines.has_method("from_dict") \
+			and payload.get("deep_mines") is Dictionary:
+		deep_mines.call("from_dict", payload["deep_mines"])
 	if animal_service != null and animal_service.has_method("from_dict") \
 			and payload.get("animals") is Dictionary:
 		animal_service.call("from_dict", payload["animals"])

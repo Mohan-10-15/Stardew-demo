@@ -142,6 +142,7 @@ var collection_service: CollectionService = null
 var heartstone: HeartstoneState = null
 var valley_memory: ValleyMemory = null
 var voxel_service: VoxelService = null
+var deep_mines: DeepMines = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -189,6 +190,9 @@ func _boot() -> void:
 	if load_collections:
 		_spawn_collections()
 	if load_voxel:
+		deep_mines = DeepMines.new()
+		deep_mines.name = "DeepMines"
+		add_child(deep_mines)
 		voxel_service = VoxelService.new()
 		voxel_service.name = "VoxelService"
 		add_child(voxel_service)
@@ -538,6 +542,7 @@ func _spawn_save_service() -> void:
 	save_service.heartstone = heartstone
 	save_service.valley_memory = valley_memory
 	save_service.voxel_service = voxel_service
+	save_service.deep_mines = deep_mines
 	add_child(save_service)
 	Log.info("Main", "Spawned aggregate save service")
 

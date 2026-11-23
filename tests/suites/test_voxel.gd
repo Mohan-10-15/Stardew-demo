@@ -2,6 +2,22 @@ extends TestSuite
 ## W3.2: the pure voxel core — content, meshing, breaking, generation and
 ## persistence. No scene or rendering context is needed for any case here.
 
+var _nodes: Array[Node] = []
+
+
+func teardown() -> void:
+	for node: Node in _nodes:
+		if is_instance_valid(node):
+			node.free()
+	_nodes.clear()
+
+
+func _mine(seed_value: int) -> DeepMines:
+	var mine := DeepMines.new()
+	mine.world_seed = seed_value
+	_nodes.append(mine)
+	return mine
+
 func get_cases() -> Array[StringName]:
 	return [
 		&"at_least_24_blocks_are_authored",
@@ -11,6 +27,8 @@ func get_cases() -> Array[StringName]:
 		&"generation_is_deterministic",
 		&"raycast_hits_the_first_solid_cell",
 		&"edits_round_trip_as_deltas",
+		&"ten_deterministic_mine_floors",
+		&"mine_edits_survive_a_save",
 	]
 
 
@@ -96,4 +114,30 @@ func _run(case: StringName) -> Dictionary:
 			if fresh.edit_hash() != grid.edit_hash():
 				return fail(case, "edit hash changed across save")
 			return succeeded(case, "delta saved and restored")
+		&"ten_deterministic_mine_floors":
+			var a := _mine(9001)
+			var b := _mine(9001)
+			a.enter()
+			b.enter()
+			for _i: int in range(DeepMines.FLOORS - 1):
+				if not a.descend() or not b.descend():
+					return fail(case, "could not descend to floor 10")
+			if a.floor != 10 or b.floor != 10:
+				return fail(case, "climb ended at floor %d" % a.floor)
+			if not a.is_boss_floor() or not a.is_lantern_room(10):
+				return fail(case, "floor 10 is not boss/lantern room")
+			if a.grid.edit_hash() != b.grid.edit_hash():
+				return fail(case, "same seed gave different boss floors")
+			return succeeded(case, "10 floors, boss + lantern room, deterministic")
+		&"mine_edits_survive_a_save":
+			var mine := _mine(12345)
+			mine.enter()
+			mine.grid.set_block(Vector3i(2, -8, 2), &"oak_planks")
+			var data: Dictionary = mine.to_dict()
+			var fresh := _mine(12345)
+			fresh.from_dict(data)
+			if fresh.floor != mine.floor or fresh.grid.get_block(
+					Vector3i(2, -8, 2)) != &"oak_planks":
+				return fail(case, "mine state did not round-trip")
+			return succeeded(case, "floor and edits survived a save")
 	return fail(case, "no case implementation for %s" % case)
