@@ -167,6 +167,10 @@ func _boot() -> void:
 	# actions, so this sits next to the state service near the front of boot.
 	if load_rebind:
 		_spawn_rebind_service()
+	var device_monitor := Node.new()
+	device_monitor.name = "InputDeviceMonitor"
+	device_monitor.set_script(load("res://scripts/ui/input_device_monitor.gd"))
+	add_child(device_monitor)
 	if load_audio:
 		_spawn_audio_manager()
 	if load_cutscenes:

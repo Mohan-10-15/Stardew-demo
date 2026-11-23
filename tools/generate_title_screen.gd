@@ -52,7 +52,10 @@ func _initialize() -> void:
 
 	var hint := Label.new()
 	hint.name = "Hint"
-	hint.text = "F5 saves  •  F9 loads"
+	# Labels come from InputGlyphs at runtime so a pad player sees the pad
+	# glyphs. The generator only creates the node and an initial placeholder.
+	hint.set_meta("glyph_kind", "save_hint")
+	hint.text = "Save and load from the menu"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 13)
 	column.add_child(hint)

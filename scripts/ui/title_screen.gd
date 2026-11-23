@@ -23,7 +23,23 @@ func _ready() -> void:
 		new_game.pressed.connect(_on_new_game)
 	if _continue != null and not _continue.pressed.is_connected(_on_continue):
 		_continue.pressed.connect(_on_continue)
+	var loop := Engine.get_main_loop()
+	if loop is SceneTree:
+		var bus := (loop as SceneTree).root.get_node_or_null(^"EventBus")
+		if bus != null and not bus.input_device_changed.is_connected(_refresh_glyphs):
+			bus.input_device_changed.connect(_refresh_glyphs)
+	_refresh_glyphs()
 	refresh()
+
+
+func _refresh_glyphs(_device: int = 0) -> void:
+	var hint := get_node_or_null(^"Panel/Column/Hint") as Label
+	if hint == null:
+		return
+	hint.text = "%s saves  •  %s loads" % [
+		InputGlyphs.label_for(InputActions.SAVE_GAME),
+		InputGlyphs.label_for(InputActions.LOAD_GAME),
+	]
 
 
 ## Enables Continue only when a save actually exists. A permanently live button

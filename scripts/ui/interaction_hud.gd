@@ -159,7 +159,7 @@ func _refresh_prompt() -> void:
 		return
 
 	var actor := _probe.get_actor()
-	var key := _probe.get_action_label()
+	var key := InputGlyphs.label_for(InputActions.INTERACT)
 	var verb := target.get_prompt(actor)
 	# A timed interaction says so, otherwise the player holds and wonders.
 	var suffix := " (hold)" if target.hold_seconds > 0.0 else ""

@@ -112,8 +112,9 @@ func _rebuild() -> void:
 		_text.append_text(_format(entry))
 	_text.scroll_following = true
 	if _header != null:
-		_header.text = "Log — %s — %d lines — F3 to close" % [
+		_header.text = "Log — %s — %d lines — %s to close" % [
 			str(_log.call("log_file_path")), lines.size(),
+			InputGlyphs.label_for(InputActions.TOGGLE_LOG_PANEL),
 		]
 
 
