@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MusicCue" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/music_score.gd" id="1_wcsby"]
+[ext_resource type="Script" path="res://resources/audio/music_cue.gd" id="2_po2ga"]
+
+[sub_resource type="Resource" id="Resource_oe717"]
+script = ExtResource("1_wcsby")
+id = &"village_night_score"
+display_name = "Cottage Glow"
+tempo_bpm = 70
+bars = 28
+root = -7
+progression = Array[int]([0, 4, 2, 3])
+melody = Array[int]([0, -1, 1, 2, 4, -1, 3, 2])
+timbre = "soft_pad"
+percussion = 0.05
+
+[resource]
+script = ExtResource("2_po2ga")
+id = &"village_night"
+display_name = "Cottage Glow"
+score = SubResource("Resource_oe717")
+priority = 26
+tags = Array[StringName]([&"village", &"night"])

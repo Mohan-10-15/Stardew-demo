@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MusicCue" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/music_score.gd" id="1_3adr2"]
+[ext_resource type="Script" path="res://resources/audio/music_cue.gd" id="2_tqrba"]
+
+[sub_resource type="Resource" id="Resource_54cae"]
+script = ExtResource("1_3adr2")
+id = &"pond_score"
+display_name = "Water Remembering"
+tempo_bpm = 78
+bars = 28
+root = -10
+progression = Array[int]([0, 4, 3, 1])
+melody = Array[int]([0, 2, -1, 4, 3, -1, 2, 1])
+timbre = "glass_bell"
+percussion = 0.1
+
+[resource]
+script = ExtResource("2_tqrba")
+id = &"pond"
+display_name = "Water Remembering"
+score = SubResource("Resource_54cae")
+priority = 24
+tags = Array[StringName]([&"pond"])

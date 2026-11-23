@@ -589,3 +589,27 @@ check is part of W5.
 
 **Consequence:** physics results may differ from the old default in edge cases;
 the deterministic fixed-step tests in W5 are the contract, not the old numbers.
+
+---
+
+## D23 — Score route: original in-engine generative music
+
+**Status:** settled, 2026-11-23. **Amends** `docs/AUDIO_GUIDE.md` §3's
+"twelve loops" plan, which was never wired into gameplay.
+
+**What forced it.** W6 asks for ≥16 real cues and says today's ten "themes" are
+single synthesized tones that nothing ever starts. The project has no audio
+toolchain installed, and adding binary assets would need licence evidence per
+file (D18) plus a download.
+
+**What was decided.** Render original music in-engine from data: a `MusicScore`
+(tempo, key, chord progression, melody, timbre, leitmotif) becomes a stereo
+`AudioStreamWAV` with ADSR voices, three layers (bass, chord pad, melody) and a
+soft percussion bed. A `MusicDirector` selects cues by priority from location,
+season, time, weather, festival, combat and cutscene state, crossfades, ducks
+under dialogue and rests between phrases. No external file, no new licence.
+
+**Consequence:** cues are bounded by the generator's quality, so the objective
+checks (≥3 pitch classes, ≥2 timbral layers, seam continuity, size budget) are
+the gate — and the owner still marks 👍/👎 in `AUDIO_REVIEW.md`. "Perfect" is a
+taste call this repo cannot make.

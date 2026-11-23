@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MusicCue" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/music_score.gd" id="1_wj06d"]
+[ext_resource type="Script" path="res://resources/audio/music_cue.gd" id="2_jl8ef"]
+
+[sub_resource type="Resource" id="Resource_t407h"]
+script = ExtResource("1_wj06d")
+id = &"farm_summer_score"
+display_name = "Long Afternoon"
+tempo_bpm = 104
+bars = 28
+root = -5
+progression = Array[int]([0, 1, 4, 3])
+melody = Array[int]([4, 3, 2, -1, 1, 2, 4, 3])
+timbre = "flute"
+percussion = 0.32
+
+[resource]
+script = ExtResource("2_jl8ef")
+id = &"farm_summer"
+display_name = "Long Afternoon"
+score = SubResource("Resource_t407h")
+priority = 20
+tags = Array[StringName]([&"farm", &"summer"])

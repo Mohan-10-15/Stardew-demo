@@ -85,6 +85,7 @@ const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
 @export var load_collections: bool = true
 @export var load_valley_memory: bool = true
 @export var load_voxel: bool = true
+@export var load_music: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -143,6 +144,7 @@ var heartstone: HeartstoneState = null
 var valley_memory: ValleyMemory = null
 var voxel_service: VoxelService = null
 var deep_mines: DeepMines = null
+var music_director: MusicDirector = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -210,6 +212,8 @@ func _boot() -> void:
 	add_child(device_monitor)
 	if load_audio:
 		_spawn_audio_manager()
+	if load_music:
+		_spawn_music_director()
 	if load_cutscenes:
 		_spawn_cutscene_director()
 	# Between world and player: it needs the world's grid to attach, and the
@@ -343,6 +347,8 @@ func _enter_title() -> void:
 		return
 	GameState.set_phase(GameState.Phase.TITLE)
 	GameState.set_paused(true)
+	if music_director != null:
+		music_director.call("set_context", {"menu": true})
 	if title_screen.has_method("show_title"):
 		title_screen.call("show_title")
 	else:
@@ -372,6 +378,8 @@ func _on_continue_game() -> void:
 		title_screen.visible = false
 	GameState.set_paused(false)
 	GameState.set_phase(GameState.Phase.PLAYING)
+	if music_director != null:
+		music_director.call("set_context", {"menu": false, "location": "farm"})
 	if player != null:
 		player.call("set_mouse_captured", true)
 	Log.info("Main", "Continued from save")
@@ -439,6 +447,37 @@ func _spawn_ui_accessibility() -> void:
 	ui_accessibility.name = "UiAccessibility"
 	add_child(ui_accessibility)
 	Log.info("UI", "Accessibility ready (scale %s)" % str(Config.settings.ui_scale))
+
+
+func _spawn_music_director() -> void:
+	music_director = MusicDirector.new()
+	music_director.name = "MusicDirector"
+	add_child(music_director)
+	EventBus.season_changed.connect(_on_music_season)
+	EventBus.time_hour_changed.connect(_on_music_hour)
+	EventBus.mine_entered.connect(func() -> void:
+		music_director.call("set_context", {"location": "mine", "deep": true}))
+	EventBus.game_paused.connect(func(paused: bool) -> void:
+		if music_director == null:
+			return
+		if paused:
+			music_director.call("duck", true)
+		else:
+			music_director.call("duck", false))
+	Log.info("Audio", "Music director ready")
+
+
+func _on_music_season(season: int) -> void:
+	if music_director == null:
+		return
+	var names := ["spring", "summer", "autumn", "winter"]
+	music_director.call("set_context", {"season": names[clampi(season, 0, 3)]})
+
+
+func _on_music_hour(hour: int) -> void:
+	if music_director == null:
+		return
+	music_director.call("set_context", {"night": hour >= 20 or hour < 6})
 
 
 func _spawn_audio_manager() -> void:
