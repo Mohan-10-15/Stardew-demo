@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_vse3h"]
+
+[resource]
+script = ExtResource("1_vse3h")
+id = &"what_is_this"
+title = "What is Hollowbrook Hollow?"
+body = "Hollowbrook Hollow is a cozy 3D farming and life simulator. The ash-fall took the old road and the valley's Heartstone. You inherit a burnt-out farm, work the soil back to life, and befriend the twelve people who stayed. The valley remembers you."
+icon = "heart"

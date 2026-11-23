@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_ds8a4"]
+
+[resource]
+script = ExtResource("1_ds8a4")
+id = &"your_goal"
+title = "Your goal"
+body = "Collections across Fields, Waters, Stone, Table, Wilds and Hearts call the six lost Embers home. As the Heartstone mends, paths and festivals open and the seasons settle. The last Ember needs something no list can measure: being known. Afterwards the valley is yours to keep playing."
+icon = "star"
+order = 3

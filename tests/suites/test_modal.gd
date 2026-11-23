@@ -281,7 +281,10 @@ func _release_tree() -> void:
 ## genuinely held on `Input`, not merely passed to a function.
 func _drive_move(_player: Node, down: bool, actions: Array[StringName] = []) -> void:
 	if down and actions.is_empty():
-		actions = [&"move_left", &"move_right", &"move_forward", &"move_back"]
+		# One direction, not all four: opposing actions cancel out, which made
+		# this suite's setup flaky and sometimes proved nothing at all (D10 —
+		# the test was wrong, so the test was fixed, not the assertion weakened).
+		actions = [&"move_forward"]
 	for action: StringName in [&"move_left", &"move_right", &"move_forward", &"move_back"]:
 		if not down or not actions.has(action):
 			Input.action_release(action)

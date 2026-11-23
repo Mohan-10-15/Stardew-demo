@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_k8tio"]
+
+[resource]
+script = ExtResource("1_k8tio")
+id = &"a_day"
+title = "A day in the valley"
+body = "A day runs 06:00 to 02:00 and takes about ten real minutes. Four seasons of 28 days make a year. Every swing, step and conversation spends energy — choosing what to do with a finite day is the game. At 02:00 you collapse and are carried home; sleeping in your own bed is gentler."
+icon = "clock"
+order = 2

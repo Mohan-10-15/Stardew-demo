@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="CreditsData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/credit_entry.gd" id="1_x64is"]
+[ext_resource type="Script" path="res://resources/ui/credits_data.gd" id="2_v8d76"]
+
+[sub_resource type="Resource" id="Resource_3ccs2"]
+script = ExtResource("1_x64is")
+label = "Hollowbrook Hollow"
+detail = "An original game by the repository owner."
+
+[sub_resource type="Resource" id="Resource_st3t0"]
+script = ExtResource("1_x64is")
+label = "Godot Engine 4.5"
+detail = "MIT licence — https://godotengine.org"
+
+[sub_resource type="Resource" id="Resource_d1waf"]
+script = ExtResource("1_x64is")
+label = "KayKit Adventurers Character Pack"
+detail = "CC0 1.0 — https://kaylousberg.itch.io/kaykit-adventurers"
+
+[sub_resource type="Resource" id="Resource_ic6pq"]
+script = ExtResource("1_x64is")
+label = "Quaternius Farm Buildings Pack"
+detail = "CC0 1.0 — https://quaternius.com/packs/farmbuildings.html"
+
+[sub_resource type="Resource" id="Resource_b1s7i"]
+script = ExtResource("1_x64is")
+label = "Quaternius Ultimate Nature Pack"
+detail = "CC0 1.0 — https://quaternius.com/packs/ultimatenature.html"
+
+[sub_resource type="Resource" id="Resource_rxh2v"]
+script = ExtResource("1_x64is")
+label = "Original audio"
+detail = "Synthesised in-engine by AudioSynth; no third-party sound files."
+
+[sub_resource type="Resource" id="Resource_koqaq"]
+script = ExtResource("1_x64is")
+label = "Original art overlays"
+detail = "Anime faces, toon materials, clouds and voxel textures generated in code."
+
+[resource]
+script = ExtResource("2_v8d76")
+entries = Array[ExtResource("1_x64is")]([SubResource("Resource_3ccs2"), SubResource("Resource_st3t0"), SubResource("Resource_d1waf"), SubResource("Resource_ic6pq"), SubResource("Resource_b1s7i"), SubResource("Resource_rxh2v"), SubResource("Resource_koqaq")])

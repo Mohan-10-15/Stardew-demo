@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_kja64"]
+
+[resource]
+script = ExtResource("1_kja64")
+id = &"who_stayed"
+title = "Who stayed"
+body = "Twelve neighbours kept the hollow alive through the ash: Mira, Bram, Fen, Odette, Sable, Aurel, Lyra, Cassia, Elke, Garrick, Halda and Dorian. Each has a want, a fear, a birthday and a gift they love. Learn their stories in the journal and at the Heartstone's Mending."
+icon = "people"
+order = 4

@@ -16,7 +16,9 @@ func _initialize() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.name = "Backdrop"
-	backdrop.color = Color(0.04, 0.07, 0.12, 0.92)
+	# Translucent so the real valley and its slow camera drift stay visible
+	# behind the menu (W1.5). Do not build a second world for a title screen.
+	backdrop.color = Color(0.04, 0.07, 0.12, 0.58)
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
@@ -24,13 +26,19 @@ func _initialize() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(420, 260)
+	# Fixed centred rect: a growing PanelContainer keeps its top at the anchor
+	# and pushes the last buttons off the bottom of a 720p window.
+	panel.offset_left = -250.0
+	panel.offset_right = 250.0
+	panel.offset_top = -320.0
+	panel.offset_bottom = 320.0
+	panel.custom_minimum_size = Vector2(500, 640)
 	panel.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(panel)
 
 	var column := VBoxContainer.new()
 	column.name = "Column"
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", 7)
 	panel.add_child(column)
 
 	var title := Label.new()
@@ -49,6 +57,11 @@ func _initialize() -> void:
 
 	column.add_child(_button("NewGame", "New Game"))
 	column.add_child(_button("Continue", "Continue"))
+	column.add_child(_button("About", "About the Game"))
+	column.add_child(_button("HowToPlay", "How to Play"))
+	column.add_child(_button("Settings", "Settings"))
+	column.add_child(_button("Credits", "Credits"))
+	column.add_child(_button("Quit", "Quit"))
 
 	var hint := Label.new()
 	hint.name = "Hint"

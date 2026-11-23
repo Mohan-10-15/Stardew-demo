@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_6gqwx"]
+
+[resource]
+script = ExtResource("1_6gqwx")
+id = &"how_to_play"
+title = "How to Play"
+body = "Move with [b]WASD[/b], look with the mouse. [b]E[/b] talks, picks up and opens; [b]left click[/b] uses the held tool and [b]right click[/b] places or cancels. [b]Space[/b] jumps, [b]1-9[/b] or the wheel swaps tools, [b]Esc[/b] goes back. On a pad: left stick, right stick, [b]X[/b] interact, [b]RT[/b] use, [b]LT[/b] alt-use, [b]A[/b] jump, [b]Start[/b] menu. F2 opens the full remap and accessibility screen."
+icon = "pad"
+order = 5

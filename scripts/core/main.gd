@@ -28,6 +28,8 @@ const CraftingPanelScene := "res://scenes/ui/crafting_panel.tscn"
 const MachinePanelScene := "res://scenes/ui/machine_panel.tscn"
 const BuildingPanelScene := "res://scenes/ui/building_panel.tscn"
 const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
+const AboutPanelScene := "res://scenes/ui/about_panel.tscn"
+const CreditsPanelScene := "res://scenes/ui/credits_panel.tscn"
 
 @export var world_scene_path: String = WorldScene
 @export var player_scene_path: String = PlayerScene
@@ -74,6 +76,8 @@ const SettingsPanelScene := "res://scenes/ui/settings_panel.tscn"
 @export var load_crafting_panel: bool = true
 @export var building_panel_scene_path: String = BuildingPanelScene
 @export var load_building_panel: bool = true
+@export var about_panel_scene_path: String = AboutPanelScene
+@export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
 @export var load_settings_panel: bool = true
 @export var load_accessibility: bool = true
@@ -121,6 +125,8 @@ var combat_hud: CanvasLayer = null
 var building_service: BuildingService = null
 var building_panel: CanvasLayer = null
 var settings_panel: CanvasLayer = null
+var about_panel: CanvasLayer = null
+var credits_panel: CanvasLayer = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -254,6 +260,10 @@ func _boot() -> void:
 		_spawn_overlay(building_panel_scene_path, "building panel", "building_panel")
 	if load_settings_panel:
 		_spawn_overlay(settings_panel_scene_path, "settings panel", "settings_panel")
+	if load_settings_panel:
+		_spawn_overlay(about_panel_scene_path, "about panel", "about_panel")
+	if load_settings_panel:
+		_spawn_overlay(credits_panel_scene_path, "credits panel", "credits_panel")
 	if load_machine_panel:
 		_spawn_overlay(machine_panel_scene_path, "machine panel", "machine_panel")
 	if load_crafting_panel:
@@ -299,7 +309,10 @@ func _enter_title() -> void:
 		return
 	GameState.set_phase(GameState.Phase.TITLE)
 	GameState.set_paused(true)
-	title_screen.visible = true
+	if title_screen.has_method("show_title"):
+		title_screen.call("show_title")
+	else:
+		title_screen.visible = true
 	if title_screen.has_method("refresh"):
 		title_screen.call("refresh")
 	if not title_screen.new_game_requested.is_connected(_on_new_game):

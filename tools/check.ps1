@@ -12,10 +12,11 @@ pwsh -File tools/check.ps1
 #>
 param(
     [switch]$SkipImport,
-    # 120s was enough until it was not: the suite measured 120.6s at 509 cases,
-    # which made the tests stage a coin flip rather than a check. 180 leaves
-    # headroom without letting a wedged process waste much more than a minute.
-    [int]$TimeoutSeconds = 180
+    # 120s was enough until it was not (120.6s at 509 cases). 180 then covered
+    # 628 cases. Update 2's front-door suites (title, controls, About, credits)
+    # boot real UI scenes repeatedly; at 632 cases the tests stage measured
+    # ~210s, so the default is raised with that measurement rather than skipped.
+    [int]$TimeoutSeconds = 300
 )
 
 $ErrorActionPreference = 'Stop'

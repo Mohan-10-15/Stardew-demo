@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AboutPage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/ui/about_page.gd" id="1_2ia5h"]
+
+[resource]
+script = ExtResource("1_2ia5h")
+id = &"what_you_do"
+title = "What you'll do"
+body = "[b]Farm & forage[/b] — till, plant, water, harvest.
+[b]Fish & cook[/b] — cast at the pond, turn catches into meals.
+[b]Mine & build with blocks[/b] — dig the Deep Mines, build in the Builders' Plot.
+[b]Befriend twelve villagers[/b] — gifts, festivals, romance.
+[b]Celebrate festivals[/b] — four seasons of reasons to gather.
+[b]Restore the Heartstone[/b] — the valley's long road home."
+icon = "seed"
+order = 1
