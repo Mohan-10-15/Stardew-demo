@@ -38,6 +38,17 @@ cricket, cave drip) chosen by location. Four footstep surfaces now have three
 recorded variants each plus pitch jitter. `tests/suites/test_ambience.gd` pins
 the layer selection and that every id has a definition.
 
+## Numeric listening substitute
+
+Because there is no audible device, `tests/suites/test_audio_signal.gd` checks
+the rendered waveform instead of the playback: all 17 cues are non-silent,
+genuinely stereo, distinct from one another, below clipping, loop-bounded and
+fade-seamed. A first draft of the seam assertion measured the full 20 ms fade
+window and failed every cue — the correct property is that the *boundary
+samples* are near zero, measured over 2 ms. That distinction is now documented
+in the test. This proves the signal is well formed; it cannot prove the music
+sounds good.
+
 ## Honest limits
 
 - This machine has **no audible output device**. The windowed playtest verifies

@@ -448,10 +448,43 @@ project path (including a warning about the stale copy in
 `C:\mohan\projects`). `tools/release_check.gd` prints a one-shot readiness
 report — project root, EXE, launcher source, portable engine, C# assemblies,
 licence document, generated scene and the absence of cheat actions — and
-`tests/suites/test_release.gd` (5 cases) enforces those checks in CI. The two
-export rows stay **unticked**: no export templates are installed on this
-machine and there is no network to fetch them, so neither a Godot-exported
-Windows build nor a web build can be produced or verified here. The supported
-Windows distribution is the `Hollowbrook.exe` launcher plus the bundled portable
-engine, which is verified on this machine. No claim is made about a clean
-machine the project has never been run on.")
+`tests/suites/test_release.gd` (6 cases) enforces those checks in CI. The two
+export rows are now **ticked**: Godot 4.5 export templates were installed, and
+both `build/Hollowbrook.exe` (Windows Desktop, PCK embedded) and
+`build/web/index.html` (Web) are built from the committed `export_presets.cfg`
+and rechecked after the last content change in
+`docs/evidence/update2/w8-final-export-recheck.log`. The exported EXE boots
+headlessly with no content errors. A fresh-clone run is recorded at
+`docs/evidence/update2/w8-final-fresh-clone.log`. No claim is made about a
+second, unseen machine.
+
+---
+
+## Update 2 — alternative verification (things I cannot perceive directly)
+
+The brief asks for a perfect game and for alternative methods when something is
+inaccessible. Three inputs are genuinely inaccessible here: there is no audible
+output device, no physical gamepad, and no human to approve taste. I did not
+tick those human-queue items. I did replace the *unknowns* with machine checks:
+
+- **Score (no speakers).** `tests/suites/test_audio_signal.gd` renders all 17
+  cues to PCM and asserts non-silence, real stereo spread, distinct waveforms,
+  no clipping, correct loop bounds and a faded loop seam. This proves the
+  signal is well formed; whether it is *beautiful* is still a human call.
+- **Gamepad (no controller).** `tests/suites/test_gamepad.gd` drives Godot's
+  Input singleton with synthetic joypad button and analog-axis events and
+  asserts the game's real actions press and release. Ergonomics/feel remain a
+  human call.
+- **Cast look (no art director).** `art_review_cast.png` and
+  `art_review_face_moods.png` are rendered from the exact textures used in
+  game and were inspected in-window: 12 distinct palettes and five visibly
+  distinct moods (neutral, happy, sad, angry, blink). Whether the style is the
+  *right* style remains a human call.
+- **Story/About copy (no editor).** Structure and rendering are covered by
+  `test_story.gd` and the title/About screenshots. The prose itself is still
+  taste, not measurement.
+
+All of the above sit on top of the normal gate: **698/698 tests**, zero script
+errors, csharp/import/tests/boot OK. The 12-actor Mending case is measured in
+`docs/evidence/update2/w7-perf-matrix.log` rather than inferred from the
+festival number.

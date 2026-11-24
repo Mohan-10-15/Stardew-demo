@@ -45,8 +45,37 @@ func _run() -> void:
 	bus.mine_entered.emit()
 	await _measure("deep mines", 180)
 	bus.festival_ended.emit(&"bloom_day")
+
+	# The Mending: all twelve villagers gathered at the plinth with the
+	# cutscene actually playing. This is the heaviest cutscene case in the
+	# brief, so it gets measured rather than assumed from the festival number.
+	# Fetch via the group and a dynamic call: naming the Npc class here would
+	# pull npc.gd into this --script compile and hit the autoload/Log trap.
+	var managers := get_nodes_in_group(&"npc_service")
+	if managers.is_empty():
+		printerr("[perf] no npc_service group")
+		quit(1)
+		return
+	var npcs: Array = managers[0].call("npcs")
+	if npcs.size() != 12:
+		printerr("[perf] expected 12 villagers, found %d" % npcs.size())
+		quit(1)
+		return
+	for i: int in range(npcs.size()):
+		var angle := TAU * float(i) / float(npcs.size())
+		npcs[i].global_position = Vector3(
+			35.0 + cos(angle) * 4.0, 1.2, 5.0 + sin(angle) * 4.0)
+	var director: Node = _main.get("cutscene_director")
+	if director == null or not bool(director.call("play", &"the_mending")):
+		printerr("[perf] the_mending did not start")
+		quit(1)
+		return
+	await _measure("the mending x12", 180)
+	director.call("skip")
 	print("[perf] PASS")
 	quit(0)
+
+
 
 
 func _measure(label: String, frames: int) -> void:
