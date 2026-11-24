@@ -41,6 +41,8 @@ const TOGGLE_LOG_PANEL := &"toggle_log_panel"
 ## Opens the settings and accessibility panel. F2: away from the movement and
 ## hotbar rows, and free of the browser's F1 help key.
 const SETTINGS := &"settings"
+## Jukebox overlay — replays cues the player has already heard.
+const JUKEBOX := &"jukebox"
 
 ## Aggregate save/load. Deliberately plain keys rather than a menu: the menu
 ## comes with its own milestone, and these make the versioned save reachable

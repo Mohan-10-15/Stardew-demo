@@ -9,6 +9,7 @@ const BUS := "Music"
 const DUCK_DB := -6.0
 
 signal cue_changed(cue_id: StringName)
+signal now_playing(title: String)
 
 var cues: Dictionary = {}
 var context: Dictionary = {}
@@ -62,9 +63,15 @@ func _process(delta: float) -> void:
 	var cue: MusicCue = cues.get(current_id)
 	if cue == null:
 		return
-	if _rest_enabled and _played_for >= cue.min_play_seconds:
+	# Music frequency: Always disables the rest, Often uses the authored rest,
+	# Sometimes doubles it — ambience gets more room to breathe.
+	var rest_seconds := cue.rest_seconds
+	match Config.settings.music_frequency:
+		0: rest_seconds = 0.0
+		2: rest_seconds *= 2.0
+	if rest_seconds > 0.0 and _played_for >= cue.min_play_seconds:
 		_resting_for += delta
-		if _resting_for >= cue.rest_seconds:
+		if _resting_for >= rest_seconds:
 			_resting_for = 0.0
 			_played_for = 0.0
 			_fade_out(0.6)
@@ -142,7 +149,12 @@ func _switch(id: StringName) -> void:
 	_played_for = 0.0
 	_resting_for = 0.0
 	history.append(id)
+	if not Config.settings.jukebox_unlocked.has(id):
+		Config.settings.jukebox_unlocked.append(id)
+		Config.save_config()
 	cue_changed.emit(id)
+	if Config.settings.now_playing_toast:
+		now_playing.emit(String(cue.display_name))
 
 
 func _fade(player: AudioStreamPlayer, target_db: float, seconds: float) -> void:
@@ -168,6 +180,20 @@ func duck(on: bool) -> void:
 	# Duck the music bus itself relative to its normal gain.
 	var db := DUCK_DB if on else 0.0
 	AudioServer.set_bus_volume_db(index, db)
+
+
+## Jukebox: play any cue the player has already heard, or any cue in dev.
+func play_cue(id: StringName) -> bool:
+	if not cues.has(id):
+		return false
+	if not Config.settings.jukebox_unlocked.has(id) and not OS.is_debug_build():
+		return false
+	_switch(id)
+	return true
+
+
+func unlocked_cues() -> Array[StringName]:
+	return Config.settings.jukebox_unlocked.duplicate()
 
 
 static func find(start: Node) -> MusicDirector:

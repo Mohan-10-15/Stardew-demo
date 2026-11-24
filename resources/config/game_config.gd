@@ -25,10 +25,24 @@ extends Resource
 @export var ambient_volume: float = 0.8
 @export var ui_volume: float = 0.9
 @export var muted: bool = false
+## Always / Often / Sometimes: how much the score plays vs ambience only.
+@export_enum("Always", "Often", "Sometimes") var music_frequency: int = 1
+## Show a short "Now playing" toast when the cue changes.
+@export var now_playing_toast: bool = true
 
 @export_group("Gameplay")
 @export var camera_switch_key_action: StringName = &"toggle_camera_mode"
 @export var show_debug_overlay: bool = false
+
+@export_group("Graphics")
+## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision
+## a player makes is "how much am I willing to pay", and low/high with nothing between
+## forces someone with a middling machine to pick a side and then live with it.
+##
+## Read by [code]scripts/world/graphics_quality.gd[/code], which owns what each tier
+## actually turns on. Nothing else may read it: a second place that decides what "high"
+## means is a second place to forget to update.
+@export_enum("Low", "Medium", "High") var graphics_quality: int = 2
 
 @export_group("Accessibility")
 ## Multiplier applied to every label and button font size. 1.0 is the shipped
@@ -52,15 +66,8 @@ extends Resource
 ## Optional 60-90 ms freeze on a landed hit.
 @export var hit_stop: bool = true
 
-@export_group("Graphics")
-## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision
-## a player makes is "how much am I willing to pay", and low/high with nothing between
-## forces someone with a middling machine to pick a side and then live with it.
-##
-## Read by [code]scripts/world/graphics_quality.gd[/code], which owns what each tier
-## actually turns on. Nothing else may read it: a second place that decides what "high"
-## means is a second place to forget to update.
-@export_enum("Low", "Medium", "High") var graphics_quality: int = 2
+## Jukebox: cue ids the player has heard, in discovery order.
+@export var jukebox_unlocked: Array[StringName] = []
 
 
 func duplicate_config() -> GameConfig:

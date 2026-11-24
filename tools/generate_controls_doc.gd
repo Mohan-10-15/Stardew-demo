@@ -10,7 +10,7 @@ const OUTPUT := "res://docs/CONTROLS.md"
 const KEYBOARD_ONLY: Array[StringName] = [
 	InputActions.CRAFT, InputActions.BUILD, InputActions.BUILDINGS,
 	InputActions.SETTINGS, InputActions.SAVE_GAME, InputActions.LOAD_GAME,
-	InputActions.TOGGLE_LOG_PANEL,
+	InputActions.TOGGLE_LOG_PANEL, InputActions.JUKEBOX,
 	InputActions.HOTBAR_1, InputActions.HOTBAR_2, InputActions.HOTBAR_3,
 	InputActions.HOTBAR_4, InputActions.HOTBAR_5, InputActions.HOTBAR_6,
 	InputActions.HOTBAR_7, InputActions.HOTBAR_8, InputActions.HOTBAR_9,

@@ -41,6 +41,14 @@ func load_config() -> void:
 	settings.ambient_volume = float(cfg.get_value("audio", "ambient_volume", settings.ambient_volume))
 	settings.ui_volume = float(cfg.get_value("audio", "ui_volume", settings.ui_volume))
 	settings.muted = bool(cfg.get_value("audio", "muted", settings.muted))
+	settings.music_frequency = clampi(
+		int(cfg.get_value("audio", "music_frequency", settings.music_frequency)), 0, 2
+	)
+	settings.now_playing_toast = bool(cfg.get_value(
+		"audio", "now_playing_toast", settings.now_playing_toast
+	))
+	var unlocked: Variant = cfg.get_value("audio", "jukebox_unlocked", [])
+	settings.jukebox_unlocked = _string_names(unlocked)
 	settings.camera_switch_key_action = StringName(cfg.get_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action)))
 	settings.show_debug_overlay = bool(cfg.get_value("gameplay", "show_debug_overlay", settings.show_debug_overlay))
 	settings.graphics_quality = clampi(
@@ -81,6 +89,9 @@ func save_config() -> void:
 	cfg.set_value("audio", "ambient_volume", settings.ambient_volume)
 	cfg.set_value("audio", "ui_volume", settings.ui_volume)
 	cfg.set_value("audio", "muted", settings.muted)
+	cfg.set_value("audio", "music_frequency", settings.music_frequency)
+	cfg.set_value("audio", "now_playing_toast", settings.now_playing_toast)
+	cfg.set_value("audio", "jukebox_unlocked", settings.jukebox_unlocked)
 	cfg.set_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action))
 	cfg.set_value("gameplay", "show_debug_overlay", settings.show_debug_overlay)
 	cfg.set_value("graphics", "graphics_quality", settings.graphics_quality)
@@ -154,6 +165,12 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.ui_volume = value
 				"muted":
 					settings.muted = value
+				"music_frequency":
+					settings.music_frequency = clampi(int(value), 0, 2)
+				"now_playing_toast":
+					settings.now_playing_toast = bool(value)
+				"jukebox_unlocked":
+					settings.jukebox_unlocked = _string_names(value)
 		&"gameplay":
 			match key:
 				"camera_switch_key_action":
@@ -197,6 +214,14 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 	apply_settings()
 	EventBus.config_changed.emit(section)
 	EventBus.settings_applied.emit()
+
+
+static func _string_names(value: Variant) -> Array[StringName]:
+	var out: Array[StringName] = []
+	if value is Array:
+		for item: Variant in (value as Array):
+			out.append(StringName(String(item)))
+	return out
 
 
 ## Convenience accessors so gameplay code does not reach into `.settings`.

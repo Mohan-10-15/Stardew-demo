@@ -5,7 +5,7 @@ extends TestSuite
 const KEYBOARD_ONLY: Array[StringName] = [
 	InputActions.CRAFT, InputActions.BUILD, InputActions.BUILDINGS,
 	InputActions.SETTINGS, InputActions.SAVE_GAME, InputActions.LOAD_GAME,
-	InputActions.TOGGLE_LOG_PANEL,
+	InputActions.TOGGLE_LOG_PANEL, InputActions.JUKEBOX,
 	# On a pad the nine slots are reached with D-pad left/right (next/prev);
 	# individual digit shortcuts are keyboard conveniences.
 	InputActions.HOTBAR_1, InputActions.HOTBAR_2, InputActions.HOTBAR_3,

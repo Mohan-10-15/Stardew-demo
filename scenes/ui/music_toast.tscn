@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/music_toast.gd" id="1_5axur"]
+
+[node name="MusicToast" type="CanvasLayer"]
+script = ExtResource("1_5axur")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = -64.0
+offset_right = 190.0
+offset_bottom = -22.0
+mouse_filter = 2
+
+[node name="Text" type="Label" parent="Panel"]
+layout_mode = 2
+horizontal_alignment = 1

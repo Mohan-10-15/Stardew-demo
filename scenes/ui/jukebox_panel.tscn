@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/jukebox_panel.gd" id="1_3eo8i"]
+
+[node name="JukeboxPanel" type="CanvasLayer"]
+script = ExtResource("1_3eo8i")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+mouse_filter = 2
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Heading" type="Label" parent="Panel/Column"]
+layout_mode = 2
+text = "Jukebox — cues you have heard (F6 to close)"
+
+[node name="Rows" type="VBoxContainer" parent="Panel/Column"]
+layout_mode = 2

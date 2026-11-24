@@ -21,6 +21,15 @@ percussion bed. No third-party audio file is used.
 | mending | The Mending | restore all six Embers at the plinth | — | leitmotif resolves here |
 | credits | credits roll | finish the story | — | — |
 
+## UX
+
+A "Now playing" toast shows the cue title for 3 s when it changes (off via
+`audio/now_playing_toast`). The jukebox opens on F6 and offers only cues the
+player has already heard, tracked in `audio/jukebox_unlocked`; discovered cues
+survive a config reload. `docs/evidence/update2/w6-jukebox.log` verifies the
+unlock list and overlay in a window. Music frequency is Always / Often /
+Sometimes — "Sometimes" doubles the ambience-only rest.
+
 ## Honest limits
 
 - This machine has **no audible output device**. The windowed playtest verifies

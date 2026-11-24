@@ -24,7 +24,8 @@ func teardown() -> void:
 
 func get_cases() -> Array[StringName]:
 	return [&"at_least_sixteen_valid_cues", &"cues_render_real_stereo_audio",
-		&"no_cue_is_a_single_tone", &"director_follows_game_state"]
+		&"no_cue_is_a_single_tone", &"director_follows_game_state",
+		&"jukebox_unlocks_heard_cues"]
 
 
 func _cues() -> Dictionary:
@@ -108,4 +109,15 @@ func _run_async(case: StringName) -> Dictionary:
 			if _director.current_id != &"cutscene":
 				return fail(case, "cutscene chose %s" % _director.current_id)
 			return succeeded(case, "menu -> farm/winter -> combat -> cutscene")
+		&"jukebox_unlocks_heard_cues":
+			_director = MusicDirector.new()
+			root().add_child(_director)
+			await tree.process_frame
+			_director.set_context({"menu": true})
+			var unlocked: Array = _director.call("unlocked_cues")
+			if not unlocked.has(&"title"):
+				return fail(case, "heard cue was not unlocked")
+			if not bool(_director.call("play_cue", &"title")):
+				return fail(case, "unlocked cue could not be replayed")
+			return succeeded(case, "title unlocked and replayable")
 	return fail(case, "no case implementation for %s" % case)

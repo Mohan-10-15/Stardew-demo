@@ -50,6 +50,7 @@ gamepad focus.
 | `interact` | E | Btn 2 |
 | `inventory` | Tab | Btn 3 |
 | `journal` | J | Btn 4 |
+| `jukebox` | F6 | keyboard-only |
 | `jump` | Space | Btn 0 |
 | `load_game` | F9 | keyboard-only |
 | `look_down` | — | Axis 3 + |
@@ -82,6 +83,7 @@ gamepad focus.
 - `save_game` — reachable on a pad through menu focus
 - `load_game` — reachable on a pad through menu focus
 - `toggle_log_panel` — reachable on a pad through menu focus
+- `jukebox` — reachable on a pad through menu focus
 - `hotbar_1` — reached on a pad with D-pad left / right (next / prev slot)
 - `hotbar_2` — reached on a pad with D-pad left / right (next / prev slot)
 - `hotbar_3` — reached on a pad with D-pad left / right (next / prev slot)

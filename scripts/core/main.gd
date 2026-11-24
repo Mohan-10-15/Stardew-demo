@@ -32,6 +32,8 @@ const AboutPanelScene := "res://scenes/ui/about_panel.tscn"
 const CreditsPanelScene := "res://scenes/ui/credits_panel.tscn"
 const TutorialHudScene := "res://scenes/ui/tutorial_hud.tscn"
 const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
+const JukeboxPanelScene := "res://scenes/ui/jukebox_panel.tscn"
+const MusicToastScene := "res://scenes/ui/music_toast.tscn"
 # Collections and the Heartstone spine are pure logic spawned by main.
 
 @export var world_scene_path: String = WorldScene
@@ -81,6 +83,8 @@ const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
 @export var load_building_panel: bool = true
 @export var tutorial_hud_scene_path: String = TutorialHudScene
 @export var journal_panel_scene_path: String = JournalPanelScene
+@export var jukebox_panel_scene_path: String = JukeboxPanelScene
+@export var music_toast_scene_path: String = MusicToastScene
 @export var load_tutorial: bool = true
 @export var load_collections: bool = true
 @export var load_valley_memory: bool = true
@@ -140,6 +144,7 @@ var about_panel: CanvasLayer = null
 var credits_panel: CanvasLayer = null
 var tutorial_service: TutorialService = null
 var journal_panel: CanvasLayer = null
+var jukebox_panel: CanvasLayer = null
 var collection_service: CollectionService = null
 var heartstone: HeartstoneState = null
 var valley_memory: ValleyMemory = null
@@ -314,6 +319,9 @@ func _boot() -> void:
 	if load_tutorial:
 		_spawn_overlay(tutorial_hud_scene_path, "tutorial HUD", "tutorial_hud")
 	_spawn_overlay(journal_panel_scene_path, "journal panel", "journal_panel")
+	_spawn_overlay(jukebox_panel_scene_path, "jukebox panel", "jukebox_panel")
+	if load_music:
+		_spawn_overlay(music_toast_scene_path, "music toast", "music_toast")
 	if load_machine_panel:
 		_spawn_overlay(machine_panel_scene_path, "machine panel", "machine_panel")
 	if load_crafting_panel:
