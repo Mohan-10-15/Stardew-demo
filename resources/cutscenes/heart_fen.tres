@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_o25oc"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_t3l0v"]
+
+[sub_resource type="Resource" id="Resource_yn7l4"]
+script = ExtResource("1_o25oc")
+kind = &"actor_emote"
+params = {
+&"mood": &"shy",
+&"npc": &"fen"
+}
+skip_mode = 1
+seconds = 1.6
+
+[sub_resource type="Resource" id="Resource_4oasy"]
+script = ExtResource("1_o25oc")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "Fen: I left wood by your door. Do not make a thing of it."
+
+[sub_resource type="Resource" id="Resource_qla02"]
+script = ExtResource("1_o25oc")
+kind = &"flag"
+params = {
+&"name": &"heart_fen_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_t3l0v")
+id = &"heart_fen"
+events = Array[ExtResource("1_o25oc")]([SubResource("Resource_yn7l4"), SubResource("Resource_4oasy"), SubResource("Resource_qla02")])
+title = "Fen — Four Hearts"

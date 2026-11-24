@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_ljjd7"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_d7msa"]
+
+[sub_resource type="Resource" id="Resource_b6dss"]
+script = ExtResource("1_ljjd7")
+kind = &"fade"
+params = {
+&"alpha": 0.7
+}
+skip_mode = 1
+seconds = 0.3
+
+[sub_resource type="Resource" id="Resource_c2ojc"]
+script = ExtResource("1_ljjd7")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 3.0
+text = "A warm light lifts out of the orchard and drifts toward the empty plinth."
+
+[sub_resource type="Resource" id="Resource_0bf8h"]
+script = ExtResource("1_ljjd7")
+kind = &"particle"
+params = {
+&"kind_of": "ember"
+}
+skip_mode = 1
+
+[sub_resource type="Resource" id="Resource_agtov"]
+script = ExtResource("1_ljjd7")
+kind = &"flag"
+params = {
+&"name": &"first_ember_seen",
+&"value": true
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_6i8nq"]
+script = ExtResource("1_ljjd7")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 1
+seconds = 0.4
+
+[resource]
+script = ExtResource("2_d7msa")
+id = &"first_ember"
+events = Array[ExtResource("1_ljjd7")]([SubResource("Resource_b6dss"), SubResource("Resource_c2ojc"), SubResource("Resource_0bf8h"), SubResource("Resource_agtov"), SubResource("Resource_6i8nq")])
+title = "The First Ember"

@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_c0xeh"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_d6q0y"]
+
+[sub_resource type="Resource" id="Resource_01b5i"]
+script = ExtResource("1_c0xeh")
+kind = &"fade"
+params = {
+&"alpha": 1.0
+}
+skip_mode = 1
+seconds = 0.4
+
+[sub_resource type="Resource" id="Resource_fj6oj"]
+script = ExtResource("1_c0xeh")
+kind = &"set_time"
+params = {
+&"hour": 2
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_o1cu4"]
+script = ExtResource("1_c0xeh")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.4
+text = "The lanterns go out one by one. Your boots feel very heavy."
+
+[sub_resource type="Resource" id="Resource_hml06"]
+script = ExtResource("1_c0xeh")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 2
+seconds = 0.6
+
+[sub_resource type="Resource" id="Resource_4yv8l"]
+script = ExtResource("1_c0xeh")
+kind = &"flag"
+params = {
+&"name": &"collapse_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_d6q0y")
+id = &"daily_collapse"
+events = Array[ExtResource("1_c0xeh")]([SubResource("Resource_01b5i"), SubResource("Resource_fj6oj"), SubResource("Resource_o1cu4"), SubResource("Resource_hml06"), SubResource("Resource_4yv8l")])
+title = "Two in the Morning"

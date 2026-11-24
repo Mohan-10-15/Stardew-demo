@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_d42h8"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_ixdhu"]
+
+[sub_resource type="Resource" id="Resource_jrg5x"]
+script = ExtResource("1_d42h8")
+kind = &"letterbox"
+params = {
+&"show": true
+}
+skip_mode = 1
+seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_48wm8"]
+script = ExtResource("1_d42h8")
+kind = &"camera_cut"
+params = {
+&"position": Vector3(35, 2, 5)
+}
+skip_mode = 1
+seconds = 0.6
+
+[sub_resource type="Resource" id="Resource_siahf"]
+script = ExtResource("1_d42h8")
+kind = &"title_card"
+skip_mode = 1
+seconds = 2.4
+text = "The valley recites what you did, and the stone remembers."
+
+[sub_resource type="Resource" id="Resource_tiro5"]
+script = ExtResource("1_d42h8")
+kind = &"actor_emote"
+params = {
+&"mood": &"happy",
+&"npc": &"mira"
+}
+skip_mode = 1
+seconds = 1.8
+
+[sub_resource type="Resource" id="Resource_whmvm"]
+script = ExtResource("1_d42h8")
+kind = &"actor_emote"
+params = {
+&"mood": &"happy",
+&"npc": &"bram"
+}
+skip_mode = 1
+seconds = 1.8
+
+[sub_resource type="Resource" id="Resource_5cphf"]
+script = ExtResource("1_d42h8")
+kind = &"particle"
+params = {
+&"kind_of": "lanterns"
+}
+skip_mode = 1
+seconds = 1.4
+
+[sub_resource type="Resource" id="Resource_3o3bg"]
+script = ExtResource("1_d42h8")
+kind = &"play_music"
+params = {
+&"id": &"mending"
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_22vyc"]
+script = ExtResource("1_d42h8")
+kind = &"flag"
+params = {
+&"name": &"heartstone_mended_seen",
+&"value": true
+}
+skip_mode = 2
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_1rgm6"]
+script = ExtResource("1_d42h8")
+kind = &"story_advance"
+params = {
+&"flag": &"all_embers"
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_wkha5"]
+script = ExtResource("1_d42h8")
+kind = &"letterbox"
+params = {
+&"show": false
+}
+skip_mode = 1
+seconds = 0.1
+
+[resource]
+script = ExtResource("2_ixdhu")
+id = &"the_mending"
+events = Array[ExtResource("1_d42h8")]([SubResource("Resource_jrg5x"), SubResource("Resource_48wm8"), SubResource("Resource_siahf"), SubResource("Resource_tiro5"), SubResource("Resource_whmvm"), SubResource("Resource_5cphf"), SubResource("Resource_3o3bg"), SubResource("Resource_22vyc"), SubResource("Resource_1rgm6"), SubResource("Resource_wkha5")])
+title = "The Mending"

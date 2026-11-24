@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_5cubu"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_1peb2"]
+
+[sub_resource type="Resource" id="Resource_qbuon"]
+script = ExtResource("1_5cubu")
+kind = &"title_card"
+skip_mode = 1
+seconds = 2.0
+text = "The seasons turn, whether the Heartstone is whole or not."
+
+[sub_resource type="Resource" id="Resource_wtt87"]
+script = ExtResource("1_5cubu")
+kind = &"particle"
+params = {
+&"kind_of": "petals"
+}
+skip_mode = 1
+
+[sub_resource type="Resource" id="Resource_mcfod"]
+script = ExtResource("1_5cubu")
+kind = &"set_weather"
+params = {
+&"weather": 0
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_xan4c"]
+script = ExtResource("1_5cubu")
+kind = &"flag"
+params = {
+&"name": &"season_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_1peb2")
+id = &"new_season"
+events = Array[ExtResource("1_5cubu")]([SubResource("Resource_qbuon"), SubResource("Resource_wtt87"), SubResource("Resource_mcfod"), SubResource("Resource_xan4c")])
+title = "A New Season"

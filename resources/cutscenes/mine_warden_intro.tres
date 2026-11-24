@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_j2iub"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_1vuw2"]
+
+[sub_resource type="Resource" id="Resource_ysy6o"]
+script = ExtResource("1_j2iub")
+kind = &"camera_cut"
+params = {
+&"position": Vector3(-12, -38, -34)
+}
+skip_mode = 1
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_yb2ev"]
+script = ExtResource("1_j2iub")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 3.0
+text = "Something vast shifts in the dark. It has guarded the Deep Ember a long time."
+
+[sub_resource type="Resource" id="Resource_psy3k"]
+script = ExtResource("1_j2iub")
+kind = &"flag"
+params = {
+&"name": &"warden_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_1vuw2")
+id = &"mine_warden_intro"
+events = Array[ExtResource("1_j2iub")]([SubResource("Resource_ysy6o"), SubResource("Resource_yb2ev"), SubResource("Resource_psy3k")])
+title = "The Warden"

@@ -62,9 +62,9 @@ const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
 @export var load_log_panel: bool = true
 @export var load_audio: bool = true
 @export var load_cutscenes: bool = true
-## Off by default: a cutscene that pauses the world on boot would change every
-## existing boot assertion. The playtest enables it explicitly.
-@export var play_intro_cutscene: bool = false
+## The intro plays on a fresh New Game (which skips the title). Tests that boot
+## straight into play can set this false on their instance to keep state stable.
+@export var play_intro_cutscene: bool = true
 @export var load_save_service: bool = true
 @export var load_story: bool = true
 @export var title_scene_path: String = TitleScreenScene
@@ -337,7 +337,10 @@ func _boot() -> void:
 	# instead of showing the title a second time.
 	if show_title_on_boot and not get_tree().has_meta(&"skip_title"):
 		_enter_title()
-	elif play_intro_cutscene and cutscene_director != null:
+	# Only a genuine New Game carries skip_title; tests and playtests that boot
+	# straight into play must not be interrupted by the intro modal.
+	elif play_intro_cutscene and cutscene_director != null \
+			and get_tree().has_meta(&"skip_title"):
 		EventBus.cutscene_requested.emit(&"intro")
 	Log.info("Main", "Boot sequence complete")
 

@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_2ynr1"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_ewpdi"]
+
+[sub_resource type="Resource" id="Resource_a16jx"]
+script = ExtResource("1_2ynr1")
+kind = &"fade"
+params = {
+&"alpha": 1.0
+}
+skip_mode = 1
+seconds = 0.4
+
+[sub_resource type="Resource" id="Resource_5yf4u"]
+script = ExtResource("1_2ynr1")
+kind = &"title_card"
+skip_mode = 1
+seconds = 2.2
+text = "Before the ash, the stone kept the seasons gentle."
+
+[sub_resource type="Resource" id="Resource_oacae"]
+script = ExtResource("1_2ynr1")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 3.0
+text = "You remember a hearth that hummed, and a valley that knew your name."
+
+[sub_resource type="Resource" id="Resource_b7584"]
+script = ExtResource("1_2ynr1")
+kind = &"particle"
+params = {
+&"kind_of": "ash"
+}
+skip_mode = 1
+seconds = 1.2
+
+[sub_resource type="Resource" id="Resource_wuxml"]
+script = ExtResource("1_2ynr1")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 1
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_pcgnv"]
+script = ExtResource("1_2ynr1")
+kind = &"flag"
+params = {
+&"name": &"ash_memory_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_ewpdi")
+id = &"ash_memory"
+events = Array[ExtResource("1_2ynr1")]([SubResource("Resource_a16jx"), SubResource("Resource_5yf4u"), SubResource("Resource_oacae"), SubResource("Resource_b7584"), SubResource("Resource_wuxml"), SubResource("Resource_pcgnv")])
+title = "Before the Ash"

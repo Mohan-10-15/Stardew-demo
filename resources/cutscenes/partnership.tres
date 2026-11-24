@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_l2wx0"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_vd6cu"]
+
+[sub_resource type="Resource" id="Resource_ux63m"]
+script = ExtResource("1_l2wx0")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.8
+text = "The farm is yours now. The valley is, too — if you still want it."
+
+[sub_resource type="Resource" id="Resource_bnxy8"]
+script = ExtResource("1_l2wx0")
+kind = &"actor_emote"
+params = {
+&"mood": &"happy",
+&"npc": &"mira"
+}
+skip_mode = 1
+seconds = 1.6
+
+[sub_resource type="Resource" id="Resource_845ds"]
+script = ExtResource("1_l2wx0")
+kind = &"flag"
+params = {
+&"name": &"partnership_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_vd6cu")
+id = &"partnership"
+events = Array[ExtResource("1_l2wx0")]([SubResource("Resource_ux63m"), SubResource("Resource_bnxy8"), SubResource("Resource_845ds")])
+title = "Someone Chose to Stay"

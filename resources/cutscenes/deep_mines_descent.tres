@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_my6dk"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_gihhw"]
+
+[sub_resource type="Resource" id="Resource_8mdt5"]
+script = ExtResource("1_my6dk")
+kind = &"fade"
+params = {
+&"alpha": 1.0
+}
+skip_mode = 1
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_678ya"]
+script = ExtResource("1_my6dk")
+kind = &"title_card"
+skip_mode = 1
+seconds = 1.8
+text = "The Deep Mines"
+
+[sub_resource type="Resource" id="Resource_4wimi"]
+script = ExtResource("1_my6dk")
+kind = &"fade"
+params = {
+&"alpha": 0.0
+}
+skip_mode = 2
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_3mwc1"]
+script = ExtResource("1_my6dk")
+kind = &"flag"
+params = {
+&"name": &"deep_mines_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_gihhw")
+id = &"deep_mines_descent"
+events = Array[ExtResource("1_my6dk")]([SubResource("Resource_8mdt5"), SubResource("Resource_678ya"), SubResource("Resource_4wimi"), SubResource("Resource_3mwc1")])
+title = "Below the Stairs"

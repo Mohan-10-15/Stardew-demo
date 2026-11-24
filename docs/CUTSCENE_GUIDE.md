@@ -2,15 +2,20 @@
 
 How the cinematic system is meant to work, and the rules a cutscene must obey.
 
-**Status: core system implemented.** `scripts/cutscenes/` owns the director,
-the two data resources, the context snapshot and the registry; four cutscenes
-are authored under `resources/cutscenes/` and the overlay scene is generated.
-Playback locks the player, restores camera/pause state unconditionally, and
-skipping applies `SKIP_APPLY` flags while respecting `SKIP_REQUIRED` beats.
-The event vocabulary implemented is `wait`, `dialogue`, `fade`, `letterbox`,
-`flag`, `camera_move`, `play_sound` and `play_music`; the wider actor/branch/
-nested-cutscene vocabulary in §3 remains a future extension. M10's acceptance
-rows are met.
+**Status: extended in Update 2 W7.** `scripts/cutscenes/` owns the director,
+the data resources, the context snapshot, the registry and a content validator.
+Seventeen authored cutscenes (plus two test fixtures) live under
+`resources/cutscenes/`; the overlay scene is generated. Playback locks the
+player, restores camera/pause state unconditionally, and skipping applies
+`SKIP_APPLY` flags while respecting `SKIP_REQUIRED` beats.
+
+The implemented vocabulary now also includes `title_card`, `screen_flash`,
+`actor_anim`, `actor_emote`, `actor_move`, `camera_cut`, `particle`, `choice`,
+`set_time`, `set_weather`, `give_item` and `story_advance`. `tools/validate_cutscenes.gd`
+checks every kind, npc, music id, flag name and per-scene duration; `docs/evidence/update2/w7-cutscene.log`
+shows The Mending playing and skipping with the world restored. The intro plays
+on a genuine New Game. Branching/nested cutscenes and a blended dialogue
+portrait remain open.
 
 Nothing in this document is a stub or a placeholder — it is a specification. The
 first milestone that touches cutscenes implements it; before that, there is

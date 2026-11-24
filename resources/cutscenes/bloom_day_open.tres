@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_4o8d5"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_2wwsg"]
+
+[sub_resource type="Resource" id="Resource_2q4b6"]
+script = ExtResource("1_4o8d5")
+kind = &"letterbox"
+params = {
+&"show": true
+}
+skip_mode = 1
+seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_i20cm"]
+script = ExtResource("1_4o8d5")
+kind = &"actor_anim"
+params = {
+&"clip": &"cheer",
+&"npc": &"mira"
+}
+skip_mode = 1
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_c1138"]
+script = ExtResource("1_4o8d5")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "Mira: Every garden gate is open. Even the ones that have not opened in years."
+
+[sub_resource type="Resource" id="Resource_hvm12"]
+script = ExtResource("1_4o8d5")
+kind = &"flag"
+params = {
+&"name": &"bloom_day_seen",
+&"value": true
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_5dhvd"]
+script = ExtResource("1_4o8d5")
+kind = &"letterbox"
+params = {
+&"show": false
+}
+skip_mode = 1
+seconds = 0.1
+
+[resource]
+script = ExtResource("2_2wwsg")
+id = &"bloom_day_open"
+events = Array[ExtResource("1_4o8d5")]([SubResource("Resource_2q4b6"), SubResource("Resource_i20cm"), SubResource("Resource_c1138"), SubResource("Resource_hvm12"), SubResource("Resource_5dhvd")])
+title = "Bloom Day"

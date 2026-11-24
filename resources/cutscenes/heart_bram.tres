@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_dhee5"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_0sapy"]
+
+[sub_resource type="Resource" id="Resource_5gmdr"]
+script = ExtResource("1_dhee5")
+kind = &"actor_emote"
+params = {
+&"mood": &"happy",
+&"npc": &"bram"
+}
+skip_mode = 1
+seconds = 1.6
+
+[sub_resource type="Resource" id="Resource_gray3"]
+script = ExtResource("1_dhee5")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.6
+text = "Bram: Something you mended stayed mended. That has not happened in a while."
+
+[sub_resource type="Resource" id="Resource_4lib8"]
+script = ExtResource("1_dhee5")
+kind = &"flag"
+params = {
+&"name": &"heart_bram_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_0sapy")
+id = &"heart_bram"
+events = Array[ExtResource("1_dhee5")]([SubResource("Resource_5gmdr"), SubResource("Resource_gray3"), SubResource("Resource_4lib8")])
+title = "Bram — Four Hearts"

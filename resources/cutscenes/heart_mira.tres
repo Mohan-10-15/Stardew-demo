@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_k3ams"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_40lct"]
+
+[sub_resource type="Resource" id="Resource_6u0yb"]
+script = ExtResource("1_k3ams")
+kind = &"actor_anim"
+params = {
+&"clip": &"interact",
+&"npc": &"mira"
+}
+skip_mode = 1
+seconds = 0.5
+
+[sub_resource type="Resource" id="Resource_uivsm"]
+script = ExtResource("1_k3ams")
+kind = &"actor_emote"
+params = {
+&"mood": &"happy",
+&"npc": &"mira"
+}
+skip_mode = 1
+seconds = 1.6
+
+[sub_resource type="Resource" id="Resource_ks5nc"]
+script = ExtResource("1_k3ams")
+kind = &"choice"
+skip_mode = 1
+seconds = 2.4
+text = "Mira: You stayed for the harvest. Nobody has stayed for that in years."
+
+[sub_resource type="Resource" id="Resource_cfsur"]
+script = ExtResource("1_k3ams")
+kind = &"flag"
+params = {
+&"name": &"heart_mira_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_40lct")
+id = &"heart_mira"
+events = Array[ExtResource("1_k3ams")]([SubResource("Resource_6u0yb"), SubResource("Resource_uivsm"), SubResource("Resource_ks5nc"), SubResource("Resource_cfsur")])
+title = "Mira — Four Hearts"

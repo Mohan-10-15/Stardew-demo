@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_73d5j"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_pffqo"]
+
+[sub_resource type="Resource" id="Resource_cw4cn"]
+script = ExtResource("1_73d5j")
+kind = &"give_item"
+params = {
+&"amount": 1,
+&"item": &"iron_ore"
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_48esa"]
+script = ExtResource("1_73d5j")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.4
+text = "A shard of the old stone, still warm from the ground."
+
+[sub_resource type="Resource" id="Resource_e1h4e"]
+script = ExtResource("1_73d5j")
+kind = &"flag"
+params = {
+&"name": &"shard_found",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_pffqo")
+id = &"shard_found"
+events = Array[ExtResource("1_73d5j")]([SubResource("Resource_cw4cn"), SubResource("Resource_48esa"), SubResource("Resource_e1h4e")])
+title = "A Shard Remembered"

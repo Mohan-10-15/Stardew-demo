@@ -136,6 +136,43 @@ func _run_event(event: CutsceneEvent) -> void:
 		&"fade":
 			_set_fade(float(event.params.get("alpha", 0.0)))
 			await _wait(event.seconds)
+		&"title_card":
+			_set_text(String(event.params.get("text", event.text)))
+			await _wait(event.seconds)
+			_set_text("")
+		&"screen_flash":
+			_set_fade(1.0)
+			await _wait(0.05)
+			_set_fade(0.0)
+			await _wait(event.seconds)
+		&"actor_anim":
+			var npc := _actor(StringName(event.params.get("npc", &"")))
+			if npc != null:
+				NpcAnimator.play(npc, StringName(event.params.get("clip", &"idle")))
+			await _wait(event.seconds)
+		&"actor_emote":
+			var npc := _actor(StringName(event.params.get("npc", &"")))
+			if npc != null:
+				npc.call("set_expression", StringName(event.params.get("mood", &"happy")),
+					event.seconds)
+			await _wait(event.seconds)
+		&"actor_move":
+			var npc := _actor(StringName(event.params.get("npc", &"")))
+			if npc != null and event.params.has("position"):
+				npc.call("walk_to", event.params["position"])
+			await _wait(event.seconds)
+		&"camera_cut":
+			var camera := _camera()
+			if camera != null and event.params.has("position"):
+				camera.global_position = event.params["position"]
+			await _wait(event.seconds)
+		&"particle":
+			# VFX are decorative; a skip may drop them without changing state.
+			await _wait(event.seconds)
+		&"choice":
+			_set_text(String(event.params.get("text", event.text)))
+			await _wait(event.seconds)
+			_set_text("")
 		_:
 			pass
 
@@ -155,6 +192,25 @@ func _apply_effect(event: CutsceneEvent) -> void:
 				audio.call("play_music", StringName(event.params.get("id", &"")))
 		&"letterbox":
 			_show_letterbox(bool(event.params.get("show", true)))
+		&"set_time":
+			var time := _find_named(get_tree().get_root(), ^"TimeService")
+			if time != null and time.get("time") != null and event.params.has("hour"):
+				var world_time: WorldTime = time.get("time")
+				world_time.hour = clampi(int(event.params["hour"]), 0, 23)
+		&"set_weather":
+			var bus := _bus()
+			if bus != null and event.params.has("weather"):
+				bus.weather_changed.emit(int(event.params["weather"]))
+		&"give_item":
+			var state := _find_named(get_tree().get_root(), ^"PlayerState")
+			if state != null and state.get("inventory") != null:
+				var bag: Object = state.get("inventory")
+				bag.call("add", StringName(event.params.get("item", &"")),
+					int(event.params.get("amount", 1)))
+		&"story_advance":
+			var story := _find_named(get_tree().get_root(), ^"StoryService")
+			if story != null and event.params.has("flag"):
+				story.call("set_flag", StringName(event.params["flag"]), true)
 
 
 ## Skipping is a completion with a shortcut. Effects the guide marks
@@ -254,6 +310,12 @@ func _set_fade(alpha: float) -> void:
 		var color := fade.color
 		color.a = clampf(alpha, 0.0, 1.0)
 		fade.color = color
+
+
+func _actor(id: StringName) -> Node:
+	if id == &"":
+		return null
+	return _find_named(get_tree().get_root(), String(id))
 
 
 func _camera() -> Camera3D:

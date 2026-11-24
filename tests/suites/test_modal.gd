@@ -221,6 +221,9 @@ func _boot_main() -> Node:
 	# The title screen pauses the tree; these cases are about process modes and
 	# pause behaviour, so boot straight into play.
 	_rig.set("show_title_on_boot", false)
+	# The intro now plays on New Game; these cases are about pause modes, so
+	# suppress it on this instance rather than fighting a modal cutscene.
+	_rig.set("play_intro_cutscene", false)
 	tree.root.add_child(_rig)
 	for _i: int in range(8):
 		await tree.process_frame

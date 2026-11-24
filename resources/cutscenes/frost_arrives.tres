@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="CutscenePlayer" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_event.gd" id="1_rsfro"]
+[ext_resource type="Script" path="res://scripts/cutscenes/cutscene_player.gd" id="2_1v67c"]
+
+[sub_resource type="Resource" id="Resource_msdhw"]
+script = ExtResource("1_rsfro")
+kind = &"set_weather"
+params = {
+&"weather": 3
+}
+seconds = 0.0
+
+[sub_resource type="Resource" id="Resource_p6dlu"]
+script = ExtResource("1_rsfro")
+kind = &"particle"
+params = {
+&"kind_of": "snow"
+}
+skip_mode = 1
+seconds = 1.2
+
+[sub_resource type="Resource" id="Resource_5wcgn"]
+script = ExtResource("1_rsfro")
+kind = &"dialogue"
+skip_mode = 1
+seconds = 2.8
+text = "Odette: Frost before its season. The old stories said this would happen."
+
+[sub_resource type="Resource" id="Resource_r0a0n"]
+script = ExtResource("1_rsfro")
+kind = &"flag"
+params = {
+&"name": &"frost_seen",
+&"value": true
+}
+seconds = 0.0
+
+[resource]
+script = ExtResource("2_1v67c")
+id = &"frost_arrives"
+events = Array[ExtResource("1_rsfro")]([SubResource("Resource_msdhw"), SubResource("Resource_p6dlu"), SubResource("Resource_5wcgn"), SubResource("Resource_r0a0n")])
+title = "The Early Frost"
