@@ -37,6 +37,9 @@ signal pickup_requested(drop: ResourceDrop)
 var _area: Area3D = null
 var _collected: bool = false
 var _mesh: MeshInstance3D = null
+var _age: float = 0.0
+var _still_for: float = 0.0
+var _settled: bool = false
 
 
 func _ready() -> void:
@@ -101,9 +104,33 @@ func _build_pickup_area() -> void:
 	add_child(_area)
 
 
-func _physics_process(_delta: float) -> void:
+## A small outward kick on spawn so a dropped log visibly tumbles out of a
+## tree instead of appearing already at rest.
+func pop(direction: Vector3, strength: float = 2.0) -> void:
+	apply_impulse(direction.normalized() * strength, Vector3(0, 0.1, 0))
+
+
+func _physics_process(delta: float) -> void:
 	if _collected or _area == null or not is_inside_tree():
 		return
+	_age += delta
+	if DropRules.should_despawn(_age):
+		queue_free()
+		return
+	var speed := linear_velocity.length()
+	if speed <= DropRules.SETTLE_SPEED:
+		_still_for += delta
+	else:
+		_still_for = 0.0
+	_settled = DropRules.should_sleep(speed, _still_for)
+	if _settled:
+		var state := _find_named(get_tree().get_root(), &"Player")
+		if state is Node3D:
+			var pull := DropRules.magnet_velocity(global_position,
+				(state as Node3D).global_position, true)
+			if pull != Vector3.ZERO:
+				linear_velocity.x += pull.x * delta
+				linear_velocity.z += pull.z * delta
 	for body: Node3D in _area.get_overlapping_bodies():
 		if body is PlayerController:
 			pickup_requested.emit(self)
@@ -127,11 +154,38 @@ func is_collected() -> bool:
 	return _collected
 
 
+func from_dict(data: Dictionary) -> void:
+	if is_inside_tree():
+		global_position = data.get("position", global_position)
+	_age = float(data.get("age", 0.0))
+
+
+static func _find_named(node: Node, wanted: StringName) -> Node:
+	if node == null:
+		return null
+	if node.name == wanted:
+		return node
+	for child: Node in node.get_children():
+		var found := _find_named(child, wanted)
+		if found != null:
+			return found
+	return null
+
+
+func age() -> float:
+	return _age
+
+
+func is_settled() -> bool:
+	return _settled
+
+
 func to_dict() -> Dictionary:
 	return {
 		"item_id": item_id,
 		"amount": amount,
 		"position": global_position,
+		"age": _age,
 	}
 
 
