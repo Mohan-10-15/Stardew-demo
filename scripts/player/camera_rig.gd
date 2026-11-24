@@ -200,6 +200,7 @@ func _update_camera_transform(instant: bool) -> void:
 		# depending on the body's yaw only — where a head is — while the camera's
 		# zero local rotation still aims it along the pitch.
 		_camera.position = Vector3(0.0, first_person_height, 0.0).rotated(Vector3.RIGHT, -_pitch)
+		_camera.position += _shake_offset()
 		_camera.rotation = Vector3.ZERO
 		return
 
@@ -227,8 +228,16 @@ func _update_camera_transform(instant: bool) -> void:
 	# the camera sits on the ground. `pivot_height` is the pivot the occlusion
 	# ray starts from, so using the same value keeps the camera and the ray
 	# agreeing about where "behind the shoulder" is.
-	_camera.position = Vector3(0.0, pivot_height, _current_distance)
+	_camera.position = Vector3(0.0, pivot_height, _current_distance) + _shake_offset()
 	_camera.rotation = Vector3.ZERO
+
+
+func _shake_offset() -> Vector3:
+	var service := JuiceService.find(get_tree().root)
+	if service == null:
+		return Vector3.ZERO
+	var offset := service.shake_offset()
+	return Vector3(offset.x, offset.y, 0.0)
 
 
 ## Casts a ray from the pivot along `-forward` and returns how far the camera

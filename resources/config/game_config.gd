@@ -44,6 +44,14 @@ extends Resource
 ## Block texture pack: hollowbrook_detailed (default) or pixel16.
 @export var voxel_texture_pack: String = "hollowbrook_detailed"
 
+@export_group("Feel")
+## Screen shake intensity, 0 disables all shake.
+@export_range(0.0, 1.0, 0.05) var screen_shake: float = 1.0
+## Optional camera bob while walking.
+@export var head_bob: bool = true
+## Optional 60-90 ms freeze on a landed hit.
+@export var hit_stop: bool = true
+
 @export_group("Graphics")
 ## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision
 ## a player makes is "how much am I willing to pay", and low/high with nothing between

@@ -60,6 +60,9 @@ func load_config() -> void:
 	settings.voxel_texture_pack = String(cfg.get_value(
 		"world", "voxel_texture_pack", settings.voxel_texture_pack
 	))
+	settings.screen_shake = float(cfg.get_value("feel", "screen_shake", settings.screen_shake))
+	settings.head_bob = bool(cfg.get_value("feel", "head_bob", settings.head_bob))
+	settings.hit_stop = bool(cfg.get_value("feel", "hit_stop", settings.hit_stop))
 
 
 func save_config() -> void:
@@ -86,6 +89,9 @@ func save_config() -> void:
 	cfg.set_value("accessibility", "bindings", settings.bindings)
 	cfg.set_value("accessibility", "tutorial_enabled", settings.tutorial_enabled)
 	cfg.set_value("world", "voxel_texture_pack", settings.voxel_texture_pack)
+	cfg.set_value("feel", "screen_shake", settings.screen_shake)
+	cfg.set_value("feel", "head_bob", settings.head_bob)
+	cfg.set_value("feel", "hit_stop", settings.hit_stop)
 	var err := cfg.save(CONFIG_PATH)
 	if err != OK:
 		Log.error("Config", "Failed to save config: %d" % err)
@@ -176,6 +182,14 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 			match key:
 				"voxel_texture_pack":
 					settings.voxel_texture_pack = String(value)
+		&"feel":
+			match key:
+				"screen_shake":
+					settings.screen_shake = clampf(float(value), 0.0, 1.0)
+				"head_bob":
+					settings.head_bob = bool(value)
+				"hit_stop":
+					settings.hit_stop = bool(value)
 		_:
 			Log.warn("Config", "Unknown config section '%s'" % section)
 			return

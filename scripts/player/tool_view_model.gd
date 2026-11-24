@@ -17,6 +17,23 @@ const REST_ROTATION := Vector3(-0.18, -0.10, -0.22)
 var _model: Node3D = null
 var _current_id: StringName = &""
 var _tween: Tween = null
+var _sway: Vector2 = Vector2.ZERO
+
+
+func _process(delta: float) -> void:
+	# W5.4: inertial sway from player motion. A player who disables juice gets
+	# exactly zero sway, not a smaller one.
+	if not Config.settings.head_bob:
+		_sway = Vector2.ZERO
+		return
+	var player := _find_named(get_tree().get_root(), "Player")
+	var target := Vector2.ZERO
+	if player is CharacterBody3D:
+		var v := (player as CharacterBody3D).velocity
+		target = Vector2(clampf(v.x * 0.012, -0.05, 0.05),
+			clampf(v.z * 0.012, -0.05, 0.05))
+	_sway = Juice.view_sway(_sway, target, true, delta)
+	position = REST_POSITION + Vector3(_sway.x, _sway.y, 0.0)
 
 
 func _ready() -> void:

@@ -86,6 +86,7 @@ const JournalPanelScene := "res://scenes/ui/journal_panel.tscn"
 @export var load_valley_memory: bool = true
 @export var load_voxel: bool = true
 @export var load_music: bool = true
+@export var load_juice: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -145,6 +146,7 @@ var valley_memory: ValleyMemory = null
 var voxel_service: VoxelService = null
 var deep_mines: DeepMines = null
 var music_director: MusicDirector = null
+var juice_service: JuiceService = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -214,6 +216,16 @@ func _boot() -> void:
 		_spawn_audio_manager()
 	if load_music:
 		_spawn_music_director()
+	if load_juice:
+		juice_service = JuiceService.new()
+		juice_service.name = "JuiceService"
+		add_child(juice_service)
+		EventBus.attack_landed.connect(func(_id: StringName, _dmg: int) -> void:
+			juice_service.add_trauma(0.35))
+		EventBus.player_damaged.connect(func(_amount: int, _left: int) -> void:
+			juice_service.add_trauma(0.5))
+		EventBus.tool_swung.connect(func(_id: StringName) -> void:
+			juice_service.add_trauma(0.08))
 	if load_cutscenes:
 		_spawn_cutscene_director()
 	# Between world and player: it needs the world's grid to attach, and the
