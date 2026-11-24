@@ -3169,3 +3169,25 @@ without admin rights, so the browser check used headless Edge. A first attempt
 at a dedicated cloud test suite leaked global state and broke 106 unrelated
 tests; it was removed rather than left in — clouds remain covered by the world
 material-library tests and the real-window screenshot.
+
+## Update 2 (waves W0–W7)
+
+The living record is `docs/UPDATE2.md` with evidence under
+`docs/evidence/update2/`. Highlights: anime cast with 76 embedded clips, gaze
+and voice blips; 31-block sandbox with two texture packs and 10 mine floors;
+original adaptive score, layered ambience and jukebox; 17 cutscenes; Jolt game
+feel; story spine of 16 quests / 15 chapters / 8 festivals.
+
+Most recent fix: the Builders' Plot is now an exact 10 m hole in both the ground
+visual mesh and its trimesh collider, aligned to `PLOT_CENTRE=(35,0,25)` in
+`scripts/voxel/voxel_service.gd` and cut by `WorldBuilder.is_plot_cell()`. The
+first attempt multiplied by the 5 m ground-cell step and cut a 50 m hole around
+a 10 m platform; a real raycast regression test in `tests/suites/test_world_geometry.gd`
+caught the geometry error and the house occlusion at the first probe location.
+Jolt's body limit was raised from 10240 to 20480 in `project.godot` because the
+headless suite keeps multiple world rigs alive and exceeded the default.
+
+Verified: `check.ps1` 694/694, all four stages OK, zero script errors;
+`w3-voxel.log` and `w3-texture-pack.log` pass with reviewed screenshots.
+Human queue (not verifiable on this machine): audible listening, cast-look sign
+off, real gamepad feel, story/About copy taste.

@@ -95,6 +95,19 @@ static func terrain_height(x: float, z: float) -> float:
 	return WorldTerrain.terrain_height(x, z)
 
 
+## Whether a ground cell centre is covered by the Builders' Plot. Pure so a
+## test can assert the hole is exactly the size of the voxel platform — no
+## invisible ground inside the pit and no uncovered rim around it.
+static func is_plot_cell(x: float, z: float) -> bool:
+	# Voxel blocks are 1 m (see VoxelMesher); the ground grid is 5 m
+	# (GROUND_SIZE / GROUND_CELLS). The hole is the plot's 10 m footprint in
+	# world metres, NOT 5 ground cells — multiplying by the 5 m step would cut a
+	# 50 m hole around a 10 m platform and drop the player into the void.
+	var half := float(VoxelService.PLOT_HALF)
+	return absf(x - float(VoxelService.PLOT_CENTRE.x)) < half \
+		and absf(z - float(VoxelService.PLOT_CENTRE.z)) < half
+
+
 static func _build_ground(root: Node3D) -> void:
 	var body := StaticBody3D.new()
 	body.name = "Ground"
@@ -177,8 +190,15 @@ static func _build_grid(
 	# Two triangles per cell, wound counter-clockwise when seen from above so
 	# the surface faces up.
 	var stride := GROUND_CELLS + 1
+	# The Builders' Plot replaces these ground cells with voxel blocks. Skip
+	# them in *both* the visual indices and the collider faces, so there is no
+	# invisible floor over a pit and no gap around the plot to fall through.
 	for gz: int in range(GROUND_CELLS):
 		for gx: int in range(GROUND_CELLS):
+			var cx := -GROUND_SIZE * 0.5 + (float(gx) + 0.5) * step
+			var cz := -GROUND_SIZE * 0.5 + (float(gz) + 0.5) * step
+			if is_plot_cell(cx, cz):
+				continue
 			var a := gz * stride + gx
 			var b := a + 1
 			var c := a + stride

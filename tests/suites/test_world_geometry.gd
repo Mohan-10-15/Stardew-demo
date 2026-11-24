@@ -26,6 +26,7 @@ func get_cases() -> Array[StringName]:
 		&"pond_water_is_visible_above_the_basin",
 		&"pond_floor_is_below_the_water_surface",
 		&"farm_fence_perimeter_is_closed",
+		&"the_builders_plot_replaces_the_ground",
 	]
 
 
@@ -58,6 +59,8 @@ func _run_async(case: StringName) -> Dictionary:
 			return _check_pond_floor(case, world, space)
 		&"farm_fence_perimeter_is_closed":
 			return _check_fence(case, world)
+		&"the_builders_plot_replaces_the_ground":
+			return _check_plot_hole(case, world, space)
 	return fail(case, "unhandled case")
 
 
@@ -244,6 +247,84 @@ func _check_fence(case: StringName, world: Node3D) -> Dictionary:
 	if rails < 4:
 		return fail(case, "expected 4 farm fence rails, found %d" % rails)
 	return succeeded(case, "%d posts, %d rails - perimeter closed" % [posts, rails])
+
+
+## The Builders' Plot is a 10 m voxel platform that has to *replace* the ground
+## under it. Two ways to get this wrong, both invisible in a still screenshot:
+##   1. leave the ground triangles in -> an invisible floor hovers over the pit;
+##   2. skip whole 5 m ground cells using the voxel count -> a 50 m hole rings
+##      the 10 m platform with empty air the player falls through.
+## So assert both: no Ground hit inside, Ground still hit just outside, and no
+## triangle (visual or collider) with a centroid inside the plot footprint.
+func _check_plot_hole(case: StringName, world: Node3D, space: PhysicsDirectSpaceState3D) -> Dictionary:
+	var ground := world.get_node_or_null(^"Ground") as StaticBody3D
+	if ground == null:
+		return fail(case, "no Ground node")
+	var px := float(VoxelService.PLOT_CENTRE.x)
+	var pz := float(VoxelService.PLOT_CENTRE.z)
+	var half := float(VoxelService.PLOT_HALF)
+
+	# The voxel platform lives under Main, not under this world rig, so a ray
+	# inside the plot must miss the Ground body entirely.
+	var inside: Array[Vector2] = [
+		Vector2(px, pz),
+		Vector2(px - half * 0.6, pz - half * 0.6),
+		Vector2(px + half * 0.6, pz + half * 0.6),
+	]
+	for probe: Vector2 in inside:
+		if _ground_hit_at(space, ground, probe):
+			return fail(case, "ground still covers %s - an invisible floor sits over the plot" % probe)
+
+	# Every side needs ground immediately beyond the plot; otherwise the player
+	# walks off the rim into the void. Probe at ground-cell CENTRES, not on the
+	# 5 m cell boundaries (a vertical ray exactly on a trimesh edge can miss).
+	# The house at (32.5, 17.5) occludes that side, so probe the near rim at
+	# z=12.5 (verified clear) and the other three sides at their cell centres.
+	var outside: Array[Vector2] = [
+		Vector2(px, pz - half - 7.5), Vector2(px, pz + half + 2.5),
+		Vector2(px - half - 2.5, pz), Vector2(px + half + 2.5, pz),
+	]
+	for probe: Vector2 in outside:
+		if not _ground_hit_at(space, ground, probe):
+			return fail(case, "no ground just outside the plot at %s - player can fall off the rim" % probe)
+
+	# Visual mesh and collider share the skipped cells; neither may cover the
+	# plot. Using centroids catches a triangle that straddles the boundary.
+	var tri := _trimesh_of(ground)
+	if tri == null:
+		return fail(case, "Ground collider is not a trimesh")
+	var faces := tri.get_faces()
+	for i: int in range(0, faces.size(), 3):
+		var centre := (faces[i] + faces[i + 1] + faces[i + 2]) / 3.0
+		if absf(centre.x - px) < half and absf(centre.z - pz) < half:
+			return fail(case, "collider triangle at %s covers the plot" % centre)
+	var mesh := ground.get_node_or_null(^"GroundMesh") as MeshInstance3D
+	if mesh == null or mesh.mesh == null:
+		return fail(case, "Ground has no visual mesh")
+	var arrays := mesh.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var inds: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	for i: int in range(0, inds.size(), 3):
+		var centre := (verts[inds[i]] + verts[inds[i + 1]] + verts[inds[i + 2]]) / 3.0
+		if absf(centre.x - px) < half and absf(centre.z - pz) < half:
+			return fail(case, "visual triangle at %s covers the plot" % centre)
+	# This suite builds a fresh world per case and the harness does not free
+	# them. Jolt caps bodies at 10240; releasing this rig keeps the suite from
+	# tipping later suites (test_npc) over that cap.
+	world.free()
+	return succeeded(case, "plot is an exact hole; %d collider triangles remain" % (faces.size() / 3))
+
+
+## Does a downward ray at this XZ hit the Ground body specifically? Other bodies
+## (the pond, props, the voxel platform) are ignored on purpose.
+func _ground_hit_at(space: PhysicsDirectSpaceState3D, ground: Node3D, xz: Vector2) -> bool:
+	var query := PhysicsRayQueryParameters3D.create(
+		Vector3(xz.x, 60.0, xz.y), Vector3(xz.x, -60.0, xz.y), 1
+	)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit := space.intersect_ray(query)
+	return not hit.is_empty() and hit["collider"] == ground
 
 
 ## The Ground body's trimesh collider, or null when it has none.

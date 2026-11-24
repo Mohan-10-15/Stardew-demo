@@ -5,7 +5,9 @@ extends Node
 ## chunks and publishes distinct success/failure events through EventBus.
 
 const SERVICE_GROUP := &"voxel_service"
-const PLOT_CENTRE := Vector3i(34, 0, 26)
+## Aligned to the 5 m ground cells so the hole cut in the terrain mesh is
+## covered exactly by the voxel plot — no invisible rim to fall through.
+const PLOT_CENTRE := Vector3i(35, 0, 25)
 const PLOT_HALF := 5
 const PLOT_GROUND := 1
 

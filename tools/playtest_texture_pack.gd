@@ -33,7 +33,7 @@ func _run() -> void:
 		printerr("[play] no voxel service or player")
 		quit(1)
 		return
-	player.global_position = Vector3(34, 2, 32)
+	player.global_position = Vector3(35, 2, 31)
 	for _i: int in range(30):
 		await process_frame
 	print("[play] default pack: %s" % str(service.call("active_texture_pack")))

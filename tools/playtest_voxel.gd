@@ -46,7 +46,7 @@ func _run() -> void:
 	# Typed class references would pull EventBus-dependent scripts into this
 	# --script tool's compile (AGENTS.md trap 1), so use plain values here.
 	var grid: Variant = service.get("grid")
-	var plot_centre := Vector3i(34, 0, 26)
+	var plot_centre := Vector3i(35, 0, 25)
 	var cell := Vector3i(0, 1, 0)
 	var before: StringName = grid.get_block(cell)
 	print("[play] plot cell holds %s" % before)
