@@ -57,6 +57,14 @@ func _initialize() -> void:
 	column.add_theme_constant_override("separation", 6)
 	panel.add_child(column)
 
+	var portrait := TextureRect.new()
+	portrait.name = "Portrait"
+	portrait.custom_minimum_size = Vector2(96, 96)
+	portrait.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(portrait)
+
 	var name_label := _make_label("NameLabel", "", 20, NAME_COLOR)
 	column.add_child(name_label)
 

@@ -124,6 +124,13 @@ func _fill_villagers(tab: Control) -> void:
 			continue
 		var data: NpcData = npc.get("data")
 		var friendship: Friendship = npc.get("friendship")
+		var portrait := TextureRect.new()
+		portrait.name = "Portrait_%s" % data.id
+		portrait.custom_minimum_size = Vector2(64, 64)
+		portrait.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.texture = AnimeFace.texture_for(data.id)
+		(tab.get_node_or_null(^"List") as Control).add_child(portrait)
 		_label(tab, "%s — %s" % [
 			data.display_name,
 			friendship.tier_name() if friendship != null else "Stranger",

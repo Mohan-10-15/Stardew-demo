@@ -41,6 +41,13 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
+[node name="Portrait" type="TextureRect" parent="Panel/Column"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 3
+stretch_mode = 5
+
 [node name="NameLabel" type="Label" parent="Panel/Column"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20

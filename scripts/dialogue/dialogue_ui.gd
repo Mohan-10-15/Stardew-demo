@@ -118,6 +118,7 @@ func _on_dialogue_started(npc_id: StringName, _entry_id: StringName) -> void:
 	visible = true
 	if _name != null:
 		_name.text = _speaker_name(npc_id)
+	_set_portrait(npc_id, AnimeFace.MOOD_NEUTRAL)
 	_show_current_line()
 	# Paused last, so the line is already on screen when the world stops: a
 	# panel that pauses first and paints second is one frame of an empty box.
@@ -323,6 +324,16 @@ static func _search(node: Node, group: StringName) -> Node:
 
 ## The villager's display name, from the content rather than from the id —
 ## "mira" on screen is a database key leaking into the conversation.
+## W4.6: the speaker's original anime face, drawn from the same AnimeFace
+## texture the 3D billboard uses. No new asset, and the expression follows the
+## mood the villager chose.
+func _set_portrait(npc_id: StringName, mood: StringName) -> void:
+	var portrait := get_node_or_null(^"Panel/Column/Portrait") as TextureRect
+	if portrait == null:
+		return
+	portrait.texture = AnimeFace.texture_for(npc_id, mood)
+
+
 func _speaker_name(npc_id: StringName) -> String:
 	var data := NpcRegistry.get_npc(npc_id)
 	if data != null:
