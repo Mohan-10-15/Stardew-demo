@@ -20,6 +20,14 @@ named **Hollowbrook** points at it.
 > directory" error. Always run the copy in `C:\mohan\Game\Stardew dmeo`, or the
 > Desktop shortcut — the launcher uses the non-Mono engine and never loads C#.
 
+A fresh `git clone` also needs the git-ignored portable dev tools copied into its
+`tools/` folder before the headless pipeline will run: all four
+`Godot_v4.5-stable_*.exe` binaries **and `GodotSharp/` (Api + Tools)**. Without
+`GodotSharp/`, the Mono engine aborts with `.NET: Assemblies not found`. The
+shipped game and launcher are unaffected — this is only for running `check.ps1`
+on a clone. The exact steps are recorded at the top of
+`docs/evidence/update2/w8-final-fresh-clone.log`.
+
 From a terminal (PowerShell):
 
 ```powershell

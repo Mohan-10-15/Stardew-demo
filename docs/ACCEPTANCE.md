@@ -455,8 +455,11 @@ both `build/Hollowbrook.exe` (Windows Desktop, PCK embedded) and
 and rechecked after the last content change in
 `docs/evidence/update2/w8-final-export-recheck.log`. The exported EXE boots
 headlessly with no content errors. A fresh-clone run is recorded at
-`docs/evidence/update2/w8-final-fresh-clone.log`. No claim is made about a
-second, unseen machine.
+`docs/evidence/update2/w8-final-fresh-clone.log`: **698/698, all four stages
+OK** after copying the git-ignored portable engine and `tools/GodotSharp` into
+the clone (without `GodotSharp/` the Mono engine reports `.NET: Assemblies not
+found` — a verification-environment setup step, not a game defect). No claim is
+made about a second, unseen machine.
 
 ---
 
