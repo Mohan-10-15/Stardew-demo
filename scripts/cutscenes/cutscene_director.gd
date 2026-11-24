@@ -219,10 +219,31 @@ func _apply_effect(event: CutsceneEvent) -> void:
 
 ## Skipping is a completion with a shortcut. Effects the guide marks
 ## `SKIP_APPLY` still land; camera flourishes and sounds do not.
+##
+## It is deliberately *synchronous*: setting a flag and waiting for the current
+## `wait` timer to expire left a writer paused with a cutscene still active, and
+## a skip requested during the gap between two chained scenes was lost. Apply
+## the outstanding effects now and finish, so the world is playable on return.
 func skip() -> void:
 	if not _running or _skipping:
 		return
 	_skipping = true
+	var has_required := false
+	if _current != null and _context != null:
+		var start: int = clampi(_context.reached_index, 0, _current.events.size())
+		for i: int in range(start, _current.events.size()):
+			var event: CutsceneEvent = _current.events[i]
+			if event.skip_mode == CutsceneEvent.SkipMode.SKIP_SKIP:
+				continue
+			if event.skip_mode == CutsceneEvent.SkipMode.SKIP_REQUIRED:
+				has_required = true
+			_apply_effect(event)
+	# A required beat means the scene cannot be "skipped" — it still completes
+	# normally once its beat has landed. Clear the flag first so `_finish` does
+	# not also publish a skip for that case.
+	if has_required:
+		_skipping = false
+	_finish(not has_required)
 
 
 func _finish(was_interrupted: bool) -> void:
