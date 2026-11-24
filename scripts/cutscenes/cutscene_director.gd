@@ -96,7 +96,9 @@ func play(id: StringName) -> bool:
 func _run() -> void:
 	var count := _current.events.size()
 	for i: int in range(count):
-		if not _running:
+		# A reload or an interrupted finish can null the context while a wait
+		# timer is outstanding; the resumed coroutine must exit, not crash.
+		if not _running or _context == null or _current == null:
 			return
 		_context.reached_index = i
 		var event: CutsceneEvent = _current.events[i]
@@ -120,6 +122,8 @@ func _run() -> void:
 
 
 func _run_event(event: CutsceneEvent) -> void:
+	if not _running or _context == null:
+		return
 	_apply_effect(event)
 	match event.kind:
 		&"wait", &"dialogue":
@@ -234,6 +238,12 @@ func _finish(was_interrupted: bool) -> void:
 	if _context != null:
 		applied_flags = _context.flags.duplicate()
 		_context.restore(get_tree().get_root())
+	# The snapshot was taken while the title screen had the tree paused. Never
+	# restore that pause into ordinary play — otherwise a New Game's intro ends
+	# with a frozen player and no visible reason.
+	var state := _find_named(get_tree().get_root(), ^"GameState")
+	if state != null and int(state.get("phase")) == GameState.Phase.PLAYING:
+		state.call("set_paused", false)
 	var id: StringName = _current.id if _current != null else &""
 	var bus := _bus()
 	if bus != null:

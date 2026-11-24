@@ -15,8 +15,9 @@ param(
     # 120s was enough until it was not (120.6s at 509 cases). 180 then covered
     # 628 cases. Update 2's front-door suites (title, controls, About, credits)
     # boot real UI scenes repeatedly; at 632 cases the tests stage measured
-    # ~210s, so the default is raised with that measurement rather than skipped.
-    [int]$TimeoutSeconds = 300
+    # ~210s. At 680 Update 2 cases (real UI boots, generative music, voxel
+    # grids) the tests stage exceeded 300 s and passed at 600 s with 680/0.
+    [int]$TimeoutSeconds = 600
 )
 
 $ErrorActionPreference = 'Stop'

@@ -332,6 +332,10 @@ func _boot() -> void:
 			player_state.wallet.set_gold(player_state.starting_gold)
 
 	GameState.set_phase(GameState.Phase.PLAYING)
+	# The title screen pauses the tree. A New Game reload skips the title, so
+	# nothing else would lift that pause and the player would be frozen.
+	if not show_title_on_boot or get_tree().has_meta(&"skip_title"):
+		GameState.set_paused(false)
 	EventBus.game_ready.emit()
 	# A "New Game" reload sets this meta so the fresh scene goes straight in
 	# instead of showing the title a second time.
