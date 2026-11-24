@@ -91,6 +91,7 @@ const MusicToastScene := "res://scenes/ui/music_toast.tscn"
 @export var load_voxel: bool = true
 @export var load_music: bool = true
 @export var load_juice: bool = true
+@export var load_ambience: bool = true
 @export var about_panel_scene_path: String = AboutPanelScene
 @export var credits_panel_scene_path: String = CreditsPanelScene
 @export var settings_panel_scene_path: String = SettingsPanelScene
@@ -152,6 +153,7 @@ var voxel_service: VoxelService = null
 var deep_mines: DeepMines = null
 var music_director: MusicDirector = null
 var juice_service: JuiceService = null
+var ambience_director: AmbienceDirector = null
 var rebind_service: RebindService = null
 var ui_accessibility: UiAccessibility = null
 var performance_monitor: PerformanceMonitor = null
@@ -221,6 +223,14 @@ func _boot() -> void:
 		_spawn_audio_manager()
 	if load_music:
 		_spawn_music_director()
+	if load_ambience:
+		ambience_director = AmbienceDirector.new()
+		ambience_director.name = "AmbienceDirector"
+		add_child(ambience_director)
+		EventBus.season_changed.connect(func(_s: int) -> void: _sync_ambience())
+		EventBus.weather_changed.connect(func(_w: int) -> void: _sync_ambience())
+		EventBus.time_hour_changed.connect(func(_h: int) -> void: _sync_ambience())
+		_sync_ambience()
 	if load_juice:
 		juice_service = JuiceService.new()
 		juice_service.name = "JuiceService"
@@ -492,6 +502,15 @@ func _spawn_music_director() -> void:
 		else:
 			music_director.call("duck", false))
 	Log.info("Audio", "Music director ready")
+
+
+func _sync_ambience() -> void:
+	if ambience_director == null or _time_service == null:
+		return
+	var t: WorldTime = _time_service.time
+	ambience_director.call("set_context", {
+		"location": "farm", "hour": t.hour, "weather": t.weather,
+	})
 
 
 func _on_music_season(season: int) -> void:

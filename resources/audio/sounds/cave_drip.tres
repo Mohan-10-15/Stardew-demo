@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_4oajv"]
+
+[resource]
+script = ExtResource("1_4oajv")
+id = &"cave_drip"
+bus = 2
+wave = 5
+frequency = 900.0
+duration = 0.22
+decay = 6.0
+level = 0.12
+frequency_end = 300.0

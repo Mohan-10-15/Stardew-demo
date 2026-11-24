@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_b1g6c"]
+
+[resource]
+script = ExtResource("1_b1g6c")
+id = &"footstep_dirt_b"
+wave = 3
+frequency = 680.0
+duration = 0.1
+decay = 10.0
+level = 0.13
+pitch_max = 1.35

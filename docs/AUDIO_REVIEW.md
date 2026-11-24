@@ -30,6 +30,14 @@ survive a config reload. `docs/evidence/update2/w6-jukebox.log` verifies the
 unlock list and overlay in a window. Music frequency is Always / Often /
 Sometimes — "Sometimes" doubles the ambience-only rest.
 
+## Ambience
+
+A location/season bed (wind, birds, crickets, pond, cave) plays under a weather
+layer (rain, storm, snow), with periodic original one-shots (bird chirp,
+cricket, cave drip) chosen by location. Four footstep surfaces now have three
+recorded variants each plus pitch jitter. `tests/suites/test_ambience.gd` pins
+the layer selection and that every id has a definition.
+
 ## Honest limits
 
 - This machine has **no audible output device**. The windowed playtest verifies

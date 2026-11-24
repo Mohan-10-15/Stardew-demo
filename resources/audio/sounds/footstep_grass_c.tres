@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/audio/audio_definition.gd" id="1_lp53v"]
+
+[resource]
+script = ExtResource("1_lp53v")
+id = &"footstep_grass_c"
+wave = 3
+frequency = 820.0
+duration = 0.1
+decay = 9.0
+level = 0.14
+pitch_max = 1.4
