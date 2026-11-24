@@ -53,8 +53,12 @@ static var _cache: Dictionary = {}
 
 ## The transparent face texture for [param npc_id] in [param mood], cached.
 static func texture_for(npc_id: StringName,
-		mood: StringName = MOOD_NEUTRAL) -> ImageTexture:
-	var key := "%s:%s" % [npc_id, mood]
+		mood: StringName = MOOD_NEUTRAL,
+		gaze: Vector2 = Vector2.ZERO) -> ImageTexture:
+	# Quantise so a slowly moving player does not regenerate a texture per frame.
+	var gx := clampi(int(round(gaze.x * 3.0)), -3, 3)
+	var gy := clampi(int(round(gaze.y * 2.0)), -2, 2)
+	var key := "%s:%s:%d:%d" % [npc_id, mood, gx, gy]
 	if _cache.has(key):
 		return _cache[key]
 	var image := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
@@ -63,7 +67,9 @@ static func texture_for(npc_id: StringName,
 
 	if mood == MOOD_NEUTRAL or mood == MOOD_HAPPY or mood == MOOD_SAD \
 			or mood == MOOD_ANGRY:
-		_draw_open_eyes(image, eyes, mood)
+		_draw_open_eyes(image, eyes, mood, Vector2(
+			float(gx) / 3.0, float(gy) / 2.0
+		))
 	else:
 		_draw_closed_eyes(image)
 	_draw_brows(image, mood)
@@ -92,16 +98,19 @@ static func texture_for(npc_id: StringName,
 
 ## Large eyes with a dark outline, white sclera, two-tone iris, pupil, hard
 ## catchlight and a lash flick at the outer corner.
-static func _draw_open_eyes(image: Image, eyes: Color, mood: StringName) -> void:
+static func _draw_open_eyes(image: Image, eyes: Color, mood: StringName,
+		gaze: Vector2 = Vector2.ZERO) -> void:
 	var squash := 1.0 if mood != MOOD_SAD else 0.82
+	var gx := int(round(gaze.x * 4.0))
+	var gy := int(round(gaze.y * 3.0))
 	for cx: int in [40, 88]:
 		ellipse(image, cx, 55, 19, int(24 * squash), INK)
 		ellipse(image, cx, 56, 17, int(22 * squash), WHITE)
-		ellipse(image, cx, 59, 10, int(14 * squash), eyes)
-		ellipse(image, cx, 66, 9, int(6 * squash), eyes.darkened(0.35))
-		ellipse(image, cx, 60, 4, 7, INK)
-		ellipse(image, cx - 5, 51, 5, 6, WHITE)
-		ellipse(image, cx + 6, 66, 2, 2, Color(1, 1, 1, 0.7))
+		ellipse(image, cx + gx, 59 + gy, 10, int(14 * squash), eyes)
+		ellipse(image, cx + gx, 66 + gy, 9, int(6 * squash), eyes.darkened(0.35))
+		ellipse(image, cx + gx, 60 + gy, 4, 7, INK)
+		ellipse(image, cx + gx - 5, 51 + gy, 5, 6, WHITE)
+		ellipse(image, cx + gx + 6, 66 + gy, 2, 2, Color(1, 1, 1, 0.7))
 		# Lash flick: a few shrinking ellipses angling out from the top corner.
 		var outer := cx - 17 if cx < 64 else cx + 17
 		for i: int in range(4):

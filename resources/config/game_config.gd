@@ -29,6 +29,8 @@ extends Resource
 @export_enum("Always", "Often", "Sometimes") var music_frequency: int = 1
 ## Show a short "Now playing" toast when the cue changes.
 @export var now_playing_toast: bool = true
+## Short per-character voice blips while dialogue types out.
+@export var voice_blips: bool = true
 
 @export_group("Gameplay")
 @export var camera_switch_key_action: StringName = &"toggle_camera_mode"

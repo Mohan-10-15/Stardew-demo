@@ -7,7 +7,7 @@ func get_cases() -> Array[StringName]:
 		&"thirteen_valid_distinct_profiles",
 		&"every_villager_has_a_profile",
 		&"every_schedule_activity_maps_to_a_clip",
-		&"mapped_clips_exist_in_the_kaykit_library",
+		&"mapped_clips_exist_in_the_kaykit_library", &"gaze_and_voice_are_distinct",
 	]
 
 
@@ -88,4 +88,17 @@ func _run(case: StringName) -> Dictionary:
 				if not library.has(clip):
 					return fail(case, "%s maps to unknown clip %s" % [activity, clip])
 			return succeeded(case, "%d activity mappings valid" % NpcAnimator.ACTIVITY_CLIPS.size())
+		&"gaze_and_voice_are_distinct":
+			var neutral := AnimeFace.texture_for(&"mira", AnimeFace.MOOD_NEUTRAL)
+			var looking := AnimeFace.texture_for(&"mira", AnimeFace.MOOD_NEUTRAL,
+				Vector2(1.0, 0.0))
+			if neutral.get_width() != looking.get_width():
+				return fail(case, "gaze changed the face size")
+			if neutral.get_image().get_data() == looking.get_image().get_data():
+				return fail(case, "looking aside did not move the eyes")
+			var low := VoiceBlips.stream_for(0.8)
+			var high := VoiceBlips.stream_for(1.3)
+			if low.data == high.data:
+				return fail(case, "two voice pitches made the same blip")
+			return succeeded(case, "eyes track gaze; each pitch has its own blip")
 	return fail(case, "no case implementation for %s" % case)

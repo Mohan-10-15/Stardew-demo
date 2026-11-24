@@ -462,10 +462,41 @@ func _update_face(delta: float) -> void:
 	var mat := _face_quad.material_override as StandardMaterial3D
 	if mat == null:
 		return
-	var wanted := AnimeFace.texture_for(data.id, mood)
+	var wanted := AnimeFace.texture_for(data.id, mood, _gaze_toward_player())
 	if mat.albedo_texture != wanted:
 		mat.albedo_texture = wanted
 		_face_mood = mood
+
+
+## W4.5: eyes follow the player within 5 m, and only while they are looking at
+## this villager (dialogue or close proximity). Quantised inside AnimeFace so a
+## moving player cannot thrash the texture cache.
+func _gaze_toward_player() -> Vector2:
+	var player := _find_named(get_tree().get_root(), &"Player")
+	if not (player is Node3D) or global_position.distance_to(
+			(player as Node3D).global_position) > 5.0:
+		return Vector2.ZERO
+	var to := (player as Node3D).global_position - global_position
+	var facing := -global_transform.basis.z
+	# The importer's basis is orthonormal, so its inverse is its transpose.
+	var local := global_transform.basis.transposed() * to
+	var lateral := clampf(local.x / 5.0, -1.0, 1.0)
+	var vertical := clampf(-local.y / 5.0, -1.0, 1.0)
+	if facing.dot(to.normalized()) < 0.0:
+		lateral = clampf(-lateral, -1.0, 1.0)
+	return Vector2(lateral, vertical)
+
+
+static func _find_named(node: Node, wanted: StringName) -> Node:
+	if node == null:
+		return null
+	if node.name == wanted:
+		return node
+	for child: Node in node.get_children():
+		var found := _find_named(child, wanted)
+		if found != null:
+			return found
+	return null
 
 
 func _apply_face_texture() -> void:

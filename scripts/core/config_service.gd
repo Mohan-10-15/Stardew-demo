@@ -47,6 +47,7 @@ func load_config() -> void:
 	settings.now_playing_toast = bool(cfg.get_value(
 		"audio", "now_playing_toast", settings.now_playing_toast
 	))
+	settings.voice_blips = bool(cfg.get_value("audio", "voice_blips", settings.voice_blips))
 	var unlocked: Variant = cfg.get_value("audio", "jukebox_unlocked", [])
 	settings.jukebox_unlocked = _string_names(unlocked)
 	settings.camera_switch_key_action = StringName(cfg.get_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action)))
@@ -91,6 +92,7 @@ func save_config() -> void:
 	cfg.set_value("audio", "muted", settings.muted)
 	cfg.set_value("audio", "music_frequency", settings.music_frequency)
 	cfg.set_value("audio", "now_playing_toast", settings.now_playing_toast)
+	cfg.set_value("audio", "voice_blips", settings.voice_blips)
 	cfg.set_value("audio", "jukebox_unlocked", settings.jukebox_unlocked)
 	cfg.set_value("gameplay", "camera_switch_key_action", String(settings.camera_switch_key_action))
 	cfg.set_value("gameplay", "show_debug_overlay", settings.show_debug_overlay)
@@ -169,6 +171,8 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.music_frequency = clampi(int(value), 0, 2)
 				"now_playing_toast":
 					settings.now_playing_toast = bool(value)
+				"voice_blips":
+					settings.voice_blips = bool(value)
 				"jukebox_unlocked":
 					settings.jukebox_unlocked = _string_names(value)
 		&"gameplay":

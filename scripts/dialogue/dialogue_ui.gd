@@ -72,6 +72,10 @@ var _buttons: Array[Button] = []
 ## Whether *this* panel is the thing currently pausing the game.
 ## Not cosmetic — see [ShopUI._holds_pause].
 var _holds_pause := false
+var _voice: AudioStreamPlayer = null
+var _voice_every: int = 0
+var _voice_mood: StringName = &"neutral"
+var _voice_pitch: float = 1.0
 
 
 func _ready() -> void:
@@ -84,6 +88,10 @@ func _ready() -> void:
 	EventBus.dialogue_line_changed.connect(_on_dialogue_line_changed)
 	EventBus.dialogue_finished.connect(_on_dialogue_finished)
 	_apply_name_color()
+	_voice = AudioStreamPlayer.new()
+	_voice.name = "VoiceBlip"
+	_voice.bus = "SFX"
+	add_child(_voice)
 
 
 func _exit_tree() -> void:
@@ -102,8 +110,15 @@ func _process(delta: float) -> void:
 		_continue.modulate.a = pulse if _continue.visible else 0.0
 	if not _typing:
 		return
+	var was := _revealed
 	_revealed = mini(_revealed + int(ceil(CPS * delta)), _full_text.length())
 	_text.text = _full_text.substr(0, _revealed)
+	if Config.settings.voice_blips and _voice != null and _revealed > was:
+		if (_revealed / 3) > (_voice_every / 3) \
+				and _full_text.substr(maxi(_revealed - 1, 0), 1) != " ":
+			_voice.stream = VoiceBlips.stream_for(_voice_pitch, _voice_mood)
+			_voice.play()
+		_voice_every = _revealed
 	if _revealed >= _full_text.length():
 		_typing = false
 		_refresh_continue()
@@ -119,6 +134,9 @@ func _on_dialogue_started(npc_id: StringName, _entry_id: StringName) -> void:
 	if _name != null:
 		_name.text = _speaker_name(npc_id)
 	_set_portrait(npc_id, AnimeFace.MOOD_NEUTRAL)
+	_voice_pitch = _voice_pitch_for(npc_id)
+	_voice_mood = &"neutral"
+	_voice_every = 0
 	_show_current_line()
 	# Paused last, so the line is already on screen when the world stops: a
 	# panel that pauses first and paints second is one frame of an empty box.
@@ -332,6 +350,31 @@ func _set_portrait(npc_id: StringName, mood: StringName) -> void:
 	if portrait == null:
 		return
 	portrait.texture = AnimeFace.texture_for(npc_id, mood)
+
+
+func _voice_pitch_for(npc_id: StringName) -> float:
+	var tree_root := get_tree().root if is_inside_tree() else null
+	var manager := _find_group(tree_root, &"npc_manager")
+	if manager != null:
+		for npc: Node in manager.call("npcs"):
+			if npc == null or npc.get("data") == null:
+				continue
+			var data: NpcData = npc.get("data")
+			if data.id == npc_id and data.profile != null:
+				return data.profile.voice_pitch
+	return 1.0
+
+
+func _find_group(node: Node, group: StringName) -> Node:
+	if node == null:
+		return null
+	if node.is_in_group(group):
+		return node
+	for child: Node in node.get_children():
+		var found := _find_group(child, group)
+		if found != null:
+			return found
+	return null
 
 
 func _speaker_name(npc_id: StringName) -> String:
