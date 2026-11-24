@@ -40,8 +40,8 @@ func _load_cues() -> void:
 	if dir == null:
 		return
 	for entry: String in dir.get_files():
-		if entry.ends_with(".tres"):
-			var cue := ResourceLoader.load(DIR + entry) as MusicCue
+		if ResourceFiles.is_resource(entry):
+			var cue := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as MusicCue
 			if cue != null and cue.is_valid():
 				cues[cue.id] = cue
 

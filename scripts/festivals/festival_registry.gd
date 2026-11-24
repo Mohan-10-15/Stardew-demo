@@ -40,8 +40,8 @@ static func ensure_loaded() -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
-			var data := ResourceLoader.load("%s%s" % [DIRECTORY, entry]) as FestivalData
+		if ResourceFiles.is_resource(entry):
+			var data := ResourceLoader.load(ResourceFiles.path_for(DIRECTORY, entry)) as FestivalData
 			if data != null and data.is_valid():
 				_by_id[data.id] = data
 		entry = dir.get_next()

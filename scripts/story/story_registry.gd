@@ -61,8 +61,8 @@ static func ensure_loaded() -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
-			var chapter := ResourceLoader.load("%s%s" % [DIRECTORY, entry]) as StoryChapter
+		if ResourceFiles.is_resource(entry):
+			var chapter := ResourceLoader.load(ResourceFiles.path_for(DIRECTORY, entry)) as StoryChapter
 			if chapter != null and chapter.is_valid():
 				_chapters.append(chapter)
 			else:

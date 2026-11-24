@@ -48,8 +48,8 @@ static func ensure_loaded() -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
-			var data := ResourceLoader.load("%s%s" % [DIR, entry]) as CookingRecipe
+		if ResourceFiles.is_resource(entry):
+			var data := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as CookingRecipe
 			if data != null and data.is_valid():
 				_recipes[data.id] = data
 		entry = dir.get_next()

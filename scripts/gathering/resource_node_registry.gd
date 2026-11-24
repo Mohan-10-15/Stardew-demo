@@ -104,8 +104,8 @@ static func _load_directory(path: String) -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if not entry.begins_with(".") and entry.ends_with(NODE_EXTENSION):
-			_load_resource("%s%s" % [path, entry])
+		if not entry.begins_with(".") and ResourceFiles.is_resource(entry):
+			_load_resource(ResourceFiles.path_for(path, entry))
 		entry = dir.get_next()
 	dir.list_dir_end()
 

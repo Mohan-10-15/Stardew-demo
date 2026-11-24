@@ -116,8 +116,8 @@ func _pick_fish() -> FishData:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
-			var data := ResourceLoader.load("%s%s" % [DIR, entry]) as FishData
+		if ResourceFiles.is_resource(entry):
+			var data := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as FishData
 			if data != null and data.is_valid() and data.seasons.has(season) \
 					and data.weathers.has(weather) and _hour_matches(data, hour):
 				pool.append(data)

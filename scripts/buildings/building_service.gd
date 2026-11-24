@@ -34,7 +34,7 @@ static func all_buildings() -> Array[BuildingData]:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
+		if ResourceFiles.is_resource(entry):
 			var data := ResourceLoader.load("res://resources/buildings/%s" % entry) as BuildingData
 			if data != null and data.is_valid():
 				out.append(data)

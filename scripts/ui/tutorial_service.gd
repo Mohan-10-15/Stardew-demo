@@ -41,8 +41,8 @@ func _load_steps() -> void:
 	if dir == null:
 		return
 	for entry: String in dir.get_files():
-		if entry.ends_with(".tres"):
-			var step := ResourceLoader.load(DIR + entry) as TutorialStep
+		if ResourceFiles.is_resource(entry):
+			var step := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as TutorialStep
 			if step != null and step.is_valid():
 				steps.append(step)
 	steps.sort_custom(func(a: TutorialStep, b: TutorialStep) -> bool: return a.order < b.order)

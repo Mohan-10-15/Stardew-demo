@@ -58,8 +58,8 @@ static func ensure_loaded() -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(EXTENSION):
-			_load("%s%s" % [DIRECTORY, entry])
+		if ResourceFiles.is_resource(entry):
+			_load(ResourceFiles.path_for(DIRECTORY, entry))
 		entry = dir.get_next()
 	dir.list_dir_end()
 

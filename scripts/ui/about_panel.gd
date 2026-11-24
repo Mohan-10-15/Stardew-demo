@@ -26,9 +26,9 @@ func _load_pages() -> void:
 	if dir == null:
 		return
 	for entry: String in dir.get_files():
-		if not entry.ends_with(".tres"):
+		if not ResourceFiles.is_resource(entry):
 			continue
-		var page := ResourceLoader.load(DIR + entry) as AboutPage
+		var page := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as AboutPage
 		if page != null and page.is_valid():
 			_pages.append(page)
 	_pages.sort_custom(func(a: AboutPage, b: AboutPage) -> bool: return a.order < b.order)

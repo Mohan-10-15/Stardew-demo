@@ -18,9 +18,9 @@ static func ensure_loaded() -> void:
 	if dir == null:
 		return
 	for entry: String in dir.get_files():
-		if not entry.ends_with(".tres"):
+		if not ResourceFiles.is_resource(entry):
 			continue
-		var data := ResourceLoader.load(DIR + entry) as BlockData
+		var data := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as BlockData
 		if data == null or not data.is_valid():
 			continue
 		if _by_id.has(data.id):

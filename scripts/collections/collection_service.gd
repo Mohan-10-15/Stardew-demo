@@ -51,8 +51,8 @@ func _load() -> void:
 	if dir == null:
 		return
 	for entry: String in dir.get_files():
-		if entry.ends_with(".tres"):
-			var data := ResourceLoader.load(DIR + entry) as CollectionData
+		if ResourceFiles.is_resource(entry):
+			var data := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as CollectionData
 			if data != null and data.is_valid():
 				collections.append(data)
 	collections.sort_custom(func(a: CollectionData, b: CollectionData) -> bool:

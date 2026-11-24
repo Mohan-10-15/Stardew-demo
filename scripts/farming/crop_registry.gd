@@ -119,8 +119,8 @@ static func _load_directory(path: String) -> void:
 	var entry := dir.get_next()
 	while entry != "":
 		# `_` prefixed entries are the `.` and `..` DirAccess still reports.
-		if not entry.begins_with(".") and entry.ends_with(CROP_EXTENSION):
-			_load_resource("%s%s" % [path, entry])
+		if not entry.begins_with(".") and ResourceFiles.is_resource(entry):
+			_load_resource(ResourceFiles.path_for(path, entry))
 		entry = dir.get_next()
 	dir.list_dir_end()
 

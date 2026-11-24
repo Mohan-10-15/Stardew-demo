@@ -48,8 +48,8 @@ func _load_animals() -> void:
 	dir.list_dir_begin()
 	var entry := dir.get_next()
 	while entry != "":
-		if entry.ends_with(".tres"):
-			var data := ResourceLoader.load("%s%s" % [DIR, entry]) as AnimalData
+		if ResourceFiles.is_resource(entry):
+			var data := ResourceLoader.load(ResourceFiles.path_for(DIR, entry)) as AnimalData
 			if data != null and data.is_valid() and not _states.has(data.id):
 				_states[data.id] = {
 					"data": data, "fed_today": false,

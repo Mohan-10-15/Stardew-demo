@@ -15,9 +15,9 @@ static func validate() -> Dictionary:
 		errors.append("no collection directory")
 	else:
 		for entry: String in dir.get_files():
-			if not entry.ends_with(".tres"):
+			if not ResourceFiles.is_resource(entry):
 				continue
-			var data := ResourceLoader.load("res://resources/collections/" + entry) as CollectionData
+			var data := ResourceLoader.load(ResourceFiles.path_for("res://resources/collections/", entry)) as CollectionData
 			if data == null or not data.is_valid():
 				errors.append("invalid collection %s" % entry)
 				continue
@@ -91,9 +91,9 @@ static func _all_schedules() -> Array[NpcSchedule]:
 	if dir == null:
 		return out
 	for entry: String in dir.get_files():
-		if entry.ends_with(".tres"):
+		if ResourceFiles.is_resource(entry):
 			var schedule := ResourceLoader.load(
-				"res://resources/npc/schedules/" + entry) as NpcSchedule
+				ResourceFiles.path_for("res://resources/npc/schedules/", entry)) as NpcSchedule
 			if schedule != null:
 				out.append(schedule)
 	return out
@@ -105,8 +105,8 @@ static func _all_quests() -> Array[QuestData]:
 	if dir == null:
 		return out
 	for entry: String in dir.get_files():
-		if entry.ends_with(".tres"):
-			var quest := ResourceLoader.load("res://resources/quests/" + entry) as QuestData
+		if ResourceFiles.is_resource(entry):
+			var quest := ResourceLoader.load(ResourceFiles.path_for("res://resources/quests/", entry)) as QuestData
 			if quest != null:
 				out.append(quest)
 	return out
