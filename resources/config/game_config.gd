@@ -41,6 +41,8 @@ extends Resource
 @export var bindings: Dictionary = {}
 ## First-day hints; skippable forever from Settings.
 @export var tutorial_enabled: bool = true
+## Block texture pack: hollowbrook_detailed (default) or pixel16.
+@export var voxel_texture_pack: String = "hollowbrook_detailed"
 
 @export_group("Graphics")
 ## 0 low, 1 medium, 2 high. An int rather than a bool because the interesting decision

@@ -130,8 +130,8 @@ func _close() -> void:
 
 
 func _row_count() -> int:
-	# scale, contrast, the rebind rows, then reset
-	return 2 + REBIND_ROWS.size() + 1
+	# scale, contrast, block textures, the rebind rows, then reset
+	return 3 + REBIND_ROWS.size() + 1
 
 
 func _adjust_scale(delta: float) -> void:
@@ -148,8 +148,14 @@ func _activate() -> void:
 		_adjust_scale(SCALE_STEP)
 	elif _selected == 1:
 		Config.set_value(&"accessibility", "colour_assist", not Config.settings.colour_assist)
+	elif _selected == 2:
+		var other := "pixel16" if Config.settings.voxel_texture_pack != "pixel16" \
+			else "hollowbrook_detailed"
+		var voxels: Node = _panel(&"VoxelService")
+		if voxels == null or not bool(voxels.call("set_texture_pack", other)):
+			Config.set_value(&"world", "voxel_texture_pack", other)
 	elif _selected < _row_count() - 1:
-		_listening = REBIND_ROWS[_selected - 2]
+		_listening = REBIND_ROWS[_selected - 3]
 		_refresh()
 	else:
 		Config.reset_to_defaults()
@@ -167,11 +173,12 @@ func _refresh() -> void:
 	_add_row("High contrast: %s  (Enter to toggle)" % (
 		"ON" if Config.settings.colour_assist else "OFF"
 	), 1)
+	_add_row("Block textures: %s  (Enter to swap)" % Config.settings.voxel_texture_pack, 2)
 	for i: int in range(REBIND_ROWS.size()):
 		var action := REBIND_ROWS[i]
 		var name := String(action).capitalize()
 		var key := _service.label_for(action) if _service != null else "?"
-		_add_row("Rebind %s: %s  (Enter, then a key)" % [name, key], i + 2)
+		_add_row("Rebind %s: %s  (Enter, then a key)" % [name, key], i + 3)
 	_add_row("Reset everything to defaults", _row_count() - 1)
 
 
@@ -185,6 +192,25 @@ func _add_row(text: String, index: int) -> void:
 		prefix = "> (listening) "
 	label.text = prefix + text
 	_rows.add_child(label)
+
+
+func _panel(name: StringName) -> Node:
+	var loop := Engine.get_main_loop()
+	if not loop is SceneTree:
+		return null
+	return _find_named((loop as SceneTree).root, name)
+
+
+func _find_named(node: Node, wanted: StringName) -> Node:
+	if node == null:
+		return null
+	if node.name == wanted:
+		return node
+	for child: Node in node.get_children():
+		var found := _find_named(child, wanted)
+		if found != null:
+			return found
+	return null
 
 
 func _bus() -> Node:

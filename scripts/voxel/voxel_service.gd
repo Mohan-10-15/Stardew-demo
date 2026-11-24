@@ -86,6 +86,22 @@ func _mark_dirty(cell: Vector3i) -> void:
 		(node as VoxelChunkNode).rebuild(grid)
 
 
+## Swaps the block look live. Both packs are procedural and ship in-repo, so
+## the player can flip between detailed and 16-pixel blocks without a reload.
+func set_texture_pack(pack: String) -> bool:
+	if not FileAccess.file_exists("res://assets/voxel/packs/%s/atlas.png" % pack):
+		return false
+	Config.set_value(&"world", "voxel_texture_pack", pack)
+	for node: Variant in _nodes.values():
+		if node is VoxelChunkNode:
+			(node as VoxelChunkNode).set_texture_pack(pack)
+	return true
+
+
+func active_texture_pack() -> String:
+	return String(Config.settings.voxel_texture_pack)
+
+
 func raycast(origin: Vector3, direction: Vector3, reach: float = 5.0) -> Dictionary:
 	return VoxelRaycast.cast(grid, origin, direction, reach)
 

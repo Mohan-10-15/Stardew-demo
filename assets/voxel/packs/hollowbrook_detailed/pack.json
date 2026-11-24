@@ -2,7 +2,7 @@
   "name": "Hollowbrook Detailed",
   "author": "Generated in tools/generate_block_atlas.gd",
   "licence": "CC0-1.0 (original procedural output)",
-  "tile_px": 16,
+  "tile_px": 32,
   "filter": "nearest",
   "tiles": {
     "birch_log": [0, 0],

@@ -29,6 +29,7 @@ func get_cases() -> Array[StringName]:
 		&"edits_round_trip_as_deltas",
 		&"ten_deterministic_mine_floors",
 		&"mine_edits_survive_a_save",
+		&"two_swappable_texture_packs",
 	]
 
 
@@ -140,4 +141,20 @@ func _run(case: StringName) -> Dictionary:
 					Vector3i(2, -8, 2)) != &"oak_planks":
 				return fail(case, "mine state did not round-trip")
 			return succeeded(case, "floor and edits survived a save")
+		&"two_swappable_texture_packs":
+			var packs := ["hollowbrook_detailed", "pixel16"]
+			var textures := []
+			for pack: String in packs:
+				var path := "res://assets/voxel/packs/%s/atlas.png" % pack
+				if not FileAccess.file_exists(path):
+					return fail(case, "%s atlas missing" % pack)
+				var material: StandardMaterial3D = VoxelChunkNode._material_for(pack)
+				if material == null or material.albedo_texture == null:
+					return fail(case, "%s has no atlas material" % pack)
+				textures.append(material.albedo_texture.get_width())
+			if textures[0] == textures[1]:
+				return fail(case, "both packs have the same tile size")
+			return succeeded(case, "detailed + pixel16 packs, %dpx vs %dpx" % [
+				textures[0] / 4, textures[1] / 4,
+			])
 	return fail(case, "no case implementation for %s" % case)

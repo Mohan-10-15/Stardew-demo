@@ -32,6 +32,14 @@ func setup(chunk_coord: Vector3i) -> void:
 	add_child(_body)
 
 
+func set_texture_pack(pack: String) -> void:
+	if pack == texture_pack:
+		return
+	texture_pack = pack
+	if _mesh != null:
+		_mesh.material_override = _material_for(pack)
+
+
 func rebuild(grid: VoxelGrid) -> void:
 	if _mesh == null:
 		setup(coord)

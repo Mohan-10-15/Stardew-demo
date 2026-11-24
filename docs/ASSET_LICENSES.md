@@ -21,6 +21,7 @@ All paths are `res://` paths relative to the Godot project root.
 | Quaternius — Farm Buildings Pack (Sep 2018) | `https://quaternius.com/packs/farmbuildings.html` (pack page: `https://quaternius.itch.io/lowpoly-farm-buildings`) | CC0 1.0 — `assets/models/quaternius/LICENSE-CC0.txt` | `assets/models/quaternius/FarmBuildings/` | 2026-09-30 (Unity), re-landed in Godot 2026-10-01 |
 | Quaternius — Ultimate Nature Pack (Jun 2019) | `https://quaternius.com/packs/ultimatenature.html` (mirror: `https://opengameart.org/content/low-poly-nature-pack-1`) | CC0 1.0 — `assets/models/quaternius/NaturePack/LICENSE-CC0.txt` | `assets/models/quaternius/NaturePack/` | 2026-10-02 |
 | Hollowbrook Detailed voxel atlas | Generated in-repo by `tools/generate_block_atlas.gd` (no external source) | CC0 1.0 — original procedural output; `assets/voxel/packs/hollowbrook_detailed/pack.json` | `assets/voxel/packs/hollowbrook_detailed/` | 2026-11-23 |
+| Pixel Sixteen voxel atlas | Generated in-repo by `tools/generate_pixel_atlas.gd` (no external source) | CC0 1.0 — original procedural output; `assets/voxel/packs/pixel16/pack.json` | `assets/voxel/packs/pixel16/` | 2026-11-24 |
 
 All three packs are CC0, so no attribution is required in-game. All licence files
 ship inside the imported folders as the authoritative copy.

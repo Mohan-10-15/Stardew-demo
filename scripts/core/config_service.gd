@@ -57,6 +57,9 @@ func load_config() -> void:
 	settings.tutorial_enabled = bool(cfg.get_value(
 		"accessibility", "tutorial_enabled", settings.tutorial_enabled
 	))
+	settings.voxel_texture_pack = String(cfg.get_value(
+		"world", "voxel_texture_pack", settings.voxel_texture_pack
+	))
 
 
 func save_config() -> void:
@@ -82,6 +85,7 @@ func save_config() -> void:
 	cfg.set_value("accessibility", "colour_assist", settings.colour_assist)
 	cfg.set_value("accessibility", "bindings", settings.bindings)
 	cfg.set_value("accessibility", "tutorial_enabled", settings.tutorial_enabled)
+	cfg.set_value("world", "voxel_texture_pack", settings.voxel_texture_pack)
 	var err := cfg.save(CONFIG_PATH)
 	if err != OK:
 		Log.error("Config", "Failed to save config: %d" % err)
@@ -168,6 +172,10 @@ func set_value(section: StringName, key: String, value: Variant) -> void:
 					settings.bindings = value.duplicate(true) if value is Dictionary else {}
 				"tutorial_enabled":
 					settings.tutorial_enabled = bool(value)
+		&"world":
+			match key:
+				"voxel_texture_pack":
+					settings.voxel_texture_pack = String(value)
 		_:
 			Log.warn("Config", "Unknown config section '%s'" % section)
 			return

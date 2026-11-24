@@ -5,7 +5,7 @@ extends SceneTree
 ##   Godot --headless --path . --script res://tools/generate_block_atlas.gd
 
 const PACK := "res://assets/voxel/packs/hollowbrook_detailed/"
-const TILE := 16
+const TILE := 32
 const COLS := 4
 
 
